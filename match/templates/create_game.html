@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<html lang="es">
+<head>
+    <style>
+                h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        fieldset {
+            border: none;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        legend {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #555;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+    </style>
+    <script>
+        function updatePlayerOptions() {
+            // Obtener todos los selects de jugadores
+            const playerSelects = document.querySelectorAll('select[id^="player_"]');
+            const selectedPlayers = [];
+
+            // Recopilar los IDs de jugadores seleccionados
+            playerSelects.forEach(select => {
+                if (select.value) {
+                    selectedPlayers.push(select.value);
+                }
+            });
+
+            // Actualizar las opciones de cada select
+            playerSelects.forEach(select => {
+                const options = select.querySelectorAll('option');
+
+                options.forEach(option => {
+                    if (selectedPlayers.includes(option.value) && option.value !== select.value) {
+                        option.style.display = 'none'; // Ocultar la opción si ya fue seleccionada
+                    } else {
+                        option.style.display = 'block'; // Mostrar la opción si no fue seleccionada
+                    }
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="table-container">
+        <h1>Crear Partidos para el Enfrentamiento</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div>
+                {% for i in "12345" %}
+                    <fieldset>
+                        <legend>Partido {{ i }}</legend>
+                        <div>
+                            <label for="player_1_{{ i }}">Jugador 1:</label>
+                            <input type="hidden" id="n_game_{{ i }}" name="n_game_{{ i }}" value="{{ i }}">
+                            <select id="player_1_{{ i }}" name="player_1_{{ i }}" onchange="updatePlayerOptions()">
+                                <option value="">Seleccionar jugador 1</option>
+                                {% for player in call.players.all %}
+                                    <option value="{{ player.id }}">{{ player.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="player_2_{{ i }}">Jugador 2:</label>
+                            <select id="player_2_{{ i }}" name="player_2_{{ i }}" onchange="updatePlayerOptions()">
+                                <option value="">Seleccionar jugador 2</option>
+                                {% for player in call.players.all %}
+                                    <option value="{{ player.id }}">{{ player.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </fieldset>
+                {% endfor %}
+            </div>
+            <button type="submit" class="button">Guardar Partidos</button>
+        </form>
+    </div>
+</body>
+</html>
+{% endblock %}

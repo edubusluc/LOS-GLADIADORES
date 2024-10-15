@@ -1,0 +1,91 @@
+[
+    {"name":"Eduardo",
+    "position":"Revés",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Alberto",
+    "position":"Revés",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Aurelio",
+    "position":"Derecha",
+    "skillfull_hand":"Zurdo"
+    },
+
+    {"name":"Alberto C",
+    "position":"Revés",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Urri",
+    "position":"Revés",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Borja",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Dani",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Fabrizio",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Gonzalo",
+    "position":"Mixto",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Juanfran",
+    "position":"Mixto",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Julián",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Marcelo",
+    "position":"Derecha",
+    "skillfull_hand":"Zurdo"
+    },
+
+    {"name":"Pepe",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Toni",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Jesús",
+    "position":"Revés",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Alfredo",
+    "position":"Mixto",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Antonio",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Jordi",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    }
+]

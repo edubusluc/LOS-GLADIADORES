@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<html lang="es">
+<body>
+
+<div class="table-container">
+    <h2>Resultado del Partido</h2>
+    <h3>{{game.match.local }} vs {{ game.match.visiting }}</h3>
+    <h3>Partido Número: {{ game.n_game }}</h3>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="set-row">
+            <div class="set">
+            <label for="set1_local">Set 1</label>
+            <input type="number" name="set1_local" id="set1_local" min="0" max="7" placeholder="0" required>
+            <input type="number" name="set1_visiting" id="set1_visiting" min="0" max="7" placeholder="0" required>
+            </div>
+            
+            <div class="set">
+            <label for="set2_local">Set 2</label>
+            <input type="number" name="set2_local" id="set2_local" min="0" max="7" placeholder="0" required>
+            <input type="number" name="set2_visiting" id="set2_visiting" min="0" max="7" placeholder="0" required>
+            </div>
+
+            <div class="set">
+            <label for="set3_local">Set 3</label>
+            <input type="number" name="set3_local" id="set3_local" min="0" max="7" value = "0" placeholder="0">
+            <input type="number" name="set3_visiting" id="set3_visiting" min="0" max="7" value = "0" placeholder="0">
+            </div>
+        </div>
+        <button type="submit" class="button">Guardar Resultado</button>
+    </form>
+</div>
+
+</body>
+</html>
+
+{% endblock %}

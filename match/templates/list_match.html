@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="table-container">
+    <h1>Listado de Partidos</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Local</th>
+                <th>Visitante</th>
+                <th>Fecha</th>
+                <th>Resultado</th>
+                <th>Convocatoria</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in match %}
+            <tr>
+                <td>{{ m.local }}</td>
+                <td>{{ m.visiting }}</td>
+                <td>{{ m.start_date }}</td>
+                <td>{{ m.result_points }}</td> 
+                <td>
+                    <a href="{% url 'call_for_match' m.id %}" class="btn btn-primary">Ver Convocatoria</a>
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

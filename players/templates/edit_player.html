@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+
+
+form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Estilo de las etiquetas */
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Estilo de los campos de entrada y selección */
+input[type="text"],
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Estilo del botón */
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+</style>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Jugador</title>
+</head>
+<body>
+    <h1>Editar Jugador</h1>
+    
+    <form method="POST" action="{% url 'edit_player' player.id %}">
+        {% csrf_token %}
+        
+        <div>
+            <label for="name">Nombre:</label>
+            <input type="text" id="name" name="name" value="{{ player.name }}" required>
+        </div>
+    
+        <div>
+            <label for="position">Posición:</label>
+            <select id="position" name="position" required>
+                {% for value, display in player.POSITIONS %}
+                    <option value="{{ value }}" {% if player.position == value %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <div>
+            <label for="skillfull_hand">Mano hábil:</label>
+            <select id="skillfull_hand" name="skillfull_hand" required>
+                {% for value, display in player.HAND %}
+                    <option value="{{ value }}" {% if player.skillfull_hand == value %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <button type="submit">Guardar</button>
+    </form>
+</body>
+</html>
+{% endblock %}

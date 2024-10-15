@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<html lang="es">
+    <body>
+    <div class="table-container">
+                <h1>Crear Jugador</h1>
+                <form method="POST" class="mt-4">
+                    {% csrf_token %}
+                    <div>
+                        {{ form.as_p }} <!-- Muestra el formulario en formato de párrafo -->
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="button">Crear Jugador</button>
+                    </div>
+                </form>
+    </div>
+</body>
+</html>
+{% endblock %}

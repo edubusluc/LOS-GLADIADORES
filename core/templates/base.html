@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Página de Inicio{% endblock %}</title>
+    <link rel="icon" href="{% static 'img.png' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <a href="{% url 'home' %}">
+                <img src="{% static 'img.png' %}" alt="Escudo" class="team-logo">
+            </a>
+        </h1>
+        <nav class="navigation">
+            <ul>
+                <li><a href="{% url 'list_players' %}"><i class="fas fa-users"></i> Jugadores</a></li>
+                <li><a href="{% url 'create_player' %}"><i class="fas fa-user-plus"></i> Nuevo Jugador</a></li>
+                <li><a href="{% url 'list_match' %}"><i class="fas fa-baseball-ball"></i> Partidos</a></li>
+                <li><a href="{% url 'create_match' %}"><i class="fas fa-plus-circle"></i> Nuevo Partido</a></li>
+                <li><a href="{% url 'team_statistics' %}"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024-2025 SNP Gladiadores. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

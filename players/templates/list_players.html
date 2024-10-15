@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="table-container">
+    <h1 >Jugadores</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Posición</th>
+                <th>Mano hábil</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+            <tr>
+                <td>{{ player.name }}</td>
+                <td>{{ player.position }}</td>
+                <td>{{ player.skillfull_hand }}</td>
+                <td>
+                    <a href="{% url 'edit_player' player.id %}"><i class="fas fa-pen"></i></a>
+                    <a href="{% url 'delete_player' player.id %}"><i class="fas fa-trash"></i></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No hay jugadores registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+<!-- Paginación -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if players.has_previous %}
+                <a href="?page=1">&laquo; Primera</a>
+                <a href="?page={{ players.previous_page_number }}">Anterior</a>
+            {% endif %}
+
+            <span class="current">
+                Página {{ players.number }} de {{ players.paginator.num_pages }}
+            </span>
+
+            {% if players.has_next %}
+                <a href="?page={{ players.next_page_number }}">Siguiente</a>
+                <a href="?page={{ players.paginator.num_pages }}">Última &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+{% endblock %}

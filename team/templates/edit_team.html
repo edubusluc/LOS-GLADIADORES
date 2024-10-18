@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<html lang="es">
+<head>
+    <title>Editar Equipo</title>
+</head>
+<body>
+    <div class="table-container">
+    <h1>Editar Equipo</h1>
+    
+    <form method="POST" action="{% url 'edit_team' team.id %}">
+        {% csrf_token %}
+        
+        <div>
+            <label for="name">Nombre:</label>
+            <input type="text" id="name" name="name" value="{{ team.name }}" required>
+        </div>
+
+        <div>
+            <label for="in_group">
+                <input type="checkbox" id="in_group" name="in_group" {% if team.in_group %}checked{% endif %}>
+                ¿Se encuentra en tu grupo?
+            </label>
+        </div>
+    
+        <button type="submit"class = "button">Guardar</button>
+    </form>
+</div>
+</body>
+</html>
+{% endblock %}

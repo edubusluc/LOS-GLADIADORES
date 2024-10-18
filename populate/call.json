@@ -1,6 +1,25 @@
 [
-    {"match_id":1,
-    "players": ["Eduardo","Gonzalo","Juanfran","Dani","Aurelio","Alberto","Borja","Pepe","Antonio","Jordi"],
-    "draft_mode":true
+    {
+        "match_criteria": {
+            "local_team": "LA MAGIA DEL PADEL C",
+            "visitor_team": "LOS GLADIADORES"
+        },
+        "players": [
+            "Alberto",
+            "Borja",
+            "Pablo",
+            "Jordi",
+            "Aurelio",
+            "Dani",
+            "Toni",
+            "Eduardo",
+            "Pepe",
+            "Juanfran",
+            "Mumpao",
+            "Alberto C",
+            "Gonzalo",
+            "Antonio"
+        ],
+        "draft_mode": false
     }
 ]

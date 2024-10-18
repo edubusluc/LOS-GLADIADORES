@@ -14,8 +14,8 @@ class MatchForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(MatchForm, self).__init__(*args, **kwargs)
-        self.fields['local'].queryset = Team.objects.all()
-        self.fields['visiting'].queryset = Team.objects.all()
+        self.fields['local'].queryset = Team.objects.filter(in_group = True)
+        self.fields['visiting'].queryset = Team.objects.filter(in_group = True)
 
 class GameForm (forms.ModelForm):
     class Meta:

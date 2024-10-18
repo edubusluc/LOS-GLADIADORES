@@ -71,14 +71,17 @@
   <div class="container">
     <h1 class="title">Estadísticas {{team.name}}</h1>
     <form method="GET" action="{% url 'team_statistics' %}">
-      <label for="year">Selecciona el Año:</label>
-      <select name="year" id="year">
-        <option value="">-- Todos los Años --</option>
-        {% for year in years %}
-          <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+      <label for="season" style="margin-top: 10px;">Seleccione una temporada:</label>
+      <select name="season" id="season">
+        <option value="">Todas las temporadas</option>
+        {% for season in seasons %}
+        <option value="{{ season}}" {% if season == selected_season %}selected{% endif %}>
+          {{ season }}
+        </option>
         {% endfor %}
       </select>
-      <button type="submit">Filtrar</button>
+
+      <button type="submit" class="button" style="margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
     </form>
 
     <div class="card-container">
@@ -98,7 +101,10 @@
       </div>
 
       <div class="card">
-        <h2>Comparativa de Juegos Ganados/Perdidos como Local</h2>
+        <h2>Juegos Ganados/Perdidos Local</h2>
+        {% if not total_matches %}
+          <p class="message">Aún no se ha cerrado ningún partido</p>
+        {% else %}
         <div class="chart-container">
           <canvas id="myBarChart"></canvas>
         </div>
@@ -106,10 +112,14 @@
           Ganados: {{ percentage_local_games_won }}%
           Perdidos: {{ percentage_local_games_lost }}%
         </div>
+        {% endif %}
       </div>
 
       <div class="card">
-        <h2>Comparativa de Juegos Ganados/Perdidos como Visitante</h2>
+        <h2>Juegos Ganados/Perdidos Visitante</h2>
+        {% if not total_matches %}
+        <p class="message">Aún no se ha cerrado ningún partido</p>
+      {% else %}
         <div class="chart-container">
           <canvas id="myVisitingBarChart"></canvas>
         </div>
@@ -117,13 +127,18 @@
           Ganados: {{ percentage_visiting_games_won }}%
           Perdidos: {{ percentage_visiting_games_lost }}%
         </div>
+        {% endif %}
       </div>
 
       <div class="card">
         <h2>Número de Partidos Ganados por Año</h2>
+        {% if not total_matches %}
+        <p class="message">Aún no se ha cerrado ningún partido</p>
+      {% else %}
         <div class="chart-container">
           <canvas id="myLineChart"></canvas>
         </div>
+        {% endif %}
       </div>
 
     </div>

@@ -1,15 +1,23 @@
 [
     {
-        "name": "LOS GLADIADORES"
+        "name": "LOS GLADIADORES",
+        "in_group": true
     },
     {
-        "name": "LA MAGIA DEL PADEL C"
+        "name": "LA MAGIA DEL PADEL C",
+        "in_group": true
     },
     {
-        "name": "CLUB DE PADEL BURGUILLOS BETA"
+        "name": "CLUB DE PADEL BURGUILLOS BETA",
+        "in_group": true
     },
     {
-        "name": "LFP TOMARES MASC. B. 500"
+        "name": "LFP TOMARES MASC. B. 500",
+        "in_group": true
+    },
+    {
+        "name": "CÍRCULO MERCANTIL E INDUSTRIAL DE SEVILLA",
+        "in_group": false
     }
     
 ]

@@ -1,6 +1,7 @@
 from django.db import models
 from players.models import Player
 from match.models import Match
+from datetime import datetime
 
 # Create your models here.
 class Call(models.Model):

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django_flatpickr",
     'data_analyse',
     'team',
+    'callLog',
 ]
 
 MIDDLEWARE = [

@@ -53,6 +53,6 @@ def remove_pycache_and_clean_migrations(root_path, modules):
 root_path = '.'
 
 # Lista de módulos a limpiar
-modules = ['call', 'core', 'data_analyse', 'match', 'players', 'team']
+modules = ['call', 'core', 'data_analyse', 'match', 'players', 'team', 'callLog']
 
 remove_pycache_and_clean_migrations(root_path, modules)

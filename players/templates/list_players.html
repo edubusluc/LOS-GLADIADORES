@@ -3,7 +3,10 @@
 
 {% block content %}
 <div class="table-container">
-    <h1 >Jugadores</h1>
+    <div style="display: flex; align-items: center;">
+        <h1>Listado de Jugadores</h1>
+        <a href="{% url 'create_player' %}" class="button" style="margin-left: auto;">Nuevo Jugador</a>
+    </div>
     <table>
         <thead>
             <tr>

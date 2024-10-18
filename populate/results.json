@@ -1,0 +1,97 @@
+[
+    {
+        "game_criteria":{
+            "player_1_visiting":"Eduardo",
+            "player_2_visiting": "Borja"
+        },
+        "results":[
+            {
+                "result": "Visitante",
+                "set1_local":6,
+                "set1_visiting":4,
+                "set2_local":4,
+                "set2_visiting":6,
+                "set3_local":3,
+                "set3_visiting":6
+
+            }
+        ]
+
+    },
+    {
+        "game_criteria":{
+            "player_1_visiting":"Alberto",
+            "player_2_visiting": "Aurelio"
+        },
+        "results":[
+            {
+                "result": "Local",
+                "set1_local":6,
+                "set1_visiting":4,
+                "set2_local":6,
+                "set2_visiting":4,
+                "set3_local":null,
+                "set3_visiting":null
+
+            }
+        ]
+
+    },
+    {
+        "game_criteria":{
+            "player_1_visiting":"Dani",
+            "player_2_visiting": "Juanfran"
+        },
+        "results":[
+            {
+                "result": "Visitante",
+                "set1_local":6,
+                "set1_visiting":3,
+                "set2_local":4,
+                "set2_visiting":6,
+                "set3_local":5,
+                "set3_visiting":7
+
+            }
+        ]
+
+    },
+    {
+        "game_criteria":{
+            "player_1_visiting":"Gonzalo",
+            "player_2_visiting": "Pepe"
+        },
+        "results":[
+            {
+                "result": "Local",
+                "set1_local":7,
+                "set1_visiting":6,
+                "set2_local":4,
+                "set2_visiting":6,
+                "set3_local":6,
+                "set3_visiting":3
+
+            }
+        ]
+
+    },
+    {
+        "game_criteria":{
+            "player_1_visiting":"Jordi",
+            "player_2_visiting": "Antonio"
+        },
+        "results":[
+            {
+                "result": "Local",
+                "set1_local":6,
+                "set1_visiting":4,
+                "set2_local":2,
+                "set2_visiting":6,
+                "set3_local":6,
+                "set3_visiting":4
+
+            }
+        ]
+
+    }
+]

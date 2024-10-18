@@ -22,6 +22,8 @@ urlpatterns = [
     path("", include("core.urls")),
     path('players/', include('players.urls')),
     path('match/', include('match.urls')),
-    path('data_analyse/',include('data_analyse.urls'))
+    path('data_analyse/',include('data_analyse.urls')),
+    path('team/',include('team.urls')),
+    path('callLog/',include('callLog.urls')),
 
 ]

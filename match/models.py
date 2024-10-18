@@ -1,6 +1,7 @@
 from django.db import models
 from players.models import Player
 from django.core.exceptions import ValidationError
+from datetime import datetime
 
 # Create your models here.
 
@@ -19,12 +20,24 @@ class Match(models.Model):
     ]
     
     start_date = models.DateField()
-    result = models.CharField(max_length=20, choices=RESULT, default="NONE")
-    result_points = models.CharField(max_length=20)
+    result = models.CharField(max_length=20, choices=RESULT, null = True, blank = True, default="NONE")
+    result_points = models.CharField(max_length=20, null= True, blank = True, default="NONE")
     draft_mode = models.BooleanField(default=True)
+    season = models.CharField(max_length=9,null = True, blank = True, default="NONE")
+    
+    def save(self, *args, **kwargs):
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        
+        # Solo asigna una nueva temporada si es necesario
+        if not self.season or self.season == "NONE":
+            if current_month >= 9:  # Temporada empieza en septiembre
+                self.season = f"{current_year}-{current_year + 1}"
+            else:  # Temporada anterior
+                self.season = f"{current_year - 1}-{current_year}"
 
-    def __str__(self):
-            return f"LOCAL: {self.local} | VISITANTE: {self.visiting} | FECHA: {self.start_date.strftime('%d-%m-%Y')}"
+        # Llama al método de guardado del padre
+        super().save(*args, **kwargs)
 
 
 
@@ -44,7 +57,7 @@ class Game(models.Model):
 
     SCORE = [
         ("3","3"),
-        ("3","3"),
+        ("2","2"),
     ]
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='games')
@@ -52,9 +65,10 @@ class Game(models.Model):
     player_1_local = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_1_local', null=True)
     player_2_local = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_2_local', null=True)
     player_1_visiting = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_1_visiting', null=True)
-    player_2_visiting = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_4_visiting', null=True)
+    player_2_visiting = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_2_visiting', null=True)
     score = models.IntegerField(choices= NUMBER_GAME, null = True)
     winner = models.CharField(max_length=10, null=True)
+    draft_mode = models.BooleanField(default=True)
 
 def validate_set_value(value):
     if value < 0 or value > 7:
@@ -69,6 +83,7 @@ class Result(models.Model):
     set2_visiting = models.IntegerField(validators=[validate_set_value])
     set3_local = models.IntegerField(validators=[validate_set_value], null=True)
     set3_visiting = models.IntegerField(validators=[validate_set_value], null=True)
+    draft_mode = models.BooleanField(default=True)
 
 
     def determine_winner(self):

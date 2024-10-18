@@ -3,7 +3,11 @@
 
 {% block content %}
 <div class="table-container">
-    <h1>Listado de Partidos</h1>
+    <div style="display: flex; align-items: center;">
+        <h1>Listado de Partidos</h1>
+        <a href="{% url 'create_match' %}" class="button" style="margin-left: auto;">Nuevo Partido</a>
+    </div>
+
     <table>
         <thead>
             <tr>
@@ -21,7 +25,7 @@
                 <td>{{ m.local }}</td>
                 <td>{{ m.visiting }}</td>
                 <td>{{ m.start_date }}</td>
-                <td>{{ m.result_points }}</td> 
+                <td>{{ m.result_points }}</td>
                 <td>
                     <a href="{% url 'call_for_match' m.id %}" class="btn btn-primary">Ver Convocatoria</a>
                 </td>

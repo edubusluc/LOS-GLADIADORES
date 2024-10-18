@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="table-container">
+    <div style="display: flex; align-items: center;">
+        <h1>Listado de Equipos</h1>
+        <a href="{% url 'create_team' %}" class="button" style="margin-left: auto;">Nuevo Equipo</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th style="text-align: center;">Acciones</th> 
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td>{{ team.name }}</td>
+                <td style="text-align: center;">
+                    <a href="{% url 'edit_team' team.id %}"><i class="fas fa-pen"></i></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" style="text-align: center;">No hay equipos registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

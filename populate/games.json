@@ -1,0 +1,63 @@
+[
+    {
+        "match_criteria":{
+            "local_team":"LA MAGIA DEL PADEL C",
+            "visitor_team": "LOS GLADIADORES"
+        },
+        "matches": [
+            {
+                "n_game":1,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":"Eduardo",
+                "player_2_visiting":"Borja",
+                "score": "3",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+            {
+                "n_game":2,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":"Alberto",
+                "player_2_visiting":"Aurelio",
+                "score": "3",
+                "winner": "Local",
+                "draft_mode": false
+            },
+            {
+                "n_game":3,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":"Dani",
+                "player_2_visiting":"Juanfran",
+                "score": "2",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+
+            {
+                "n_game":4,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":"Gonzalo",
+                "player_2_visiting":"Pepe",
+                "score": "2",
+                "winner": "Local",
+                "draft_mode": false
+            },
+
+            {
+                "n_game":5,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":"Jordi",
+                "player_2_visiting":"Antonio",
+                "score": "2",
+                "winner": "Local",
+                "draft_mode": false
+            }
+        ]
+
+    }
+]

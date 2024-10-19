@@ -31,16 +31,13 @@
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       flex: 1 1 calc(50% - 20px);
-      /* Dos columnas con espacio entre ellas */
       padding: 20px;
       min-width: 300px;
-      /* Ancho mínimo para asegurar que se mantenga el diseño */
     }
 
     @media (max-width: 768px) {
       .card {
         flex: 1 1 100%;
-        /* Una sola columna en pantallas pequeñas */
       }
     }
 
@@ -74,9 +71,7 @@
 
     .percentage {
       display: flex;
-      /* Usar flexbox */
       justify-content: center;
-      /* Centrar el contenido */
       font-weight: bold;
       margin-top: 10px;
       color: #083C64;
@@ -93,7 +88,7 @@
         <option value="">-- Todos los jugadores --</option>
         {% for player in players %}
         <option value="{{ player.id }}" {% if player.id == selected_player %}selected{% endif %}>
-          {{ player.name }}
+          {{ player.name|escape }} <!-- Escapa el nombre del jugador -->
         </option>
         {% endfor %}
       </select>
@@ -102,8 +97,8 @@
       <select name="season" id="season">
         <option value="">-- Todas las temporadas --</option>
         {% for season in seasons %}
-        <option value="{{ season}}" {% if season == selected_season %}selected{% endif %}>
-          {{ season }}
+        <option value="{{ season|escape }}" {% if season == selected_season %}selected{% endif %}>
+          {{ season|escape }} <!-- Escapa la temporada -->
         </option>
         {% endfor %}
       </select>
@@ -178,14 +173,7 @@
         <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
         {% endif %}
       </div>
-    
-    
     </div>
-
-
-  </div>
-
-
   </div>
 
   <script>
@@ -196,37 +184,36 @@
       data: {
         labels: ['Ganados', 'Perdidos'],
         datasets: [{
-          data: [{{ total_wins }}, {{ total_lost }}],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
+          data: [{{ total_wins|escape }}, {{ total_lost|escape }}], // Escapar datos
+          backgroundColor: ['#083C64', '#ff6384'],
+        }]
       },
-    options: {
-      responsive: true,
+      options: {
+        responsive: true,
         maintainAspectRatio: false
-    }
+      }
     });
 
-    console.log('Present Call:', {{ present_call }});
-    console.log('No Call:', {{ no_call }});
+    console.log('Present Call:', {{ present_call|escape }});
+    console.log('No Call:', {{ no_call|escape }});
   </script>
 
-
   <script>
-    // Gráfico de pastel para partidos ganados/perdidos
+    // Gráfico de pastel para la participación en convocatorias
     const pieCallCtx = document.getElementById('chartCall').getContext('2d');
     const myPieCallCtx = new Chart(pieCallCtx, {
       type: 'pie',
       data: {
-        labels: ['LLamado', 'no llamado'],
+        labels: ['Llamado', 'No llamado'],
         datasets: [{
-          data: [{{ present_call }}, {{ no_call }}],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
+          data: [{{ present_call|escape }}, {{ no_call|escape }}], // Escapar datos
+          backgroundColor: ['#083C64', '#ff6384'],
+        }]
       },
-    options: {
-      responsive: true,
+      options: {
+        responsive: true,
         maintainAspectRatio: false
-    }
+      }
     });
   </script>
 
@@ -237,25 +224,25 @@
       data: {
         labels: ['Partidos Ganados', 'Partidos Perdidos'],
         datasets: [{
-          data: [{{ won_games_local }}, {{ lost_games_local }}],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
-  },
-    options: {
-      responsive: true,
-        maintainAspectRatio: false,
-          plugins: {
-        legend: {
-          display: false // Oculta la leyenda
-        }
+          data: [{{ won_games_local|escape }}, {{ lost_games_local|escape }}], // Escapar datos
+          backgroundColor: ['#083C64', '#ff6384'],
+        }]
       },
-      scales: {
-        y: {
-          beginAtZero: true
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false // Oculta la leyenda
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
         }
       }
-    }
-});
+    });
   </script>
 
   <script>
@@ -265,81 +252,46 @@
       data: {
         labels: ['Partidos Ganados', 'Partidos Perdidos'],
         datasets: [{
-          data: [{{ won_games_visiting }}, {{ lost_games_visiting }}],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
-},
-    options: {
-      responsive: true,
+          data: [{{ won_games_visiting|escape }}, {{ lost_games_visiting|escape }}], // Escapar datos
+          backgroundColor: ['#083C64', '#ff6384'],
+        }]
+      },
+      options: {
+        responsive: true,
         maintainAspectRatio: false,
-          plugins: {
-        legend: {
-          display: false // Oculta la leyenda
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
-});
-  </script>
-
-
-<script>
-  // Gráfico de línea para el número de partidos ganados y perdidos por año
-  const lineGamesCtx = document.getElementById('myLineGamesChart').getContext('2d');
-  const myLineGamesChart = new Chart(lineGamesCtx, {
-    type: 'line',
-    data: {
-      labels: {{ years|safe }}, // Asegúrate de pasar una lista de años como contexto
-      datasets: [
-        {
-          label: 'Partidos Ganados',
-          data: {{ games_won_per_year|safe }}, // Asegúrate de pasar una lista con los partidos ganados por año
-          backgroundColor: 'rgba(8, 60, 100, 0.2)',
-          borderColor: '#083C64',
-          borderWidth: 2,
-          fill: true,
-        },
-        {
-          label: 'Partidos Perdidos',
-          data: {{ games_lost_per_year|safe }}, // Asegúrate de pasar una lista con los partidos perdidos por año
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          borderColor: 'rgba(255, 99, 132, 1)',
-          borderWidth: 2,
-          fill: true,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true // Muestra la leyenda para distinguir las líneas
-        }
-      },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: 'Año'
+        plugins: {
+          legend: {
+            display: false // Oculta la leyenda
           }
         },
-        y: {
-          title: {
-            display: true,
-            text: 'Número de Partidos'
-          },
-          beginAtZero: true
+        scales: {
+          y: {
+            beginAtZero: true
+          }
         }
       }
-    }
-  });
-</script>
+    });
+  </script>
 
-
+  <script>
+    const lineGamesCtx = document.getElementById('myLineGamesChart').getContext('2d');
+    const myLineGamesChart = new Chart(lineGamesCtx, {
+      type: 'line',
+      data: {
+        labels: {{ match_dates|escape }}, // Escapar datos
+        datasets: [{
+          label: 'Resultados',
+          data: {{ match_results|escape }}, // Escapar datos
+          fill: false,
+          borderColor: '#083C64',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  </script>
 </body>
 {% endblock %}

@@ -12,7 +12,8 @@ class Match(models.Model):
     local = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='local_matches', null=True)
     visiting = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='visiting_matches', null=True)
     
-    RESULT = [
+    
+    POSSIBLE_RESULT = [
         ("Victoria Local", "Victoria Local"),
         ("Victoria Visitante", "Victoria Visitante"),
         ("EMPATE", "Empate"),
@@ -20,10 +21,10 @@ class Match(models.Model):
     ]
     
     start_date = models.DateField()
-    result = models.CharField(max_length=20, choices=RESULT, null = True, blank = True, default="NONE")
-    result_points = models.CharField(max_length=20, null= True, blank = True, default="NONE")
+    result = models.CharField(max_length=20, choices=POSSIBLE_RESULT, blank = True, default="NONE")
+    result_points = models.CharField(max_length=20, blank = True, default="NONE")
     draft_mode = models.BooleanField(default=True)
-    season = models.CharField(max_length=9,null = True, blank = True, default="NONE")
+    season = models.CharField(max_length=9, blank = True, default="NONE")
     
     def save(self, *args, **kwargs):
         current_year = datetime.now().year

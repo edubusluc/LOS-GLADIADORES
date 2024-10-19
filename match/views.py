@@ -62,10 +62,10 @@ def create_call(request, match_id):
             call.save()
             call.players.set(players)
 
-            callLog = CallLog(
+            call_log = CallLog(
                 call = call,
             )
-            callLog.save()
+            call_log.save()
             return redirect('call_for_match', match.id)
         
     return render(request, "create_call.html", {"players": players, "match": match})

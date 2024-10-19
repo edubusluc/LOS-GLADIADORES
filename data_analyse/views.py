@@ -7,6 +7,9 @@ from django.db.models import Q
 from call.models import Call
 
 #ESTADISTICAS EQUIPO
+LOCAL_WIN = "Victoria Local"
+VISITING_WIN = "Victoria Visitante"
+
 def get_current_season(request):
     return request.GET.get('season')
 
@@ -23,12 +26,12 @@ def get_team():
 def calculate_match_statistics(season, team):
     if season is None:
         total_matches = Match.objects.filter(draft_mode=False).count()
-        won_local = Match.objects.filter(local=team, result="Victoria Local", draft_mode=False).count()
-        won_visiting = Match.objects.filter(visiting=team, result="Victoria Visitante", draft_mode=False).count()
+        won_local = Match.objects.filter(local=team, result=LOCAL_WIN, draft_mode=False).count()
+        won_visiting = Match.objects.filter(visiting=team, result=VISITING_WIN, draft_mode=False).count()
     else:
         total_matches = Match.objects.filter(season=season, draft_mode=False).count()
-        won_local = Match.objects.filter(season=season, local=team, result="Victoria Local", draft_mode=False).count()
-        won_visiting = Match.objects.filter(season=season, visiting=team, result="Victoria Visitante", draft_mode=False).count()
+        won_local = Match.objects.filter(season=season, local=team, result=LOCAL_WIN, draft_mode=False).count()
+        won_visiting = Match.objects.filter(season=season, visiting=team, result=VISITING_WIN, draft_mode=False).count()
 
     total_won = won_local + won_visiting
     lost_matches = total_matches - total_won
@@ -85,9 +88,9 @@ def calculate_matches_won_per_year(team):
         year = m.season
         if year not in dicc_match:
             dicc_match[year] = {'won': 0}
-        match_wonLocal = Match.objects.filter(season=year, local=team, result="Victoria Local", draft_mode=False).count()
-        match_wonVisiting = Match.objects.filter(season=year, visiting=team, result="Victoria Visitante", draft_mode=False).count()
-        dicc_match[year]['won'] += match_wonLocal + match_wonVisiting
+        match_won_Local = Match.objects.filter(season=year, local=team, result=LOCAL_WIN, draft_mode=False).count()
+        match_won_Visiting = Match.objects.filter(season=year, visiting=team, result=VISITING_WIN, draft_mode=False).count()
+        dicc_match[year]['won'] += match_won_Local + match_won_Visiting
 
     years = sorted(dicc_match.keys())
     matches_won_per_year = [dicc_match[y]['won'] for y in years]
@@ -208,32 +211,41 @@ def get_match_history(player, all_match):
         if year not in dicc_match:
             dicc_match[year] = {'won': 0, 'lost': 0}
 
-        won_games_local = Game.objects.filter(
-            Q(player_1_local=player.id) | Q(player_2_local=player.id),
-            winner="Local",
-            draft_mode=False,
-        ).count()
+    won_games_local = Game.objects.filter(
+        Q(player_1_local=player.id) | Q(player_2_local=player.id),
+        winner="Local",
+        draft_mode=False,
+        match__season = year
+    ).count()
 
-        won_games_visiting = Game.objects.filter(
-            Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-            winner="Visitante",
-            draft_mode=False,
-        ).count()
+    print("won-local",year, won_games_local)
 
-        lost_games_local = Game.objects.filter(
-            Q(player_1_local=player.id) | Q(player_2_local=player.id),
-            winner="Visitante",
-            draft_mode=False,
-        ).count()
+    won_games_visiting = Game.objects.filter(
+        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
+        winner="Visitante",
+        draft_mode=False,
+        match__season = year
+    ).count()
+    print("won-visiting",year, won_games_visiting)
 
-        lost_games_visiting = Game.objects.filter(
-            Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-            winner="Local",
-            draft_mode=False,
-        ).count()
+    lost_games_local = Game.objects.filter(
+        Q(player_1_local=player.id) | Q(player_2_local=player.id),
+        winner="Visitante",
+        draft_mode=False,
+        match__season = year
+    ).count()
+    print("lost-local",year,lost_games_local)
 
-        dicc_match[year]['won'] += (won_games_local + won_games_visiting)
-        dicc_match[year]['lost'] += (lost_games_local + lost_games_visiting)
+    lost_games_visiting = Game.objects.filter(
+        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
+        winner="Local",
+        draft_mode=False,
+        match__season = year
+    ).count()
+    print("lost-visiting",year,lost_games_visiting)
+
+    dicc_match[year]['won'] += (won_games_local + won_games_visiting)
+    dicc_match[year]['lost'] += (lost_games_local + lost_games_visiting)
 
     return dicc_match
 

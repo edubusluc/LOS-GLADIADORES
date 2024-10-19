@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from callLog.models import CallLog
 from players.models import Player
+from django.views.decorators.http import require_GET
 
 # Create your views here.
-
+@require_GET
 def view_call_log(request, call_id):
     try:
         call_log = CallLog.objects.get(call=call_id)

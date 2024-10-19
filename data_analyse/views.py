@@ -2,9 +2,9 @@ from django.shortcuts import render
 from match.models import Match, Game
 from players.models import Player
 from team.models import Team
-from datetime import datetime
 from django.db.models import Q
 from call.models import Call
+from django.views.decorators.http import require_GET
 
 #ESTADISTICAS EQUIPO
 LOCAL_WIN = "Victoria Local"
@@ -96,6 +96,7 @@ def calculate_matches_won_per_year(team):
     matches_won_per_year = [dicc_match[y]['won'] for y in years]
     return years, matches_won_per_year
 
+@require_GET
 def team_statistics(request):
     seasons = get_total_season(Match.objects.all())
     selected_season = request.GET.get("season")

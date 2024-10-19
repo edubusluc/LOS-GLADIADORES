@@ -25,6 +25,14 @@
         vertical-align: top;
         /* Alinea el texto en la parte superior */
     }
+    .alert {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+    background-color: #fff3cd;
+    color: #856404;
+}
+
 </style>
 
 <div class="styled-table">
@@ -35,9 +43,9 @@
     </div>
 
     {% if messages %}
-    <div class="alert">
+    <div>
         {% for message in messages %}
-        <p class="{{ message.tags }}">{{ message }}</p>
+        <p class="alert">{{ message }}</p>
         {% endfor %}
     </div>
     {% endif %}
@@ -158,8 +166,7 @@
     </div>
     {% endif %}
 
-
-    {% if not game_for_match and not call_for_match.draft_mode %}
+    {% if match.draft_mode and not call_for_match.draft_mode and game_for_match.count < 5%}
     <div class="text-center">
         <a href="{% url 'create_game' match_id %}" class="button">Crear Partidos</a>
     </div>

@@ -127,7 +127,7 @@ def team_statistics(request):
         'percentage_local_games_lost': percentage_local_games_lost,
         'percentage_visiting_games_won': percentage_visiting_games_won,
         'percentage_visiting_games_lost': percentage_visiting_games_lost,
-        'years': json.dumps(years),  # Convert years to JSON string
+        'years': json.dumps(years),
         'matches_won_per_year': json.dumps(matches_won_per_year),
         "seasons": seasons,
         "selected_season": selected_season
@@ -140,7 +140,6 @@ def team_statistics(request):
 
 
 # ESTADIISTICAS JUGADORES:
-@require_GET
 def get_player_statistics(player, season):
     # Obtener estadísticas del jugador
     stats = {
@@ -280,6 +279,11 @@ def statistics_per_player(request):
     total_call = Call.objects.filter(draft_mode=False).count()
     stats['percentage_call'] = (stats['present_call'] / total_call) * 100 if total_call > 0 else 0
     stats['no_call'] = total_call - stats['present_call']
+
+    # Serializa los datos de años y estadísticas a JSON
+    stats['years'] = json.dumps(years)
+    stats['games_won_per_year'] = json.dumps(stats['games_won_per_year'])
+    stats['games_lost_per_year'] = json.dumps(stats['games_lost_per_year'])
 
     context = {
         "players": players,

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{%load custom_filters %}
 
 {% block content %}
 <head>
@@ -68,7 +69,7 @@
         {% if messages %}
         <div class="alert">
             {% for message in messages %}
-            <p class="{{ message.tags }}">{{ message }}</p>
+            <p>{{ message }}</p>
             {% endfor %}
         </div>
         {% endif %}
@@ -84,16 +85,27 @@
                             <select id="player_1_{{ i }}" name="player_1_{{ i }}" onchange="updatePlayerOptions()">
                                 <option value="">Seleccionar jugador 1</option>
                                 {% for player in call.players.all %}
-                                    <option value="{{ player.id }}">{{ player.name }}</option>
+                                    <option value="{{ player.id }}" 
+                                        {% with key='player_1_'|add:i %}
+                                            {% if post_data|get_item:key|first == player.id|stringformat:"s" %}selected{% endif %}
+                                        {% endwith %}>
+                                        {{ player.name }}
+                                    </option>
                                 {% endfor %}
                             </select>
+                        
                         </div>
                         <div>
                             <label for="player_2_{{ i }}">Jugador 2:</label>
                             <select id="player_2_{{ i }}" name="player_2_{{ i }}" onchange="updatePlayerOptions()">
                                 <option value="">Seleccionar jugador 2</option>
                                 {% for player in call.players.all %}
-                                    <option value="{{ player.id }}">{{ player.name }}</option>
+                                <option value="{{ player.id }}" 
+                                {% with key='player_2_'|add:i %}
+                                    {% if post_data|get_item:key|first == player.id|stringformat:"s" %}selected{% endif %}
+                                {% endwith %}>
+                                {{ player.name }}
+                            </option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -102,6 +114,9 @@
             </div>
             <button type="submit" class="button">Guardar Partidos</button>
         </form>
+
+
     </div>
 </body>
+
 {% endblock %}

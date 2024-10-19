@@ -216,53 +216,76 @@ def validate_game_for_match(call):
 def create_game_for_match(request, match_id):
     call = Call.objects.filter(match_id=match_id).first()
     match = get_object_or_404(Match, id=match_id)
+    team = Team.objects.filter(name="LOS GLADIADORES").first()
 
-    team = Team.objects.filter(name = "LOS GLADIADORES").first()
-    
     is_valid, error_message = validate_game_for_match(call)
 
     if not is_valid:
         messages.error(request, error_message)
-        return redirect(call_for_match, match_id=match_id)
+        return redirect('call_for_match', match_id=match_id)
 
     if request.method == "POST":
+        all_games_data = []  # Lista para almacenar todos los datos de los partidos válidos
+        incomplete_data = False  # Para comprobar si falta información
+        error_messages = []  # Lista para acumular mensajes de error
+
         for i in range(1, 6):  # Para los partidos 1 a 5
-           
-            local_players = (request.POST.get(f'player_1_{i}'), request.POST.get(f'player_2_{i}')) if match.local.name == team.name else (None, None)
-            visiting_players = (request.POST.get(f'player_1_{i}'), request.POST.get(f'player_2_{i}')) if match.visiting.name == team.name else (None, None)
+            player_1_id = request.POST.get(f'player_1_{i}')
+            player_2_id = request.POST.get(f'player_2_{i}')
+            n_game = request.POST.get(f'n_game_{i}')  # Obtener el número del partido
 
-            player_1_local, player_2_local = local_players
-            player_1_visiting, player_2_visiting = visiting_players
+            # Comprobar si ambos jugadores están seleccionados
+            if player_1_id and player_2_id:
+                # Convertir los IDs a instancias de Player
+                player_1 = get_object_or_404(Player, id=player_1_id)
+                player_2 = get_object_or_404(Player, id=player_2_id)
 
-            if player_1_local and player_2_local:
-                player_1_local = get_object_or_404(Player, id=player_1_local)
-                player_2_local = get_object_or_404(Player, id=player_2_local)
-            if player_1_visiting and player_2_visiting:
-                player_1_visiting = get_object_or_404(Player, id=player_1_visiting)
-                player_2_visiting = get_object_or_404(Player, id=player_2_visiting)
-
-
-            n_game = request.POST.get(f'n_game_{i}')  # Obtener el número del partido  
-
-            if (player_1_local and player_2_local) or (player_1_visiting and player_2_visiting):
                 score = 3 if int(n_game) in [1, 2] else 2
-                game = Game(
-                    match=match,
-                    n_game=n_game,
-                    player_1_local=player_1_local,
-                    player_2_local=player_2_local,
-                    player_1_visiting=player_1_visiting,
-                    player_2_visiting=player_2_visiting,
-                    score=score
-                )
-                game.save()  # Guarda el partido en la base de datos
-            else:
-                messages.error(request, f"Por favor selecciona ambos jugadores para el partido {n_game}.")
 
-                
+                # Acumular los datos del partido en una lista
+                all_games_data.append({
+                    'match': match,
+                    'n_game': n_game,
+                    'player_1_local': player_1 if match.local.name == team.name else None,
+                    'player_2_local': player_2 if match.local.name == team.name else None,
+                    'player_1_visiting': player_1 if match.visiting.name == team.name else None,
+                    'player_2_visiting': player_2 if match.visiting.name == team.name else None,
+                    'score': score
+                })
+            else:
+                # Agregar un mensaje de error si falta alguno de los jugadores
+                error_messages.append(f"Por favor selecciona ambos jugadores para el partido {n_game}.")
+                incomplete_data = True  # Señalar que falta información
+
+        # Si hay mensajes de error, mostrar y volver a la vista
+        if incomplete_data:
+            for error_message in error_messages:
+                messages.error(request, error_message)
+
+            return render(request, "create_game.html", {
+                "call": call,
+                "match": match,
+                "team": team,
+                "post_data": request.POST
+            })
+
+        # Si todos los partidos tienen datos válidos, guardar todos los partidos
+        for game_data in all_games_data:
+            game = Game(
+                match=game_data['match'],
+                n_game=game_data['n_game'],
+                player_1_local=game_data['player_1_local'],
+                player_2_local=game_data['player_2_local'],
+                player_1_visiting=game_data['player_1_visiting'],
+                player_2_visiting=game_data['player_2_visiting'],
+                score=game_data['score']
+            )
+            game.save()  # Guarda el partido en la base de datos
+
         return redirect('call_for_match', match_id=match.id)
 
     return render(request, "create_game.html", {"call": call})
+
 
 
 

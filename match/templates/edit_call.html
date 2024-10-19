@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +15,7 @@
             <div class="card-body">
                 <h1 class="card-title text-center">Editar Convocatoria</h1>
                 <h2 class="card-title text-center">{{ call.match.local }} VS {{ call.match.visiting }}</h2>
-
+                <p class="warning">Cualquier cambio realizado en una convocatoria cerrada quedará registrado</p>
                 {% if form.non_field_errors %}
                     <div class="error">
                         {{ form.non_field_errors }}
@@ -49,5 +48,4 @@
         </div>
     </div>
 </body>
-</html>
 {% endblock %}

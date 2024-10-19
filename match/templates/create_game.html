@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-<html lang="es">
 <head>
     <style>
                 h1, h2 {
@@ -66,6 +65,13 @@
 <body>
     <div class="table-container">
         <h1>Crear Partidos para el Enfrentamiento</h1>
+        {% if messages %}
+        <div class="alert">
+            {% for message in messages %}
+            <p class="{{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
         <form method="post">
             {% csrf_token %}
             <div>
@@ -98,5 +104,4 @@
         </form>
     </div>
 </body>
-</html>
 {% endblock %}

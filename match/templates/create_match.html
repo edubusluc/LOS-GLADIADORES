@@ -2,17 +2,26 @@
 {% load static %}
 
 {% block content %}
-<h1>Crear Partido</h1>
+<div class="table-container">
+    <h1>Crear Partido</h1>
+    <form method="POST">
+        {% csrf_token %}
+        
+        {{ form.as_p }}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Crear Partido</button>
-</form>
+        {# Imprimir errores para cada campo #}
+        {% for field in form %}
+            {% for error in field.errors %}
+                <div class="error">{{ error }}</div>
+            {% endfor %}
+        {% endfor %}
 
-<a href="{% url 'home' %}">Volver a la página principal</a>
+        <button type="submit" class="button" style="margin-top: 10px;">Crear Partido</button>
+    </form>
+</div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  <!-- Usa la versión completa -->
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Usa la versión completa -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.js"></script>
 
@@ -25,40 +34,12 @@
         });
     });
 </script>
-
 <style>
-    form {
-        max-width: 500px;
-        margin: 0 auto;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 5px;
-    }
-
-    input[type="text"],
-    input[type="date"] {
+        input[type="date"] {
         width: 100%;
         padding: 10px;
         border: 1px solid #ccc;
         border-radius: 3px;
-    }
-
-    button {
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background-color: #0069d9;
     }
 </style>
 

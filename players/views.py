@@ -1,14 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from team.models import Team
 # Create your views here.
 
 def create_player(request):
     if request.method == "POST":
         form = Playerform(request.POST)
+
         if form.is_valid():
+            player = form.save(commit=False)
+            default_team = get_object_or_404(Team, id=1)
+            player.team = default_team
+            player.save()
             form.save()
-            return redirect("home") 
+            return redirect("list_players") 
 
     else:
         form = Playerform()  # Crea una nueva instancia del formulario para mostrar en GET

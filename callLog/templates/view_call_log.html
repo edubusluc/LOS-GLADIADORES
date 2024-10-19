@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<body>
+    <div class="table-container">
+        <h1 class="ms-4">Cambios realizados en la convocatoria</h1>
+        <div class="log-container ms-3">
+            {% for l in log_lines %}
+                {% if "convocatoria abierta" in l %}
+                    <p class="alert-log">{{ l }}</p>
+                    <p>&nbsp</p>
+                {% endif %}
+                {% if "convocatoria cerrada" in l %}
+                    <p class="warning">{{ l }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="ms-3" style="margin-top: 10px;">
+            <div class="row">
+                {% for player in players %}
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="player-{{ player.id }}">
+                            <label class="form-check-label" for="player-{{ player.id }}">
+                                {{ player.name }}
+                            </label>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <p class="button"> Aplicar sanción</p>
+    </div>
+</body>
+{% endblock %}

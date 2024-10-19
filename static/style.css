@@ -6,7 +6,8 @@
 }
 
 html {
-    height: 100%; /* Asegura que el HTML y el body ocupen toda la altura */
+    height: 100%;
+    /* Asegura que el HTML y el body ocupen toda la altura */
 }
 
 body {
@@ -15,7 +16,8 @@ body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
     color: #333;
-    height: 100%; /* Asegura que el HTML y el body ocupen toda la altura */
+    height: 100%;
+    /* Asegura que el HTML y el body ocupen toda la altura */
 }
 
 /* Header Styles */
@@ -57,75 +59,116 @@ body {
 
 /* Main Content Styles */
 .main-content {
-    flex: 1; /* Permite que el contenido principal expanda para ocupar el espacio restante */
+    flex: 1;
+    /* Permite que el contenido principal expanda para ocupar el espacio restante */
     padding: 20px;
+    margin-bottom: 60px;
 }
 
 /* Footer Styles */
 .footer {
-    text-align: center;
-    padding: 10px 0;
-    background: #333;
+    background-color: #333;
     color: white;
+    text-align: center;
+    padding: 1em 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0px -4px 2px -2px gray;
 }
+
 
 /* FORMATO DE TABLAS*/
 table {
-    width: 100%; /* Establece un ancho del 80% de la pantalla */
+    width: 100%;
+    /* Establece un ancho del 80% de la pantalla */
     max-width: 1000px;
-    border-collapse: collapse; /* Elimina el espacio entre celdas */
+    border-collapse: collapse;
+    /* Elimina el espacio entre celdas */
 }
 
 .table-container {
-    background-color: white; /* Color de fondo del contenedor */
-    border-radius: 10px; /* Bordes redondeados */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Sombra del contenedor */
-    padding: 30px; /* Espaciado interno del contenedor */
-    margin: 20px auto; /* Margen superior e inferior, y centrado horizontal */
-    width: 90%; /* Aumentar a 90% del ancho de la pantalla */
-    max-width: 1000px; /* Aumentar el máximo ancho a 1000px */
+    background-color: white;
+    /* Color de fondo del contenedor */
+    border-radius: 10px;
+    /* Bordes redondeados */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    /* Sombra del contenedor */
+    padding: 30px;
+    /* Espaciado interno del contenedor */
+    margin: 20px auto;
+    /* Margen superior e inferior, y centrado horizontal */
+    width: 90%;
+    /* Aumentar a 90% del ancho de la pantalla */
+    max-width: 1000px;
+    /* Aumentar el máximo ancho a 1000px */
     overflow: auto;
 }
 
-th, td {
-    padding: 12px; /* Espaciado interno en las celdas */
-    text-align: left; /* Alineación del texto a la izquierda */
-    border-bottom: 1px solid #ddd; /* Línea inferior para cada celda */
+th,
+td {
+    padding: 12px;
+    /* Espaciado interno en las celdas */
+    text-align: left;
+    /* Alineación del texto a la izquierda */
+    border-bottom: 1px solid #ddd;
+    /* Línea inferior para cada celda */
 }
 
 th {
     background-color: #333;
-    color: white; /* Color del texto en el encabezado */
-    
+    color: white;
+    /* Color del texto en el encabezado */
+
 }
 
 tr:hover {
-    background-color: #f5f5f5; /* Color de fondo al pasar el ratón sobre una fila */
+    background-color: #f5f5f5;
+    /* Color de fondo al pasar el ratón sobre una fila */
 }
 
 /* FORMATO PARA LOS FORMULARIOS */
-    .button {
-        padding: 10px 20px; /* Espaciado interno */
-        margin: 0; /* Sin margen */
-        display: inline-block; /* Para alinear correctamente */
-        text-align: center; /* Centra el texto */
-        font-size: 16px; /* Tamaño de fuente uniforme */
-        line-height: normal; /* Asegura una altura de línea consistente */
-        text-decoration: none; /* Sin subrayado en los enlaces */
-        background-color: rgb(8, 60, 100); /* Color de fondo */
-        color: #fff; /* Color del texto */
-        border: none; /* Sin borde */
-        border-radius: 8px; /* Bordes redondeados */
-        cursor: pointer; /* Cambia el cursor al pasar el mouse */
-    }
+.button {
+    padding: 10px 20px;
+    /* Espaciado interno */
+    margin: 0;
+    /* Sin margen */
+    display: inline-block;
+    /* Para alinear correctamente */
+    text-align: center;
+    /* Centra el texto */
+    font-size: 16px;
+    /* Tamaño de fuente uniforme */
+    line-height: normal;
+    /* Asegura una altura de línea consistente */
+    text-decoration: none;
+    /* Sin subrayado en los enlaces */
+    background-color: rgb(8, 60, 100);
+    /* Color de fondo */
+    color: #fff;
+    /* Color del texto */
+    border: none;
+    /* Sin borde */
+    border-radius: 8px;
+    /* Bordes redondeados */
+    cursor: pointer;
+    /* Cambia el cursor al pasar el mouse */
+}
 
-input[type="text"], select  {
-    width: 100%; /* Ancho completo */
-    padding: 10px; /* Espaciado interno */
-    border: 1px solid #ccc; /* Borde gris claro */
-    border-radius: 4px; /* Bordes redondeados */
-    box-sizing: border-box; /* Incluye padding y border en el ancho */
-    transition: border-color 0.3s; /* Transición suave para el borde */
+input[type="text"],
+select {
+    width: 100%;
+    /* Ancho completo */
+    padding: 10px;
+    /* Espaciado interno */
+    border: 1px solid #ccc;
+    /* Borde gris claro */
+    border-radius: 4px;
+    /* Bordes redondeados */
+    box-sizing: border-box;
+    /* Incluye padding y border en el ancho */
+    transition: border-color 0.3s;
+    /* Transición suave para el borde */
 }
 
 .list-group {
@@ -143,23 +186,32 @@ input[type="text"], select  {
 }
 
 form div {
-    margin-bottom: 15px; /* Espacio entre los campos */
+    margin-bottom: 15px;
+    /* Espacio entre los campos */
 }
 
 
 /* FORMATO DE PAGINACIÓN */
 .pagination {
-    margin: 20px 0; /* Espaciado alrededor de la paginación */
-    text-align: center; /* Centra el texto de la paginación */
+    margin: 20px 0;
+    /* Espaciado alrededor de la paginación */
+    text-align: center;
+    /* Centra el texto de la paginación */
 }
 
 .pagination a {
-    margin: 0 5px; /* Espaciado horizontal entre los enlaces de paginación */
-    padding: 8px 12px; /* Espaciado interno */
-    background-color: rgb(8, 60, 100); /* Color de fondo para los enlaces de paginación */
-    color: white; /* Color del texto */
-    text-decoration: none; /* Sin subrayado */
-    border-radius: 5px; /* Bordes redondeados */
+    margin: 0 5px;
+    /* Espaciado horizontal entre los enlaces de paginación */
+    padding: 8px 12px;
+    /* Espaciado interno */
+    background-color: rgb(8, 60, 100);
+    /* Color de fondo para los enlaces de paginación */
+    color: white;
+    /* Color del texto */
+    text-decoration: none;
+    /* Sin subrayado */
+    border-radius: 5px;
+    /* Bordes redondeados */
 }
 
 
@@ -167,14 +219,17 @@ form div {
 /* FORMATO PARA INTRODUCIR EL RESULTADO */
 
 .set-row {
-    display: flex; /* Crea una fila flexible */
+    display: flex;
+    /* Crea una fila flexible */
     justify-content: left;
-    margin-bottom: 20px; /* Espacio entre filas */
+    margin-bottom: 20px;
+    /* Espacio entre filas */
 }
 
 .set {
     display: flex;
-    flex-direction: column; /* Apila los elementos verticalmente */
+    flex-direction: column;
+    /* Apila los elementos verticalmente */
 }
 
 input[type="number"] {
@@ -201,6 +256,112 @@ label {
     color: #856404;
 }
 
+.alert-log {
+    padding: 15px;
+    margin: 10px;
+    border-radius: 4px;
+    background-color: #fff3cd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #856404;
+}
+
+.warning {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+    background-color: #ff8c8c;
+    color: #750000;
+}
+
+
+/* FORMATO PARA LOG*/
+.log-container {
+    background-color: #e6e6e6;
+    color: #000000;
+    font-family: monospace;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 90%;
+    margin: auto;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.log-container p {
+    margin: 0;
+    /* Eliminar margen superior e inferior */
+}
+
+
+/* STATISTICS CSS*/
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+  }
+  
+  .title {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #083C64;
+  }
+  
+  .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    flex: 1 1 calc(50% - 20px);
+    padding: 20px;
+    min-width: 300px;
+  }
+  
+  @media (max-width: 768px) {
+    .card {
+      flex: 1 1 100%;
+    }
+  }
+  
+  .card h2 {
+    text-align: center;
+    color: #083C64;
+    font-size: 1.5em;
+  }
+  
+  .chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
+    margin: auto;
+  }
+  
+  #myPieChart, #myBarChart, #myVisitingBarChart, #myLineChart {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .message {
+    text-align: center;
+    font-style: italic;
+    color: #777;
+  }
+  
+  .percentage {
+    display: flex;
+    justify-content: center;
+    font-weight: bold;
+    margin-top: 10px;
+    color: #083C64;
+  }
+
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     .navigation ul {
@@ -218,7 +379,8 @@ label {
     }
 
     .team-logo {
-        width: 60px; /* Ajusta el tamaño de la imagen en pantallas pequeñas */
+        width: 60px;
+        /* Ajusta el tamaño de la imagen en pantallas pequeñas */
     }
 
 }
@@ -229,7 +391,8 @@ label {
     }
 
     .team-logo {
-        width: 50px; /* Ajusta el tamaño de la imagen en pantallas más pequeñas */
+        width: 50px;
+        /* Ajusta el tamaño de la imagen en pantallas más pequeñas */
     }
 
     .navigation ul li a {

@@ -5,6 +5,7 @@ from team.models import Team
 from django.db.models import Q
 from call.models import Call
 from django.views.decorators.http import require_GET
+import json
 
 #ESTADISTICAS EQUIPO
 LOCAL_WIN = "Victoria Local"
@@ -126,8 +127,8 @@ def team_statistics(request):
         'percentage_local_games_lost': percentage_local_games_lost,
         'percentage_visiting_games_won': percentage_visiting_games_won,
         'percentage_visiting_games_lost': percentage_visiting_games_lost,
-        'years': years,
-        'matches_won_per_year': matches_won_per_year,
+        'years': json.dumps(years),  # Convert years to JSON string
+        'matches_won_per_year': json.dumps(matches_won_per_year),
         "seasons": seasons,
         "selected_season": selected_season
     }

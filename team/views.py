@@ -2,13 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import Teamform
 from .models import Team
 from django.contrib import messages
+from django.views.decorators.http import require_GET, require_http_methods
 
 # Create your views here.
-
+@require_GET
 def list_team(request):
     teams = Team.objects.all()
     return render(request, "list_teams.html", {"teams": teams}) 
 
+
+@require_http_methods(["GET", "POST"])
 def create_team(request):
     if request.method == "POST":
         form = Teamform(request.POST)
@@ -24,7 +27,7 @@ def create_team(request):
 
     return render(request, "create_team.html", {"form": form})  # Renderiza el formulario
 
-
+@require_http_methods(["GET", "POST"])
 def edit_team(request, team_id):
     team = get_object_or_404(Team, id=team_id)
     if request.method == "POST":

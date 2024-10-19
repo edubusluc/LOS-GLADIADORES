@@ -139,7 +139,7 @@ def team_statistics(request):
 
 
 # ESTADIISTICAS JUGADORES:
-
+@require_GET
 def get_player_statistics(player, season):
     # Obtener estadísticas del jugador
     stats = {

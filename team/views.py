@@ -28,7 +28,6 @@ def create_team(request):
 
     return render(request, "create_team.html", {"form": form})
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def edit_team(request, team_id):
     team = get_object_or_404(Team, id=team_id)

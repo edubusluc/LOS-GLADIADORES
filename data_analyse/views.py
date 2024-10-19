@@ -88,9 +88,9 @@ def calculate_matches_won_per_year(team):
         year = m.season
         if year not in dicc_match:
             dicc_match[year] = {'won': 0}
-        match_won_Local = Match.objects.filter(season=year, local=team, result=LOCAL_WIN, draft_mode=False).count()
-        match_won_Visiting = Match.objects.filter(season=year, visiting=team, result=VISITING_WIN, draft_mode=False).count()
-        dicc_match[year]['won'] += match_won_Local + match_won_Visiting
+        match_won_local = Match.objects.filter(season=year, local=team, result=LOCAL_WIN, draft_mode=False).count()
+        match_won_visiting = Match.objects.filter(season=year, visiting=team, result=VISITING_WIN, draft_mode=False).count()
+        dicc_match[year]['won'] += match_won_local + match_won_visiting
 
     years = sorted(dicc_match.keys())
     matches_won_per_year = [dicc_match[y]['won'] for y in years]

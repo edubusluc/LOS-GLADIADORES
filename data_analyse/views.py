@@ -250,6 +250,7 @@ def get_match_history(player, all_match):
 
     return dicc_match
 
+@require_GET
 def statistics_per_player(request):
     all_match = Match.objects.all()
     players = Player.objects.all()

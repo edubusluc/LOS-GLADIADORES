@@ -17,31 +17,37 @@ def create_team(request):
         form = Teamform(request.POST)
         if form.is_valid():
             form.save()
-            return redirect("list_teams") 
+            messages.success(request, "Equipo creado con éxito.")
+            return redirect("list_teams")
         else:
-            if 'name' in form.errors:
-                del form.errors['name']
-            messages.error(request, "El nombre del equipo no puede repetirse")
-    else:
-        form = Teamform() 
+            messages.error(request, "Error al crear el equipo. Por favor, verifica los datos.")
 
-    return render(request, "create_team.html", {"form": form})  # Renderiza el formulario
+    else:
+        form = Teamform()
+
+    return render(request, "create_team.html", {"form": form})
 
 @require_http_methods(["GET", "POST"])
 def edit_team(request, team_id):
     team = get_object_or_404(Team, id=team_id)
-    if request.method == "POST":
-        name = request.POST.get("name")
-        in_group = request.POST.get("in_group") == "on"
-        team.name = name
-        team.in_group = in_group
-        team.save()
 
-        return redirect('list_teams')  # Redirigir a la lista de jugadores después de guardar
+    if request.method == "POST":
+        form = Teamform(request.POST, instance=team)
+        if form.is_valid():
+            form.save()  # Guarda el equipo
+            messages.success(request, "Equipo editado con éxito.")
+            return redirect('list_teams')
+        else:
+            messages.error(request, "Error al editar el equipo. Por favor, verifica los datos.")
+
+    else:
+        form = Teamform(instance=team)  
 
     context = {
-        'team': team  # Asegúrate de pasar el objeto player a la plantilla
+        'form': form,  
+        'team': team,
     }
-    return render(request, 'edit_team.html', context)  # Renderizar con el contexto correcto
+    return render(request, 'edit_team.html', context)  
+
 
 

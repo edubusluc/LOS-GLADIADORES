@@ -248,7 +248,7 @@ label {
 
 
 /* FORMATO PARA LOS MENSAJES */
-.alert {
+.alert-message {
     padding: 15px;
     margin: 20px 0;
     border-radius: 4px;
@@ -293,6 +293,13 @@ label {
     /* Eliminar margen superior e inferior */
 }
 
+/* RESULT CSS*/
+.large-input {
+    width: 100px;  /* Ajusta el ancho según sea necesario */
+    height: 40px;  /* Ajusta la altura según sea necesario */
+    font-size: 16px; /* Tamaño de la fuente */
+    padding: 5px; /* Espaciado interno */
+}
 
 /* STATISTICS CSS*/
 .container {

@@ -301,23 +301,38 @@ def create_result(request, game_id):
         set3_visiting = request.POST.get('set3_visiting')
 
         result = Result(
-            game = game,
-            set1_local = set1_local,
-            set1_visiting = set1_visiting,
-            set2_local = set2_local,
-            set2_visiting = set2_visiting,
-            set3_local = set3_local,
-            set3_visiting = set3_visiting,
+            game=game,
+            set1_local=set1_local,
+            set1_visiting=set1_visiting,
+            set2_local=set2_local,
+            set2_visiting=set2_visiting,
+            set3_local=set3_local,
+            set3_visiting=set3_visiting,
         )
-        result.result = result.determine_winner()
-        result.save()
-        
-        if result.determine_winner() == "Victoria Local":
-            game.winner = "Local"
-        else:
-            game.winner = "Visitante"
-        game.save()
-        return redirect('call_for_match', match_id=game.match.id)  
+
+        try:
+            result.result = result.determine_winner()
+            result.save()
+
+            if result.determine_winner() == "Victoria Local":
+                game.winner = "Local"
+            else:
+                game.winner = "Visitante"
+            game.save()
+            return redirect('call_for_match', match_id=game.match.id)
+
+        except ValidationError as e:
+            return render(request, "create_result.html", {
+                "game": game,
+                "set1_local": set1_local,
+                "set1_visiting": set1_visiting,
+                "set2_local": set2_local,
+                "set2_visiting": set2_visiting,
+                "set3_local": set3_local,
+                "set3_visiting": set3_visiting,
+                "error": str(e), 
+            })
+
     return render(request, "create_result.html", {"game": game})
 
 

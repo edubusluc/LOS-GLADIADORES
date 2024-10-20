@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'data_analyse',
     'team',
     'callLog',
+    'penalty'
 ]
 
 MIDDLEWARE = [

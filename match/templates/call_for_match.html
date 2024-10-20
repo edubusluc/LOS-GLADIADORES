@@ -102,7 +102,7 @@
         <a href="{% url 'create_call' match_id %}" class="button">Crear Convocatoria</a>
         {% endif %}
 
-        {% if call_for_match %}
+        {% if call_for_match and match.draft_mode %}
         <a href="{% url 'view_call_log' call_for_match.id %}" class="button">Penalizaciones</a>
         <a href="{% url 'edit_call' call_for_match.id %}" class="button">Editar Convocatoria</a>
         {% endif %}

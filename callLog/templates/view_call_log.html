@@ -17,20 +17,23 @@
             {% endfor %}
         </div>
         <div class="ms-3" style="margin-top: 10px;">
-            <div class="row">
-                {% for player in players %}
-                    <div class="col-md-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="player-{{ player.id }}">
-                            <label class="form-check-label" for="player-{{ player.id }}">
-                                {{ player.name }}
-                            </label>
+            <form method="POST" action="{% url 'create_penalty' call_id %}">
+                {% csrf_token %}
+                <div class="row">
+                    {% for player in players %}
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="players" value="{{ player.id }}" id="player-{{ player.id }}">
+                                <label class="form-check-label" for="player-{{ player.id }}">
+                                    {{ player.name }}
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="button">Aplicar sanciones</button>
+            </form>
         </div>
-        <p class="button"> Aplicar sanción</p>
     </div>
 </body>
 {% endblock %}

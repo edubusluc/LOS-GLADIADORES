@@ -84,7 +84,6 @@ def validate_padle_score(s):
         ('6', '0'), ('6', '1'), ('6', '2'), ('6', '3'), ('6', '4'), ('7', '5'),
         ('7', '6'), ('0', '6'), ('1', '6'), ('2', '6'), ('3', '6'), ('4', '6'), ('5', '7'), ('6', '7')
     ]
-    print(s)
     if s not in valid_scores:
         raise ValidationError(f'El resultado {s} no es un resultado válido.')
 
@@ -105,7 +104,6 @@ def validate_result(set1, set2, set3):
     # Obtener ganadores de los sets 1 y 2
     winner_set1 = get_winner(set1)
     winner_set2 = get_winner(set2)
-    print(set3)
 
     # Validar el set 3 solo si los ganadores de los sets 1 y 2 son diferentes
     if winner_set1 != winner_set2:

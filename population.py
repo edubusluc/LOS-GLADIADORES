@@ -9,6 +9,9 @@ from match.models import Match, Game, Result
 from call.models import Call
 from team.models import Team
 from datetime import datetime
+from penalty.models import Penalty
+from callLog.models import CallLog
+
 
 def truncate_all_tables():
     
@@ -18,7 +21,9 @@ def truncate_all_tables():
         Match,
         Call,
         Game, 
-        Result
+        Result,
+        Penalty,
+        CallLog
     ]
     for model1 in models_to_truncate:
         model1.objects.all().delete()
@@ -50,7 +55,7 @@ def create_match():
 
             start_date = datetime.strptime(match_data['start_date'], '%Y-%m-%d').date()
 
-            match = Match.objects.create(
+            Match.objects.create(
                 local = local_team,
                 visiting = visitor_team,
                 start_date = start_date,
@@ -59,10 +64,6 @@ def create_match():
                 result_points = match_data['result_points'],
                 result = match_data['result']
             )
-            matches_to_create.append(match)
-
-        # Crear todos los partidos de una vez
-        Match.objects.bulk_create(matches_to_create)
 
 
 def create_call():
@@ -151,7 +152,7 @@ def create_result():
                     set3_visiting = r["set3_visiting"],
                     result = r["result"],
                     draft_mode = False
-            )
+                )
                 result.save()
 
 def populate_database():

@@ -7,12 +7,12 @@
         "results":[
             {
                 "result": "Visitante",
-                "set1_local":6,
-                "set1_visiting":4,
-                "set2_local":4,
-                "set2_visiting":6,
-                "set3_local":3,
-                "set3_visiting":6
+                "set1_local":"6",
+                "set1_visiting":"4",
+                "set2_local":"4",
+                "set2_visiting":"6",
+                "set3_local":"3",
+                "set3_visiting":"6"
 
             }
         ]
@@ -26,12 +26,12 @@
         "results":[
             {
                 "result": "Local",
-                "set1_local":6,
-                "set1_visiting":4,
-                "set2_local":6,
-                "set2_visiting":4,
-                "set3_local":null,
-                "set3_visiting":null
+                "set1_local":"6",
+                "set1_visiting":"4",
+                "set2_local":"6",
+                "set2_visiting":"4",
+                "set3_local":"0",
+                "set3_visiting":"0"
 
             }
         ]
@@ -45,12 +45,12 @@
         "results":[
             {
                 "result": "Visitante",
-                "set1_local":6,
-                "set1_visiting":3,
-                "set2_local":4,
-                "set2_visiting":6,
-                "set3_local":5,
-                "set3_visiting":7
+                "set1_local":"6",
+                "set1_visiting":"3",
+                "set2_local":"4",
+                "set2_visiting":"6",
+                "set3_local":"5",
+                "set3_visiting":"7"
 
             }
         ]
@@ -64,12 +64,12 @@
         "results":[
             {
                 "result": "Local",
-                "set1_local":7,
-                "set1_visiting":6,
-                "set2_local":4,
-                "set2_visiting":6,
-                "set3_local":6,
-                "set3_visiting":3
+                "set1_local":"7",
+                "set1_visiting":"6",
+                "set2_local":"4",
+                "set2_visiting":"6",
+                "set3_local":"6",
+                "set3_visiting":"3"
 
             }
         ]
@@ -83,12 +83,12 @@
         "results":[
             {
                 "result": "Local",
-                "set1_local":6,
-                "set1_visiting":4,
-                "set2_local":2,
-                "set2_visiting":6,
-                "set3_local":6,
-                "set3_visiting":4
+                "set1_local":"6",
+                "set1_visiting":"4",
+                "set2_local":"2",
+                "set2_visiting":"6",
+                "set3_local":"6",
+                "set3_visiting":"4"
 
             }
         ]

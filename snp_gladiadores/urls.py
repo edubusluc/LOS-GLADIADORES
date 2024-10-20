@@ -25,5 +25,6 @@ urlpatterns = [
     path('data_analyse/',include('data_analyse.urls')),
     path('team/',include('team.urls')),
     path('callLog/',include('callLog.urls')),
+    path('penalty/',include('penalty.urls')),
 
 ]

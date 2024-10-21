@@ -7,6 +7,7 @@ from call.models import Call
 from team.models import Team
 from datetime import datetime
 from callLog.models import CallLog
+from penalty.models import Penalty
 
 # Create your views here.
 def list_match(request):
@@ -51,6 +52,12 @@ def create_call(request, match_id):
     if existing_call:
         return redirect('existing_call', match.id)
     
+    player_penalties = {
+        player.id: Penalty.objects.filter(player=player).values_list('reason', flat=True) 
+        for player in players
+    }
+    
+    
     if request.method == 'POST':
         players = request.POST.getlist('players')
         if not players:
@@ -68,7 +75,7 @@ def create_call(request, match_id):
             call_log.save()
             return redirect('call_for_match', match.id)
         
-    return render(request, "create_call.html", {"players": players, "match": match})
+    return render(request, "create_call.html", {"players": players, "match": match, "player_penalties":player_penalties})
 
 def validate_call(call):
     if call.players.all().count() < 10:

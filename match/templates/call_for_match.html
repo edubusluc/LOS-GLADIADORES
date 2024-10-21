@@ -14,25 +14,33 @@
         overflow: auto;
     }
 
-    .styled-table th,
-    .styled-table td {
+    .styled-table th {
+        background-color: rgb(8, 60, 100);
+        color: white;
         padding: 12px;
         text-align: left;
         border: 1px solid #ddd;
     }
 
-    .styled-table td {
-        vertical-align: top;
-        /* Alinea el texto en la parte superior */
+    .styled-table th.custom-header {
+        background-color: #3d3d3d;
     }
-    .alert {
-    padding: 15px;
-    margin: 20px 0;
-    border-radius: 4px;
-    background-color: #fff3cd;
-    color: #856404;
-}
 
+    .styled-table td {
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #ddd;
+        background-color: #f3f3f3; /* Estilo para todos los <td> */
+        vertical-align: top; /* Alinea el texto en la parte superior */
+    }
+
+    .alert {
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+        background-color: #fff3cd;
+        color: #856404;
+    }
 </style>
 
 <div class="styled-table">
@@ -50,7 +58,7 @@
     </div>
     {% endif %}
 
-    <table>
+    <table style="margin-bottom: 20px; width: 100%; border-collapse: collapse;">
         <thead>
             <tr>
                 <th>Jugadores Revés</th>
@@ -106,7 +114,7 @@
         <a href="{% url 'view_call_log' call_for_match.id %}" class="button">Penalizaciones</a>
         <a href="{% url 'edit_call' call_for_match.id %}" class="button">Editar Convocatoria</a>
         {% endif %}
-        {%if call_for_match.draft_mode%}
+        {% if call_for_match.draft_mode %}
         <form action="{% url 'close_call' match.id %}" method="post" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="button">Cerrar Convocatoria</button>
@@ -120,39 +128,38 @@
     {% for g in game_for_match %}
     <table style="margin-bottom: 20px; width: 100%; border-collapse: collapse;">
         <tr>
-            <th style="background-color: rgb(8, 60, 100); text-align: left; width: 70%;">
+            <th style="width: 70%;">
                 {% if g.results.first == None %}
                 <a href="{% url 'create_result' g.id %}" style="color: white;"><i class="fa-solid fa-plus"></i></a>
                 {% endif %}
                 Resultado Partido {{ g.n_game }}
             </th>
-            <th style="background-color: rgb(8, 60, 100); width: 10%; text-align: center;">1</th>
-            <th style="background-color: rgb(8, 60, 100); width: 10%; text-align: center;">2</th>
-            <th style="background-color: rgb(8, 60, 100); width: 10%; text-align: center;">3</th>
+            <th style="width: 10%; text-align: center;">1</th>
+            <th style="width: 10%; text-align: center;">2</th>
+            <th style="width: 10%; text-align: center;">3</th>
         </tr>
     
         <tr>
-            <th style="text-align: left;">
+            <th class="custom-header" style="text-align: left;">
                 {% if g.winner == "Local" %} V {{ match.local }} - {% else %} D {{ match.local }} - {% endif %}
                 {% if g.player_1_local and g.player_2_local %} {{ g.player_1_local }}/{{ g.player_2_local }} {% endif %}
             </th>
-            <td style="text-align: center;">{{ g.results.first.set1_local }}</td>
-            <td style="text-align: center;">{{ g.results.first.set2_local }}</td>
-            <td style="text-align: center;">{{ g.results.first.set3_local }}</td>
+            <td>{{ g.results.first.set1_local }}</td>
+            <td>{{ g.results.first.set2_local }}</td>
+            <td>{{ g.results.first.set3_local }}</td>
         </tr>
         
         <tr>
-            <th style="text-align: left;">
+            <th class="custom-header" style="text-align: left;">
                 {% if g.winner == "Visitante" %} V {{ match.visiting }} - {% else %} D {{ match.visiting }} - {% endif %}
                 {% if g.player_1_visiting and g.player_2_visiting %} {{ g.player_1_visiting }}/{{ g.player_2_visiting }} {% endif %}
             </th>
-            <td style="text-align: center;">{{ g.results.first.set1_visiting }}</td>
-            <td style="text-align: center;">{{ g.results.first.set2_visiting }}</td>
-            <td style="text-align: center;">{{ g.results.first.set3_visiting }}</td>
+            <td>{{ g.results.first.set1_visiting }}</td>
+            <td>{{ g.results.first.set2_visiting }}</td>
+            <td>{{ g.results.first.set3_visiting }}</td>
         </tr>
     </table>
-{% endfor %}
-
+    {% endfor %}
     {% else %}
     <p>No hay partidos disponibles para este enfrentamiento. Debe confirmar la convocatoria.</p>
     {% endif %}
@@ -166,7 +173,7 @@
     </div>
     {% endif %}
 
-    {% if match.draft_mode and not call_for_match.draft_mode and game_for_match.count < 5%}
+    {% if match.draft_mode and not call_for_match.draft_mode and game_for_match.count < 5 %}
     <div class="text-center">
         <a href="{% url 'create_game' match_id %}" class="button">Crear Partidos</a>
     </div>

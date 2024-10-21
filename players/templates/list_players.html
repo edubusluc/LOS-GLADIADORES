@@ -3,56 +3,82 @@
 
 {% block content %}
 <div class="table-container">
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center; margin-bottom: 20px;">
         <h1>Listado de Jugadores</h1>
         <a href="{% url 'create_player' %}" class="button" style="margin-left: auto;">Nuevo Jugador</a>
     </div>
     <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-            <tr>
-                <th>Nombre</th>
-                <th>Posición</th>
-                <th>Mano hábil</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for player in players %}
-            <tr>
-                <td>{{ player.name }}</td>
-                <td>{{ player.position }}</td>
-                <td>{{ player.skillfull_hand }}</td>
-                <td>
-                    <a href="{% url 'edit_player' player.id %}"><i class="fas fa-pen"></i></a>
-                    <a href="{% url 'delete_player' player.id %}"><i class="fas fa-trash"></i></a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3">No hay jugadores registrados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Posición</th>
+                    <th>Mano hábil</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr class="text-center">
+                    <td>{{ player.name }}</td>
+                    <td>{{ player.position }}</td>
+                    <td>{{ player.skillfull_hand }}</td>
+                    <td>
+                        <a href="{% url 'edit_player' player.id %}" class="text-warning" title="Editar"><i class="fas fa-pen"></i></a>
+                        <a href="{% url 'delete_player' player.id %}" class="text-danger ms-3" title="Eliminar"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="text-center">
+                    <td colspan="4">No hay jugadores registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-<!-- Paginación -->
-    <div class="pagination">
-        <span class="step-links">
-            {% if players.has_previous %}
-                <a href="?page=1">&laquo; Primera</a>
-                <a href="?page={{ players.previous_page_number }}">Anterior</a>
-            {% endif %}
+    <!-- Paginación -->
+    <div class="pagination mt-3 d-flex justify-content-center">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if players.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ players.previous_page_number }}">Anterior</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo; Primera</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Anterior</span>
+                    </li>
+                {% endif %}
 
-            <span class="current">
-                Página {{ players.number }} de {{ players.paginator.num_pages }}
-            </span>
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ players.number }} de {{ players.paginator.num_pages }}
+                    </span>
+                </li>
 
-            {% if players.has_next %}
-                <a href="?page={{ players.next_page_number }}">Siguiente</a>
-                <a href="?page={{ players.paginator.num_pages }}">Última &raquo;</a>
-            {% endif %}
-        </span>
+                {% if players.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ players.next_page_number }}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ players.paginator.num_pages }}">Última &raquo;</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Siguiente</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Última &raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
 </div>
 

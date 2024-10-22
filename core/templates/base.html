@@ -22,7 +22,14 @@
     <a href="{% url 'login' %}" class="btn btn-light">
         Iniciar sesión
     </a>
-{% endif %}
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Cerrar sesión</button>
+  </form>
+    {% endif %}
 </div>
 
 <!-- Barra de navegación -->
@@ -71,10 +78,21 @@
 
               <!-- Agregar el enlace de Iniciar sesión en el menú desplegable -->
               {% if not user.is_authenticated %}
-              <li class="nav-item">
-                  <a href="{% url 'login' %}" class="nav-link text-light">
-                      <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+              <li class="nav-item d-lg-none">
+                  <a href="{% url 'login' %}" class="btn" style="background-color: #D4AF37;">
+                       Iniciar sesión
                   </a>
+              </li>
+              {% endif %}
+
+              {% if user.is_authenticated %}
+              <li class="nav-item d-lg-none">
+                  <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="nav-link btn btn-link text-light">
+                          Cerrar sesión
+                      </button>
+                  </form>
               </li>
               {% endif %}
           </ul>

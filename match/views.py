@@ -1,5 +1,5 @@
-from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import *
 from .models import *
@@ -14,6 +14,7 @@ def list_match(request):
     match = Match.objects.all()
     return render(request, "list_match.html", {'match': match})
 
+@login_required
 def create_match(request):
     if request.method == "POST":
         local_id = request.POST.get('local')
@@ -42,7 +43,7 @@ def create_match(request):
     return render(request, "create_match.html", {"form": form})  # Renderiza el formulario
 
 
-
+@login_required
 def create_call(request, match_id):
     players = Player.objects.all()  # Asegúrate de que esto sea correcto
     match = Match.objects.get(id=match_id)  # Asegúrate de que esto sea correcto
@@ -77,6 +78,7 @@ def create_call(request, match_id):
         
     return render(request, "create_call.html", {"players": players, "match": match, "player_penalties":player_penalties})
 
+
 def validate_call(call):
     if call.players.all().count() < 10:
         return False, "Para cerrar una convocatoria al menos debes contar con 10 jugadores"
@@ -85,6 +87,7 @@ def validate_call(call):
     
     return True, None
 
+@login_required
 def close_call(request, match_id):
     call = Call.objects.get(match__id=match_id)
     is_valid, error_message = validate_call(call)
@@ -100,7 +103,7 @@ def close_call(request, match_id):
     
     return redirect('call_for_match', call.match.id)
 
-
+@login_required
 def edit_call(request, call_id):
     call = get_object_or_404(Call, id=call_id)
     all_players = Player.objects.all()
@@ -156,12 +159,14 @@ def edit_call(request, call_id):
     return render(request, 'edit_call.html', context)
 
 #VISTA POR SI SE INTENTA MODIFICAR UNA CONVOCATORIA YA CERRADA
+@login_required
 def closed_call(request, call_id):
     call = Call.objects.get(id=call_id)
     return render(request, 'closed_call.html', {'match': call})
 
 
 #VISTA POR SI SE INTENTA CREAR UNA CONVOCATORIA YA EXISTENTE
+@login_required
 def existing_call_view(request, match_id):
     match = Match.objects.get(id=match_id)
     return render(request, 'existing_call.html', {'match': match})
@@ -210,6 +215,7 @@ def call_for_match(request,match_id):
 
     return render(request, "call_for_match.html",context)
 
+
 def validate_game_for_match(call):
     if not call:
         return False, "No se pueden crear partidos, no existe ninguna convocatoria."
@@ -222,6 +228,7 @@ def validate_game_for_match(call):
     return True, None
 
 #FUNCIÓN PARA CREAR PARTIDOS DENTRO DE UN ENFRENTAMIENTO
+@login_required
 def create_game_for_match(request, match_id):
     call = Call.objects.filter(match_id=match_id).first()
     match = get_object_or_404(Match, id=match_id)
@@ -250,6 +257,7 @@ def create_game_for_match(request, match_id):
         return redirect('call_for_match', match_id=match.id)
 
     return render(request, "create_game.html", {"call": call})
+
 
 def process_games_data(request, match, team):
     """
@@ -285,6 +293,7 @@ def process_games_data(request, match, team):
 
     return all_games_data, error_messages
 
+
 def save_games(all_games_data):
     """
     Guarda los datos de todos los partidos en la base de datos.
@@ -303,7 +312,7 @@ def save_games(all_games_data):
 
 
 
-
+@login_required
 def create_result(request, game_id):
     game = get_object_or_404(Game, id=game_id)
 
@@ -370,7 +379,7 @@ def determine_match_result(points_local, points_visiting):
         return "Victoria Visitante"
     else:
         return "Empate"
-     
+   
 def valid_close_match(games,match):
     if match.draft_mode == False:
         return False, "No se pueden cerrar actas, el partido ya ha sido cerrado"
@@ -382,7 +391,7 @@ def valid_close_match(games,match):
             return False, "No se pueden cerrar actas, algunos partidos no tienen resultado."
     
     return True, None     
-
+@login_required
 def close_match(request, match_id):
     match = Match.objects.get(id=match_id)
     games = match.games.all()

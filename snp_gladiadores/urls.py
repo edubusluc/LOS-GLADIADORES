@@ -26,5 +26,5 @@ urlpatterns = [
     path('team/',include('team.urls')),
     path('callLog/',include('callLog.urls')),
     path('penalty/',include('penalty.urls')),
-
+    path('home/',include('post.urls')),
 ]

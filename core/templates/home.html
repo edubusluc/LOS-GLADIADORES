@@ -4,6 +4,28 @@
 {% block title %}Página de Inicio{% endblock %}
 
 {% block content %}
-    <h2>Bienvenido a la Página de Inicio</h2>
-    <p>Aquí puedes gestionar los jugadores del equipo.</p>
+
+<body>
+    <div class="table-container">
+        <h2>Bienvenido a LOS GLADIADORES</h2>
+        {% if user.is_authenticated %}
+        <a href="{% url 'create_post' %}">Crear nueva publicación</a>
+        {% endif %}
+
+        <div>
+            {% for post in posts %}
+            <div class="post">
+                <h2>{{ post.title }}</h2>
+                <p>{{ post.content }}</p>
+                {% if post.image %}
+                <img src="{{ post.image.url }}" alt="{{ post.title }}">
+                {% endif %}
+                <p class="date">Publicado el {{ post.created_at }}</p>
+            </div>
+            {% empty %}
+            <p>No hay publicaciones todavía.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
 {% endblock %}

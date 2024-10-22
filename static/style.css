@@ -101,18 +101,31 @@ body {
 input[type="text"],
 select {
     width: 100%;
-    /* Ancho completo */
     padding: 10px;
-    /* Espaciado interno */
     border: 1px solid #ccc;
-    /* Borde gris claro */
     border-radius: 4px;
-    /* Bordes redondeados */
     box-sizing: border-box;
-    /* Incluye padding y border en el ancho */
     transition: border-color 0.3s;
-    /* Transición suave para el borde */
 }
+
+input[type="text"],
+input[type="password"],
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus {
+    border-color: #065a96;
+    outline: none;
+}
+
 .form .button:hover {
     background-color: #065a96;
 }
@@ -129,6 +142,14 @@ select {
     display: flex;
     flex-direction: column;
     /* Apila los elementos verticalmente */
+}
+
+input[type="number"] {
+    width: 60px;
+    height: 30px;
+    text-align: center;
+    border: 1px solid #ccc;
+    padding: 5px;
 }
 
 input[type="number"] {
@@ -195,6 +216,28 @@ label {
     height: 40px;  /* Ajusta la altura según sea necesario */
     font-size: 16px; /* Tamaño de la fuente */
     padding: 5px; /* Espaciado interno */
+}
+
+/* FORMATO PUBLICACIONES */
+.post {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f7f7f7;
+}
+.date {
+    font-size: 0.9em;
+    color: #666;
+}
+
+img {
+    width: 100%; /* Asegúrate de que la imagen ocupe todo el ancho de su contenedor */
+    max-width: 400px; /* Establece un tamaño máximo para la imagen */
+    height: auto; /* Mantiene la relación de aspecto */
+    border-radius: 8px; /* Bordes redondeados para un estilo más moderno */
+    object-fit: cover; /* Asegura que la imagen cubra el contenedor sin deformarse */
+    margin-top: 10px;
 }
 
 /* FORMATO PARA LAS ESTADÍSTICAS */

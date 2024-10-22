@@ -39,6 +39,9 @@ class Match(models.Model):
 
         # Llama al método de guardado del padre
         super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f'{self.local} - {self.visiting}'
 
 
 

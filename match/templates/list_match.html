@@ -27,7 +27,7 @@
                     <td >{{ m.start_date|date:"d/m/Y" }}</td>
                     <td>{{ m.result_points|default:"-" }}</td>
                     <td>
-                        <a href="{% url 'call_for_match' m.id %}" class="btn btn-info btn-sm">Ver Convocatoria</a>
+                        <a href="{% url 'call_for_match' m.id %}"> <i class="fa-solid fa-eye"></i></a>
                     </td>
                 </tr>
                 {% empty %}

@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .forms import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from team.models import Team
 # Create your views here.
 
+
+@login_required
 def create_player(request):
     if request.method == "POST":
         form = Playerform(request.POST)
@@ -40,7 +43,7 @@ def list_players(request):
 
     return render(request, 'list_players.html', {'players': players})
 
-
+@login_required
 def edit_player(request, player_id):
     player = get_object_or_404(Player, id=player_id)  # Asegúrate de que estás usando el modelo correcto
 
@@ -62,7 +65,7 @@ def edit_player(request, player_id):
     return render(request, 'edit_player.html', context)  # Renderizar con el contexto correcto
 
 
-
+@login_required
 def delete_player(request, player_id):
     player = get_object_or_404(Player, id=player_id)
     if request.method == "POST":

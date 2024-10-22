@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<body>
+    <div class="table-container">
+        <h1>Crear nueva publicación</h1>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <!-- Desplegable para seleccionar un partido -->
+            <label for="match_select">Selecciona un partido:</label>
+            <select id="match_select" name="match_id">
+                <option value="">-- Selecciona un partido --</option>
+                {% for match in matches %}
+                    <option value="{{ match.id }}">{{ match }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="button">Publicar</button>
+        </form>
+    </div>
+</body>
+{% endblock %}

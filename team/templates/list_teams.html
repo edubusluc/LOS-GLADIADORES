@@ -5,7 +5,9 @@
 <div class="table-container mt-4">
     <div class="d-flex align-items-center mb-3">
         <h1 class="flex-grow-1">Listado de Equipos</h1>
+        {% if user.is_authenticated %}
         <a href="{% url 'create_team' %}" class="button">Nuevo Equipo</a>
+        {% endif %}
     </div>
 
     <div class="table-responsive">
@@ -13,16 +15,20 @@
             <thead class="table-dark text-center">
                 <tr>
                     <th>Nombre</th>
+                    {% if user.is_authenticated %}
                     <th>Acciones</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for team in teams %}
                 <tr class="text-center">
                     <td>{{ team.name }}</td>
+                    {% if user.is_authenticated %}
                     <td>
                         <a href="{% url 'edit_team' team.id %}" class="text-warning" title="Editar"><i class="fas fa-pen"></i></a>
                     </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr class="text-center">

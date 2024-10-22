@@ -2,8 +2,10 @@ from django.shortcuts import render
 from callLog.models import CallLog
 from players.models import Player
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
+@login_required
 @require_http_methods(["GET", "POST"])
 def view_call_log(request, call_id):
     try:

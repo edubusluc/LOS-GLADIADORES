@@ -19,9 +19,9 @@ def create_match(request):
     if request.method == "POST":
         local_id = request.POST.get('local')
         visiting_id = request.POST.get('visiting')
-        start_date = request.POST.get('start_date')
-
-        print(local_id, visiting_id, start_date)
+        start_date_str = request.POST.get('start_date')
+        
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
 
         # Verifica que todos los campos necesarios están presentes
         if local_id and visiting_id and start_date:
@@ -29,7 +29,6 @@ def create_match(request):
                 local_id=local_id,
                 visiting_id=visiting_id,  
                 start_date=start_date,
-                season = "2024-2025"
             )
             match.save()
 

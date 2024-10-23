@@ -25,7 +25,7 @@
       initializeCharts(playerStatsData);
     });
   </script>
-  <div class="container">
+  <div class="table-container">
     <h1 class="title">Estadísticas de jugadores</h1>
     <form method="GET" action="{% url 'player_statistics' %}">
       <label for="player">Selecciona el jugador:</label>
@@ -51,7 +51,7 @@
       <button type="submit" class="button" style="margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
     </form>
 
-    <div class="card-container">
+    <div class="card-container" style="margin-bottom: 20px;">
       <div class="card">
         <h2>Partidos Ganados/Perdidos</h2>
         {% if selected_player %}

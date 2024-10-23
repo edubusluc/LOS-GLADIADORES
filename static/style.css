@@ -17,6 +17,7 @@ body {
     line-height: 1.6;
     color: #333;
     height: 100%;
+    background-image: url("/static/background-GLADIADOR.png");
     /* Asegura que el HTML y el body ocupen toda la altura */
 }
 
@@ -257,20 +258,38 @@ img {
     font-size: 20px;
   }
   
-  .title {
+.title {
     text-align: center;
     margin-bottom: 40px;
     color: #083C64;
   }
   
-  .card-container {
+.card-container {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-  }
+}
 
   canvas {
     border-radius: 8px;
+}
+
+.chart-container {
+    animation: fadeIn 1s ease-in-out;
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
+    margin: auto;
+}
+
+.chart-container2 {
+    animation: fadeIn 1s ease-in-out;
+    position: relative;
+    width: 100%;
+    max-width: 700px; /* Aumentado a 800px */
+    height: 500px;    /* Aumentado a 500px */
+    margin: auto;
 }
 
 .card h2 {
@@ -301,15 +320,6 @@ img {
     to {
         opacity: 1;
     }
-}
-
-.chart-container {
-    animation: fadeIn 1s ease-in-out;
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    height: 400px;
-    margin: auto;
 }
 
 #myPieChart, #myBarChart, #myVisitingBarChart, #myLineChart {

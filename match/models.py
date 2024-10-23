@@ -27,15 +27,13 @@ class Match(models.Model):
     season = models.CharField(max_length=9, blank = True, default="NONE")
     
     def save(self, *args, **kwargs):
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-        
-        # Solo asigna una nueva temporada si es necesario
+        # Asignar la temporada según la fecha de inicio
         if not self.season or self.season == "NONE":
-            if current_month >= 9:  # Temporada empieza en septiembre
-                self.season = f"{current_year}-{current_year + 1}"
-            else:  # Temporada anterior
-                self.season = f"{current_year - 1}-{current_year}"
+            if self.start_date:
+                if self.start_date.month >= 9:  # Septiembre o después
+                    self.season = f"{self.start_date.year}-{self.start_date.year + 1}"
+                else:  # Antes de septiembre (enero a agosto)
+                    self.season = f"{self.start_date.year - 1}-{self.start_date.year}"
 
         # Llama al método de guardado del padre
         super().save(*args, **kwargs)

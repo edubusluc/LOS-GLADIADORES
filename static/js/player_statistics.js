@@ -1,5 +1,5 @@
 function initializeCharts(data) {
-    const { totalWins, totalLost, presentCall, noCall, years, gamesWonPerYear, gamesLostPerYear } = data;
+    const { totalWins, totalLost, presentCall, noCall, years, gamesWonPerYear, gamesLostPerYear} = data;
 
     const pieChart = document.getElementById('myPieChart');
     const chartCall = document.getElementById('chartCall');
@@ -149,6 +149,6 @@ function initializeCharts(data) {
                 }
             }
         });
-    }
-    
+    } 
+
 }

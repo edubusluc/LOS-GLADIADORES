@@ -1,5 +1,3 @@
-// charts.js
-
 // Gráfico de pastel para partidos ganados/perdidos
 const pieCtx = document.getElementById('myPieChart').getContext('2d');
 const myPieChart = new Chart(pieCtx, {
@@ -72,41 +70,121 @@ const myVisitingBarChart = new Chart(visitingBarCtx, {
 });
 
 // Gráfico de línea para el número de partidos ganados por año
-const lineCtx = document.getElementById('myLineChart').getContext('2d');
-const myLineChart = new Chart(lineCtx, {
-  type: 'line',
+const years = Object.keys(teamData.matchesWonPerYear);
+    const wonMatches = years.map(year => teamData.matchesWonPerYear[year].won);
+    const lostMatches = years.map(year => teamData.matchesWonPerYear[year].lost);
+
+    // Configuración del gráfico
+    const ctx = document.getElementById('myLineChart').getContext('2d');
+    const myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: years,
+            datasets: [
+                {
+                    label: 'Partidos Ganados',
+                    data: wonMatches,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true
+                },
+                {
+                    label: 'Partidos Perdidos',
+                    data: lostMatches,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true
+                }
+            ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Año'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Número de Partidos Ganados'
+              },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+// Gráfico de columnas para partidos ganados/perdidos
+const columnCtx = document.getElementById('myColumnChart').getContext('2d');
+// Procesar los datos para el gráfico de columnas
+const labels = teamData.column_chart_data.map(entry => entry.player);
+const partidos2Ganados = teamData.column_chart_data.map(entry => entry.data[0]); // Partidos de 2 puntos ganados
+const partidos2Perdidos = teamData.column_chart_data.map(entry => entry.data[1]); // Partidos de 2 puntos perdidos
+const partidos3Ganados = teamData.column_chart_data.map(entry => entry.data[2]); // Partidos de 3 puntos ganados
+const partidos3Perdidos = teamData.column_chart_data.map(entry => entry.data[3]); // Partidos de 3 puntos perdidos
+
+const myColumnChart = new Chart(columnCtx, {
+  type: 'bar',
   data: {
-    labels: teamData.years,  // Usar teamData
-    datasets: [{
-      label: 'Partidos Ganados',
-      data: teamData.matchesWonPerYear,  // Usar teamData
-      backgroundColor: 'rgba(8, 60, 100, 0.2)',
-      borderColor: '#083C64',
-      borderWidth: 2,
-      fill: true,
-    }]
+    labels: labels,
+    datasets: [
+      {
+        label: 'Partidos de 2 puntos ganados',
+        data: partidos2Ganados,
+        backgroundColor: '#007BFF', // Azul brillante
+      },
+      {
+        label: 'Partidos de 2 puntos perdidos',
+        data: partidos2Perdidos,
+        backgroundColor: '#33f3ff', // Amarillo brillante
+      },
+      {
+        label: 'Partidos de 3 puntos ganados',
+        data: partidos3Ganados,
+        backgroundColor: '#0056b3', // Azul oscuro
+      },
+      {
+        label: 'Partidos de 3 puntos perdidos',
+        data: partidos3Perdidos,
+        backgroundColor: 'rgba(255, 215, 0, 0.8)', // Amarillo dorado
+      }
+    ]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false
+        display: true
       }
     },
     scales: {
-      x: {
-        title: {
+      y: {
+        beginAtZero: true,
+        stacked: true, // Activar apilado en el eje Y
+        title: { // Añadir título al eje Y
           display: true,
-          text: 'Año'
+          text: 'Número de Partidos', // Cambia el texto según necesites
+          font: {
+            size: 16, // Tamaño de la fuente
+          },
+          padding: {
+            top: 10, // Espaciado superior
+            bottom: 10 // Espaciado inferior
+          }
         }
       },
-      y: {
-        title: {
-          display: true,
-          text: 'Número de Partidos Ganados'
-        },
-        beginAtZero: true
+      x: {
+        stacked: true // Activar apilado en el eje X
       }
     }
   }

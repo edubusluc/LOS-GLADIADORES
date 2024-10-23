@@ -83,25 +83,97 @@ def calculate_visiting_game_statistics(season, team):
 
 def calculate_matches_won_per_year(team):
     dicc_match = {}
-    all_matchs = Match.objects.all()
+    year = set()
+    
+    # Filtra partidos que no están en modo draft
+    all_matchs = Match.objects.filter(draft_mode=False)
 
+    # Agrega las temporadas al conjunto
     for m in all_matchs:
-        year = m.season
-        if year not in dicc_match:
-            dicc_match[year] = {'won': 0}
-        match_won_local = Match.objects.filter(season=year, local=team, result=LOCAL_WIN, draft_mode=False).count()
-        match_won_visiting = Match.objects.filter(season=year, visiting=team, result=VISITING_WIN, draft_mode=False).count()
-        dicc_match[year]['won'] += match_won_local + match_won_visiting
+        year.add(m.season)
 
-    years = sorted(dicc_match.keys())
-    matches_won_per_year = [dicc_match[y]['won'] for y in years]
-    return years, matches_won_per_year
+    # Recorre cada año en el conjunto
+    for y in year:    
+        if y not in dicc_match:
+            dicc_match[y] = {'won': 0, 'lost': 0}  # Inicializa contadores para ganados y perdidos
+
+        # Contar partidos ganados como local
+        match_won_local = Match.objects.filter(season=y, local=team, result="Victoria Local", draft_mode=False).count()
+        # Contar partidos perdidos como local
+        match_lost_local = Match.objects.filter(season=y, local=team, result="Victoria Visitante", draft_mode=False).count()
+        
+        # Contar partidos ganados como visitante
+        match_won_visiting = Match.objects.filter(season=y, visiting=team, result="Victoria Visitante", draft_mode=False).count()
+        # Contar partidos perdidos como visitante
+        match_lost_visiting = Match.objects.filter(season=y, visiting=team, result="Victoria Local", draft_mode=False).count()
+
+        # Suma los partidos ganados
+        dicc_match[y]['won'] += match_won_local + match_won_visiting
+        
+        # Suma los partidos perdidos
+        dicc_match[y]['lost'] += match_lost_local + match_lost_visiting
+        dicc_match = dict(sorted(dicc_match.items()))
+
+    return dicc_match
+def count_games(player, role, winner, n_games, season):
+    """Helper function to count games for a player."""
+    filter_conditions = Q(**{f'player_1_{role}': player.id}) | Q(**{f'player_2_{role}': player.id})
+    filter_conditions &= Q(winner=winner, draft_mode=False, n_game__in=n_games)
+    
+    if season:  # Solo aplica el filtro de temporada si `season` tiene un valor
+        filter_conditions &= Q(match__season=season)
+
+    return Game.objects.filter(filter_conditions).count()
+
+def column_chart(season):
+    players = Player.objects.all()
+    dicc = {
+        p: {
+            'Partidos de 2 puntos ganados': 0,
+            'Partidos de 2 puntos perdidos': 0,
+            'Partidos de 3 puntos ganados': 0,
+            'Partidos de 3 puntos perdidos': 0,
+        } for p in players
+    }
+
+    for player in players:
+        # Partidos locales
+        dicc[player]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2],season)
+        dicc[player]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2],season)
+        dicc[player]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5],season)
+        dicc[player]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5],season)
+
+        # Partidos visitantes
+        dicc[player]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2],season)
+        dicc[player]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2],season)
+        dicc[player]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5],season)
+        dicc[player]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5],season)
+
+
+    return dicc  # No olvides devolver el diccionario resultante
+
+def format_for_chart(dic):
+    players = []
+    for player, stats in dic.items():
+        players.append({
+            'player': str(player), 
+            'data': [
+                stats['Partidos de 2 puntos ganados'],
+                stats['Partidos de 2 puntos perdidos'],
+                stats['Partidos de 3 puntos ganados'],
+                stats['Partidos de 3 puntos perdidos'],
+            ]
+        })
+    return players
 
 @require_GET
 def team_statistics(request):
     seasons = get_total_season(Match.objects.all())
     selected_season = request.GET.get("season")
     team = get_team()
+
+    dicc = column_chart(selected_season)
+    column_chart_data = format_for_chart(dicc)
 
     if not team:
         return render(request, 'team_statistics.html', {"seasons": seasons})
@@ -110,7 +182,11 @@ def team_statistics(request):
     total_matches, total_won, lost_matches, percentage_won, percentage_lost = calculate_match_statistics(selected_season or None, team)
     local_games_won, local_games_lost, percentage_local_games_won, percentage_local_games_lost = calculate_local_game_statistics(selected_season or None, team)
     visiting_games_won, visiting_games_lost, percentage_visiting_games_won, percentage_visiting_games_lost = calculate_visiting_game_statistics(selected_season or None, team)
-    years, matches_won_per_year = calculate_matches_won_per_year(team)
+    
+    #LINE CHART
+    dicc_line_chart = calculate_matches_won_per_year(team)
+    print(dicc_line_chart)
+
 
     context = {
         'team': team,
@@ -127,10 +203,10 @@ def team_statistics(request):
         'percentage_local_games_lost': percentage_local_games_lost,
         'percentage_visiting_games_won': percentage_visiting_games_won,
         'percentage_visiting_games_lost': percentage_visiting_games_lost,
-        'years': json.dumps(years),  # Convert years to JSON string
-        'matches_won_per_year': json.dumps(matches_won_per_year),
+        'dicc_line_chart':dicc_line_chart,
         "seasons": seasons,
-        "selected_season": selected_season
+        "selected_season": selected_season,
+        "column_chart_data": column_chart_data
     }
 
     return render(request, 'team_statistics.html', context)
@@ -140,7 +216,6 @@ def team_statistics(request):
 
 
 # ESTADIISTICAS JUGADORES:
-@require_GET
 def get_player_statistics(player, season):
     # Obtener estadísticas del jugador
     stats = {
@@ -220,7 +295,6 @@ def get_match_history(player, all_match):
         match__season = year
     ).count()
 
-    print("won-local",year, won_games_local)
 
     won_games_visiting = Game.objects.filter(
         Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
@@ -228,7 +302,6 @@ def get_match_history(player, all_match):
         draft_mode=False,
         match__season = year
     ).count()
-    print("won-visiting",year, won_games_visiting)
 
     lost_games_local = Game.objects.filter(
         Q(player_1_local=player.id) | Q(player_2_local=player.id),
@@ -236,7 +309,6 @@ def get_match_history(player, all_match):
         draft_mode=False,
         match__season = year
     ).count()
-    print("lost-local",year,lost_games_local)
 
     lost_games_visiting = Game.objects.filter(
         Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
@@ -244,12 +316,13 @@ def get_match_history(player, all_match):
         draft_mode=False,
         match__season = year
     ).count()
-    print("lost-visiting",year,lost_games_visiting)
 
     dicc_match[year]['won'] += (won_games_local + won_games_visiting)
     dicc_match[year]['lost'] += (lost_games_local + lost_games_visiting)
 
     return dicc_match
+
+
 
 @require_GET
 def statistics_per_player(request):
@@ -280,6 +353,11 @@ def statistics_per_player(request):
     total_call = Call.objects.filter(draft_mode=False).count()
     stats['percentage_call'] = (stats['present_call'] / total_call) * 100 if total_call > 0 else 0
     stats['no_call'] = total_call - stats['present_call']
+
+    # Serializa los datos de años y estadísticas a JSON
+    stats['years'] = json.dumps(years)
+    stats['games_won_per_year'] = json.dumps(stats['games_won_per_year'])
+    stats['games_lost_per_year'] = json.dumps(stats['games_lost_per_year'])
 
     context = {
         "players": players,

@@ -1,14 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Convocatoria</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
 <body>
     <div class="container mt-5">
         <div class="card shadow-lg">
@@ -30,10 +24,17 @@
                             {% for player in players %}
                                 <div class="col-md-4">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="players" value="{{ player.id }}" id="player-{{ player.id }}"
+                                        <input class="form-check-input" style="width: 20px; height: 20px;" type="checkbox" name="players" value="{{ player.id }}" id="player-{{ player.id }}"
                                             {% if player.id in selected_players %} checked {% endif %}>
-                                        <label class="form-check-label" for="player-{{ player.id }}">
-                                            {{ player.name }}  <!-- Asegúrate de que aquí estás accediendo correctamente al nombre del jugador -->
+                                        <label class="form-check-label" for="player-{{ player.id }}" 
+                                               data-bs-toggle="tooltip" 
+                                               data-bs-placement="top" 
+                                               data-bs-html="true" 
+                                               title="{% if player_penalties|get_item:player.id %}<p>{% for reason in player_penalties|get_item:player.id %}{{ reason }}<br>{% endfor %}</p>{% else %}Sin penalizaciones{% endif %}">
+                                            {{ player.name }} 
+                                            {% if player_penalties|get_item:player.id|length > 0 %}
+                                                <span class="text-danger">(!)</span>
+                                            {% endif %}
                                         </label>
                                     </div>
                                 </div>
@@ -49,4 +50,13 @@
         </div>
     </div>
 </body>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(function () {
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+</script>
 {% endblock %}

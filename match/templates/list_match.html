@@ -5,12 +5,14 @@
 <div class="table-container mt-4">
     <div class="d-flex align-items-center mb-3">
         <h1 class="flex-grow-1">Listado de Partidos</h1>
+        {% if user.is_authenticated %}
         <a href="{% url 'create_match' %}" class="button">Nuevo Partido</a>
+        {% endif %}
     </div>
 
     <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark text-center">
                 <tr>
                     <th>Local</th>
                     <th>Visitante</th>
@@ -21,18 +23,18 @@
             </thead>
             <tbody>
                 {% for m in match %}
-                <tr>
-                    <td>{{ m.local }}</td>
+                <tr class="text-center" >
+                    <td>{{ m.local }}</td> 
                     <td>{{ m.visiting }}</td>
-                    <td>{{ m.start_date|date:"d/m/Y" }}</td>
+                    <td >{{ m.start_date|date:"d/m/Y" }}</td>
                     <td>{{ m.result_points|default:"-" }}</td>
                     <td>
-                        <a href="{% url 'call_for_match' m.id %}" class="btn btn-primary btn-sm">Ver Convocatoria</a>
+                        <a href="{% url 'call_for_match' m.id %}"> <i class="fa-solid fa-eye"></i></a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center">No hay partidos disponibles</td>
+                <tr class="text-center" >
+                    <td colspan="5">No hay partidos disponibles</td>
                 </tr>
                 {% endfor %}
             </tbody>

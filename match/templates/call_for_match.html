@@ -14,35 +14,47 @@
         overflow: auto;
     }
 
-    .styled-table th,
-    .styled-table td {
+    .styled-table th {
+        background-color: rgb(8, 60, 100);
+        color: white;
         padding: 12px;
-        text-align: left;
+        text-align: center; /* Alinea el texto de los encabezados al centro */
         border: 1px solid #ddd;
     }
 
     .styled-table td {
-        vertical-align: top;
-        /* Alinea el texto en la parte superior */
+        padding: 12px;
+        border: 1px solid #ddd;
+        background-color: #f3f3f3; /* Estilo para todos los <td> */
+        vertical-align: top; /* Alinea el texto en la parte superior */
+        text-align: center; /* Alinea el texto de los <td> al centro */
+    }
+
+    .alert {
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+        background-color: #fff3cd;
+        color: #856404;
     }
 </style>
 
 <div class="styled-table">
-    <div class="text-center">
-        <h2>Equipo Local: {{ match.local }}</h2>
-        <h2>Equipo Visitante: {{ match.visiting }}</h2>
-        <h2>Fecha: {{ match.start_date }}</h2>
+    <div class="text-center p-4 my-4" style="background-color: #f8f9fa; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+        <h2 style="color: #083C64; font-weight: bold;">Equipo Local: {{ match.local }}</h2>
+        <h2 style="color: #083C64; font-weight: bold;">Equipo Visitante: {{ match.visiting }}</h2>
+        <h2 style="color: #555;">Fecha: {{ match.start_date }}</h2>
     </div>
 
     {% if messages %}
-    <div class="alert">
+    <div>
         {% for message in messages %}
-        <p class="{{ message.tags }}">{{ message }}</p>
+        <p class="alert">{{ message }}</p>
         {% endfor %}
     </div>
     {% endif %}
 
-    <table>
+    <table style="margin-bottom: 20px; width: 100%; border-collapse: collapse;">
         <thead>
             <tr>
                 <th>Jugadores Revés</th>
@@ -53,7 +65,7 @@
         <tbody>
             <tr>
                 <td>
-                    <ul>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
                         {% if not backhand_players %}
                         <p>Aún no se han incluido jugadores de revés</p>
                         {% else %}
@@ -64,7 +76,7 @@
                     </ul>
                 </td>
                 <td>
-                    <ul>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
                         {% if not forehand_players %}
                         <p>Aún no se han incluido jugadores de derecha</p>
                         {% else %}
@@ -75,7 +87,7 @@
                     </ul>
                 </td>
                 <td>
-                    <ul>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
                         {% if not mixed_players %}
                         <p>Aún no se han incluido jugadores de revés/derecha</p>
                         {% else %}
@@ -89,22 +101,24 @@
         </tbody>
     </table>
 
+    {% if user.is_authenticated %}
     <div style="padding-top: 10px;">
         {% if not call_for_match %}
         <a href="{% url 'create_call' match_id %}" class="button">Crear Convocatoria</a>
         {% endif %}
 
-        {% if call_for_match %}
+        {% if call_for_match and match.draft_mode %}
         <a href="{% url 'view_call_log' call_for_match.id %}" class="button">Penalizaciones</a>
         <a href="{% url 'edit_call' call_for_match.id %}" class="button">Editar Convocatoria</a>
         {% endif %}
-        {%if call_for_match.draft_mode%}
+        {% if call_for_match.draft_mode %}
         <form action="{% url 'close_call' match.id %}" method="post" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="button">Cerrar Convocatoria</button>
         </form>
         {% endif %}
     </div>
+    {% endif %}
 
     <h1>Partidos</h1>
     <p></p>
@@ -112,43 +126,45 @@
     {% for g in game_for_match %}
     <table style="margin-bottom: 20px; width: 100%; border-collapse: collapse;">
         <tr>
-            <th style="background-color: rgb(8, 60, 100); text-align: left; width: 70%;">
+            <th style="width: 70%;">
                 {% if g.results.first == None %}
+                {% if user.is_authenticated %}
                 <a href="{% url 'create_result' g.id %}" style="color: white;"><i class="fa-solid fa-plus"></i></a>
+                {% endif %}
                 {% endif %}
                 Resultado Partido {{ g.n_game }}
             </th>
-            <th style="background-color: rgb(8, 60, 100); width: 10%; text-align: center;">1</th>
-            <th style="background-color: rgb(8, 60, 100); width: 10%; text-align: center;">2</th>
-            <th style="background-color: rgb(8, 60, 100); width: 10%; text-align: center;">3</th>
+            <th style="width: 10%; text-align: center;">1</th>
+            <th style="width: 10%; text-align: center;">2</th>
+            <th style="width: 10%; text-align: center;">3</th>
         </tr>
     
         <tr>
-            <th style="text-align: left;">
+            <th class="custom-header" style="text-align: left;">
                 {% if g.winner == "Local" %} V {{ match.local }} - {% else %} D {{ match.local }} - {% endif %}
                 {% if g.player_1_local and g.player_2_local %} {{ g.player_1_local }}/{{ g.player_2_local }} {% endif %}
             </th>
-            <td style="text-align: center;">{{ g.results.first.set1_local }}</td>
-            <td style="text-align: center;">{{ g.results.first.set2_local }}</td>
-            <td style="text-align: center;">{{ g.results.first.set3_local }}</td>
+            <td>{{ g.results.first.set1_local }}</td>
+            <td>{{ g.results.first.set2_local }}</td>
+            <td>{{ g.results.first.set3_local }}</td>
         </tr>
         
         <tr>
-            <th style="text-align: left;">
+            <th class="custom-header" style="text-align: left;">
                 {% if g.winner == "Visitante" %} V {{ match.visiting }} - {% else %} D {{ match.visiting }} - {% endif %}
                 {% if g.player_1_visiting and g.player_2_visiting %} {{ g.player_1_visiting }}/{{ g.player_2_visiting }} {% endif %}
             </th>
-            <td style="text-align: center;">{{ g.results.first.set1_visiting }}</td>
-            <td style="text-align: center;">{{ g.results.first.set2_visiting }}</td>
-            <td style="text-align: center;">{{ g.results.first.set3_visiting }}</td>
+            <td>{{ g.results.first.set1_visiting }}</td>
+            <td>{{ g.results.first.set2_visiting }}</td>
+            <td>{{ g.results.first.set3_visiting }}</td>
         </tr>
     </table>
-{% endfor %}
-
+    {% endfor %}
     {% else %}
     <p>No hay partidos disponibles para este enfrentamiento. Debe confirmar la convocatoria.</p>
     {% endif %}
 
+    {% if user.is_authenticated %}
     {% if game_for_match.count == 5 and match.draft_mode %}
     <div class="text-center mt-4">
         <form method="POST" action="{% url 'close_match' match.id %}">
@@ -157,9 +173,9 @@
         </form>
     </div>
     {% endif %}
+    {% endif %}
 
-
-    {% if not game_for_match and not call_for_match.draft_mode %}
+    {% if match.draft_mode and not call_for_match.draft_mode and game_for_match.count < 5 %}
     <div class="text-center">
         <a href="{% url 'create_game' match_id %}" class="button">Crear Partidos</a>
     </div>

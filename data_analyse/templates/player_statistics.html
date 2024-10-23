@@ -2,86 +2,30 @@
 {% load static %}
 
 {% block content %}
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estadísticas del Jugador</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl5/4p1Ac4v4P93Z6Y5YZgX6Z9Kn27e9j8JKgWxJ1A"
-  crossorigin="anonymous"></script>
-  <style>
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .title {
-      text-align: center;
-      margin-bottom: 40px;
-      color: #083C64;
-    }
-
-    .card-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-
-    .card {
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      flex: 1 1 calc(50% - 20px);
-      padding: 20px;
-      min-width: 300px;
-    }
-
-    @media (max-width: 768px) {
-      .card {
-        flex: 1 1 100%;
-      }
-    }
-
-    .card h2 {
-      text-align: center;
-      color: #083C64;
-      font-size: 1.5em;
-    }
-
-    .chart-container {
-      position: relative;
-      width: 100%;
-      max-width: 600px;
-      height: 400px;
-      margin: auto;
-    }
-
-    #myPieChart,
-    #myBarChart,
-    #myVisitingBarChart,
-    #myLineChart {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    .message {
-      text-align: center;
-      font-style: italic;
-      color: #777;
-    }
-
-    .percentage {
-      display: flex;
-      justify-content: center;
-      font-weight: bold;
-      margin-top: 10px;
-      color: #083C64;
-    }
-  </style>
-</head>
-
 <body>
-  <div class="container">
+  <script>
+    // Pasar datos desde Django a JavaScript
+    const playerStatsData = {
+      totalWins: {{ total_wins|escape }},
+      totalLost: {{ total_lost|escape }},
+      presentCall: {{ present_call|escape }},
+      noCall: {{ no_call|escape }},
+      years: {{ years|safe }},
+      gamesWonPerYear: {{ games_won_per_year|safe }},
+      gamesLostPerYear: {{ games_lost_per_year|safe }},
+      won_games_local: {{ won_games_local|escape }},
+      lost_games_local: {{ lost_games_local|escape }},
+      won_games_visiting: {{ won_games_visiting|escape }},
+      lost_games_visiting: {{ lost_games_visiting|escape }},
+    };
+    </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeCharts(playerStatsData);
+    });
+  </script>
+  <div class="table-container">
     <h1 class="title">Estadísticas de jugadores</h1>
     <form method="GET" action="{% url 'player_statistics' %}">
       <label for="player">Selecciona el jugador:</label>
@@ -89,7 +33,7 @@
         <option value="">-- Todos los jugadores --</option>
         {% for player in players %}
         <option value="{{ player.id }}" {% if player.id == selected_player %}selected{% endif %}>
-          {{ player.name|escape }} <!-- Escapa el nombre del jugador -->
+          {{ player.name|escape }}
         </option>
         {% endfor %}
       </select>
@@ -99,7 +43,7 @@
         <option value="">-- Todas las temporadas --</option>
         {% for season in seasons %}
         <option value="{{ season|escape }}" {% if season == selected_season %}selected{% endif %}>
-          {{ season|escape }} <!-- Escapa la temporada -->
+          {{ season|escape }}
         </option>
         {% endfor %}
       </select>
@@ -107,7 +51,7 @@
       <button type="submit" class="button" style="margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
     </form>
 
-    <div class="card-container">
+    <div class="card-container" style="margin-bottom: 20px;">
       <div class="card">
         <h2>Partidos Ganados/Perdidos</h2>
         {% if selected_player %}
@@ -176,123 +120,6 @@
       </div>
     </div>
   </div>
-
-  <script>
-    // Gráfico de pastel para partidos ganados/perdidos
-    const pieCtx = document.getElementById('myPieChart').getContext('2d');
-    const myPieChart = new Chart(pieCtx, {
-      type: 'pie',
-      data: {
-        labels: ['Ganados', 'Perdidos'],
-        datasets: [{
-          data: [{{ total_wins|escape }}, {{ total_lost|escape }}], // Escapar datos
-          backgroundColor: ['#083C64', '#ff6384'],
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-
-    console.log('Present Call:', {{ present_call|escape }});
-    console.log('No Call:', {{ no_call|escape }});
-  </script>
-
-  <script>
-    // Gráfico de pastel para la participación en convocatorias
-    const pieCallCtx = document.getElementById('chartCall').getContext('2d');
-    const myPieCallCtx = new Chart(pieCallCtx, {
-      type: 'pie',
-      data: {
-        labels: ['Llamado', 'No llamado'],
-        datasets: [{
-          data: [{{ present_call|escape }}, {{ no_call|escape }}], // Escapar datos
-          backgroundColor: ['#083C64', '#ff6384'],
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-  </script>
-
-  <script>
-    const localWinLostCtx = document.getElementById('localWinLost').getContext('2d');
-    const mylocalWinLostCtx = new Chart(localWinLostCtx, {
-      type: 'bar',
-      data: {
-        labels: ['Partidos Ganados', 'Partidos Perdidos'],
-        datasets: [{
-          data: [{{ won_games_local|escape }}, {{ lost_games_local|escape }}], // Escapar datos
-          backgroundColor: ['#083C64', '#ff6384'],
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false // Oculta la leyenda
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
-    });
-  </script>
-
-  <script>
-    const visitingWinLostCtx = document.getElementById('visitingWinLost').getContext('2d');
-    const myVisitingWinLostCtx = new Chart(visitingWinLostCtx, {
-      type: 'bar',
-      data: {
-        labels: ['Partidos Ganados', 'Partidos Perdidos'],
-        datasets: [{
-          data: [{{ won_games_visiting|escape }}, {{ lost_games_visiting|escape }}], // Escapar datos
-          backgroundColor: ['#083C64', '#ff6384'],
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false // Oculta la leyenda
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
-    });
-  </script>
-
-  <script>
-    const lineGamesCtx = document.getElementById('myLineGamesChart').getContext('2d');
-    const myLineGamesChart = new Chart(lineGamesCtx, {
-      type: 'line',
-      data: {
-        labels: {{ match_dates|escape }}, // Escapar datos
-        datasets: [{
-          label: 'Resultados',
-          data: {{ match_results|escape }}, // Escapar datos
-          fill: false,
-          borderColor: '#083C64',
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-  </script>
+  <script src="{% static 'js/player_statistics.js' %}"></script>
 </body>
 {% endblock %}

@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-  <body>
     <script>
       const teamData = {
         wonMatches: {{ won_matches }},
@@ -11,12 +10,12 @@
         localGamesLost: {{ local_games_lost }},
         visitingGamesWon: {{ visiting_games_won }},
         visitingGamesLost: {{ visiting_games_lost }},
-        years: {{ years|safe }},
-        matchesWonPerYear: {{ matches_won_per_year|safe }},
+        matchesWonPerYear: {{ dicc_line_chart|safe }},
+        column_chart_data: {{column_chart_data|safe}}
       };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <div class="container">
+    <div class="table-container">
       <h1 class="title">Estadísticas {{ team.name }}</h1>
       <form method="GET" action="{% url 'team_statistics' %}">
         <label for="season" style="margin-top: 10px;">Seleccione una temporada:</label>
@@ -88,7 +87,12 @@
           {% endif %}
         </div>
       </div>
+      <div class="card">
+        <h2>Balance de Partidos</h2>
+        <div class="chart-container2">
+          <canvas id="myColumnChart"></canvas>
+        </div>
+      </div>
     </div>
     <script src="{% static 'js/team_statistics.js' %}"></script>
-  </body>
 {% endblock %}

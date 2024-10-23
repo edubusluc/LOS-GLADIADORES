@@ -27,18 +27,19 @@ class Match(models.Model):
     season = models.CharField(max_length=9, blank = True, default="NONE")
     
     def save(self, *args, **kwargs):
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-        
-        # Solo asigna una nueva temporada si es necesario
+        # Asignar la temporada según la fecha de inicio
         if not self.season or self.season == "NONE":
-            if current_month >= 9:  # Temporada empieza en septiembre
-                self.season = f"{current_year}-{current_year + 1}"
-            else:  # Temporada anterior
-                self.season = f"{current_year - 1}-{current_year}"
+            if self.start_date:
+                if self.start_date.month >= 9:  # Septiembre o después
+                    self.season = f"{self.start_date.year}-{self.start_date.year + 1}"
+                else:  # Antes de septiembre (enero a agosto)
+                    self.season = f"{self.start_date.year - 1}-{self.start_date.year}"
 
         # Llama al método de guardado del padre
         super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f'{self.local} - {self.visiting}'
 
 
 
@@ -71,9 +72,49 @@ class Game(models.Model):
     winner = models.CharField(max_length=10, null=True)
     draft_mode = models.BooleanField(default=True)
 
+    def save(self, *args, **kwargs):
+        self.clean()  # Llamar a la validación antes de guardar
+        super().save(*args, **kwargs)
+
 def validate_set_value(value):
     if value < 0 or value > 7:
         raise ValidationError('El valor debe estar entre 0 y 7.')
+    
+def validate_padle_score(s):
+    valid_scores = [
+        ('6', '0'), ('6', '1'), ('6', '2'), ('6', '3'), ('6', '4'), ('7', '5'),
+        ('7', '6'), ('0', '6'), ('1', '6'), ('2', '6'), ('3', '6'), ('4', '6'), ('5', '7'), ('6', '7')
+    ]
+    if s not in valid_scores:
+        raise ValidationError(f'El resultado {s} no es un resultado válido.')
+
+def get_winner(score):
+    local, visiting = score
+    if int(local) > int(visiting):
+        return 'local'  
+    elif int(local) < int(visiting):
+        return 'visiting' 
+    else:
+        return 'tie' 
+
+def validate_result(set1, set2, set3):
+    # Validar los sets 1 y 2
+    validate_padle_score(set1)
+    validate_padle_score(set2)
+
+    # Obtener ganadores de los sets 1 y 2
+    winner_set1 = get_winner(set1)
+    winner_set2 = get_winner(set2)
+
+    # Validar el set 3 solo si los ganadores de los sets 1 y 2 son diferentes
+    if winner_set1 != winner_set2:
+        validate_padle_score(set3)
+    # Si los ganadores de set1 y set2 son idénticos, set3 debe ser 0-0
+    
+    elif set3 != ("0", "0"):
+        raise ValidationError('El resultado no es válido.')
+
+
     
 class Result(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='results')
@@ -107,5 +148,20 @@ class Result(models.Model):
             return "Victoria Local"
         else:
             return "Victoria visitante"
+    def clean(self):
+        validate_result(
+            (self.set1_local, self.set1_visiting), 
+            (self.set2_local, self.set2_visiting), 
+            (self.set3_local, self.set3_visiting)
+        )
+        
+    def save(self, *args, **kwargs):
+        self.clean() 
+        super().save(*args, **kwargs)
+        
+
+
+
+
 
 

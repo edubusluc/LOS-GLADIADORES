@@ -89,10 +89,16 @@
       </div>
       <div class="card">
         <h2>Balance de Partidos</h2>
-        <div class="chart-container2">
-          <canvas id="myColumnChart"></canvas>
+        {% if not total_matches %}
+        <p class="message">Aún no se ha cerrado ningún partido</p>
+        {% else %}
+        <div class="chart-container">
+            <div class="chart-scroll">
+                <canvas id="myColumnChart"></canvas>
+            </div>
         </div>
-      </div>
+        {% endif %}
+    </div>
     </div>
     <script src="{% static 'js/team_statistics.js' %}"></script>
 {% endblock %}

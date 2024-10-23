@@ -278,18 +278,14 @@ img {
     animation: fadeIn 1s ease-in-out;
     position: relative;
     width: 100%;
-    max-width: 600px;
-    height: 400px;
+    max-width: 700px; /* Ajusta según sea necesario */
+    height: 100%; /* Ajusta según sea necesario */
     margin: auto;
+    overflow-x: auto; /* Permitir desplazamiento horizontal */
 }
-
-.chart-container2 {
-    animation: fadeIn 1s ease-in-out;
-    position: relative;
-    width: 100%;
-    max-width: 700px; /* Aumentado a 800px */
-    height: 500px;    /* Aumentado a 500px */
-    margin: auto;
+.chart-scroll {
+    min-width: 800px; /* Establece un ancho mínimo mayor al contenedor */
+    height: 100%;
 }
 
 .card h2 {

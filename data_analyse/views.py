@@ -187,7 +187,7 @@ def team_statistics(request):
     
     #LINE CHART
     dicc_line_chart = calculate_matches_won_per_year(team)
-    print(dicc_line_chart)
+
 
 
     context = {
@@ -325,12 +325,90 @@ def get_match_history(player, all_match):
     return dicc_match
 
 
+def player_won(m, player):
+    """Determina si el jugador ganó el partido."""
+    return (m.winner == 'Local' and (m.player_1_local == player or m.player_2_local == player)) or \
+           (m.winner == 'Visitante' and (m.player_1_visiting == player or m.player_2_visiting == player))
+
+def player_lost(m, player):
+    """Determina si el jugador perdió el partido."""
+    return (m.winner == 'Visitante' and (m.player_1_local == player or m.player_2_local == player)) or \
+           (m.winner == 'Local' and (m.player_1_visiting == player or m.player_2_visiting == player))
+
+def degree_of_affinity(player):
+    player = Player.objects.get(id=player.id)
+    other_players = Player.objects.exclude(id=player.id)
+
+    affinity_results = {}
+
+    for other in other_players:
+        games = Game.objects.filter(
+            Q(player_1_local=player, player_2_local=other) | 
+            Q(player_1_local=other, player_2_local=player) |
+            Q(player_1_visiting=player, player_2_visiting=other) | 
+            Q(player_1_visiting=other, player_2_visiting=player)
+        )
+        
+
+        # Contadores para victorias
+        game_2_points_won = 0
+        game_2_points_lost = 0
+        game_3_points_won = 0
+        game_3_points_lost = 0
+
+        for m in games:
+            if m.score == 2:
+                if player_won(m, player):
+                    game_2_points_won += 1
+                elif player_lost(m, player):
+                    game_2_points_lost += 1
+            
+            elif m.score == 3:
+                if player_won(m, player):
+                    game_3_points_won += 1
+                elif player_lost(m, player):
+                    game_3_points_lost += 1
+
+        
+        # Calcular la afinidad mejorada
+        total_matches = game_2_points_won + game_2_points_lost + game_3_points_won + game_3_points_lost
+        penalty = (game_2_points_lost + game_3_points_lost)
+
+        # Ponderación de victorias
+        weighted_wins = (game_3_points_won * 2.0) + (game_2_points_won * 1.0)  # Puedes ajustar estos pesos
+
+        # Efecto de las pérdidas
+        loss_penalty = penalty * 1.5  # Puedes ajustar este peso
+
+        # Ajustar la afinidad
+        if total_matches == 0:  # Evitar división por cero
+            affinity = 0.0
+        else:
+            affinity = ((weighted_wins - loss_penalty) / total_matches) * 100
+
+        # Normalizar la afinidad para que no supere 100
+        affinity = min(affinity, 100)
+
+        # Si deseas agregar un efecto de experiencia:
+        experience_factor = min(1 + (total_matches / 10), 2)  # Aumenta el efecto con el número de partidos
+        affinity *= experience_factor
+        affinity = min(affinity, 100)  # Asegurar que no supere 100
+        
+        affinity_results[str(other.name)] = affinity  # Suponiendo que cada jugador tiene un atributo `name`
+    sorted_affinity = dict(sorted(affinity_results.items(), key=lambda item: item[1], reverse=True))
+
+    return sorted_affinity
+
+
+
 
 @require_GET
 def statistics_per_player(request):
     all_match = Match.objects.all()
     players = Player.objects.all()
     seasons = get_total_season(all_match)
+
+    
 
     seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
 
@@ -340,6 +418,8 @@ def statistics_per_player(request):
         player = Player.objects.get(id=player_id)
     else:
         return render(request, 'player_statistics.html', {"players": players, "seasons":seasons})
+    
+    degree_afinity = degree_of_affinity(player)
 
     stats = get_player_statistics(player, selected_season)
     current_season = get_current_season(request)
@@ -350,6 +430,7 @@ def statistics_per_player(request):
     years = sorted(dicc_match.keys())
     stats['games_won_per_year'] = [dicc_match[y]['won'] for y in years]
     stats['games_lost_per_year'] = [dicc_match[y]['lost'] for y in years]
+    stats['degree_afinity'] = json.dumps(degree_afinity)
 
     # Cálculos finales
     stats['total_wins'] = stats['won_games_local'] + stats['won_games_visiting']
@@ -370,6 +451,7 @@ def statistics_per_player(request):
         **stats,
         "years": years,
         "seasons": seasons,
+
     }
 
     return render(request, 'player_statistics.html', context)

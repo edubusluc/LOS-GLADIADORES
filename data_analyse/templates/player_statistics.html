@@ -17,6 +17,7 @@
       lost_games_local: {{ lost_games_local|escape }},
       won_games_visiting: {{ won_games_visiting|escape }},
       lost_games_visiting: {{ lost_games_visiting|escape }},
+      degree_afinity: {{ degree_afinity|safe }},
     };
     </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -119,6 +120,18 @@
         {% endif %}
       </div>
     </div>
+
+    <div class="card">
+      <h2>Grado de afinidad</h2>
+      {% if selected_player %}
+      <div class="chart-container" style="margin-top: 20px;">
+        <canvas id="myAffinityChart"></canvas>
+      </div>
+      {% else %}
+      <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
+      {% endif %}
+    </div>
+
   </div>
   <script src="{% static 'js/player_statistics.js' %}"></script>
 </body>

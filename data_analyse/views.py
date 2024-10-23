@@ -386,12 +386,9 @@ def degree_of_affinity(player):
         else:
             affinity = ((weighted_wins - loss_penalty) / total_matches) * 100
 
-        # Normalizar la afinidad para que no supere 100
-        affinity = min(affinity, 100)
-
-        # Si deseas agregar un efecto de experiencia:
         experience_factor = min(1 + (total_matches / 10), 2)  # Aumenta el efecto con el número de partidos
         affinity *= experience_factor
+        affinity = max(affinity, 0)  # Si es menor que 0, establecer en 0
         affinity = min(affinity, 100)  # Asegurar que no supere 100
         
         affinity_results[str(other.name)] = affinity  # Suponiendo que cada jugador tiene un atributo `name`

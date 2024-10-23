@@ -172,6 +172,8 @@ def team_statistics(request):
     selected_season = request.GET.get("season")
     team = get_team()
 
+    seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
+
     dicc = column_chart(selected_season)
     column_chart_data = format_for_chart(dicc)
 
@@ -329,6 +331,8 @@ def statistics_per_player(request):
     all_match = Match.objects.all()
     players = Player.objects.all()
     seasons = get_total_season(all_match)
+
+    seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
 
     player_id = request.GET.get('player')
     selected_season = request.GET.get('season')

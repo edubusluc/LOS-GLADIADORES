@@ -7,7 +7,7 @@
         <h1>Crear nueva publicación</h1>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ form.as_p }}
+            {{ post_form.as_p }}
 
             <!-- Desplegable para seleccionar un partido -->
             <label for="match_select">Selecciona un partido:</label>
@@ -17,6 +17,10 @@
                     <option value="{{ match.id }}">{{ match }}</option>
                 {% endfor %}
             </select>
+
+            <!-- Campo para seleccionar múltiples imágenes -->
+            <label for="images">Selecciona imágenes:</label>
+            <input type="file" name="images" id="images" multiple>
 
             <button type="submit" class="button">Publicar</button>
         </form>

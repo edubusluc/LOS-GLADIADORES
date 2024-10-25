@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from core.views import error_404_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("post.urls")),
@@ -27,4 +29,7 @@ urlpatterns = [
     path('callLog/',include('callLog.urls')),
     path('penalty/',include('penalty.urls')),
     path('core/', include('core.urls')),
+    
 ]
+
+handler404 = error_404_view

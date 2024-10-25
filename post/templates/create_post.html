@@ -4,23 +4,42 @@
 {% block content %}
 <body>
     <div class="table-container">
-        <h1>Crear nueva publicación</h1>
-        <form method="POST" enctype="multipart/form-data">
+        <h1 class="form-title">Crear nueva publicación</h1>
+        
+        <!-- Mensajes de error -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-message">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" class="form-post">
             {% csrf_token %}
             {{ post_form.as_p }}
 
-            <!-- Desplegable para seleccionar un partido -->
-            <label for="match_select">Selecciona un partido:</label>
-            <select id="match_select" name="match_id">
-                <option value="">-- Selecciona un partido --</option>
-                {% for match in matches %}
-                    <option value="{{ match.id }}">{{ match }}</option>
+            <!-- Mostrar errores específicos de cada campo -->
+            {% for field in post_form %}
+                {% for error in field.errors %}
+                    <div class="alert-message">{{ error }}</div>
                 {% endfor %}
-            </select>
+            {% endfor %}
 
-            <!-- Campo para seleccionar múltiples imágenes -->
-            <label for="images">Selecciona imágenes:</label>
-            <input type="file" name="images" id="images" multiple>
+            <div class="form-group">
+                <label for="match_select">Selecciona un partido:</label>
+                <select id="match_select" name="match_id" class="form-select">
+                    <option value="">-- Selecciona un partido --</option>
+                    {% for match in matches %}
+                        <option value="{{ match.id }}">{{ match }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="images">Selecciona imágenes:</label>
+                <input type="file" name="images" id="images" multiple class="form-input">
+            </div>
 
             <button type="submit" class="button">Publicar</button>
         </form>

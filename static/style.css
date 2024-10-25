@@ -101,16 +101,6 @@ body {
 
 /* FORMATO PARA LOS FORMULARIOS */
 input[type="text"],
-select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
-}
-
-input[type="text"],
 input[type="password"],
 select {
     width: 100%;

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Post, Image
 from .forms import PostForm
 from match.models import Match
+from django.contrib import messages
 
 def home(request):
     posts = Post.objects.prefetch_related('images').all().order_by('-created_at')
@@ -13,11 +14,19 @@ def home(request):
 def create_post(request):
     matches = Match.objects.filter(draft_mode=False)
     if request.method == 'POST':
-        post_form = PostForm(request.POST)
+        form = PostForm(request.POST)
         files = request.FILES.getlist('images')  # Obtener los archivos subidos
 
-        if post_form.is_valid() and files:
-            post = post_form.save(commit=False)
+        # Verificar si el formulario es válido
+        if form.is_valid():
+            if not files:  # Si no hay imágenes
+                messages.error(request, 'Debes seleccionar al menos una imagen')
+                return render(request, 'create_post.html', {  # Volver a renderizar con el mensaje de error
+                    'post_form': form,
+                    'matches': matches
+                })
+
+            post = form.save(commit=False)
 
             match_id = request.POST.get('match_id')  # Obtener el ID del partido seleccionado
             if match_id:
@@ -34,10 +43,14 @@ def create_post(request):
                 Image.objects.create(post=post, image=file)
 
             return redirect('home')
+        else:
+            # Aquí puedes manejar los errores del formulario si es necesario
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+
     else:
-        post_form = PostForm()
+        form = PostForm()
 
     return render(request, 'create_post.html', {
-        'post_form': post_form,
+        'post_form': form,
         'matches': matches
     })

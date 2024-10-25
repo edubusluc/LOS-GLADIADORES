@@ -11,7 +11,7 @@ from penalty.models import Penalty
 
 # Create your views here.
 def list_match(request):
-    match = Match.objects.all()
+    match = Match.objects.all().order_by('-start_date')
     return render(request, "list_match.html", {'match': match})
 
 @login_required

@@ -16,10 +16,13 @@ body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
     color: #333;
-    height: 100%;
+    height: 100vh; /* Cambiar a 100vh para ocupar toda la altura de la ventana */
+    margin: 0; /* Eliminar márgenes para evitar espacio en blanco */
+
     background-image: url("/static/background-GLADIADOR.png");
-    padding-bottom: 10px; /* Agrega un margen inferior de 10px */
-    /* Asegura que el HTML y el body ocupen toda la altura */
+    background-size: cover; /* Ajusta el tamaño de la imagen para cubrir todo el fondo */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
+    background-attachment: fixed; /* Mantiene la imagen fija al hacer scroll */
 }
 
 /* Contenido principal */

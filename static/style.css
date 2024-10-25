@@ -18,6 +18,7 @@ body {
     color: #333;
     height: 100%;
     background-image: url("/static/background-GLADIADOR.png");
+    padding-bottom: 10px; /* Agrega un margen inferior de 10px */
     /* Asegura que el HTML y el body ocupen toda la altura */
 }
 
@@ -233,12 +234,7 @@ label {
 }
 
 img {
-    width: 100%; /* Asegúrate de que la imagen ocupe todo el ancho de su contenedor */
-    max-width: 400px; /* Establece un tamaño máximo para la imagen */
-    height: auto; /* Mantiene la relación de aspecto */
     border-radius: 8px; /* Bordes redondeados para un estilo más moderno */
-    object-fit: cover; /* Asegura que la imagen cubra el contenedor sin deformarse */
-    margin-top: 10px;
 }
 
 /* FORMATO PARA LAS ESTADÍSTICAS */

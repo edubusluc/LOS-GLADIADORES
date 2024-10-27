@@ -11,3 +11,6 @@ class Call(models.Model):
 
     class Meta:
         unique_together = ('match',)
+
+    def __str__(self):
+        return f"{self.match.local.name} vs {self.match.visiting.name}"

@@ -1,23 +1,47 @@
 [
     {
         "name": "LOS GLADIADORES",
-        "in_group": true
+        "location":"C. Castilla Leon, 237, 41909 Salteras, Sevilla",
+        "in_group": true,
+        "photo": "static/team/losGladiadores_photo.png"
     },
     {
         "name": "LA MAGIA DEL PADEL C",
-        "in_group": true
+        "location":"Pol. La estrella, Coria del Río",
+        "in_group": true,
+        "photo": "static/team/lamagia_photo.jpg"
     },
     {
         "name": "CLUB DE PADEL BURGUILLOS BETA",
-        "in_group": true
+        "location":"BURGPADEL",
+        "in_group": true,
+        "photo": "static/team/burguillos_photo.jpg"
     },
     {
         "name": "LFP TOMARES MASC. B. 500",
-        "in_group": true
+        "location":"INSTALACIONES DEPORTIVAS MUNICIPALES CAMINO VIEJO",
+        "in_group": true,
+        "photo": "static/team/tomares_photo.jpg"
+    },
+    {
+        "name": "CLUB DE PÁDEL BDB",
+        "location":"EL REMATE PADEL SEVILLA",
+        "in_group": true,
+        "photo": "static/team/bdb_photo.png"
+    },
+    {
+        "name": "ASOCIACION DE PERSONAL LA CAIXA",
+        "location":"SITING PADEL CLUB",
+        "in_group": true,
+        "photo": "static/team/La_Caixa_logo.png"
     },
     {
         "name": "CÍRCULO MERCANTIL E INDUSTRIAL DE SEVILLA",
-        "in_group": false
+        "location":"Círculo Mercantil e Industrial de Sevilla (Instalaciones Deportivas)",
+        "in_group": false,
+        "photo": "static/team/los_gladiadores.jpg"
     }
+
+
     
 ]

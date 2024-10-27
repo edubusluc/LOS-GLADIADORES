@@ -98,7 +98,9 @@ def create_team():
         for m in messages_content:
             Team.objects.create(
                 name = m['name'],
-                in_group = m['in_group']
+                in_group = m['in_group'],
+                location = m['location'],
+                photo = m['photo']
             )
 
 def create_games():

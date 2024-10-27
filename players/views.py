@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import Playerform
+from .forms import PlayerForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from team.models import Team
+from django.contrib import messages
 from match.models import Game
 from players.models import Player
 from django.db.models import Q
@@ -12,20 +12,20 @@ from django.db.models import Q
 @login_required
 def create_player(request):
     if request.method == "POST":
-        form = Playerform(request.POST, request.FILES)
-
+        form = PlayerForm(request.POST, request.FILES)
         if form.is_valid():
-            player = form.save(commit=False)
-            default_team = get_object_or_404(Team, name = "LOS GLADIADORES")
-            player.team = default_team
-            player.save()
             form.save()
-            return redirect("list_players") 
-
+            return redirect("list_players")
+        else: 
+            messages.error(request, "Error al crear el jugador. Por favor, verifica los datos.")
     else:
-        form = Playerform()  # Crea una nueva instancia del formulario para mostrar en GET
+        form = PlayerForm()
 
-    return render(request, "create_player.html", {"form": form})  # Renderiza el formulario
+    # Agregar clases a cada campo
+    for field in form:
+        field.field.widget.attrs.update({'class': 'form-control'})
+
+    return render(request, "create_player.html", {"form": form})
 
 
 

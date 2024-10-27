@@ -5,3 +5,9 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ['title','content']
+
+    def __init__(self, *args, **kwargs):
+        super(PostForm, self).__init__(*args, **kwargs)
+        self.fields['title'].label = "Título de la Publicación"
+        self.fields['content'].label = "Contenido"  
+

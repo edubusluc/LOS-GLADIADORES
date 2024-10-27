@@ -1,8 +1,14 @@
 [
     {
         "game_criteria":{
-            "player_1_visiting":"Eduardo",
-            "player_2_visiting": "Borja"
+            "player_1_visiting":{
+                    "name": "Eduardo",
+                    "last_name": "Bustamante Lucena"  
+                },
+                "player_2_visiting":{
+                    "name": "Borja",
+                    "last_name": "Molina Müller"  
+                }
         },
         "results":[
             {
@@ -20,8 +26,14 @@
     },
     {
         "game_criteria":{
-            "player_1_visiting":"Alberto",
-            "player_2_visiting": "Aurelio"
+            "player_1_visiting":{
+                "name": "Alberto",
+                "last_name": "Montaño León"  
+            },
+            "player_2_visiting":{
+                "name": "Aurelio",
+                "last_name": "Bielsa Martín"  
+            }
         },
         "results":[
             {
@@ -39,8 +51,14 @@
     },
     {
         "game_criteria":{
-            "player_1_visiting":"Dani",
-            "player_2_visiting": "Juanfran"
+            "player_1_visiting":{
+                    "name": "Daniel",
+                    "last_name": "Carratala Rius"  
+                },
+                "player_2_visiting":{
+                    "name": "Juan Francisco",
+                    "last_name": "Romero Crespo"  
+                }
         },
         "results":[
             {
@@ -58,8 +76,14 @@
     },
     {
         "game_criteria":{
-            "player_1_visiting":"Gonzalo",
-            "player_2_visiting": "Pepe"
+            "player_1_visiting":{
+                    "name": "Gonzalo",
+                    "last_name": "Santana Alonso"  
+                },
+                "player_2_visiting":{
+                    "name": "Jose María",
+                    "last_name": "Cano Raya"  
+                }
         },
         "results":[
             {
@@ -77,8 +101,14 @@
     },
     {
         "game_criteria":{
-            "player_1_visiting":"Jordi",
-            "player_2_visiting": "Antonio"
+            "player_1_visiting": {
+                    "name": "Jordi",
+                    "last_name": "Beltrán Vega"  
+                },
+                "player_2_visiting": {
+                    "name": "Antonio",
+                    "last_name": "Caro Bermúdez"  
+                }
         },
         "results":[
             {

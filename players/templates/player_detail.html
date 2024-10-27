@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="table-container">
+    <h1>Detalles de {{ player.name }}</h1>
+    <p><strong>Posición:</strong> {{ player.position }}</p>
+    <p><strong>Mano hábil:</strong> {{ player.hand }}</p>
+    <p><strong>Rendimiento actual:</strong> {{ emoticon }}</p> <!-- Mostrar la puntuación normalizada -->
+
+    <h2 class="mb-3">Últimos Partidos</h2>
+    <div class="list-group">
+        {% for game in games %}
+            <div class="list-group-item">
+                {% if game.winner == 'Local' %}
+                    {% if player == game.player_1_local or player == game.player_2_local %}
+                        <h5 class="mb-1 text-success">
+                            {{ game.match.local }} vs {{ game.match.visiting }} - ¡Partido ganado!
+                        </h5>
+                    {% else %}
+                        <h5 class="mb-1 text-danger">
+                            {{ game.match.local }} vs {{ game.match.visiting }} - Un mal día.
+                        </h5>
+                    {% endif %}
+                {% elif game.winner == 'Visitante' %}
+                    {% if player == game.player_1_visiting or player == game.player_2_visiting %}
+                        <h5 class="mb-1 text-success">
+                            {{ game.match.local }} vs {{ game.match.visiting }} - ¡Partido ganado!
+                        </h5>
+                    {% else %}
+                        <h5 class="mb-1 text-danger">
+                            {{ game.match.local }} vs {{ game.match.visiting }} - Un mal día.
+                        </h5>
+                    {% endif %}
+                {% endif %}
+                
+                <div class="score-details">
+                    {% for result in game.results.all %}
+                        <div class="py-1">
+                            {% if result.set3_local == 0 %}
+                                {{ result.set1_local }} - {{ result.set1_visiting }} / {{ result.set2_local }} - {{ result.set2_visiting }}
+                            {% else %}
+                                {{ result.set1_local }} - {{ result.set1_visiting }} / {{ result.set2_local }} - {{ result.set2_visiting }} / {{ result.set3_local }} - {{ result.set3_visiting }}
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="bg-warning text-white p-2 rounded">No hay resultados para este juego.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-warning text-white p-2 rounded">No hay partidos registrados.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

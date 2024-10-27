@@ -2,18 +2,30 @@
 {% load static %}
 
 {% block content %}
-    <body>
+<body>
     <div class="table-container">
-                <h1>Crear Jugador</h1>
-                <form method="POST" class="mt-4">
-                    {% csrf_token %}
-                    <div>
-                        {{ form.as_p }} <!-- Muestra el formulario en formato de párrafo -->
-                    </div>
-                    <div class="text-center">
-                        <button type="submit" class="button">Crear Jugador</button>
-                    </div>
-                </form>
+        {% if form.errors %}
+        <div class="alert-message">
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <h1>Crear Jugador</h1>
+        <form method="POST" class="mt-4" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div>
+                {{ form.as_p }} <!-- Muestra el formulario en formato de párrafo -->
+            </div>
+            <div class="text-center">
+                <button type="submit" class="button">Crear Jugador</button>
+            </div>
+        </form>
+        
     </div>
 </body>
 {% endblock %}

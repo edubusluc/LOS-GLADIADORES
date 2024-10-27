@@ -9,8 +9,14 @@
                 "n_game":1,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Eduardo",
-                "player_2_visiting":"Borja",
+                "player_1_visiting":{
+                    "name": "Eduardo",
+                    "last_name": "Bustamante Lucena"  
+                },
+                "player_2_visiting":{
+                    "name": "Borja",
+                    "last_name": "Molina Müller"  
+                },
                 "score": "3",
                 "winner": "Visitante",
                 "draft_mode": false
@@ -19,8 +25,14 @@
                 "n_game":2,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Alberto",
-                "player_2_visiting":"Aurelio",
+                "player_1_visiting":{
+                    "name": "Alberto",
+                    "last_name": "Montaño León"  
+                },
+                "player_2_visiting":{
+                    "name": "Aurelio",
+                    "last_name": "Bielsa Martín"  
+                },
                 "score": "3",
                 "winner": "Local",
                 "draft_mode": false
@@ -29,8 +41,14 @@
                 "n_game":3,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Dani",
-                "player_2_visiting":"Juanfran",
+                "player_1_visiting":{
+                    "name": "Daniel",
+                    "last_name": "Carratala Rius"  
+                },
+                "player_2_visiting":{
+                    "name": "Juan Francisco",
+                    "last_name": "Romero Crespo"  
+                },
                 "score": "2",
                 "winner": "Visitante",
                 "draft_mode": false
@@ -40,19 +58,31 @@
                 "n_game":4,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Gonzalo",
-                "player_2_visiting":"Pepe",
+                "player_1_visiting":{
+                    "name": "Gonzalo",
+                    "last_name": "Santana Alonso"  
+                },
+                "player_2_visiting":{
+                    "name": "Jose María",
+                    "last_name": "Cano Raya"  
+                },
                 "score": "2",
                 "winner": "Local",
                 "draft_mode": false
             },
 
             {
-                "n_game":5,
+                "n_game": 5,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Jordi",
-                "player_2_visiting":"Antonio",
+                "player_1_visiting": {
+                    "name": "Jordi",
+                    "last_name": "Beltrán Vega"  
+                },
+                "player_2_visiting": {
+                    "name": "Antonio",
+                    "last_name": "Caro Bermúdez"  
+                },
                 "score": "2",
                 "winner": "Local",
                 "draft_mode": false

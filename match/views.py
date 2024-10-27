@@ -8,6 +8,7 @@ from team.models import Team
 from datetime import datetime
 from callLog.models import CallLog
 from penalty.models import Penalty
+from players.views import calculate_score
 
 # Create your views here.
 def list_match(request):
@@ -17,29 +18,56 @@ def list_match(request):
 @login_required
 def create_match(request):
     if request.method == "POST":
+        # Obtiene los datos del formulario
         local_id = request.POST.get('local')
         visiting_id = request.POST.get('visiting')
         start_date_str = request.POST.get('start_date')
-        
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+
+        # Intenta convertir la fecha
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return render(request, "create_match.html", {
+                "form": MatchForm(request.POST),
+                "error": "Fecha no válida. Usa el formato AAAA-MM-DD."
+            })
 
         # Verifica que todos los campos necesarios están presentes
+        try:
+            local_team = Team.objects.get(id=local_id)
+            visiting_team = Team.objects.get(id=visiting_id)
+        except Team.DoesNotExist:
+            return render(request, "create_match.html", {
+                "form": MatchForm(request.POST),
+                "error": "Uno de los equipos no existe."
+            })
+
+        # Verifica si el enfrentamiento es válido
+        if local_team.name != "LOS GLADIADORES" and visiting_team.name != "LOS GLADIADORES":
+            form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
+            return render(request, "create_match.html", {
+                "form": form,
+                "error": "No es un enfrentamiento válido. LOS GLADIADORES deben ser locales o visitantes"
+            })
+
+        # Verifica si los campos están completos
         if local_id and visiting_id and start_date:
-            match = Match.objects.create(
+            Match.objects.create(
                 local_id=local_id,
-                visiting_id=visiting_id,  
+                visiting_id=visiting_id,
                 start_date=start_date,
             )
-            match.save()
-
-            return redirect("list_match")  
+            return redirect("list_match")
         else:
-            return render(request, "create_match.html", {"error": "Por favor, completa todos los campos."})
-
+            form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
+            return render(request, "create_match.html", {
+                "form": form,
+                "error": "Por favor, completa todos los campos."
+            })
     else:
-        form = MatchForm() 
+        form = MatchForm()
 
-    return render(request, "create_match.html", {"form": form})  # Renderiza el formulario
+    return render(request, "create_match.html", {"form": form})
 
 
 @login_required
@@ -307,8 +335,7 @@ def save_games(all_games_data):
             player_2_visiting=game_data['player_2_visiting'],
             score=game_data['score']
         )
-
-
+    
 
 
 @login_required
@@ -390,13 +417,14 @@ def valid_close_match(games,match):
             return False, "No se pueden cerrar actas, algunos partidos no tienen resultado."
     
     return True, None     
+
 @login_required
 def close_match(request, match_id):
     match = Match.objects.get(id=match_id)
     games = match.games.all()
 
     # Validar si se pueden cerrar las actas
-    is_valid, error_message = valid_close_match(games,match)
+    is_valid, error_message = valid_close_match(games, match)
     if not is_valid:
         messages.error(request, error_message)
         return redirect(call_for_match, match_id=match_id)
@@ -404,17 +432,37 @@ def close_match(request, match_id):
     # Calcular puntos y actualizar ganadores
     points_local, points_visiting = calculate_points(games)
 
-    #Dar por finalizado los juegos:
-    for g in games:
-        g.draft_mode = False
-        g.save()
+    # Dar por finalizado los juegos
+    for game in games:
+        game.draft_mode = False
+        game.save()
 
     # Determinar el resultado del partido
     match.result = determine_match_result(points_local, points_visiting)
     match.result_points = f"{points_local}/{points_visiting}"
     match.draft_mode = False
     match.save()
+
+    # Actualizar el rendimiento de los jugadores
+    if match.local.name == "LOS GLADIADORES":
+        update_player_scores(games, is_local=True)
+    elif match.local.name == "LOS GLADIADORES":
+        update_player_scores(games, is_local=False)
+
     return redirect('list_match')
+
+
+def update_player_scores(games, is_local):
+    for game in games:
+        if is_local:
+            players = [game.player_1_local, game.player_2_local]
+        else:
+            players = [game.player_1_visiting, game.player_2_visiting]
+
+        for player in players:
+            player_score = calculate_score(player)
+            player.score = player_score
+            player.save()
 
 
     

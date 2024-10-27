@@ -36,6 +36,7 @@ def create_players():
         for m in messages_content:
             Player.objects.create(
                 name = m['name'],
+                last_name = m['last_name'],
                 position = m['position'],
                 skillfull_hand = m['skillfull_hand'],
                 team = team
@@ -119,8 +120,16 @@ def create_games():
                 game = Game.objects.create(
                     match = match,
                     n_game = m["n_game"],
-                    player_1_visiting = Player.objects.get(name = m["player_1_visiting"]),
-                    player_2_visiting =Player.objects.get(name=m["player_2_visiting"]),
+                    player_1_visiting = Player.objects.get(
+                        name=m["player_1_visiting"]["name"], 
+                        last_name=m["player_1_visiting"]["last_name"]
+                    ),
+
+                    player_2_visiting = Player.objects.get(
+                        name=m["player_2_visiting"]["name"], 
+                        last_name=m["player_2_visiting"]["last_name"]
+                    ),
+
                     score =m["score"],
                     winner =m["winner"],
                     draft_mode = m["draft_mode"]
@@ -135,8 +144,15 @@ def create_result():
             results = g["results"]
             try:
                 game = Game.objects.get(
-                    player_1_visiting = Player.objects.get(name=game_criteria["player_1_visiting"]),
-                    player_2_visiting = Player.objects.get(name=game_criteria["player_2_visiting"]))
+                    player_1_visiting = Player.objects.get(
+                        name=game_criteria["player_1_visiting"]["name"], 
+                        last_name=game_criteria["player_1_visiting"]["last_name"]
+                    ),
+
+                    player_2_visiting = Player.objects.get(
+                        name=game_criteria["player_2_visiting"]["name"], 
+                        last_name=game_criteria["player_2_visiting"]["last_name"]
+                    ))
             except Match.DoesNotExist:
                 print(f"No se encontró un Game: {game_criteria} con los criterios establecidos")
                 continue

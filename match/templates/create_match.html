@@ -4,15 +4,21 @@
 {% block content %}
 <div class="table-container">
     <h1>Crear Partido</h1>
+
+    {# Mostrar el mensaje de error si existe #}
+    {% if error %}
+    <div class="alert-message">{{ error }}</div>
+    {% endif %}
+
     <form method="POST">
         {% csrf_token %}
-        
+
         {{ form.as_p }}
 
         {# Imprimir errores para cada campo #}
         {% for field in form %}
             {% for error in field.errors %}
-                <div class="error">{{ error }}</div>
+                <div class="alert-message">{{ error }}</div>
             {% endfor %}
         {% endfor %}
 
@@ -20,22 +26,21 @@
     </form>
 </div>
 
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Usa la versión completa -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.js"></script>
 
 <script>
     $(function () {
-        // Utilizamos el ID del campo de fecha para inicializar el datepicker
         $("#{{ form.start_date.id_for_label }}").datepicker({
-            format: 'yyyy-mm-dd', // Formato para coincidir con DateField
+            format: 'yyyy-mm-dd',
             autoclose: true
         });
     });
 </script>
+
 <style>
-        input[type="date"] {
+    input[type="date"] {
         width: 100%;
         padding: 10px;
         border: 1px solid #ccc;

@@ -3,70 +3,69 @@
 
 {% block content %}
 <style>
+    /* Estilo del encabezado */
+    h1 {
+        text-align: center;
+    }
 
-/* Estilo del encabezado */
-h1 {
-    text-align: center;
-}
+    /* Estilo del párrafo */
+    p {
+        text-align: center;
+        font-size: 1.2em;
+        margin: 20px 0;
+    }
 
-/* Estilo del párrafo */
-p {
-    text-align: center;
-    font-size: 1.2em;
-    margin: 20px 0;
-}
+    /* Estilos del formulario */
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-/* Estilos del formulario */
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+    /* Estilo del botón de eliminar */
+    button {
+        background-color: #d9534f;
+        /* Color de fondo rojo */
+        color: white;
+        /* Color del texto */
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 1em;
+        cursor: pointer;
+        margin-bottom: 10px;
+        transition: background-color 0.3s;
+    }
 
-/* Estilo del botón de eliminar */
-button {
-    background-color: #d9534f; /* Color de fondo rojo */
-    color: white; /* Color del texto */
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
-    font-size: 1em;
-    cursor: pointer;
-    margin-bottom: 10px;
-    transition: background-color 0.3s;
-}
+    /* Efecto al pasar el ratón sobre el botón */
+    button:hover {
+        background-color: #c9302c;
+        /* Color más oscuro al pasar el ratón */
+    }
 
-/* Efecto al pasar el ratón sobre el botón */
-button:hover {
-    background-color: #c9302c; /* Color más oscuro al pasar el ratón */
-}
+    /* Estilo del enlace de cancelar */
+    a {
+        text-decoration: none;
+        color: #5bc0de;
+        /* Color azul */
+        font-size: 1em;
+    }
 
-/* Estilo del enlace de cancelar */
-a {
-    text-decoration: none;
-    color: #5bc0de; /* Color azul */
-    font-size: 1em;
-}
-
-/* Efecto al pasar el ratón sobre el enlace */
-a:hover {
-    text-decoration: underline; /* Subrayar el enlace al pasar el ratón */
-}
-
+    /* Efecto al pasar el ratón sobre el enlace */
+    a:hover {
+        text-decoration: underline;
+        /* Subrayar el enlace al pasar el ratón */
+    }
 </style>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eliminar Jugador</title>
-</head>
-<body>
+
+<div class="table-container">
     <h1>Eliminar Jugador</h1>
     <p>¿Estás seguro de que deseas eliminar a "{{ player.name }}"?</p>
-    
+
     <form method="POST">
         {% csrf_token %}
         <button type="submit">Eliminar</button>
         <a href="{% url 'list_players' %}">Cancelar</a>
     </form>
-</body>
+</div>
 {% endblock %}

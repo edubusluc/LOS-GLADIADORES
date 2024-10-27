@@ -1,98 +1,124 @@
 [
     {"name":"Eduardo",
+    "last_name": "Bustamante Lucena",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Alberto",
+    "last_name": "Montaño León",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Aurelio",
+    "last_name": "Bielsa Martín",
     "position":"Derecha",
     "skillfull_hand":"Zurdo"
     },
 
-    {"name":"Alberto C",
+    {"name":"Alberto",
+    "last_name": "Castro Luque",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Urri",
+    {"name":"Antonio",
+    "last_name": "Urraco Rivero",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Borja",
+    "last_name": "Molina Müller",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
-    {"name":"Mumpao",
+    {"name":"Juan Antonio",
+    "last_name": "Lopez Mumpao",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Dani",
+    {"name":"Daniel",
+    "last_name": "Carratala Rius",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Fabrizio",
+    "last_name": "Bravi",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Gonzalo",
+    "last_name": "Santana Alonso",
     "position":"Mixto",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Juanfran",
+    {"name":"Juan Francisco",
+    "last_name": "Romero Crespo",
     "position":"Mixto",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Julián",
+    "last_name": "Ruiz Delgado",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
     {"name":"Pablo",
+    "last_name": "Delgado Pascual",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Marcelo",
+    "last_name": "Dominguez Costa",
     "position":"Derecha",
     "skillfull_hand":"Zurdo"
     },
 
-    {"name":"Pepe",
+    {"name":"Jose María",
+    "last_name": "Cano Raya",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Toni",
+    "last_name": "Morillo Rodríguez",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Jesús",
+    "last_name": "Sánchez Fernández",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Alfredo",
+    "last_name": "Delgado",
     "position":"Mixto",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Antonio",
+    "last_name": "Noguer Jiménez",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
     {"name":"Jordi",
+    "last_name": "Beltrán Vega",
+    "position":"Derecha",
+    "skillfull_hand":"Diestro"
+    },
+
+    {"name":"Antonio",
+    "last_name": "Caro Bermúdez",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     }

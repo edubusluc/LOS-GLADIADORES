@@ -1,3 +1,4 @@
+import unicodedata
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import PlayerForm
@@ -6,6 +7,8 @@ from django.contrib import messages
 from match.models import Game
 from players.models import Player
 from django.db.models import Q
+
+from .scraper import scrape_scores
 # Create your views here.
 
 
@@ -35,9 +38,7 @@ def list_players(request):
     paginator = Paginator(players, 6)  # Puedes ajustar el número de jugadores por página
 
     # Obtén el número de página de la solicitud GET
-    page = request.GET.get('page')
-
-    
+    page = request.GET.get('page')  
 
     try:
         players = paginator.page(page)
@@ -150,6 +151,62 @@ def calculate_score(player):
     normalized_score = max(0, min(10, (score / max_possible_score) * 10)) if max_possible_score > 0 else 0
     
     return round(normalized_score)  # Retorna la puntuación normalizada
+
+
+
+def find_player_score(player_name, scores_list):
+    # Filtrar la lista para encontrar al jugador por nombre
+    player_scores = [player for player in scores_list if player['name'].lower() == player_name.lower()]
+    
+    if player_scores:
+        return player_scores[0]  # Retornar el primer resultado encontrado
+    else:
+        return None  # Retornar None si no se encuentra el jugador
+    
+
+
+#SNP SCORE
+def get_snp_score(request):
+    dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", "j3du")
+
+    for p in dicc:
+        name = p["name"]
+        score = p["score"]
+        name_parts = name.split()
+
+        if len(name_parts) == 2:
+            name = name_parts[0]
+            last_name = name_parts[1]
+
+            try:
+                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
+                player.snp_score = score
+                player.save()
+            except: 
+                print(f"NO se encontro al jugador {name} {last_name}")
+
+        if len(name_parts) == 3:
+            name = name_parts[0]
+            last_name = ' '.join(name_parts[1:])
+            try:
+                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
+                player.snp_score = score
+                player.save()
+            except: 
+                print(f"NO se encontro al jugador {name} {last_name}")
+        
+        if len(name_parts) > 3:
+            name = ' '.join(name_parts[:2])
+            last_name = ' '.join(name_parts[2:])
+            try:
+                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
+                player.snp_score = score
+                player.save()
+            except: 
+                print(f"NO se encontro al jugador {name} {last_name}")
+    return redirect("list_players")
+
+
 
 
 

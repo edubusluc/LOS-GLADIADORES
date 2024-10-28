@@ -73,23 +73,35 @@ def create_call():
         for c in calls_content:
             match_criteria = c["match_criteria"]
             players = c["players"]
+            players_list = []  # Reiniciar para cada partido
 
             try:
                 match = Match.objects.get(
-                    local=Team.objects.get(name = match_criteria["local_team"]),
-                    visiting=Team.objects.get(name = match_criteria["visitor_team"])
+                    local=Team.objects.get(name=match_criteria["local_team"]),
+                    visiting=Team.objects.get(name=match_criteria["visitor_team"])
                 )
             except Match.DoesNotExist:
                 print(f"No se encontró el partido con los criterios: {match_criteria}")
                 continue
 
             call = Call.objects.create(
-                match=match, 
+                match=match,
                 draft_mode=c['draft_mode']
             )
 
-            players = Player.objects.filter(name__in=c['players'])
-            call.players.set(players)
+            for player in players:
+                name = player['name']
+                last_name = player['last_name']
+                try:
+                    player_instance = Player.objects.get(
+                        name=name,
+                        last_name=last_name
+                    )
+                    players_list.append(player_instance)  # Agregar a la lista de jugadores
+                except Player.DoesNotExist:
+                    print(f"No se encontró el jugador: {name} {last_name}")
+
+            call.players.set(players_list)
 
 
 def create_team():

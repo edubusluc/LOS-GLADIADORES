@@ -1,124 +1,124 @@
 [
-    {"name":"Eduardo",
-    "last_name": "Bustamante Lucena",
+    {"name":"EDUARDO",
+    "last_name": "BUSTAMANTE LUCENA",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Alberto",
-    "last_name": "Montaño León",
+    {"name":"ALBERTO",
+    "last_name": "MONTAÑO LEON",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Aurelio",
-    "last_name": "Bielsa Martín",
+    {"name":"AURELIO",
+    "last_name": "BIELSA MARTIN",
     "position":"Derecha",
     "skillfull_hand":"Zurdo"
     },
 
-    {"name":"Alberto",
-    "last_name": "Castro Luque",
+    {"name":"ALBERTO",
+    "last_name": "CASTRO LUQUE",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Antonio",
-    "last_name": "Urraco Rivero",
+    {"name":"ANTONIO",
+    "last_name": "URRACO RIVERO",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Borja",
-    "last_name": "Molina Müller",
+    {"name":"BORJA",
+    "last_name": "MOLINA MULLER",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
-    {"name":"Juan Antonio",
-    "last_name": "Lopez Mumpao",
+    {"name":"JUAN ANTONIO",
+    "last_name": "LOPEZ MUMPAO",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Daniel",
-    "last_name": "Carratala Rius",
+    {"name":"DANIEL",
+    "last_name": "CARRATALA RIUS",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Fabrizio",
-    "last_name": "Bravi",
+    {"name":"FABRIZIO",
+    "last_name": "BRAVI",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Gonzalo",
-    "last_name": "Santana Alonso",
+    {"name":"GONZALO",
+    "last_name": "SANTANA ALONSO",
     "position":"Mixto",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Juan Francisco",
-    "last_name": "Romero Crespo",
+    {"name":"JUAN FRANCISCO",
+    "last_name": "ROMERO CRESPO",
     "position":"Mixto",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Julián",
-    "last_name": "Ruiz Delgado",
+    {"name":"JULIAN",
+    "last_name": "RUIZ DELGADO",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
-    {"name":"Pablo",
-    "last_name": "Delgado Pascual",
+    {"name":"PABLO",
+    "last_name": "DELGADO PASCUAL",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Marcelo",
-    "last_name": "Dominguez Costa",
+    {"name":"MARCELO",
+    "last_name": "DOMÍNGUEZ COSTA ",
     "position":"Derecha",
     "skillfull_hand":"Zurdo"
     },
 
-    {"name":"Jose María",
-    "last_name": "Cano Raya",
+    {"name":"JOSE MARIA",
+    "last_name": "CANO RAYA",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Toni",
-    "last_name": "Morillo Rodríguez",
+    {"name":"TONI",
+    "last_name": "MORILLO RODRIGUEZ",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Jesús",
-    "last_name": "Sánchez Fernández",
+    {"name":"JESUS",
+    "last_name": "SANCHEZ FERNANDEZ",
     "position":"Revés",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Alfredo",
-    "last_name": "Delgado",
+    {"name":"ALFREDO",
+    "last_name": "DELGADO",
     "position":"Mixto",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Antonio",
-    "last_name": "Noguer Jiménez",
+    {"name":"ANTONIO",
+    "last_name": "NOGUER JIMENEZ",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Jordi",
-    "last_name": "Beltrán Vega",
+    {"name":"JORDI",
+    "last_name": "BELTRAN VEGA",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     },
 
-    {"name":"Antonio",
-    "last_name": "Caro Bermúdez",
+    {"name":"ANTONIO",
+    "last_name": "CARO BERMÚDEZ",
     "position":"Derecha",
     "skillfull_hand":"Diestro"
     }

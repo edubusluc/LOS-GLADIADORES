@@ -2,12 +2,12 @@
     {
         "game_criteria":{
             "player_1_visiting":{
-                    "name": "Eduardo",
-                    "last_name": "Bustamante Lucena"  
+                    "name": "EDUARDO",
+                    "last_name": "BUSTAMANTE LUCENA"  
                 },
                 "player_2_visiting":{
-                    "name": "Borja",
-                    "last_name": "Molina Müller"  
+                    "name": "BORJA",
+                    "last_name": "MOLINA MULLER"   
                 }
         },
         "results":[
@@ -27,12 +27,12 @@
     {
         "game_criteria":{
             "player_1_visiting":{
-                "name": "Alberto",
-                "last_name": "Montaño León"  
+                "name": "ALBERTO",
+                    "last_name": "MONTAÑO LEON"  
             },
             "player_2_visiting":{
-                "name": "Aurelio",
-                "last_name": "Bielsa Martín"  
+                "name": "AURELIO",
+                "last_name": "BIELSA MARTIN"  
             }
         },
         "results":[
@@ -52,12 +52,12 @@
     {
         "game_criteria":{
             "player_1_visiting":{
-                    "name": "Daniel",
-                    "last_name": "Carratala Rius"  
+                    "name": "DANIEL",
+                    "last_name": "CARRATALA RIUS"  
                 },
                 "player_2_visiting":{
-                    "name": "Juan Francisco",
-                    "last_name": "Romero Crespo"  
+                    "name": "JUAN FRANCISCO",
+                    "last_name": "ROMERO CRESPO"  
                 }
         },
         "results":[
@@ -77,12 +77,12 @@
     {
         "game_criteria":{
             "player_1_visiting":{
-                    "name": "Gonzalo",
-                    "last_name": "Santana Alonso"  
+                   "name": "GONZALO",
+                    "last_name": "SANTANA ALONSO"   
                 },
                 "player_2_visiting":{
-                    "name": "Jose María",
-                    "last_name": "Cano Raya"  
+                    "name": "JOSE MARIA",
+                    "last_name": "CANO RAYA"    
                 }
         },
         "results":[
@@ -102,12 +102,12 @@
     {
         "game_criteria":{
             "player_1_visiting": {
-                    "name": "Jordi",
-                    "last_name": "Beltrán Vega"  
+                    "name": "JORDI",
+                    "last_name": "BELTRAN VEGA"  
                 },
                 "player_2_visiting": {
-                    "name": "Antonio",
-                    "last_name": "Caro Bermúdez"  
+                   "name": "ANTONIO",
+                    "last_name": "CARO BERMÚDEZ"    
                 }
         },
         "results":[

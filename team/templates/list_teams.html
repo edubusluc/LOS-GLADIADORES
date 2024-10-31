@@ -38,7 +38,7 @@
                         <img src="{{ team.photo.url }}" class="img-fluid" alt="{{ team.name }}"
                             style="max-width: 100%; height: 150px; object-fit: cover;">
                         {% else %}
-                        <img src="{% static 'team/default_team.png' %}" class="img-fluid" alt="Imagen por defecto"
+                        <img src="{% static 'team/default_team.png' %}" class="img-fluid" alt="{{ team.name }}"
                             style="max-width: 100%; height: 150px; object-fit: cover;">
                         {% endif %}
                     </div>

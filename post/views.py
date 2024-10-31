@@ -13,38 +13,24 @@ def home(request):
 @login_required
 def create_post(request):
     matches = Match.objects.filter(draft_mode=False)
+
     if request.method == 'POST':
         form = PostForm(request.POST)
-        files = request.FILES.getlist('images')  # Obtener los archivos subidos
+        files = request.FILES.getlist('images')
 
-        # Verificar si el formulario es válido
+        # Validar el formulario
         if form.is_valid():
-            if not files:  # Si no hay imágenes
-                messages.error(request, 'Debes seleccionar al menos una imagen')
-                return render(request, 'create_post.html', {  # Volver a renderizar con el mensaje de error
-                    'post_form': form,
-                    'matches': matches
-                })
+            if not files:
+                return handle_error(request, form, matches, 'Debes seleccionar al menos una imagen')
 
             post = form.save(commit=False)
-
-            match_id = request.POST.get('match_id')  # Obtener el ID del partido seleccionado
-            if match_id:
-                try:
-                    match = Match.objects.get(id=match_id)
-                    post.content = f"{match.result}, en el partido {match.local} vs {match.visiting} con resultado final: {match.result_points}"
-                except Match.DoesNotExist:
-                    post.content = "Partido no válido."
+            post.content = generate_post_content(request.POST.get('match_id'))
 
             post.save()
-
-            # Guardar cada imagen asociada a la publicación
-            for file in files:
-                Image.objects.create(post=post, image=file)
+            save_post_images(post, files)
 
             return redirect('home')
         else:
-            # Aquí puedes manejar los errores del formulario si es necesario
             messages.error(request, 'Por favor corrige los errores en el formulario.')
 
     else:
@@ -54,3 +40,23 @@ def create_post(request):
         'post_form': form,
         'matches': matches
     })
+
+def handle_error(request, form, matches, error_message):
+    messages.error(request, error_message)
+    return render(request, 'create_post.html', {
+        'post_form': form,
+        'matches': matches
+    })
+
+def generate_post_content(match_id):
+    if match_id:
+        try:
+            match = Match.objects.get(id=match_id)
+            return f"{match.result}, en el partido {match.local} vs {match.visiting} con resultado final: {match.result_points}"
+        except Match.DoesNotExist:
+            return "Partido no válido."
+    return ""
+
+def save_post_images(post, files):
+    for file in files:
+        Image.objects.create(post=post, image=file)

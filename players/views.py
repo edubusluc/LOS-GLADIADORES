@@ -140,24 +140,17 @@ def calculate_game_statistics(games, player):
     games_win = games_lost = consecutive_wins = max_consecutive_wins = three_point_wins = 0
 
     for game in games:
-        if player in [game.player_1_local, game.player_2_local]:  # Jugador local
-            if game.winner == "Local":
-                games_win += 1
-                consecutive_wins += 1
-                if game.score == 3:
-                    three_point_wins += 1
-            else:
-                games_lost += 1
-                consecutive_wins = 0  # Rompe la racha
-        elif player in [game.player_1_visiting, game.player_2_visiting]:  # Jugador visitante
-            if game.winner == "Visitante":
-                games_win += 1
-                consecutive_wins += 1
-                if game.score == 3:
-                    three_point_wins += 1
-            else:
-                games_lost += 1
-                consecutive_wins = 0  # Rompe la racha
+        is_local = player in [game.player_1_local, game.player_2_local]
+        is_visiting = player in [game.player_1_visiting, game.player_2_visiting]
+        
+        if (is_local and game.winner == "Local") or (is_visiting and game.winner == "Visitante"):
+            games_win += 1
+            consecutive_wins += 1
+            if game.score == 3:
+                three_point_wins += 1
+        elif is_local or is_visiting:
+            games_lost += 1
+            consecutive_wins = 0  # Rompe la racha
 
         # Actualiza la máxima racha de victorias
         max_consecutive_wins = max(max_consecutive_wins, consecutive_wins)
@@ -175,11 +168,6 @@ def calculate_streak_bonus(max_consecutive_wins):
 
 def calculate_three_point_bonus(three_point_wins):
     return three_point_wins * 2  # 2 puntos extra por cada victoria en un partido de 3 puntos
-
-
-
-
-
 
 def find_player_score(player_name, scores_list):
     # Filtrar la lista para encontrar al jugador por nombre

@@ -441,7 +441,7 @@ def close_match(request, match_id):
     # Actualizar el rendimiento de los jugadores
     if match.local.name == "LOS GLADIADORES":
         update_player_scores(games, is_local=True)
-    elif match.local.name == "LOS GLADIADORES":
+    elif match.visiting.name == "LOS GLADIADORES":
         update_player_scores(games, is_local=False)
 
     return redirect('list_match')

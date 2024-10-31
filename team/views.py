@@ -4,16 +4,24 @@ from .models import Team
 from django.contrib import messages
 from django.views.decorators.http import require_GET, require_http_methods
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 # Create your views here.
 @require_GET
 def list_team(request):
-    if request.user.is_authenticated:
-        teams = Team.objects.all()
-        return render(request, "list_teams.html", {"teams": teams})
-    else:   
-        teams = Team.objects.filter(in_group = True)
-        return render(request, "list_teams.html", {"teams": teams}) 
+    # Determina si el usuario está autenticado para filtrar el queryset
+    teams = Team.objects.all() if request.user.is_authenticated else Team.objects.filter(in_group=True)
+    paginator = Paginator(teams, 4)  # Número de equipos por página
+    page = request.GET.get('page')
+
+    try:
+        teams = paginator.page(page)
+    except PageNotAnInteger:
+        teams = paginator.page(1)
+    except EmptyPage:
+        teams = paginator.page(paginator.num_pages)
+
+    return render(request, "list_teams.html", {"teams": teams})
 
 @login_required
 @require_http_methods(["GET", "POST"])

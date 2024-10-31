@@ -1,20 +1,39 @@
 [
     {
-    "local": "LOS GLADIADORES",
-    "visiting": "CÍRCULO MERCANTIL E INDUSTRIAL DE SEVILLA",
-    "start_date": "2023-10-31",
-    "draft_mode": false,
-    "season": "2023-2024",
-    "result": "Victoria Local",
-    "result_points": "10-2"
+        "local": "LOS GLADIADORES",
+        "visiting": "CÍRCULO MERCANTIL E INDUSTRIAL DE SEVILLA",
+        "start_date": "2023-10-31",
+        "draft_mode": false,
+        "season": "2023-2024",
+        "result": "Victoria Local",
+        "result_points": "10-2"
     },
     {
-    "local": "LA MAGIA DEL PADEL C",
-    "visiting": "LOS GLADIADORES",
-    "start_date": "2024-10-06",
-    "draft_mode": false,
-    "result": "Victoria Local",
-    "result_points": "7-5",
-    "season": "2024-2025"
+        "local": "LA MAGIA DEL PADEL C",
+        "visiting": "LOS GLADIADORES",
+        "start_date": "2024-10-06",
+        "draft_mode": false,
+        "result": "Victoria Local",
+        "result_points": "7-5",
+        "season": "2024-2025"
+    },
+    {
+        "local": "LOS GLADIADORES",
+        "visiting": "LFP TOMARES MASC. B. 500",
+        "start_date": "2024-10-20",
+        "draft_mode": false,
+        "result": "Victoria Visitante",
+        "result_points": "3-9",
+        "season": "2024-2025"
+    },
+    {
+        "local": "CLUB DE PADEL BURGUILLOS BETA",
+        "visiting": "LOS GLADIADORES",
+        "start_date": "2024-10-27",
+        "draft_mode": false,
+        "result": "Victoria Local",
+        "result_points": "10-2",
+        "season": "2024-2025"
     }
+    
 ]

@@ -1,127 +1,371 @@
 [
     {
-        "game_criteria":{
-            "player_1_visiting":{
-                    "name": "EDUARDO",
-                    "last_name": "BUSTAMANTE LUCENA"  
-                },
-                "player_2_visiting":{
-                    "name": "BORJA",
-                    "last_name": "MOLINA MULLER"   
-                }
+        "match_criteria": {
+            "local_team": "LA MAGIA DEL PADEL C",
+            "visitor_team": "LOS GLADIADORES"
         },
-        "results":[
+        "games": [
             {
-                "result": "Visitante",
-                "set1_local":"6",
-                "set1_visiting":"4",
-                "set2_local":"4",
-                "set2_visiting":"6",
-                "set3_local":"3",
-                "set3_visiting":"6"
-
-            }
-        ]
-
-    },
-    {
-        "game_criteria":{
-            "player_1_visiting":{
-                "name": "ALBERTO",
-                    "last_name": "MONTAÑO LEON"  
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "EDUARDO",
+                        "last_name": "BUSTAMANTE LUCENA"
+                    },
+                    "player_2_visiting": {
+                        "name": "BORJA",
+                        "last_name": "MOLINA MULLER"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "6",
+                        "set1_visiting": "4",
+                        "set2_local": "4",
+                        "set2_visiting": "6",
+                        "set3_local": "3",
+                        "set3_visiting": "6"
+                    }
+                ]
             },
-            "player_2_visiting":{
-                "name": "AURELIO",
-                "last_name": "BIELSA MARTIN"  
-            }
-        },
-        "results":[
             {
-                "result": "Local",
-                "set1_local":"6",
-                "set1_visiting":"4",
-                "set2_local":"6",
-                "set2_visiting":"4",
-                "set3_local":"0",
-                "set3_visiting":"0"
-
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "ALBERTO",
+                        "last_name": "MONTAÑO LEON"
+                    },
+                    "player_2_visiting": {
+                        "name": "AURELIO",
+                        "last_name": "BIELSA MARTIN"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "4",
+                        "set2_local": "6",
+                        "set2_visiting": "4",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "DANIEL",
+                        "last_name": "CARRATALA RIUS"
+                    },
+                    "player_2_visiting": {
+                        "name": "JUAN FRANCISCO",
+                        "last_name": "ROMERO CRESPO"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "6",
+                        "set1_visiting": "3",
+                        "set2_local": "4",
+                        "set2_visiting": "6",
+                        "set3_local": "5",
+                        "set3_visiting": "7"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "GONZALO",
+                        "last_name": "SANTANA ALONSO"
+                    },
+                    "player_2_visiting": {
+                        "name": "JOSE MARIA",
+                        "last_name": "CANO RAYA"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "7",
+                        "set1_visiting": "6",
+                        "set2_local": "4",
+                        "set2_visiting": "6",
+                        "set3_local": "6",
+                        "set3_visiting": "3"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "JORDI",
+                        "last_name": "BELTRAN VEGA"
+                    },
+                    "player_2_visiting": {
+                        "name": "ANTONIO",
+                        "last_name": "CARO BERMÚDEZ"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "4",
+                        "set2_local": "2",
+                        "set2_visiting": "6",
+                        "set3_local": "6",
+                        "set3_visiting": "4"
+                    }
+                ]
             }
         ]
-
     },
     {
-        "game_criteria":{
-            "player_1_visiting":{
-                    "name": "DANIEL",
-                    "last_name": "CARRATALA RIUS"  
-                },
-                "player_2_visiting":{
-                    "name": "JUAN FRANCISCO",
-                    "last_name": "ROMERO CRESPO"  
-                }
+        "match_criteria": {
+            "local_team": "LOS GLADIADORES",
+            "visitor_team": "LFP TOMARES MASC. B. 500"
         },
-        "results":[
+        "games": [
             {
-                "result": "Visitante",
-                "set1_local":"6",
-                "set1_visiting":"3",
-                "set2_local":"4",
-                "set2_visiting":"6",
-                "set3_local":"5",
-                "set3_visiting":"7"
-
+                "game_criteria": {
+                    "player_1_local": {
+                        "name": "EDUARDO",
+                        "last_name": "BUSTAMANTE LUCENA"
+                    },
+                    "player_2_local": {
+                        "name": "GONZALO",
+                        "last_name": "SANTANA ALONSO"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "3",
+                        "set2_local": "6",
+                        "set2_visiting": "3",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local": {
+                        "name": "ALBERTO",
+                        "last_name": "MONTAÑO LEON"
+                    },
+                    "player_2_local": {
+                        "name": "PABLO",
+                        "last_name": "DELGADO PASCUAL"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "3",
+                        "set1_visiting": "6",
+                        "set2_local": "7",
+                        "set2_visiting": "5",
+                        "set3_local": "4",
+                        "set3_visiting": "6"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local": {
+                        "name": "JUAN FRANCISCO",
+                        "last_name": "ROMERO CRESPO"
+                    },
+                    "player_2_local": {
+                        "name": "MARCELO",
+                        "last_name": "DOMÍNGUEZ COSTA"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "4",
+                        "set1_visiting": "6",
+                        "set2_local": "2",
+                        "set2_visiting": "6",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local": {
+                        "name": "ALBERTO",
+                        "last_name": "CASTRO LUQUE"
+                    },
+                    "player_2_local": {
+                        "name": "TONI",
+                        "last_name": "MORILLO RODRIGUEZ"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "2",
+                        "set1_visiting": "6",
+                        "set2_local": "3",
+                        "set2_visiting": "6",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local": {
+                        "name": "ALFREDO",
+                        "last_name": "DELGADO"
+                    },
+                    "player_2_local": {
+                        "name": "FABRIZIO",
+                        "last_name": "BRAVI"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "7",
+                        "set1_visiting": "6",
+                        "set2_local": "5",
+                        "set2_visiting": "7",
+                        "set3_local": "3",
+                        "set3_visiting": "6"
+                    }
+                ]
             }
         ]
-
     },
     {
-        "game_criteria":{
-            "player_1_visiting":{
-                   "name": "GONZALO",
-                    "last_name": "SANTANA ALONSO"   
-                },
-                "player_2_visiting":{
-                    "name": "JOSE MARIA",
-                    "last_name": "CANO RAYA"    
-                }
+        "match_criteria": {
+            "local_team": "CLUB DE PADEL BURGUILLOS BETA",
+            "visitor_team": "LOS GLADIADORES"
         },
-        "results":[
+        "games": [
             {
-                "result": "Local",
-                "set1_local":"7",
-                "set1_visiting":"6",
-                "set2_local":"4",
-                "set2_visiting":"6",
-                "set3_local":"6",
-                "set3_visiting":"3"
-
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "ANTONIO",
+                        "last_name": "URRACO RIVERO"
+                    },
+                    "player_2_visiting": {
+                        "name": "JOSE MARIA",
+                        "last_name": "CANO RAYA"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "3",
+                        "set2_local": "6",
+                        "set2_visiting": "2",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "JULIAN",
+                        "last_name": "RUIZ DELGADO"
+                    },
+                    "player_2_visiting": {
+                        "name": "JUAN FRANCISCO",
+                        "last_name": "ROMERO CRESPO"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "3",
+                        "set2_local": "6",
+                        "set2_visiting": "2",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "ALBERTO",
+                        "last_name": "MONTAÑO LEON"
+                    },
+                    "player_2_visiting": {
+                        "name": "JORDI",
+                        "last_name": "BELTRAN VEGA"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "3",
+                        "set2_local": "6",
+                        "set2_visiting": "2",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "EDUARDO",
+                        "last_name": "BUSTAMANTE LUCENA"
+                    },
+                    "player_2_visiting": {
+                        "name": "ANTONIO",
+                        "last_name": "CARO BERMÚDEZ"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "6",
+                        "set1_visiting": "2",
+                        "set2_local": "2",
+                        "set2_visiting": "6",
+                        "set3_local": "6",
+                        "set3_visiting": "7"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_visiting": {
+                        "name": "JUAN ANTONIO",
+                        "last_name": "LOPEZ MUMPAO"
+                    },
+                    "player_2_visiting": {
+                        "name": "ALFREDO",
+                        "last_name": "DELGADO"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "7",
+                        "set1_visiting": "6",
+                        "set2_local": "6",
+                        "set2_visiting": "2",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
             }
         ]
-
-    },
-    {
-        "game_criteria":{
-            "player_1_visiting": {
-                    "name": "JORDI",
-                    "last_name": "BELTRAN VEGA"  
-                },
-                "player_2_visiting": {
-                   "name": "ANTONIO",
-                    "last_name": "CARO BERMÚDEZ"    
-                }
-        },
-        "results":[
-            {
-                "result": "Local",
-                "set1_local":"6",
-                "set1_visiting":"4",
-                "set2_local":"2",
-                "set2_visiting":"6",
-                "set3_local":"6",
-                "set3_visiting":"4"
-
-            }
-        ]
-
     }
 ]

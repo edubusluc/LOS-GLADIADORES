@@ -9,11 +9,23 @@ from datetime import datetime
 from callLog.models import CallLog
 from penalty.models import Penalty
 from players.views import calculate_score
+import json
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 # Create your views here.
 def list_match(request):
-    match = Match.objects.all().order_by('-start_date')
-    return render(request, "list_match.html", {'match': match})
+    matches = Match.objects.all().order_by('-start_date')
+    paginator = Paginator(matches, 5)
+    page = request.GET.get('page')
+
+    try:
+        matches = paginator.page(page)
+    except PageNotAnInteger:
+        matches = paginator.page(1)
+    except EmptyPage:
+        matches = paginator.page(paginator.num_pages)
+
+    return render(request, "list_match.html", {'matches': matches})
 
 @login_required
 def create_match(request):
@@ -57,7 +69,7 @@ def create_match(request):
                 visiting_id=visiting_id,
                 start_date=start_date,
             )
-            return redirect("list_match")
+            return redirect("list_match")  # Redirección después de crear el partido
         else:
             form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
             return render(request, "create_match.html", {
@@ -259,7 +271,6 @@ def validate_game_for_match(call):
 def create_game_for_match(request, match_id):
     call = Call.objects.filter(match_id=match_id).first()
     match = get_object_or_404(Match, id=match_id)
-    team = Team.objects.filter(name="LOS GLADIADORES").first()
 
     is_valid, error_message = validate_game_for_match(call)
     if not is_valid:
@@ -267,76 +278,60 @@ def create_game_for_match(request, match_id):
         return redirect('call_for_match', match_id=match_id)
 
     if request.method == "POST":
-        all_games_data, error_messages = process_games_data(request, match, team)
+        ordered_games_data = json.loads(request.POST.get("ordered_games", "[]"))
 
-        if error_messages:
-            for error_message in error_messages:
-                messages.error(request, error_message)
-            return render(request, "create_game.html", {
-                "call": call,
-                "match": match,
-                "team": team,
-                "post_data": request.POST
-            })
+        print(match.local)
 
-        # Guardar los datos de los partidos en la base de datos
-        save_games(all_games_data)
+        for idx, game in enumerate(ordered_games_data, start=1):
+            try:
+                player_1 = Player.objects.get(id=game['player1Id'])
+                player_2 = Player.objects.get(id=game['player2Id'])
+            except Player.DoesNotExist:
+                messages.error(request, "Uno de los jugadores no existe.")
+                return redirect('call_for_match', match_id=match_id)
+
+            if match.local.name == "LOS GLADIADORES":
+                new_game = Game(
+                    match=match,
+                    n_game=idx,  # Asigna el número de juego según el índice
+                    player_1_local=player_1,
+                    player_2_local=player_2,
+                    player_1_visiting=None,  # Si es local, puedes dejarlo en None
+                    player_2_visiting=None,  # Si es local, puedes dejarlo en None
+                    score=calculate_score(idx),
+                    winner=None,  # Asigna el ganador si es necesario
+                    draft_mode=True  # Cambia según la lógica de tu aplicación
+                )
+            elif match.visiting.name == "LOS GLADIADORES":
+                new_game = Game(
+                    match=match,
+                    n_game=idx,  # Asigna el número de juego según el índice
+                    player_1_local=None,
+                    player_2_local=None,
+                    player_1_visiting=player_1,
+                    player_2_visiting=player_2,
+                    score=calculate_score(idx),
+                    winner=None,  # Asigna el ganador si es necesario
+                    draft_mode=True  # Cambia según la lógica de tu aplicación
+                )
+            else:
+                messages.error(request, "El partido no es de LOS GLADIADORES.")
+                return redirect('create_game', match_id=match_id)
+
+            try:
+                new_game.save()
+            except Exception as e:
+                messages.error(request, f"Error al guardar el juego: {str(e)}")
+                return redirect('create_game', match_id=match_id)
+
         return redirect('call_for_match', match_id=match.id)
 
     return render(request, "create_game.html", {"call": call})
 
-
-def process_games_data(request, match, team):
-    """
-    Procesa los datos de los partidos y retorna una lista con los datos válidos y una lista con mensajes de error.
-    """
-    all_games_data = []
-    error_messages = []
-
-    for i in range(1, 6):  # Iterar por los partidos 1 a 5
-        player_1_id = request.POST.get(f'player_1_{i}')
-        player_2_id = request.POST.get(f'player_2_{i}')
-        n_game = request.POST.get(f'n_game_{i}')
-
-        if not player_1_id or not player_2_id:
-            error_messages.append(f"Por favor selecciona ambos jugadores para el partido {n_game}.")
-            continue
-
-        player_1 = get_object_or_404(Player, id=player_1_id)
-        player_2 = get_object_or_404(Player, id=player_2_id)
-        score = 3 if int(n_game) in [1, 2] else 2
-
-        # Determinar si los jugadores son locales o visitantes
-        game_data = {
-            'match': match,
-            'n_game': n_game,
-            'player_1_local': player_1 if match.local.name == team.name else None,
-            'player_2_local': player_2 if match.local.name == team.name else None,
-            'player_1_visiting': player_1 if match.visiting.name == team.name else None,
-            'player_2_visiting': player_2 if match.visiting.name == team.name else None,
-            'score': score
-        }
-        all_games_data.append(game_data)
-
-    return all_games_data, error_messages
-
-
-def save_games(all_games_data):
-    """
-    Guarda los datos de todos los partidos en la base de datos.
-    """
-    for game_data in all_games_data:
-        Game.objects.create(
-            match=game_data['match'],
-            n_game=game_data['n_game'],
-            player_1_local=game_data['player_1_local'],
-            player_2_local=game_data['player_2_local'],
-            player_1_visiting=game_data['player_1_visiting'],
-            player_2_visiting=game_data['player_2_visiting'],
-            score=game_data['score']
-        )
     
-
+def calculate_score(index):
+    if index == 1 or index == 2: return 3
+    else: return 2
 
 @login_required
 def create_result(request, game_id):

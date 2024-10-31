@@ -145,7 +145,7 @@ const myColumnChart = new Chart(columnCtx, {
           {
               label: 'Partidos de 2 puntos perdidos',
               data: partidos2Perdidos,
-              backgroundColor: '#33f3ff', // Amarillo brillante
+              backgroundColor: '#FFA500', 
           },
           {
               label: 'Partidos de 3 puntos ganados',

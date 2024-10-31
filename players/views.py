@@ -83,8 +83,9 @@ def delete_player(request, player_id):
 def show_player(request, player_id):
     player = get_object_or_404(Player, id=player_id)
     games = Game.objects.filter(
-        Q(player_1_local=player) | Q(player_2_local=player) |
-        Q(player_1_visiting=player) | Q(player_2_visiting=player)
+        (Q(player_1_local=player) | Q(player_2_local=player) |
+        Q(player_1_visiting=player) | Q(player_2_visiting=player)) &
+        Q(draft_mode=False)
     ).order_by('-match__start_date')[:5]
     # Calcula la puntuación, si es necesario
     normalized_score = calculate_score(player)  # Llama a la función y guarda el resultado
@@ -106,49 +107,69 @@ def get_emoticon(score):
     else:
         return ""
 
+@login_required
+def force_update_score(request):
+    players = Player.objects.all()
+    for player in players:
+        score = calculate_score(player)
+        player.score = score
+        player.save()
+    return redirect("list_players")
+
+
 def calculate_score(player):
     games = Game.objects.filter(
-        Q(player_1_local=player) | Q(player_2_local=player) |
-        Q(player_1_visiting=player) | Q(player_2_visiting=player)
-    ).order_by('-match__start_date')[:5]
+        (Q(player_1_local=player) | Q(player_2_local=player) |
+        Q(player_1_visiting=player) | Q(player_2_visiting=player)) &
+        Q(draft_mode=False)
+    ).order_by('-match__start_date')[:3]
 
     games_win = 0
     games_lost = 0
     consecutive_wins = 0
     max_consecutive_wins = 0
+    three_point_wins = 0
 
-    for game in games:
-        if player in [game.player_1_local, game.player_2_local]:  # Jugador local
-            if game.winner == "Local":
-                games_win += 1
-                consecutive_wins += 1
-            elif game.winner == "Visitante":
-                games_lost += 1
-                consecutive_wins = 0  # Rompe la racha
-        elif player in [game.player_1_visiting, game.player_2_visiting]:  # Jugador visitante
-            if game.winner == "Visitante":
-                games_win += 1
-                consecutive_wins += 1
-            elif game.winner == "Local":
-                games_lost += 1
-                consecutive_wins = 0  # Rompe la racha
+    if len(games) == 0: 
+        normalized_score = -1
+    else:
+        for game in games:
+            if player in [game.player_1_local, game.player_2_local]:  # Jugador local
+                if game.winner == "Local":
+                    games_win += 1
+                    consecutive_wins += 1
+                    if game.score == 3: three_point_wins +=1
+                elif game.winner == "Visitante":
+                    games_lost += 1
+                    consecutive_wins = 0  # Rompe la racha
+            elif player in [game.player_1_visiting, game.player_2_visiting]:  # Jugador visitante
+                if game.winner == "Visitante":
+                    games_win += 1
+                    consecutive_wins += 1
+                    if game.score == 3: three_point_wins +=1
+                elif game.winner == "Local":
+                    games_lost += 1
+                    consecutive_wins = 0  # Rompe la racha
 
-        # Actualiza la máxima racha de victorias
-        max_consecutive_wins = max(max_consecutive_wins, consecutive_wins)
+            # Actualiza la máxima racha de victorias
+            max_consecutive_wins = max(max_consecutive_wins, consecutive_wins)
 
-    # Puntuación básica
-    score = games_win * 3 - games_lost
+        # Puntuación básica
+        score = games_win * 4 - games_lost
 
     # Bonificación por rachas de victorias
-    score += (max_consecutive_wins - 1) * 3  # 2 puntos por cada victoria consecutiva adicional
+        score += (max_consecutive_wins - 1) * 3  #
 
-    # Calcular el número de partidos jugados
-    total_games_played = games_win + games_lost
-    # Ajustar la puntuación máxima según el número de partidos jugados
-    max_possible_score = total_games_played * 3 + (max_consecutive_wins - 1) * 2  # 3 puntos por victoria
+        # Bonificación por victorias en partidos de 3 puntos
+        score += three_point_wins * 2  # 2 puntos extra por cada victoria en un partido de 3 puntos
 
-    # Puntuación normalizada
-    normalized_score = max(0, min(10, (score / max_possible_score) * 10)) if max_possible_score > 0 else 0
+        # Calcular el número de partidos jugados
+        total_games_played = games_win + games_lost
+        # Ajustar la puntuación máxima según el número de partidos jugados
+        max_possible_score = total_games_played * 3 + (max_consecutive_wins - 1) * 2 + three_point_wins * 2
+
+        # Puntuación normalizada
+        normalized_score = max(0, min(10, (score / max_possible_score) * 10)) if max_possible_score > 0 else 0
     
     return round(normalized_score)  # Retorna la puntuación normalizada
 

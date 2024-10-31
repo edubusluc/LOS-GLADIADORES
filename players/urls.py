@@ -9,4 +9,5 @@ urlpatterns = (
     path("delete_player/<int:player_id>",delete_player, name='delete_player'),
     path("player_details/<int:player_id>/",show_player, name = 'show_player' ),
     path("update_score/", get_snp_score, name="update_score"),
+    path("force_update_score/", force_update_score, name="force_update_score"),
 )

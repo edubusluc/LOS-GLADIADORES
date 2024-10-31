@@ -128,7 +128,7 @@ def count_games(player, role, winner, n_games, season):
 def column_chart(season):
     players = Player.objects.all()
     dicc = {
-        p: {
+        f"{p.name} {p.last_name}": {  # Usar el nombre y apellido como clave
             'Partidos de 2 puntos ganados': 0,
             'Partidos de 2 puntos perdidos': 0,
             'Partidos de 3 puntos ganados': 0,
@@ -136,27 +136,29 @@ def column_chart(season):
         } for p in players
     }
 
+
     for player in players:
+        player_key = f"{player.name} {player.last_name}"
         # Partidos locales
-        dicc[player]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2],season)
-        dicc[player]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2],season)
-        dicc[player]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5],season)
-        dicc[player]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2],season)
+        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2],season)
+        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5],season)
 
         # Partidos visitantes
-        dicc[player]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2],season)
-        dicc[player]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2],season)
-        dicc[player]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5],season)
-        dicc[player]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2],season)
+        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2],season)
+        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5],season)
 
 
     return dicc  # No olvides devolver el diccionario resultante
 
 def format_for_chart(dic):
     players = []
-    for player, stats in dic.items():
+    for player_name, stats in dic.items():
         players.append({
-            'player': str(player), 
+            'player': player_name, 
             'data': [
                 stats['Partidos de 2 puntos ganados'],
                 stats['Partidos de 2 puntos perdidos'],

@@ -31,10 +31,10 @@
     <form method="GET" action="{% url 'player_statistics' %}">
       <label for="player">Selecciona el jugador:</label>
       <select name="player" id="player">
-        <option value="">-- Todos los jugadores --</option>
+        <option value="">-- Selecciona un jugador --</option>
         {% for player in players %}
         <option value="{{ player.id }}" {% if player.id == selected_player %}selected{% endif %}>
-          {{ player.name|escape }}
+          {{ player.name|escape }} {{player.last_name}}
         </option>
         {% endfor %}
       </select>

@@ -30,22 +30,24 @@
     }
 
     /* Estilo de la tarjeta del jugador */
-    .card {
+    .card-player {
         border: none;
         border-radius: 10px;
         overflow: hidden;
         transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    .card:hover {
+    .card-player:hover {
         transform: translateY(-5px);
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     }
 
-    .card-body {
+    .card-player-body {
         background-color: #ffffff;
         padding: 20px;
         display: flex;
+        justify-content: space-between;
+        height: 100%;
     }
 
     /* Contenedor de la imagen del jugador */
@@ -54,13 +56,14 @@
         margin-right: 20px;
     }
 
-    .card-title {
+    .card-player-title {
         font-size: 1.5rem;
         margin-bottom: 10px;
+        padding-top: 0;
         color: #007bff;
     }
 
-    .card-text {
+    .card-player-text {
         margin-bottom: 5px;
         color: #6c757d;
     }
@@ -183,7 +186,7 @@
 }
     /* Responsividad */
     @media (max-width: 768px) {
-        .card-body {
+        .card-player-body {
             flex-direction: column;
             text-align: center;
         }
@@ -210,6 +213,8 @@
         {% if user.is_authenticated %}
         <div class="d-flex flex-column flex-md-row align-items-center gap-2"style="margin-bottom: 10px;">
             <a href="{% url 'create_player' %}" class="btn btn-primary">Nuevo Jugador</a>
+            <a href="{% url 'force_update_score' %}" class="btn btn-danger"onclick="return confirmAndShowLoading();">
+                Forzar actualización de rendimiento</a>
             <a href="{% url 'update_score' %}" class="btn btn-warning" 
             onclick="return confirmAndShowLoading();">
             Actualizar puntuaciones
@@ -221,9 +226,9 @@
     <div class="row">
         {% for player in players %}
         <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 position-relative">
+            <div class="card-player h-100 position-relative">
                 {% if user.is_authenticated %}
-                <div class="d-flex justify-content-end">
+                <div class="d-flex justify-content-end position-absolute top-0 end-0 p-2">
                     <a href="{% url 'edit_player' player.id %}" class="me-2">
                         <i class="fas fa-pen"></i>
                     </a>
@@ -233,29 +238,35 @@
                 </div>
                 {% endif %}
                 <a href="{% url 'show_player' player.id %}" class="text-decoration-none text-dark">
-                    <div class="card-body d-flex flex-column align-items-center text-center">
+                    <div class="card-player-body d-flex flex-column align-items-center text-center">
                         <!-- Imagen del jugador -->
                         <div class="player-image mb-3">
                             {% if player.photo %}
-                            <img src="{{ player.photo.url }}" alt="Foto de {{ player.name }}" class="img-fluid rounded">
+                            <img src="{{ player.photo.url }}" alt="Foto de {{ player.name }}" class="img-fluid rounded-circle" style="width: 100px; height: 100px;">
                             {% else %}
-                            <img src="{% static 'profile/img.png' %}" alt="Foto de {{ player.name }}" class="img-fluid rounded">
+                            <img src="{% static 'profile/img.png' %}" alt="Foto de {{ player.name }}" class="img-fluid rounded-circle" style="width: 100px; height: 100px;">
                             {% endif %}
                         </div>
                         <!-- Información del jugador -->
                         <div class="player-info">
-                            <h5 class="card-title">{{ player.name }}</h5>
-                            <p class="card-text"><i class="fas fa-map-marker-alt me-2"></i><strong>Posición:</strong> {{ player.position }}</p>
-                            <p class="card-text"><i class="fas fa-hand-paper me-2"></i><strong>Mano hábil:</strong> {{ player.skillfull_hand }}</p>
-                            <p class="card-text"><i class="fas fa-trophy me-2"></i><strong>Puntos SNP:</strong> {{ player.snp_score }}</p>
+                            <h5 class="card-player-title">{{ player.name }} {{ player.get_first_last_name }}</h5>
+                            <p class="card-player-text"><i class="fas fa-map-marker-alt me-2"></i><strong>Posición:</strong> {{ player.position }}</p>
+                            <p class="card-player-text"><i class="fas fa-hand-paper me-2"></i><strong>Mano hábil:</strong> {{ player.skillfull_hand }}</p>
+                            <p class="card-player-text"><i class="fas fa-trophy me-2"></i><strong>Puntos SNP:</strong> {{ player.snp_score }}</p>
+                            {% if player.score == -1 %}
+                            <p>Aún no ha disputado ningún partido.</p>
+                            {% else %}
                             <div class="performance-score 
-                                {% if player.score >= 0 and player.score <= 4 %} score-red 
+                                {% if player.score == -1 %}
+                                    no-played
+                                {% elif player.score >= 0 and player.score <= 4 %} score-red 
                                 {% elif player.score >= 5 and player.score <= 6 %} score-yellow 
                                 {% elif player.score >= 7 and player.score <= 8 %} score-light-green 
                                 {% elif player.score >= 9 and player.score <= 10 %} score-dark-green 
                                 {% endif %}">
                                 Rendimiento actual: {{ player.score }}
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </a>
@@ -267,6 +278,7 @@
         </div>
         {% endfor %}
     </div>
+
     
     <!-- Paginación -->
     <div class="mt-3">

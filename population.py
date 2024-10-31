@@ -14,6 +14,8 @@ from callLog.models import CallLog
 from django.core.exceptions import ObjectDoesNotExist
 
 
+LOS_GLADIADORES = "LOS GLADIADORES"
+
 def truncate_all_tables():
     
     models_to_truncate = [
@@ -33,7 +35,7 @@ def truncate_all_tables():
 def create_players():
     with open('populate/players.json', 'r', encoding='utf-8') as file:
         messages_content = json.load(file)
-        team, create = Team.objects.get_or_create(name="LOS GLADIADORES")
+        team, create = Team.objects.get_or_create(name=LOS_GLADIADORES)
         for m in messages_content:
             Player.objects.create(
                 name = m['name'],
@@ -133,7 +135,7 @@ def create_games():
             
             for m in matches:
                 try:
-                    if match.visiting.name == "LOS GLADIADORES":
+                    if match.visiting.name == LOS_GLADIADORES:
                         player_1_visiting = Player.objects.get(
                             name=m["player_1_visiting"]["name"], 
                             last_name=m["player_1_visiting"]["last_name"]
@@ -152,7 +154,7 @@ def create_games():
                             draft_mode=m["draft_mode"]
                         )
 
-                    elif match.local.name == "LOS GLADIADORES":
+                    elif match.local.name == LOS_GLADIADORES:
                         player_1_local = Player.objects.get(
                             name=m["player_1_local"]["name"], 
                             last_name=m["player_1_local"]["last_name"]
@@ -186,12 +188,12 @@ def get_player(game_criteria, player_key):
 
 def get_game(match, game_criteria):
     """Obtiene un juego basado en los criterios del partido y los jugadores."""
-    if match.local.name == "LOS GLADIADORES":
+    if match.local.name == LOS_GLADIADORES:
         player_1 = get_player(game_criteria, "player_1_local")
         player_2 = get_player(game_criteria, "player_2_local")
         return Game.objects.get(match=match, player_1_local=player_1, player_2_local=player_2)
 
-    elif match.visiting.name == "LOS GLADIADORES":
+    elif match.visiting.name == LOS_GLADIADORES:
         player_1 = get_player(game_criteria, "player_1_visiting")
         player_2 = get_player(game_criteria, "player_2_visiting")
         return Game.objects.get(match=match, player_1_visiting=player_1, player_2_visiting=player_2)

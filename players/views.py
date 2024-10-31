@@ -89,23 +89,10 @@ def show_player(request, player_id):
     ).order_by('-match__start_date')[:5]
     # Calcula la puntuación, si es necesario
     normalized_score = calculate_score(player)  # Llama a la función y guarda el resultado
-    emoticon = get_emoticon(normalized_score)
     return render(request, "player_detail.html", {"player": player,
                                                    "score": normalized_score,
-                                                   'emoticon': emoticon,
                                                    "games":games})
 
-def get_emoticon(score):
-    if 0 <= score <= 3:
-        return "📉📉"
-    elif 4 <= score <= 6:
-        return "😄"
-    elif 7 <= score <= 8:
-        return "😎"
-    elif 9 <= score <= 10:
-        return "🔥"
-    else:
-        return ""
 
 @login_required
 def force_update_score(request):
@@ -133,6 +120,13 @@ def calculate_score(player):
 
     return round(normalized_score)
 
+def normalize_score(score, games_win, games_lost, max_consecutive_wins, three_point_wins):
+    total_games_played = games_win + games_lost
+    max_possible_score = total_games_played * 3 + (max_consecutive_wins - 1) * 2 + three_point_wins * 2
+
+    if max_possible_score > 0:
+        return max(0, min(10, (score / max_possible_score) * 10))
+    return 0
 
 def get_recent_games(player):
     return Game.objects.filter(
@@ -183,13 +177,6 @@ def calculate_three_point_bonus(three_point_wins):
     return three_point_wins * 2  # 2 puntos extra por cada victoria en un partido de 3 puntos
 
 
-def normalize_score(score, games_win, games_lost, max_consecutive_wins, three_point_wins):
-    total_games_played = games_win + games_lost
-    max_possible_score = total_games_played * 3 + (max_consecutive_wins - 1) * 2 + three_point_wins * 2
-
-    if max_possible_score > 0:
-        return max(0, min(10, (score / max_possible_score) * 10))
-    return 0
 
 
 

@@ -46,8 +46,8 @@
 </div>
 
 <!-- Modal para la imagen principal -->
-<div id="imageModal" class="modal" style="display: none;"> <!-- Asegúrate de que esté oculto inicialmente -->
-    <span class="close" onclick="closeModal()">&times;</span>
+<div id="imageModal" class="modal" style="display: none;">
+    <span class="close" onclick="closeModal()" role="button" tabindex="0" aria-label="Close modal">&times;</span>
     <img class="modal-content" id="modal-image" alt="">
     <div id="caption"></div>
 </div>
@@ -66,12 +66,26 @@ function openModal(event) {
     modal.style.display = "flex"; // Cambia a flex para centrar el contenido
     modalImg.src = event.target.src; // Cambia la imagen del modal a la de la imagen principal
     captionText.innerHTML = event.target.alt; // Establece el texto del título
+
+    // Añadir el listener para detectar la tecla Escape
+    document.addEventListener("keydown", escKeyListener);
 }
 
 function closeModal() {
     var modal = document.getElementById("imageModal");
     modal.style.display = "none"; // Oculta el modal
+
+    // Quitar el listener de la tecla Escape
+    document.removeEventListener("keydown", escKeyListener);
 }
+
+function escKeyListener(event) {
+    if (event.key === "Escape") {
+        closeModal();
+    }
+}
+
+document.addEventListener("keydown", escKeyListener);
 
 // Cerrar el modal si se hace clic fuera de la imagen o en la 'close'
 window.onclick = function(event) {

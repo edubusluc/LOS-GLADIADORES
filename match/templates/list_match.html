@@ -2,6 +2,85 @@
 {% load static %}
 
 {% block content %}
+<style>
+    .custom-card {
+        margin: auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s;
+        max-width: 100%; /* Asegurar que las tarjetas no excedan el ancho de la pantalla */
+    }
+
+    .custom-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-body {
+        flex: 1;
+        padding: 15px;
+    }
+
+    .team-logo {
+        max-width: 100%;
+        height: 150px; /* Permitir que la altura se ajuste automáticamente */
+        object-fit: cover;
+    }
+
+    .card-title {
+        margin: 0;
+        font-weight: bold;
+    }
+
+    .info-container {
+        display: flex;
+        flex-direction: column; /* Cambiar a columna para pantallas pequeñas */
+        align-items: center; /* Centrar imágenes y texto */
+    }
+
+    .info-details {
+        flex-grow: 1;
+        text-align: center; /* Centrar texto en pantallas pequeñas */
+    }
+
+    .status {
+        font-weight: bold;
+    }
+
+    .result-container {
+        justify-content: center; /* Centrar elementos en el contenedor */
+        text-align: center;
+    }
+
+    .text-success {
+        color: green;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+    /* Media Queries para pantallas grandes */
+    @media (min-width: 768px) {
+        .info-container {
+            flex-direction: row; /* Volver a columna para pantallas más grandes */
+            align-items: center;
+        }
+
+        .matches-row {
+            display: flex; /* Usar flex para alinear horizontalmente */
+            flex-direction: column; /* Alinear tarjetas en columnas */
+        }
+
+        .col-12 {
+            flex: 0 0 100%; /* Cada tarjeta ocupa 100% del ancho */
+            max-width: 100%; /* Asegurar que cada tarjeta no exceda el ancho */
+            margin-bottom: 1rem; /* Espacio entre tarjetas */
+        }
+    }
+</style>
+
 <div class="table-container mt-4">
     <div class="d-flex align-items-center mb-3">
         <h1 class="flex-grow-1">Listado de Partidos</h1>
@@ -10,35 +89,84 @@
         {% endif %}
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered align-middle">
-            <thead class="table-dark text-center">
-                <tr>
-                    <th>Local</th>
-                    <th>Visitante</th>
-                    <th>Fecha</th>
-                    <th>Resultado</th>
-                    <th>Convocatoria</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for m in match %}
-                <tr class="text-center" >
-                    <td>{{ m.local }}</td> 
-                    <td>{{ m.visiting }}</td>
-                    <td >{{ m.start_date|date:"d/m/Y" }}</td>
-                    <td>{{ m.result_points|default:"-" }}</td>
-                    <td>
-                        <a href="{% url 'call_for_match' m.id %}"> <i class="fa-solid fa-eye"></i></a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr class="text-center" >
-                    <td colspan="5">No hay partidos disponibles</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="matches-row"> <!-- Cambié a una fila para contener las tarjetas -->
+        {% for m in matches %}
+        <div class="col-12 mb-4"> <!-- Ajuste de columnas para que cada tarjeta ocupe toda la fila -->
+            <a href="{% url 'call_for_match' m.id %}" class="text-decoration-none text-dark">
+                <div class="card h-100 custom-card">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div class="info-container mb-3">
+                            <img src="{{ m.local.photo.url }}" alt="{{ m.local }}" class="team-logo">
+                            <div class="info-details">
+                                <h5 class="card-title">{{ m.local }} vs {{ m.visiting }}</h5>
+                                <div class="result-container">
+                                    <p class="card-text">Fecha: {{ m.start_date|date:"d/m/Y" }}</p>
+                                    <p class="card-text">Resultado: {{ m.result_points|default:"-" }}</p>
+                                    <p class="card-text status">
+                                        Estado: 
+                                        {% if not m.draft_mode %}
+                                            <span class="text-success">Confirmado</span>
+                                        {% else %}
+                                            <span class="text-danger">Sin validar</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <img src="{{ m.visiting.photo.url }}" alt="{{ m.visiting }}" class="team-logo">
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>No hay partidos disponibles</p>
+        </div>
+        {% endfor %}
     </div>
+
+    <div class="mt-3">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center">
+            {% if matches.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1&order_by={{ order_by }}">&laquo;</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ matches.previous_page_number }}&order_by={{ order_by }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">&laquo;</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+      
+            <li class="page-item active">
+              <span class="page-link">
+                Page {{ matches.number }} of {{ matches.paginator.num_pages }}
+              </span>
+            </li>
+      
+            {% if matches.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ matches.next_page_number }}&order_by={{ order_by }}">Next</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ matches.paginator.num_pages }}&order_by={{ order_by }}">&raquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">Next</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link">&raquo;</span>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
 </div>
 {% endblock %}

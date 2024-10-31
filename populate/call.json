@@ -5,20 +5,128 @@
             "visitor_team": "LOS GLADIADORES"
         },
         "players": [
-            "Alberto",
-            "Borja",
-            "Pablo",
-            "Jordi",
-            "Aurelio",
-            "Dani",
-            "Toni",
-            "Eduardo",
-            "Pepe",
-            "Juanfran",
-            "Mumpao",
-            "Alberto C",
-            "Gonzalo",
-            "Antonio"
+            {"name": "ALBERTO",
+            "last_name": "MONTAÑO LEON"
+            },
+            {"name": "BORJA",
+            "last_name": "MOLINA MULLER"},
+            {"name": "PABLO",
+            "last_name": "DELGADO PASCUAL"},
+            {"name": "JORDI",
+            "last_name": "BELTRAN VEGA"},
+            {"name": "AURELIO",
+            "last_name": "BIELSA MARTIN"},
+            {"name": "DANIEL",
+            "last_name": "CARRATALA RIUS"},
+            {"name": "TONI",
+            "last_name": "MORILLO RODRIGUEZ"},
+            {"name": "EDUARDO",
+            "last_name": "BUSTAMANTE LUCENA"},
+            {"name": "JOSE MARIA",
+            "last_name": "CANO RAYA"},
+            {"name": "JUAN FRANCISCO",
+            "last_name": "ROMERO CRESPO"},
+            {"name": "JUAN ANTONIO",
+            "last_name": "LOPEZ MUMPAO"},
+            {"name": "GONZALO",
+            "last_name": "SANTANA ALONSO"},
+            {"name": "ANTONIO",
+            "last_name": "CARO BERMÚDEZ"}
+        ],
+        "draft_mode": false
+    },
+    {
+        "match_criteria": {
+            "local_team": "LOS GLADIADORES",
+            "visitor_team": "LFP TOMARES MASC. B. 500"
+        },
+        "players": [
+            {"name": "ALBERTO",
+            "last_name": "MONTAÑO LEON"
+            },
+
+            {"name": "EDUARDO",
+            "last_name": "BUSTAMANTE LUCENA"},
+
+            {"name": "AURELIO",
+            "last_name": "BIELSA MARTIN"},
+
+            {"name": "GONZALO",
+            "last_name": "SANTANA ALONSO"},
+
+            {"name": "MARCELO",
+            "last_name": "DOMÍNGUEZ COSTA"},
+
+            {"name": "ALBERTO",
+            "last_name": "CASTRO LUQUE"},
+
+            {"name": "JUAN FRANCISCO",
+            "last_name": "ROMERO CRESPO"},
+
+            {"name": "DANIEL",
+            "last_name": "CARRATALA RIUS"},
+
+            {"name": "ALFREDO",
+            "last_name": "DELGADO"},
+
+            {"name": "PABLO",
+            "last_name": "DELGADO PASCUAL"},
+
+            {"name": "FABRIZIO",
+            "last_name": "BRAVI"},
+
+            {"name": "TONI",
+            "last_name": "MORILLO RODRIGUEZ"},
+
+            {"name": "JULIAN",
+            "last_name": "RUIZ DELGADO"},
+
+            {"name": "JORDI",
+            "last_name": "BELTRAN VEGA"}
+        ],
+        "draft_mode": false
+    },
+    {
+        "match_criteria": {
+            "local_team": "CLUB DE PADEL BURGUILLOS BETA",
+            "visitor_team": "LOS GLADIADORES"
+        },
+        "players": [
+            {"name": "ALBERTO",
+            "last_name": "MONTAÑO LEON"},
+
+            {"name": "EDUARDO",
+            "last_name": "BUSTAMANTE LUCENA"},
+
+            {"name": "ANTONIO",
+            "last_name": "CARO BERMÚDEZ"},
+
+            {"name": "FABRIZIO",
+            "last_name": "BRAVI"},
+
+            {"name": "JUAN ANTONIO",
+            "last_name": "LOPEZ MUMPAO"},
+
+            {"name": "ALFREDO",
+            "last_name": "DELGADO"},
+
+            {"name": "ALBERTO",
+            "last_name": "CASTRO LUQUE"},
+
+            {"name": "ANTONIO",
+            "last_name": "URRACO RIVERO"},
+
+            {"name": "JULIAN",
+            "last_name": "RUIZ DELGADO"},
+
+            {"name": "JUAN FRANCISCO",
+            "last_name": "ROMERO CRESPO"},
+
+            {"name": "JOSE MARIA",
+            "last_name": "CANO RAYA"},
+            
+            {"name": "JORDI",
+            "last_name": "BELTRAN VEGA"}
         ],
         "draft_mode": false
     }

@@ -1,11 +1,12 @@
 function initializeCharts(data) {
-    const { totalWins, totalLost, presentCall, noCall, years, gamesWonPerYear, gamesLostPerYear} = data;
+    const { totalWins, totalLost, presentCall, noCall, years, gamesWonPerYear, gamesLostPerYear, degree_afinity} = data;
 
     const pieChart = document.getElementById('myPieChart');
     const chartCall = document.getElementById('chartCall');
     const localWinLost = document.getElementById('localWinLost');
     const visitingWinLost = document.getElementById('visitingWinLost');
     const lineGamesChart = document.getElementById('myLineGamesChart');
+    const affinityChart = document.getElementById('myAffinityChart');
 
     if (pieChart) {
         const pieCtx = pieChart.getContext('2d');
@@ -149,6 +150,40 @@ function initializeCharts(data) {
                 }
             }
         });
-    } 
-
+    }
+    
+    if (affinityChart) {
+        const affinityCtx = affinityChart.getContext('2d');
+        const players = Object.keys(degree_afinity);
+        const affinities = Object.values(degree_afinity);
+        const colors = affinities.map(aff => `rgba(${255 - (aff * 2.55)}, 255, 0, 1)`); // Colores de rojo a verde
+    
+        new Chart(affinityCtx, {
+            type: 'bar', // Mantener como 'bar'
+            data: {
+                labels: players,
+                datasets: [{
+                    label: 'Grado de Afinidad',
+                    data: affinities,
+                    backgroundColor: colors,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Agregar esta línea para que el gráfico sea horizontal
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100, // Máximo de 100
+                    },
+                    y: {
+                        beginAtZero: true, // No es necesario pero puedes incluirlo si deseas
+                    }
+                }
+            }
+        });
+    }
+    
 }
+

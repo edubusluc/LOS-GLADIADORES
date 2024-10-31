@@ -11,10 +11,27 @@
     </div>
     {% endif %}
     <h1>Crear Equipo</h1>
-    <form method="POST">
+    <form method="POST" class="mt-4" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="button" style="margin-top: 10px;">Crear Equipo</button>
+        
+        <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">Nombre:</label>
+            {{ form.name }}  <!-- Se agregó la clase en la vista -->
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.location.id_for_label }}" class="form-label">Localización:</label>
+            {{ form.location }}  <!-- Se agregó la clase en la vista -->
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.photo.id_for_label }}" class="form-label">Foto:</label>
+            {{ form.photo }}  <!-- Se agregó la clase en la vista -->
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Crear Equipo</button>
+        </div>
     </form>
 </div>
 {% endblock %}

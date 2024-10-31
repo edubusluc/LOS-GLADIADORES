@@ -31,7 +31,7 @@
                                                data-bs-placement="top" 
                                                data-bs-html="true" 
                                                title="{% if player_penalties|get_item:player.id %}<p>{% for reason in player_penalties|get_item:player.id %}{{ reason }}<br>{% endfor %}</p>{% else %}Sin penalizaciones{% endif %}">
-                                            {{ player.name }} 
+                                            {{ player.name }} {{player.last_name}}
                                             {% if player_penalties|get_item:player.id|length > 0 %}
                                                 <span class="text-danger">(!)</span>
                                             {% endif %}

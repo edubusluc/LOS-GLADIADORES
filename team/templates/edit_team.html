@@ -2,30 +2,34 @@
 {% load static %}
 
 {% block content %}
-<head>
-    <title>Editar Equipo</title>
-</head>
-<body>
-    <div class="table-container">
-    <h1>Editar Equipo</h1>
-    
-    <form method="POST" action="{% url 'edit_team' team.id %}">
-        {% csrf_token %}
+    <div class="table-container mt-4">
+        <h1>Editar Equipo</h1>
         
-        <div>
-            <label for="name">Nombre:</label>
-            <input type="text" id="name" name="name" value="{{ team.name }}" required>
-        </div>
+        <form method="POST" action="{% url 'edit_team' team.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="name" class="form-label">Nombre:</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ team.name }}" required>
+            </div>
 
-        <div>
-            <label for="in_group">
-                <input type="checkbox" id="in_group" name="in_group" {% if team.in_group %}checked{% endif %}>
-                ¿Se encuentra en tu grupo?
-            </label>
-        </div>
-    
-        <button type="submit"class = "button">Guardar</button>
-    </form>
-</div>
-</body>
+            <div class="mb-3">
+                <label for="location" class="form-label">Ubicación:</label>
+                <input type="text" id="location" name="location" class="form-control" value="{{ team.location }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="photo" class="form-label">Foto:</label>
+                <input type="file" id="photo" name="photo" class="form-control">
+                <small class="form-text text-muted">Dejar vacío si no deseas cambiar la foto.</small>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" id="in_group" name="in_group" class="form-check-input" {% if team.in_group %}checked{% endif %}>
+                <label for="in_group" class="form-check-label">¿Se encuentra en tu grupo?</label>
+            </div>
+        
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </form>
+    </div>
 {% endblock %}

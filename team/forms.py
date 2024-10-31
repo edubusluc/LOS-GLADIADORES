@@ -4,4 +4,4 @@ from .models import Team
 class Teamform (forms.ModelForm):
     class Meta:
         model = Team
-        fields = ['name']
+        fields = ['name','location', 'photo']

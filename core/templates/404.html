@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<body>
+    <h1>Error 404: Página No Encontrada</h1>
+    <p>Lo sentimos, la página que buscas no existe.</p>
+    <a href="{% url 'home' %}">Volver a la página principal</a>
+</body>
+{% endblock %}

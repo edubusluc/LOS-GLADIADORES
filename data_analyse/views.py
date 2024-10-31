@@ -128,7 +128,7 @@ def count_games(player, role, winner, n_games, season):
 def column_chart(season):
     players = Player.objects.all()
     dicc = {
-        p: {
+        f"{p.name} {p.last_name}": {  # Usar el nombre y apellido como clave
             'Partidos de 2 puntos ganados': 0,
             'Partidos de 2 puntos perdidos': 0,
             'Partidos de 3 puntos ganados': 0,
@@ -136,27 +136,29 @@ def column_chart(season):
         } for p in players
     }
 
+
     for player in players:
+        player_key = f"{player.name} {player.last_name}"
         # Partidos locales
-        dicc[player]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2],season)
-        dicc[player]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2],season)
-        dicc[player]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5],season)
-        dicc[player]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2],season)
+        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2],season)
+        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5],season)
 
         # Partidos visitantes
-        dicc[player]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2],season)
-        dicc[player]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2],season)
-        dicc[player]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5],season)
-        dicc[player]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2],season)
+        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2],season)
+        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5],season)
 
 
     return dicc  # No olvides devolver el diccionario resultante
 
 def format_for_chart(dic):
     players = []
-    for player, stats in dic.items():
+    for player_name, stats in dic.items():
         players.append({
-            'player': str(player), 
+            'player': player_name, 
             'data': [
                 stats['Partidos de 2 puntos ganados'],
                 stats['Partidos de 2 puntos perdidos'],
@@ -172,6 +174,8 @@ def team_statistics(request):
     selected_season = request.GET.get("season")
     team = get_team()
 
+    seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
+
     dicc = column_chart(selected_season)
     column_chart_data = format_for_chart(dicc)
 
@@ -185,7 +189,7 @@ def team_statistics(request):
     
     #LINE CHART
     dicc_line_chart = calculate_matches_won_per_year(team)
-    print(dicc_line_chart)
+
 
 
     context = {
@@ -323,6 +327,60 @@ def get_match_history(player, all_match):
     return dicc_match
 
 
+def player_won(m, player):
+    """Determina si el jugador ganó el partido."""
+    return (m.winner == 'Local' and (m.player_1_local == player or m.player_2_local == player)) or \
+           (m.winner == 'Visitante' and (m.player_1_visiting == player or m.player_2_visiting == player))
+
+def player_lost(m, player):
+    """Determina si el jugador perdió el partido."""
+    return (m.winner == 'Visitante' and (m.player_1_local == player or m.player_2_local == player)) or \
+           (m.winner == 'Local' and (m.player_1_visiting == player or m.player_2_visiting == player))
+
+def degree_of_affinity(player):
+    player = Player.objects.get(id=player.id)
+    other_players = Player.objects.exclude(id=player.id)
+    affinity_results = {}
+
+    for other in other_players:
+        # Filtra los juegos donde el jugador y el otro jugador forman pareja
+        games = Game.objects.filter(
+            Q(player_1_local=player, player_2_local=other) | 
+            Q(player_1_local=other, player_2_local=player) |
+            Q(player_1_visiting=player, player_2_visiting=other) | 
+            Q(player_1_visiting=other, player_2_visiting=player)
+        )
+
+        # Contadores de victorias y derrotas
+        game_2_wins, game_2_losses = 0, 0
+        game_3_wins, game_3_losses = 0, 0
+
+        for game in games:
+            if game.score == 2:
+                game_2_wins += player_won(game, player)
+                game_2_losses += player_lost(game, player)
+            elif game.score == 3:
+                game_3_wins += player_won(game, player)
+                game_3_losses += player_lost(game, player)
+
+        # Cálculo de afinidad
+        total_matches = game_2_wins + game_2_losses + game_3_wins + game_3_losses
+        if total_matches == 0:
+            affinity_results[other.name] = 0.0
+            continue
+
+        weighted_wins = game_3_wins * 2 + game_2_wins
+        loss_penalty = (game_2_losses + game_3_losses) * 1.5
+        affinity = ((weighted_wins - loss_penalty) / total_matches) * 100
+
+        # Factor de experiencia y límites
+        experience_factor = min(1 + total_matches / 10, 2)
+        affinity = max(0, min(affinity * experience_factor, 100))
+
+        affinity_results[other.name] = affinity
+
+    return dict(sorted(affinity_results.items(), key=lambda item: item[1], reverse=True))
+
 
 @require_GET
 def statistics_per_player(request):
@@ -330,12 +388,18 @@ def statistics_per_player(request):
     players = Player.objects.all()
     seasons = get_total_season(all_match)
 
+    
+
+    seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
+
     player_id = request.GET.get('player')
     selected_season = request.GET.get('season')
     if player_id:
         player = Player.objects.get(id=player_id)
     else:
         return render(request, 'player_statistics.html', {"players": players, "seasons":seasons})
+    
+    degree_afinity = degree_of_affinity(player)
 
     stats = get_player_statistics(player, selected_season)
     current_season = get_current_season(request)
@@ -346,6 +410,7 @@ def statistics_per_player(request):
     years = sorted(dicc_match.keys())
     stats['games_won_per_year'] = [dicc_match[y]['won'] for y in years]
     stats['games_lost_per_year'] = [dicc_match[y]['lost'] for y in years]
+    stats['degree_afinity'] = json.dumps(degree_afinity)
 
     # Cálculos finales
     stats['total_wins'] = stats['won_games_local'] + stats['won_games_visiting']
@@ -366,6 +431,7 @@ def statistics_per_player(request):
         **stats,
         "years": years,
         "seasons": seasons,
+
     }
 
     return render(request, 'player_statistics.html', context)

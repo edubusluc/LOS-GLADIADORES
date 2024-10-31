@@ -9,8 +9,14 @@
                 "n_game":1,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Eduardo",
-                "player_2_visiting":"Borja",
+                "player_1_visiting":{
+                    "name": "EDUARDO",
+                    "last_name": "BUSTAMANTE LUCENA"  
+                },
+                "player_2_visiting":{
+                    "name": "BORJA",
+                    "last_name": "MOLINA MULLER"  
+                },
                 "score": "3",
                 "winner": "Visitante",
                 "draft_mode": false
@@ -19,8 +25,14 @@
                 "n_game":2,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Alberto",
-                "player_2_visiting":"Aurelio",
+                "player_1_visiting":{
+                    "name": "ALBERTO",
+                    "last_name": "MONTAÑO LEON"  
+                },
+                "player_2_visiting":{
+                    "name": "AURELIO",
+                    "last_name": "BIELSA MARTIN"  
+                },
                 "score": "3",
                 "winner": "Local",
                 "draft_mode": false
@@ -29,8 +41,14 @@
                 "n_game":3,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Dani",
-                "player_2_visiting":"Juanfran",
+                "player_1_visiting":{
+                    "name": "DANIEL",
+                    "last_name": "CARRATALA RIUS"  
+                },
+                "player_2_visiting":{
+                    "name": "JUAN FRANCISCO",
+                    "last_name": "ROMERO CRESPO"  
+                },
                 "score": "2",
                 "winner": "Visitante",
                 "draft_mode": false
@@ -40,19 +58,213 @@
                 "n_game":4,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Gonzalo",
-                "player_2_visiting":"Pepe",
+                "player_1_visiting":{
+                    "name": "GONZALO",
+                    "last_name": "SANTANA ALONSO"  
+                },
+                "player_2_visiting":{
+                    "name": "JOSE MARIA",
+                    "last_name": "CANO RAYA"  
+                },
                 "score": "2",
                 "winner": "Local",
                 "draft_mode": false
             },
 
             {
-                "n_game":5,
+                "n_game": 5,
                 "player_1_local": null,
                 "player_2_local": null,
-                "player_1_visiting":"Jordi",
-                "player_2_visiting":"Antonio",
+                "player_1_visiting": {
+                    "name": "JORDI",
+                    "last_name": "BELTRAN VEGA"  
+                },
+                "player_2_visiting": {
+                    "name": "ANTONIO",
+                    "last_name": "CARO BERMÚDEZ"  
+                },
+                "score": "2",
+                "winner": "Local",
+                "draft_mode": false
+            }
+        ]
+
+    },
+    
+    {
+        "match_criteria":{
+            "local_team":"LOS GLADIADORES",
+            "visitor_team": "LFP TOMARES MASC. B. 500"
+        },
+        "matches": [
+            {
+                "n_game":1,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "EDUARDO",
+                    "last_name": "BUSTAMANTE LUCENA"  
+                },
+                "player_2_local":{
+                    "name": "GONZALO",
+                    "last_name": "SANTANA ALONSO"  
+                },
+                "score": "3",
+                "winner": "Local",
+                "draft_mode": false
+            },
+            {
+                "n_game":2,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "ALBERTO",
+                    "last_name": "MONTAÑO LEON"  
+                },
+                "player_2_local":{
+                    "name": "PABLO",
+                    "last_name": "DELGADO PASCUAL"  
+                },
+                "score": "3",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+            {
+                "n_game":3,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "JUAN FRANCISCO",
+                    "last_name": "ROMERO CRESPO"  
+                },
+                "player_2_local":{
+                    "name": "MARCELO",
+                    "last_name": "DOMÍNGUEZ COSTA"  
+                },
+                "score": "2",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+
+            {
+                "n_game":4,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "ALBERTO",
+                    "last_name": "CASTRO LUQUE"  
+                },
+                "player_2_local":{
+                    "name": "TONI",
+                    "last_name": "MORILLO RODRIGUEZ"  
+                },
+                "score": "2",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+
+            {
+                "n_game": 5,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local": {
+                    "name": "ALFREDO",
+                    "last_name": "DELGADO"  
+                },
+                "player_2_local": {
+                    "name": "FABRIZIO",
+                    "last_name": "BRAVI"  
+                },
+                "score": "2",
+                "winner": "Visitante",
+                "draft_mode": false
+            }
+        ]
+    },
+    {
+        "match_criteria":{
+            "local_team":"CLUB DE PADEL BURGUILLOS BETA",
+            "visitor_team": "LOS GLADIADORES"
+        },
+        "matches": [
+            {
+                "n_game":1,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":{
+                    "name": "ANTONIO",
+                    "last_name": "URRACO RIVERO"  
+                },
+                "player_2_visiting":{
+                    "name": "JOSE MARIA",
+                    "last_name": "CANO RAYA"  
+                },
+                "score": "3",
+                "winner": "Local",
+                "draft_mode": false
+            },
+            {
+                "n_game":2,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":{
+                    "name": "JULIAN",
+                    "last_name": "RUIZ DELGADO"  
+                },
+                "player_2_visiting":{
+                    "name": "JUAN FRANCISCO",
+                    "last_name": "ROMERO CRESPO"  
+                },
+                "score": "3",
+                "winner": "Local",
+                "draft_mode": false
+            },
+            {
+                "n_game":3,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":{
+                    "name": "ALBERTO",
+                    "last_name": "MONTAÑO LEON"  
+                },
+                "player_2_visiting":{
+                    "name": "JORDI",
+                    "last_name": "BELTRAN VEGA"  
+                },
+                "score": "2",
+                "winner": "Local",
+                "draft_mode": false
+            },
+
+            {
+                "n_game":4,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting":{
+                    "name": "EDUARDO",
+                    "last_name": "BUSTAMANTE LUCENA"  
+                },
+                "player_2_visiting":{
+                    "name": "ANTONIO",
+                    "last_name": "CARO BERMÚDEZ"  
+                },
+                "score": "2",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+
+            {
+                "n_game": 5,
+                "player_1_local": null,
+                "player_2_local": null,
+                "player_1_visiting": {
+                    "name": "JUAN ANTONIO",
+                    "last_name": "LOPEZ MUMPAO"  
+                },
+                "player_2_visiting": {
+                    "name": "ALFREDO",
+                    "last_name": "DELGADO"  
+                },
                 "score": "2",
                 "winner": "Local",
                 "draft_mode": false
@@ -60,4 +272,5 @@
         ]
 
     }
+
 ]

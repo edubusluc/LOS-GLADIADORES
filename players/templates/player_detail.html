@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .list-group-item {
+        background-color: #f8f9fa;
+        transition: transform 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        transform: scale(1.02);
+    }
+
+    /* Estilos para el título de cada partido */
+    .list-group-item h5 {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* Colores y estilos para el estado de los partidos */
+    .text-success {
+        color: #28a745; /* Verde para partidos ganados */
+    }
+
+    .text-danger {
+        background-color: #f8d7da; /* Fondo rojo claro */
+        color: #721c24; /* Texto rojo oscuro */
+    }
+
+    /* Estilos para los detalles de la puntuación */
+    .score-details {
+        font-size: 0.9rem;
+        color: #6c757d;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 10px;
+    }
+
+    /* Estilos de puntajes */
+    .score-details .py-1 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .score-details .py-1:not(:last-child) {
+        border-bottom: 1px dashed #ccc;
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+    }
+
+    /* Estilos para sets sin resultado */
+    .bg-warning {
+        background-color: #ffc107 !important; /* Fondo amarillo para advertencias */
+        color: #212529 !important; /* Texto oscuro */
+        padding: 0.75rem;
+        text-align: center;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-top: 8px;
+    }
+
+    /* Espaciado entre los partidos */
+    .list-group-item + .list-group-item {
+        margin-top: 15px;
+    }
+
+    .player-info {
+        text-align: left; /* Centra el texto en el contenedor */
+    }
+
+    /* Media queries para diseño responsivo */
+    @media (max-width: 576px) {
+    .player-image {
+        display: flex; /* Cambia a flex para centrar */
+        justify-content: center; /* Centra horizontalmente */
+        text-align: center; /* Centra el texto (si hay) */
+        width: 100%; /* Asegúrate de que ocupe todo el ancho */
+    }
+
+    .player-image img {
+        display: block; /* Hace que la imagen sea un bloque */
+        width: 100px; /* Ancho de la imagen */
+        height: auto; /* Altura automática para mantener la proporción */
+        max-width: 100px; /* Ancho máximo para imagen en pantallas pequeñas */
+        margin: 0 auto; /* Centra la imagen */
+    }
+
+    .player-info {
+        margin: 0; /* Elimina márgenes para mejor alineación */
+    }
+
+    .player-info p {
+        margin: 0; /* Elimina márgenes para mejor alineación */
+    }
+}
+</style>
+<div class="container my-5">
+    <div class="card shadow-lg">
+        <div class="card-header text-white" style=" background-color: rgb(8, 60, 100);">
+            <h1 class="h3 text-center">Detalles de {{ player.name }} {{ player.get_first_last_name }}</h1>
+        </div>
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-4 flex-wrap">
+                <div class="player-image me-4">
+                    {% if player.photo %}
+                        <img src="{{ player.photo.url }}" alt="Foto de {{ player.name }}" class="img-fluid" style="max-width: 200px; height: auto; border: 3px solid rgb(219, 219, 219); border-radius: 5%;">
+                    {% else %}
+                        <img src="{% static 'profile/img.png' %}" alt="Foto de {{ player.name }}" class="img-fluid" style="max-width: 200px; height: auto; border: 3px solid rgb(219, 219, 219); border-radius: 5%;">
+                    {% endif %}
+                </div>
+                <div class="player-info">
+                    <p><strong>Posición:</strong> {{ player.position }}</p>
+                    <p><strong>Mano hábil:</strong> {{ player.skillfull_hand }}</p>
+                    <p><strong>Puntuación SNP:</strong> {{ player.snp_score }}</p>
+                    <p><strong>Rendimiento actual:</strong> {{ player.score }}</p>
+                </div>
+            </div>
+
+            <h2 class="h5 mb-3 text-secondary">Últimos Partidos</h2>
+            <div class="list-group-item p-4 mb-3 border rounded shadow-sm">
+                <div class="d-flex flex-column">
+                    {% for game in games %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            {% if game.winner == 'Local' and player == game.player_1_local %}
+                                <div class="alert alert-success w-100">
+                                    <h5 class="mb-0">
+                                        {{ game.match.local }} vs {{ game.match.visiting }}
+                                    </h5>
+                                </div>
+                            {% elif game.winner == 'Local' and player == game.player_2_local %}
+                                <div class="alert alert-success w-100">
+                                    <h5 class="mb-0">
+                                        {{ game.match.local }} vs {{ game.match.visiting }}
+                                    </h5>
+                                </div>
+                            {% elif game.winner == 'Visitante' and player == game.player_1_visiting %}
+                                <div class="alert alert-success w-100">
+                                    <h5 class="mb-0">
+                                        {{ game.match.local }} vs {{ game.match.visiting }}
+                                    </h5>
+                                </div>
+                            {% elif game.winner == 'Visitante' and player == game.player_2_visiting %}
+                                <div class="alert alert-success w-100">
+                                    <h5 class="mb-0">
+                                        {{ game.match.local }} vs {{ game.match.visiting }}
+                                    </h5>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-danger w-100">
+                                    <h5 class="mb-0">
+                                        {{ game.match.local }} vs {{ game.match.visiting }}
+                                    </h5>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="bg-warning text-dark p-3 rounded">No hay partidos registrados.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

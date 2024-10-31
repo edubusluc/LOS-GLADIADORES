@@ -3,22 +3,45 @@
 
 {% block content %}
 <body>
-    <div class="table-container">
-        <h1>Crear nueva publicación</h1>
-        <form method="POST" enctype="multipart/form-data">
+    <div class="table-container mt-4">
+        <h1 class="form-title">Crear nueva publicación</h1>
+        
+        <!-- Mensajes de error -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-message alert alert-danger">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" class="form-post">
             {% csrf_token %}
-            {{ form.as_p }}
+            {{ post_form.as_p }}
 
-            <!-- Desplegable para seleccionar un partido -->
-            <label for="match_select">Selecciona un partido:</label>
-            <select id="match_select" name="match_id">
-                <option value="">-- Selecciona un partido --</option>
-                {% for match in matches %}
-                    <option value="{{ match.id }}">{{ match }}</option>
+            <!-- Mostrar errores específicos de cada campo -->
+            {% for field in post_form %}
+                {% for error in field.errors %}
+                    <div class="alert-message alert alert-danger">{{ error }}</div>
                 {% endfor %}
-            </select>
+            {% endfor %}
 
-            <button type="submit" class="button">Publicar</button>
+            <div class="form-group mb-3">
+                <label for="match_select" class="form-label">Selecciona un partido:</label>
+                <select id="match_select" name="match_id" class="form-select" required>
+                    <option value="">-- Selecciona un partido --</option>
+                    {% for match in matches %}
+                        <option value="{{ match.id }}">{{ match }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="images" class="form-label">Selecciona imágenes:</label>
+                <input type="file" name="images" id="images" multiple class="form-control">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Publicar</button>
         </form>
     </div>
 </body>

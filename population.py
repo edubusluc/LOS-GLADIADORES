@@ -11,7 +11,10 @@ from team.models import Team
 from datetime import datetime
 from penalty.models import Penalty
 from callLog.models import CallLog
+from django.core.exceptions import ObjectDoesNotExist
 
+
+LOS_GLADIADORES = "LOS GLADIADORES"
 
 def truncate_all_tables():
     
@@ -32,10 +35,11 @@ def truncate_all_tables():
 def create_players():
     with open('populate/players.json', 'r', encoding='utf-8') as file:
         messages_content = json.load(file)
-        team, create = Team.objects.get_or_create(name="LOS GLADIADORES")
+        team, create = Team.objects.get_or_create(name=LOS_GLADIADORES)
         for m in messages_content:
             Player.objects.create(
                 name = m['name'],
+                last_name = m['last_name'],
                 position = m['position'],
                 skillfull_hand = m['skillfull_hand'],
                 team = team
@@ -72,23 +76,35 @@ def create_call():
         for c in calls_content:
             match_criteria = c["match_criteria"]
             players = c["players"]
+            players_list = []  # Reiniciar para cada partido
 
             try:
                 match = Match.objects.get(
-                    local=Team.objects.get(name = match_criteria["local_team"]),
-                    visiting=Team.objects.get(name = match_criteria["visitor_team"])
+                    local=Team.objects.get(name=match_criteria["local_team"]),
+                    visiting=Team.objects.get(name=match_criteria["visitor_team"])
                 )
             except Match.DoesNotExist:
                 print(f"No se encontró el partido con los criterios: {match_criteria}")
                 continue
 
             call = Call.objects.create(
-                match=match, 
+                match=match,
                 draft_mode=c['draft_mode']
             )
 
-            players = Player.objects.filter(name__in=c['players'])
-            call.players.set(players)
+            for player in players:
+                name = player['name']
+                last_name = player['last_name']
+                try:
+                    player_instance = Player.objects.get(
+                        name=name,
+                        last_name=last_name
+                    )
+                    players_list.append(player_instance)  # Agregar a la lista de jugadores
+                except Player.DoesNotExist:
+                    print(f"No se encontró el jugador: {name} {last_name}")
+
+            call.players.set(players_list)
 
 
 def create_team():
@@ -97,7 +113,9 @@ def create_team():
         for m in messages_content:
             Team.objects.create(
                 name = m['name'],
-                in_group = m['in_group']
+                in_group = m['in_group'],
+                location = m['location'],
+                photo = m['photo']
             )
 
 def create_games():
@@ -108,52 +126,128 @@ def create_games():
             matches = g["matches"]
             try:
                 match = Match.objects.get(
-                    local=Team.objects.get(name = match_criteria["local_team"]),
-                    visiting=Team.objects.get(name = match_criteria["visitor_team"])
+                    local=Team.objects.get(name=match_criteria["local_team"]),
+                    visiting=Team.objects.get(name=match_criteria["visitor_team"])
                 )
             except Match.DoesNotExist:
                 print(f"No se encontró el partido con los criterios: {match_criteria}")
                 continue
-
+            
             for m in matches:
-                game = Game.objects.create(
-                    match = match,
-                    n_game = m["n_game"],
-                    player_1_visiting = Player.objects.get(name = m["player_1_visiting"]),
-                    player_2_visiting =Player.objects.get(name=m["player_2_visiting"]),
-                    score =m["score"],
-                    winner =m["winner"],
-                    draft_mode = m["draft_mode"]
-            )
-                game.save()
+                try:
+                    if match.visiting.name == LOS_GLADIADORES:
+                        player_1_visiting = Player.objects.get(
+                            name=m["player_1_visiting"]["name"], 
+                            last_name=m["player_1_visiting"]["last_name"]
+                        )
+                        player_2_visiting = Player.objects.get(
+                            name=m["player_2_visiting"]["name"], 
+                            last_name=m["player_2_visiting"]["last_name"]
+                        )
+                        game = Game.objects.create(
+                            match=match,
+                            n_game=m["n_game"],
+                            player_1_visiting=player_1_visiting,
+                            player_2_visiting=player_2_visiting,
+                            score=m["score"],
+                            winner=m["winner"],
+                            draft_mode=m["draft_mode"]
+                        )
+
+                    elif match.local.name == LOS_GLADIADORES:
+                        player_1_local = Player.objects.get(
+                            name=m["player_1_local"]["name"], 
+                            last_name=m["player_1_local"]["last_name"]
+                        )
+                        player_2_local = Player.objects.get(
+                            name=m["player_2_local"]["name"], 
+                            last_name=m["player_2_local"]["last_name"]
+                        )
+                        game = Game.objects.create(
+                            match=match,
+                            n_game=m["n_game"],
+                            player_1_local=player_1_local,
+                            player_2_local=player_2_local,
+                            score=m["score"],
+                            winner=m["winner"],
+                            draft_mode=m["draft_mode"]
+                        )
+
+                    game.save()
+                except Player.DoesNotExist:
+                    print(f"No se encontró uno de los jugadores para el partido: {m}")
+                    continue
+
+def get_player(game_criteria, player_key):
+    """Obtiene un jugador dado un criterio de juego y una clave de jugador."""
+    player_data = game_criteria[player_key]
+    return Player.objects.get(
+        name=player_data["name"],
+        last_name=player_data["last_name"]
+    )
+
+def get_game(match, game_criteria):
+    """Obtiene un juego basado en los criterios del partido y los jugadores."""
+    if match.local.name == LOS_GLADIADORES:
+        player_1 = get_player(game_criteria, "player_1_local")
+        player_2 = get_player(game_criteria, "player_2_local")
+        return Game.objects.get(match=match, player_1_local=player_1, player_2_local=player_2)
+
+    elif match.visiting.name == LOS_GLADIADORES:
+        player_1 = get_player(game_criteria, "player_1_visiting")
+        player_2 = get_player(game_criteria, "player_2_visiting")
+        return Game.objects.get(match=match, player_1_visiting=player_1, player_2_visiting=player_2)
+
+    return None
 
 def create_result():
     with open('populate/results.json', 'r', encoding='utf-8') as file:
         result_content = json.load(file)
-        for g in result_content:        
-            game_criteria = g["game_criteria"]
-            results = g["results"]
-            try:
-                game = Game.objects.get(
-                    player_1_visiting = Player.objects.get(name=game_criteria["player_1_visiting"]),
-                    player_2_visiting = Player.objects.get(name=game_criteria["player_2_visiting"]))
-            except Match.DoesNotExist:
-                print(f"No se encontró un Game: {game_criteria} con los criterios establecidos")
-                continue
 
-            for r in results:
-                result = Result.objects.create(
-                    game = game,
-                    set1_local = r["set1_local"],
-                    set1_visiting =  r["set1_visiting"],
-                    set2_local = r["set2_local"],
-                    set2_visiting = r["set2_visiting"],
-                    set3_local = r["set3_local"],
-                    set3_visiting = r["set3_visiting"],
-                    result = r["result"],
-                    draft_mode = False
+        # Recorrer los partidos
+        for match_data in result_content:
+            match_criteria = match_data["match_criteria"]
+            games = match_data["games"]
+
+            try:
+                match = Match.objects.get(
+                    local=Team.objects.get(name=match_criteria["local_team"]),
+                    visiting=Team.objects.get(name=match_criteria["visitor_team"])
                 )
-                result.save()
+            except Match.DoesNotExist:
+                print(f"No se encontró el partido con los criterios: {match_criteria}")
+                continue
+            
+            for g in games:
+                game_criteria = g["game_criteria"]
+                game = None  # Inicializar la variable game
+
+                try:
+                    game = get_game(match, game_criteria)
+
+                except (ObjectDoesNotExist, Exception) as e:
+                    print(f"Ocurrió un error: {e}")
+                    continue
+
+                if game:
+                    for result in g["results"]:
+                        Result.objects.create(
+                            game=game,
+                            result=result["result"],
+                            set1_local=result["set1_local"],
+                            set1_visiting=result["set1_visiting"],
+                            set2_local=result["set2_local"],
+                            set2_visiting=result["set2_visiting"],
+                            set3_local=result["set3_local"],
+                            set3_visiting=result["set3_visiting"],
+                            draft_mode=False  # O True, dependiendo de tu lógica
+                        )
+                else:
+                    print(f"No se pudo determinar el juego para los criterios: {game_criteria}")
+
+
+
+
 
 def populate_database():
     create_team()

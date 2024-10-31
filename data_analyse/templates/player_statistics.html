@@ -17,6 +17,7 @@
       lost_games_local: {{ lost_games_local|escape }},
       won_games_visiting: {{ won_games_visiting|escape }},
       lost_games_visiting: {{ lost_games_visiting|escape }},
+      degree_afinity: {{ degree_afinity|safe }},
     };
     </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -30,10 +31,10 @@
     <form method="GET" action="{% url 'player_statistics' %}">
       <label for="player">Selecciona el jugador:</label>
       <select name="player" id="player">
-        <option value="">-- Todos los jugadores --</option>
+        <option value="">-- Selecciona un jugador --</option>
         {% for player in players %}
         <option value="{{ player.id }}" {% if player.id == selected_player %}selected{% endif %}>
-          {{ player.name|escape }}
+          {{ player.name|escape }} {{player.last_name}}
         </option>
         {% endfor %}
       </select>
@@ -78,8 +79,8 @@
           <canvas id="chartCall"></canvas>
         </div>
         <div class="percentage">
-          Participó en: {{ present_call }} convocatorias<br>
-          No participó en: {{ no_call }} convocatorias<br>
+          Se apuntó a: {{ present_call }} convocatorias<br>
+          No se apuntó a: {{ no_call }} convocatorias<br>
         </div>
         {% else %}
         <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
@@ -119,6 +120,18 @@
         {% endif %}
       </div>
     </div>
+
+    <div class="card">
+      <h2>Grado de afinidad</h2>
+      {% if selected_player %}
+      <div class="chart-container" style="margin-top: 20px;">
+        <canvas id="myAffinityChart"></canvas>
+      </div>
+      {% else %}
+      <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
+      {% endif %}
+    </div>
+
   </div>
   <script src="{% static 'js/player_statistics.js' %}"></script>
 </body>

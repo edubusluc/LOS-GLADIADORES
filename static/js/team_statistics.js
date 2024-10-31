@@ -135,57 +135,57 @@ const partidos3Perdidos = teamData.column_chart_data.map(entry => entry.data[3])
 const myColumnChart = new Chart(columnCtx, {
   type: 'bar',
   data: {
-    labels: labels,
-    datasets: [
-      {
-        label: 'Partidos de 2 puntos ganados',
-        data: partidos2Ganados,
-        backgroundColor: '#007BFF', // Azul brillante
-      },
-      {
-        label: 'Partidos de 2 puntos perdidos',
-        data: partidos2Perdidos,
-        backgroundColor: '#33f3ff', // Amarillo brillante
-      },
-      {
-        label: 'Partidos de 3 puntos ganados',
-        data: partidos3Ganados,
-        backgroundColor: '#0056b3', // Azul oscuro
-      },
-      {
-        label: 'Partidos de 3 puntos perdidos',
-        data: partidos3Perdidos,
-        backgroundColor: 'rgba(255, 215, 0, 0.8)', // Amarillo dorado
-      }
-    ]
+      labels: labels,
+      datasets: [
+          {
+              label: 'Partidos de 2 puntos ganados',
+              data: partidos2Ganados,
+              backgroundColor: '#007BFF', // Azul brillante
+          },
+          {
+              label: 'Partidos de 2 puntos perdidos',
+              data: partidos2Perdidos,
+              backgroundColor: '#FFA500', 
+          },
+          {
+              label: 'Partidos de 3 puntos ganados',
+              data: partidos3Ganados,
+              backgroundColor: '#0056b3', // Azul oscuro
+          },
+          {
+              label: 'Partidos de 3 puntos perdidos',
+              data: partidos3Perdidos,
+              backgroundColor: 'rgba(255, 215, 0, 0.8)', // Amarillo dorado
+          }
+      ]
   },
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        stacked: true, // Activar apilado en el eje Y
-        title: { // Añadir título al eje Y
-          display: true,
-          text: 'Número de Partidos', // Cambia el texto según necesites
-          font: {
-            size: 16, // Tamaño de la fuente
-          },
-          padding: {
-            top: 10, // Espaciado superior
-            bottom: 10 // Espaciado inferior
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+          legend: {
+              display: true
           }
-        }
       },
-      x: {
-        stacked: true // Activar apilado en el eje X
+      scales: {
+          y: {
+              beginAtZero: true,
+              stacked: true,
+              title: {
+                  display: true,
+                  text: 'Número de Partidos',
+                  font: {
+                      size: 16,
+                  },
+                  padding: {
+                      top: 10,
+                      bottom: 10
+                  }
+              }
+          },
+          x: {
+              stacked: true
+          }
       }
-    }
   }
 });

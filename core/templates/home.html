@@ -5,27 +5,223 @@
 
 {% block content %}
 
-<body>
-    <div class="table-container">
-        <h2>Bienvenido a LOS GLADIADORES</h2>
-        {% if user.is_authenticated %}
-        <a href="{% url 'create_post' %}">Crear nueva publicación</a>
-        {% endif %}
+<div class="table-container">
+    <h2>Bienvenido a LOS GLADIADORES</h2>
+    {% if user.is_authenticated %}
+    <a href="{% url 'create_post' %}">Crear nueva publicación</a>
+    {% endif %}
 
-        <div>
-            {% for post in posts %}
+    <div class="container">
+        <h1>Galería de Posts</h1>
+        {% for post in posts %}
             <div class="post">
                 <h2>{{ post.title }}</h2>
                 <p>{{ post.content }}</p>
-                {% if post.image %}
-                <img src="{{ post.image.url }}" alt="{{ post.title }}">
-                {% endif %}
-                <p class="date">Publicado el {{ post.created_at }}</p>
+                
+                <!-- Imagen principal -->
+                <div class="main-image-container">
+                    {% if post.images.all %}
+                        <img id="main-image-{{ post.id }}" src="{{ post.images.first.image.url }}" alt="{{ post.title }}" onclick="openModal(event)" class = "image-css">
+                    {% else %}
+                        <p>No hay imágenes para este post.</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Galería de miniaturas -->
+                <div class="gallery-container">
+                    <div class="gallery">
+                        {% for image in post.images.all %}
+                            <img class="thumbnail" src="{{ image.image.url }}" alt="{{ post.title }}"
+                                 onclick="changeMainImage('{{ post.id }}', '{{ image.image.url }}')">
+                        {% empty %}
+                            <p>No hay imágenes para este post.</p>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-            {% empty %}
-            <p>No hay publicaciones todavía.</p>
-            {% endfor %}
-        </div>
+        {% empty %}
+            <p>No hay posts disponibles.</p>
+        {% endfor %}
     </div>
-</body>
+</div>
+
+<!-- Modal para la imagen principal -->
+<div id="imageModal" class="modal" style="display: none;">
+    <span class="close" onclick="closeModal()" role="button" tabindex="0" aria-label="Close modal">&times;</span>
+    <img class="modal-content" id="modal-image" alt="">
+    <div id="caption"></div>
+</div>
+
+<script>
+function changeMainImage(postId, imageUrl) {
+    document.getElementById(`main-image-${postId}`).src = imageUrl; // Cambiar la imagen principal
+}
+
+function openModal(event) {
+    var modal = document.getElementById("imageModal");
+    var modalImg = document.getElementById("modal-image");
+    var captionText = document.getElementById("caption");
+
+    // Mostrar el modal
+    modal.style.display = "flex"; // Cambia a flex para centrar el contenido
+    modalImg.src = event.target.src; // Cambia la imagen del modal a la de la imagen principal
+    captionText.innerHTML = event.target.alt; // Establece el texto del título
+
+    // Añadir el listener para detectar la tecla Escape
+    document.addEventListener("keydown", escKeyListener);
+}
+
+function closeModal() {
+    var modal = document.getElementById("imageModal");
+    modal.style.display = "none"; // Oculta el modal
+
+    // Quitar el listener de la tecla Escape
+    document.removeEventListener("keydown", escKeyListener);
+}
+
+function escKeyListener(event) {
+    if (event.key === "Escape") {
+        closeModal();
+    }
+}
+
+document.addEventListener("keydown", escKeyListener);
+
+// Cerrar el modal si se hace clic fuera de la imagen o en la 'close'
+window.onclick = function(event) {
+    var modal = document.getElementById("imageModal");
+    if (event.target === modal || event.target.className === 'close') {
+        closeModal(); // Llama a la función para cerrar el modal
+    }
+}
+</script>
+
+<style>
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.post {
+    border: 1px solid #e0e0e0; /* Borde más sutil */
+    padding: 15px; /* Aumento de padding */
+    margin-bottom: 20px;
+    background-color: #fff; /* Fondo blanco para los posts */
+    border-radius: 8px; /* Esquinas redondeadas */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    transition: transform 0.2s; /* Transición al hacer hover */
+}
+
+.post:hover {
+    transform: translateY(-2px); /* Elevar ligeramente el post al pasar el cursor */
+}
+
+.main-image-container {
+    text-align: center; 
+    margin-bottom: 15px; 
+    position: relative; 
+}
+
+.image-css {
+    width: 100%;
+    max-width: 900px; /* Ajusta este valor según sea necesario */
+    object-fit: cover;
+    height: auto;
+}
+
+.gallery-container {
+    border: 1px solid #e0e0e0; 
+    border-radius: 8px; 
+    padding: 10px; 
+    margin-top: 15px; 
+    background-color: #f9f9f9; 
+}
+
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; 
+}
+
+.thumbnail {
+    width: 100px; 
+    height: 100px; 
+    object-fit: cover; 
+    margin: 5px;
+    cursor: pointer; 
+    border-radius: 6px; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+}
+
+.thumbnail:hover {
+    transform: scale(1.1); 
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); 
+}
+
+/* Estilos para el modal */
+.modal {
+    position: fixed; 
+    z-index: 1000; /* Aumentado para estar por encima de otros elementos */
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: hidden; 
+    background-color: rgba(0, 0, 0, 0.9); /* Fondo oscuro más opaco */
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: opacity 0.3s ease; /* Transición suave */
+}
+
+.modal-content {
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    width: 100%; /* Ancho ajustado */
+    max-width: 800px; 
+    height: auto; 
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7); 
+
+    transition: transform 0.3s ease; /* Transición suave */
+    animation: fadeIn 0.3s ease; 
+}
+
+.modal-content img {
+    width: 100%; /* Mantener el 100% del contenedor */
+    max-width: 800px; /* Ajusta este valor para limitar el tamaño */
+    height: auto; /* Mantiene la proporción de la imagen */
+    border-radius: 12px; /* Si deseas mantener esquinas redondeadas */
+    transition: transform 0.3s ease; /* Suaviza la transformación */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0; 
+        transform: translateY(-20px); 
+    }
+    to {
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+.close {
+    position: absolute; 
+    top: 20px; 
+    right: 35px; 
+    color: #333; /* Color más oscuro para la close */
+    font-size: 40px; 
+    font-weight: bold; 
+    transition: color 0.3s; /* Transición suave */
+}
+
+.close:hover,
+.close:focus {
+    color: #ff5722; /* Color de hover más llamativo */
+}
+</style>
+
 {% endblock %}

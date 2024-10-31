@@ -340,65 +340,46 @@ def player_lost(m, player):
 def degree_of_affinity(player):
     player = Player.objects.get(id=player.id)
     other_players = Player.objects.exclude(id=player.id)
-
     affinity_results = {}
 
     for other in other_players:
+        # Filtra los juegos donde el jugador y el otro jugador forman pareja
         games = Game.objects.filter(
             Q(player_1_local=player, player_2_local=other) | 
             Q(player_1_local=other, player_2_local=player) |
             Q(player_1_visiting=player, player_2_visiting=other) | 
             Q(player_1_visiting=other, player_2_visiting=player)
         )
-        
 
-        # Contadores para victorias
-        game_2_points_won = 0
-        game_2_points_lost = 0
-        game_3_points_won = 0
-        game_3_points_lost = 0
+        # Contadores de victorias y derrotas
+        game_2_wins, game_2_losses = 0, 0
+        game_3_wins, game_3_losses = 0, 0
 
-        for m in games:
-            if m.score == 2:
-                if player_won(m, player):
-                    game_2_points_won += 1
-                elif player_lost(m, player):
-                    game_2_points_lost += 1
-            
-            elif m.score == 3:
-                if player_won(m, player):
-                    game_3_points_won += 1
-                elif player_lost(m, player):
-                    game_3_points_lost += 1
+        for game in games:
+            if game.score == 2:
+                game_2_wins += player_won(game, player)
+                game_2_losses += player_lost(game, player)
+            elif game.score == 3:
+                game_3_wins += player_won(game, player)
+                game_3_losses += player_lost(game, player)
 
-        
-        # Calcular la afinidad mejorada
-        total_matches = game_2_points_won + game_2_points_lost + game_3_points_won + game_3_points_lost
-        penalty = (game_2_points_lost + game_3_points_lost)
+        # Cálculo de afinidad
+        total_matches = game_2_wins + game_2_losses + game_3_wins + game_3_losses
+        if total_matches == 0:
+            affinity_results[other.name] = 0.0
+            continue
 
-        # Ponderación de victorias
-        weighted_wins = (game_3_points_won * 2.0) + (game_2_points_won * 1.0)  # Puedes ajustar estos pesos
+        weighted_wins = game_3_wins * 2 + game_2_wins
+        loss_penalty = (game_2_losses + game_3_losses) * 1.5
+        affinity = ((weighted_wins - loss_penalty) / total_matches) * 100
 
-        # Efecto de las pérdidas
-        loss_penalty = penalty * 1.5  # Puedes ajustar este peso
+        # Factor de experiencia y límites
+        experience_factor = min(1 + total_matches / 10, 2)
+        affinity = max(0, min(affinity * experience_factor, 100))
 
-        # Ajustar la afinidad
-        if total_matches == 0:  # Evitar división por cero
-            affinity = 0.0
-        else:
-            affinity = ((weighted_wins - loss_penalty) / total_matches) * 100
+        affinity_results[other.name] = affinity
 
-        experience_factor = min(1 + (total_matches / 10), 2)  # Aumenta el efecto con el número de partidos
-        affinity *= experience_factor
-        affinity = max(affinity, 0)  # Si es menor que 0, establecer en 0
-        affinity = min(affinity, 100)  # Asegurar que no supere 100
-        
-        affinity_results[str(other.name)] = affinity  # Suponiendo que cada jugador tiene un atributo `name`
-    sorted_affinity = dict(sorted(affinity_results.items(), key=lambda item: item[1], reverse=True))
-
-    return sorted_affinity
-
-
+    return dict(sorted(affinity_results.items(), key=lambda item: item[1], reverse=True))
 
 
 @require_GET

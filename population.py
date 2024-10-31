@@ -11,6 +11,7 @@ from team.models import Team
 from datetime import datetime
 from penalty.models import Penalty
 from callLog.models import CallLog
+from django.core.exceptions import ObjectDoesNotExist
 
 
 def truncate_all_tables():
@@ -175,6 +176,28 @@ def create_games():
                     print(f"No se encontró uno de los jugadores para el partido: {m}")
                     continue
 
+def get_player(game_criteria, player_key):
+    """Obtiene un jugador dado un criterio de juego y una clave de jugador."""
+    player_data = game_criteria[player_key]
+    return Player.objects.get(
+        name=player_data["name"],
+        last_name=player_data["last_name"]
+    )
+
+def get_game(match, game_criteria):
+    """Obtiene un juego basado en los criterios del partido y los jugadores."""
+    if match.local.name == "LOS GLADIADORES":
+        player_1 = get_player(game_criteria, "player_1_local")
+        player_2 = get_player(game_criteria, "player_2_local")
+        return Game.objects.get(match=match, player_1_local=player_1, player_2_local=player_2)
+
+    elif match.visiting.name == "LOS GLADIADORES":
+        player_1 = get_player(game_criteria, "player_1_visiting")
+        player_2 = get_player(game_criteria, "player_2_visiting")
+        return Game.objects.get(match=match, player_1_visiting=player_1, player_2_visiting=player_2)
+
+    return None
+
 def create_result():
     with open('populate/results.json', 'r', encoding='utf-8') as file:
         result_content = json.load(file)
@@ -193,52 +216,15 @@ def create_result():
                 print(f"No se encontró el partido con los criterios: {match_criteria}")
                 continue
             
-            print(f"Local team: {match.local}, Visiting team: {match.visiting}")  # Impresión para verificar los valores
-            
             for g in games:
                 game_criteria = g["game_criteria"]
                 game = None  # Inicializar la variable game
 
                 try:
-                    if match.local.name == "LOS GLADIADORES":
-                        player_1_local = Player.objects.get(
-                            name=game_criteria["player_1_local"]["name"], 
-                            last_name=game_criteria["player_1_local"]["last_name"]
-                        )
-                        player_2_local = Player.objects.get(
-                            name=game_criteria["player_2_local"]["name"], 
-                            last_name=game_criteria["player_2_local"]["last_name"]
-                        )
-                        game = Game.objects.get(
-                            match=match,
-                            player_1_local=player_1_local,
-                            player_2_local=player_2_local
-                        )
-                    elif match.visiting.name == "LOS GLADIADORES":
-                        player_1_visiting = Player.objects.get(
-                            name=game_criteria["player_1_visiting"]["name"], 
-                            last_name=game_criteria["player_1_visiting"]["last_name"]
-                        )
-                        
-                        player_2_visiting = Player.objects.get(
-                            name=game_criteria["player_2_visiting"]["name"], 
-                            last_name=game_criteria["player_2_visiting"]["last_name"]
-                        )
+                    game = get_game(match, game_criteria)
 
-                        game = Game.objects.get(
-                            match=match,
-                            player_1_visiting=player_1_visiting,
-                            player_2_visiting=player_2_visiting
-                        )
-
-                except Game.DoesNotExist:
-                    print(f"No se encontró el juego con los criterios: {game_criteria}")
-                    continue
-                except Player.DoesNotExist:
-                    print(f"No se encontró uno de los jugadores con los criterios: {game_criteria}")
-                    continue
-                except Exception as e:
-                    print(f"Ocurrió un error inesperado: {e}")
+                except (ObjectDoesNotExist, Exception) as e:
+                    print(f"Ocurrió un error: {e}")
                     continue
 
                 if game:
@@ -256,6 +242,7 @@ def create_result():
                         )
                 else:
                     print(f"No se pudo determinar el juego para los criterios: {game_criteria}")
+
 
 
 

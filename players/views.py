@@ -195,37 +195,28 @@ def get_snp_score(request):
         score = p["score"]
         name_parts = name.split()
 
-        if len(name_parts) == 2:
-            name = name_parts[0]
-            last_name = name_parts[1]
+        if not name_parts:
+            continue  # Salta si el nombre está vacío
 
-            try:
-                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
-                player.snp_score = score
-                player.save()
-            except: 
-                print(f"NO se encontro al jugador {name} {last_name}")
+        name, last_name = extract_name_last_name(name_parts)
 
-        if len(name_parts) == 3:
-            name = name_parts[0]
-            last_name = ' '.join(name_parts[1:])
-            try:
-                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
-                player.snp_score = score
-                player.save()
-            except: 
-                print(f"NO se encontro al jugador {name} {last_name}")
-        
-        if len(name_parts) > 3:
-            name = ' '.join(name_parts[:2])
-            last_name = ' '.join(name_parts[2:])
-            try:
-                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
-                player.snp_score = score
-                player.save()
-            except: 
-                print(f"NO se encontro al jugador {name} {last_name}")
+        try:
+            player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
+            player.snp_score = score
+            player.save()
+        except Player.DoesNotExist:  # Manejo específico de la excepción
+            print(f"NO se encontró al jugador {name} {last_name}")
+
     return redirect("list_players")
+
+def extract_name_last_name(name_parts):
+    """Extrae el nombre y el apellido(s) de la lista de partes del nombre."""
+    if len(name_parts) == 2:
+        return name_parts[0], name_parts[1]
+    elif len(name_parts) == 3:
+        return name_parts[0], ' '.join(name_parts[1:])
+    else:
+        return ' '.join(name_parts[:2]), ' '.join(name_parts[2:])
 
 
 

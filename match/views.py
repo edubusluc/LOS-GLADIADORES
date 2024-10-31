@@ -12,6 +12,8 @@ from players.views import calculate_score
 import json
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
+
+CREATE_MATCH_HTML = "create_match.html"
 # Create your views here.
 def list_match(request):
     matches = Match.objects.all().order_by('-start_date')
@@ -39,7 +41,7 @@ def create_match(request):
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
         except ValueError:
-            return render(request, "create_match.html", {
+            return render(request, CREATE_MATCH_HTML, {
                 "form": MatchForm(request.POST),
                 "error": "Fecha no válida. Usa el formato AAAA-MM-DD."
             })
@@ -49,7 +51,7 @@ def create_match(request):
             local_team = Team.objects.get(id=local_id)
             visiting_team = Team.objects.get(id=visiting_id)
         except Team.DoesNotExist:
-            return render(request, "create_match.html", {
+            return render(request, CREATE_MATCH_HTML, {
                 "form": MatchForm(request.POST),
                 "error": "Uno de los equipos no existe."
             })
@@ -57,7 +59,7 @@ def create_match(request):
         # Verifica si el enfrentamiento es válido
         if local_team.name != "LOS GLADIADORES" and visiting_team.name != "LOS GLADIADORES":
             form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
-            return render(request, "create_match.html", {
+            return render(request, CREATE_MATCH_HTML, {
                 "form": form,
                 "error": "No es un enfrentamiento válido. LOS GLADIADORES deben ser locales o visitantes"
             })
@@ -72,14 +74,14 @@ def create_match(request):
             return redirect("list_match")  # Redirección después de crear el partido
         else:
             form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
-            return render(request, "create_match.html", {
+            return render(request,CREATE_MATCH_HTML, {
                 "form": form,
                 "error": "Por favor, completa todos los campos."
             })
     else:
         form = MatchForm()
 
-    return render(request, "create_match.html", {"form": form})
+    return render(request, CREATE_MATCH_HTML, {"form": form})
 
 
 @login_required

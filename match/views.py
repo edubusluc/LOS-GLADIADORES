@@ -14,6 +14,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
 CREATE_MATCH_HTML = "create_match.html"
+LOS_GLADIADORES = "LOS GLADIADORES"
 # Create your views here.
 def list_match(request):
     matches = Match.objects.all().order_by('-start_date')
@@ -57,7 +58,7 @@ def create_match(request):
             })
 
         # Verifica si el enfrentamiento es válido
-        if local_team.name != "LOS GLADIADORES" and visiting_team.name != "LOS GLADIADORES":
+        if local_team.name != LOS_GLADIADORES and visiting_team.name != LOS_GLADIADORES:
             form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
             return render(request, CREATE_MATCH_HTML, {
                 "form": form,
@@ -292,7 +293,7 @@ def create_game_for_match(request, match_id):
                 messages.error(request, "Uno de los jugadores no existe.")
                 return redirect('call_for_match', match_id=match_id)
 
-            if match.local.name == "LOS GLADIADORES":
+            if match.local.name == LOS_GLADIADORES:
                 new_game = Game(
                     match=match,
                     n_game=idx,  # Asigna el número de juego según el índice
@@ -304,7 +305,7 @@ def create_game_for_match(request, match_id):
                     winner=None,  # Asigna el ganador si es necesario
                     draft_mode=True  # Cambia según la lógica de tu aplicación
                 )
-            elif match.visiting.name == "LOS GLADIADORES":
+            elif match.visiting.name == LOS_GLADIADORES:
                 new_game = Game(
                     match=match,
                     n_game=idx,  # Asigna el número de juego según el índice
@@ -441,9 +442,9 @@ def close_match(request, match_id):
     match.save()
 
     # Actualizar el rendimiento de los jugadores
-    if match.local.name == "LOS GLADIADORES":
+    if match.local.name == LOS_GLADIADORES:
         update_player_scores(games, is_local=True)
-    elif match.visiting.name == "LOS GLADIADORES":
+    elif match.visiting.name == LOS_GLADIADORES:
         update_player_scores(games, is_local=False)
 
     return redirect('list_match')

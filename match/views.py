@@ -465,7 +465,12 @@ def update_player_scores(games, is_local):
 @login_required
 def edit_game_match(request, match_id):
     match = get_object_or_404(Match, id=match_id)
-    games = Game.objects.filter(match_id=match_id).order_by('n_game')  # Obtiene los juegos ordenados por número de juego
+
+    if not match.draft_mode:
+        messages.error(request, "No se pueden editar los partidos que se encuentran ya confirmados")
+        return redirect('call_for_match', match_id=match_id)
+    
+    games = Game.objects.filter(match_id=match_id).order_by('n_game')
 
     def get_player(game_data, player_key):
         """Obtiene un jugador dado un diccionario de datos de juego y la clave del jugador."""

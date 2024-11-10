@@ -370,6 +370,7 @@ def create_result(request, game_id):
             return redirect('call_for_match', match_id=game.match.id)
 
         except ValidationError as e:
+            # Pasa los valores de los campos al contexto para que se mantengan
             return render(request, "create_result.html", {
                 "game": game,
                 "set1_local": set1_local,
@@ -382,6 +383,66 @@ def create_result(request, game_id):
             })
 
     return render(request, "create_result.html", {"game": game})
+
+
+
+@login_required
+def edit_result(request, game_id):
+    game = get_object_or_404(Game, id=game_id)
+    match = game.match
+    result = get_object_or_404(Result, game=game)  # Obtener el resultado del juego
+
+    if not match.draft_mode:
+        messages.error(request, "No se pueden editar los resultados de un partido ya confirmado")
+        return redirect('call_for_match', match_id=match.id)
+
+    if request.method == "POST":
+        set1_local = request.POST.get('set1_local')
+        set1_visiting = request.POST.get('set1_visiting')
+        set2_local = request.POST.get('set2_local')
+        set2_visiting = request.POST.get('set2_visiting')
+        set3_local = request.POST.get('set3_local')
+        set3_visiting = request.POST.get('set3_visiting')
+
+        # Asignar los nuevos valores a los sets
+        result.set1_local = set1_local
+        result.set1_visiting = set1_visiting
+        result.set2_local = set2_local
+        result.set2_visiting = set2_visiting
+        result.set3_local = set3_local
+        result.set3_visiting = set3_visiting
+
+        try:
+            # Determinar el ganador basado en los sets actualizados
+            result.result = result.determine_winner()
+            result.save()
+
+            # Actualizar el ganador del partido en base al resultado
+            if result.result == "Victoria Local":
+                game.winner = "Local"
+            else:
+                game.winner = "Visitante"
+            game.save()
+
+            # Redirigir al detalle del partido después de guardar
+            return redirect('call_for_match', match_id=game.match.id)
+
+        except ValidationError as e:
+            # Si hay un error de validación, devolver el formulario con el mensaje de error
+            return render(request, "edit_result.html", {
+                "game": game,
+                "result": result,
+                "set1_local": set1_local,
+                "set1_visiting": set1_visiting,
+                "set2_local": set2_local,
+                "set2_visiting": set2_visiting,
+                "set3_local": set3_local,
+                "set3_visiting": set3_visiting,
+                "error": str(e),
+            })
+
+    return render(request, "edit_result.html", {"result": result, "game": game})
+
 
 
 def calculate_points(games):

@@ -9,6 +9,7 @@ urlpatterns = (
     path('call_for_match/<int:match_id>/', call_for_match, name='call_for_match'),
     path("create_game/<int:match_id>/",create_game_for_match, name='create_game'),
     path("create_result/<int:game_id>/",create_result, name='create_result'),
+    path("edit_result/<int:game_id>/",edit_result, name='edit_result'),
     path("existing_call/<int:match_id>/", existing_call_view, name="existing_call"),
     path("edit_call/<int:call_id>/", edit_call, name='edit_call'),
     path("closed_call/<int:call_id>/", closed_call, name="closed_call"),

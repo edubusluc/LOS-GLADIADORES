@@ -2,10 +2,9 @@
 {% load static %}
 
 {% block content %}
-<body>
     <div class="table-container">
-        <h2>Resultado del Partido</h2>
-        <h3>{{game.match.local }} vs {{ game.match.visiting }}</h3>
+        <h2>Editar Resultado del Partido</h2>
+        <h3>{{ game.match.local }} vs {{ game.match.visiting }}</h3>
         <h3>Partido Número: {{ game.n_game }}</h3>
         {% if error %}
         <div class="alert-message">{{ error }}</div>
@@ -16,28 +15,28 @@
                 <div class="set">
                     <label for="set1_local" style="padding-left: 20px;">Set 1</label>
                     <input type="number" name="set1_local" id="set1_local" min="0" max="7" placeholder="0" 
-                    required style="width: 100px; height: 40px;" value="{{ set1_local}}">
+                        value="{{ result.set1_local }}" required style="width: 100px; height: 40px;">
                     <input type="number" name="set1_visiting" id="set1_visiting" min="0" max="7" placeholder="0"
-                    required style="width: 100px; height: 40px;" value="{{ set1_visiting}}">
+                        value="{{ result.set1_visiting }}" required style="width: 100px; height: 40px;">
                 </div>
 
                 <div class="set">
                     <label for="set2_local" style="padding-left: 20px;">Set 2</label>
                     <input type="number" name="set2_local" id="set2_local" min="0" max="7" placeholder="0"
-                        required style="width: 100px; height: 40px;" value="{{ set2_local }}">
+                        value="{{ result.set2_local }}" required style="width: 100px; height: 40px;">
                     <input type="number" name="set2_visiting" id="set2_visiting" min="0" max="7" placeholder="0"
-                        required style="width: 100px; height: 40px;" value="{{ set2_visiting}}">
+                        value="{{ result.set2_visiting }}" required style="width: 100px; height: 40px;">
                 </div>
 
                 <div class="set">
                     <label for="set3_local" style="padding-left: 20px;">Set 3</label>
                     <input type="number" name="set3_local" id="set3_local" min="0" max="7" placeholder="0" 
-                        style="width: 100px; height: 40px;" value="{{ set3_local }}">
-                    <input type="number" name="set3_visiting" id="set3_visiting" min="0" max="7" placeholder="0" 
-                        style="width: 100px; height: 40px;" value="{{ set3_visiting }}">
+                        value="{{ result.set3_local }}" style="width: 100px; height: 40px;">
+                    <input type="number" name="set3_visiting" id="set3_visiting" min="0" max="7" 
+                        value="{{ result.set3_visiting }}" placeholder="0" style="width: 100px; height: 40px;">
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary" style="background-color: #083C64;">Guardar Resultado</button>
+            <button type="submit" class="btn btn-primary" style="background-color: #083C64;">Actualizar Resultado</button>
         </form>
     </div>
 
@@ -53,5 +52,4 @@
         }
     </script>
 
-</body>
 {% endblock %}

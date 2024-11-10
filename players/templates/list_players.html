@@ -115,6 +115,9 @@
     .score-red {
         background-color: #dc3545; /* Rojo */
     }
+    .score-ligth-red {
+        background-color: #ff6978; /* Rojo */
+    }
     .score-yellow {
         background-color: #ffc107; /* Amarillo */
     }
@@ -253,6 +256,13 @@
                             <p class="card-player-text"><i class="fas fa-map-marker-alt me-2"></i><strong>Posición:</strong> {{ player.position }}</p>
                             <p class="card-player-text"><i class="fas fa-hand-paper me-2"></i><strong>Mano hábil:</strong> {{ player.skillfull_hand }}</p>
                             <p class="card-player-text"><i class="fas fa-trophy me-2"></i><strong>Puntos SNP:</strong> {{ player.snp_score }}</p>
+                            {% if user.is_authenticated %}
+                            {% if player.in_team %}
+                            <div class="performance-score score-light-green"> En el equipo </div>
+                            {% else %}
+                            <div class="performance-score score-ligth-red "> No en el equipo</div>
+                            {% endif %}
+                        {% endif %}
                             {% if player.score == -1 %}
                             <p>Aún no ha disputado ningún partido.</p>
                             {% else %}

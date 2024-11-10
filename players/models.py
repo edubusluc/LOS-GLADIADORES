@@ -23,6 +23,7 @@ class Player(models.Model):
     photo = models.ImageField(upload_to='static/profile', null=True, blank=True)
     snp_score = models.FloatField(null=True)
     score = models.IntegerField(default=5, null = True)
+    in_team = models.BooleanField(default=True)
     def __str__(self):
         return str(f'{self.name} {self.last_name}')
     

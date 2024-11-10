@@ -34,8 +34,13 @@
                 {% endfor %}
             </select>
         </div>
-    
-        <button type="submit"class = "button">Guardar</button>
+        
+        <div>
+            <input type="checkbox" id="in_team" name="in_team" {% if player.in_team %}checked{% endif %}>
+            <label for="in_team">¿Se encuentra en el equipo?</label>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="background-color: #083C64; margin-top: 10px;">Guardar</button>
     </form>
 </div>
 </body>

@@ -34,7 +34,7 @@ def create_player(request):
 
 def list_players(request):
     order_by = request.GET.get('order_by', 'name')
-    players = Player.objects.all().order_by(order_by)
+    players = Player.objects.all().order_by(order_by) if request.user.is_authenticated else Player.objects.filter(in_team=True)
     paginator = Paginator(players, 6)  # Puedes ajustar el número de jugadores por página
 
     # Obtén el número de página de la solicitud GET
@@ -57,10 +57,12 @@ def edit_player(request, player_id):
         name = request.POST.get("name")
         position = request.POST.get("position")
         skillfull_hand = request.POST.get("skillfull_hand")
+        in_team = 'in_team' in request.POST
 
         player.name = name
         player.position = position
         player.skillfull_hand = skillfull_hand
+        player.in_team = in_team
         player.save()
 
         return redirect('list_players')  # Redirigir a la lista de jugadores después de guardar

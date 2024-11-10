@@ -231,7 +231,7 @@ def call_for_match(request,match_id):
         })
 
     match = Match.objects.get(id=match_id)
-    game_for_match = Game.objects.filter(match_id=match_id)
+    game_for_match = Game.objects.filter(match_id=match_id).order_by("n_game")
 
     backhand_players = []
     forehand_players = []
@@ -461,6 +461,107 @@ def update_player_scores(games, is_local):
             player_score = calculate_score(player)
             player.score = player_score
             player.save()
+
+@login_required
+def edit_game_match(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    games = Game.objects.filter(match_id=match_id).order_by('n_game')  # Obtiene los juegos ordenados por número de juego
+
+    def get_player(game_data, player_key):
+        """Obtiene un jugador dado un diccionario de datos de juego y la clave del jugador."""
+        try:
+            return Player.objects.get(id=game_data[player_key])
+        except Player.DoesNotExist:
+            return None
+
+    def update_game(game, player_1, player_2, idx):
+        """Actualiza un juego con los jugadores y el número de juego."""
+        if match.local.name == "LOS GLADIADORES":
+            game.player_1_local = player_1
+            game.player_2_local = player_2
+            game.player_1_visiting = None
+            game.player_2_visiting = None
+        elif match.visiting.name == "LOS GLADIADORES":
+            game.player_1_visiting = player_1
+            game.player_2_visiting = player_2
+            game.player_1_local = None
+            game.player_2_local = None
+
+        game.n_game = idx
+        game.draft_mode = True
+
+    def is_player_repeated(player_1, player_2, used_players):
+        """Verifica si los jugadores ya han sido asignados."""
+        message=""
+        flag = False
+        if player_1.id in used_players:
+                message = f"El jugador {player_1} se encuentra repetido."
+                flag = True
+        if player_2.id in used_players:
+                message = f"El jugador {player_1} se encuentra repetido."
+                flag = True
+
+        return flag, message
+
+    if request.method == "POST":
+        ordered_games_data = json.loads(request.POST.get("ordered_games", "[]"))
+        used_players = set()
+
+        for idx, game_data in enumerate(ordered_games_data, start=1):
+            game = Game.objects.filter(id=game_data['gameId']).first()
+            if not game:
+                messages.error(request, "Uno de los juegos no existe.")
+                return redirect('edit_game_match', match_id=match_id)
+
+            player_1 = get_player(game_data, 'player1Id')
+            player_2 = get_player(game_data, 'player2Id')
+
+            if not player_1 or not player_2:
+                messages.error(request, "Uno de los jugadores no existe.")
+                return redirect('edit_game_match', match_id=match_id)
+
+            if player_1 == player_2:
+                messages.error(request, f"Existe un jugador repetido en el partido: {game.n_game}")
+                return redirect(request.path)
+            
+            flag, message = is_player_repeated(player_1, player_2, used_players)
+            if flag:
+                messages.error(request, f"{message}")
+                return redirect(request.path)
+
+            used_players.add(player_1.id)
+            used_players.add(player_2.id)
+
+            update_game(game, player_1, player_2, idx)
+
+            try:
+                game.save()
+            except Exception as e:
+                messages.error(request, f"Error al actualizar el juego: {str(e)}")
+                return redirect('edit_game_match', match_id=match_id)
+
+        messages.success(request, "Juegos actualizados exitosamente.")
+        return redirect('call_for_match', match_id=match.id)
+
+    games_data = [
+        {
+            'gameId': game.id,
+            'n_game': game.n_game,
+            'player1Id': game.player_1_local.id if game.player_1_local else game.player_1_visiting.id,
+            'player2Id': game.player_2_local.id if game.player_2_local else game.player_2_visiting.id,
+        }
+        for game in games
+    ]
+
+    call = Call.objects.get(match_id=match_id)
+
+    return render(request, "edit_game_match.html", {"games": games_data, "match": match, "call": call})
+
+
+
+
+
+
 
 
     

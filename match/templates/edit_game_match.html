@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    h1, h2 {
+        color: #333;
+        text-align: center;
+        margin-top: 20px;
+    }
+    fieldset {
+        border: none;
+        margin: 20px 0;
+        padding: 20px;
+        background: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        max-width: 500px;
+        max-width: 100%;
+    }
+    legend {
+        font-weight: bold;
+        font-size: 1.3em;
+        color: #555;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    label {
+        display: block;
+        font-weight: 600;
+        color: #444;
+        margin: 10px 0 5px;
+    }
+    .button {
+        display: inline-block;
+        padding: 12px 20px;
+        margin-top: 20px;
+        font-size: 1em;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 0.3s;
+    }
+    .button:hover {
+        background-color: #0056b3;
+    }
+    .pair-order-container {
+        margin-top: 30px;
+        max-width: 100%;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    #pair-order-list {
+        list-style-type: none;
+        padding: 0;
+        margin-top: 15px;
+        text-align: left;
+    }
+    #pair-order-list li {
+        padding: 10px;
+        border-bottom: 1px solid #c2c2c2;
+        color: #333;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+    }
+    #pair-order-list li:last-child {
+        border-bottom: none;
+    }
+    #pair-order-list li::before {
+        content: '🎾';
+        margin-right: 8px;
+        color: #007bff;
+    }
+</style>
+<script>
+    // Pasar la lista de jugadores desde Django al frontend
+    const players = [
+        {% for player in call.players.all %}
+            { 
+                "id": {{ player.id }},
+                "name": "{{ player.name }}",
+                "last_name": "{{ player.last_name }}",
+                "points": {{ player.snp_score }}
+            },
+        {% endfor %}
+    ];
+
+    function updatePlayerOptions() {
+        const playerSelects = document.querySelectorAll('select[id^="player_"]');
+        const selectedPlayers = [];
+
+        playerSelects.forEach(select => {
+            if (select.value) {
+                selectedPlayers.push(select.value);
+            }
+        });
+
+        playerSelects.forEach(select => {
+            const options = select.querySelectorAll('option');
+            options.forEach(option => {
+                option.disabled = false;
+                option.style.display = 'block';
+            });
+        });
+
+        playerSelects.forEach(select => {
+            const options = select.querySelectorAll('option');
+            options.forEach(option => {
+                if (selectedPlayers.includes(option.value) && option.value !== select.value) {
+                    option.disabled = true;
+                    option.style.display = 'none';
+                }
+            });
+        });
+
+        updateGameOrder();
+    }
+
+    function updateGameOrder() {
+        const games = [];
+        document.querySelectorAll('.game-item').forEach((gameItem, index) => {
+            const player1Select = gameItem.querySelector('select[name="player1Id"]');
+            const player2Select = gameItem.querySelector('select[name="player2Id"]');
+
+            if (player1Select && player2Select && player1Select.value && player2Select.value) {
+                const player1Option = player1Select.selectedOptions[0];
+                const player2Option = player2Select.selectedOptions[0];
+
+                const player1Points = parseInt(player1Option.dataset.points, 10) || 0;
+                const player2Points = parseInt(player2Option.dataset.points, 10) || 0;
+                const totalPoints = player1Points + player2Points;
+
+                games.push({
+                    gameId: gameItem.dataset.gameId,
+                    player1Id: player1Select.value,
+                    player2Id: player2Select.value,
+                    totalPoints: totalPoints,
+                    gameNumber: index + 1
+                });
+            }
+        });
+
+        games.sort((a, b) => b.totalPoints - a.totalPoints);
+
+        const orderList = document.getElementById("pair-order-list");
+        orderList.innerHTML = "";
+        const orderedGames = [];
+        games.forEach(game => {
+            const player1 = players.find(player => player.id === parseInt(game.player1Id));
+            const player2 = players.find(player => player.id === parseInt(game.player2Id));
+
+            const listItem = document.createElement("li");
+            listItem.textContent = `Partido: ${player1.name} ${player1.last_name} y ${player2.name} ${player2.last_name} - ${game.totalPoints} puntos`;
+            orderList.appendChild(listItem);
+
+            orderedGames.push({
+                gameId: game.gameId,
+                player1Id: game.player1Id,
+                player2Id: game.player2Id
+            });
+        });
+
+        document.getElementById('ordered_games').value = JSON.stringify(orderedGames);
+    }
+
+    window.onload = updatePlayerOptions;
+</script>
+
+<div class="table-container">
+    <h1>Editar Partidos del Enfrentamiento</h1>
+    
+    <!-- Mostrar los mensajes de Django -->
+    {% if messages %}
+        <div class="alert-message">
+            {% for message in messages %}
+                    {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div id="games-list">
+            {% for game in games %}
+                <div class="game-item" data-game-id="{{ game.gameId }}">
+                    <fieldset>
+                        <legend>Partidos {{ game.n_game }}</legend>
+                        <input type="hidden" name="ordered_games[{{ forloop.counter0 }}][gameId]" value="{{ game.gameId }}">
+                        <div>
+                            <label>Jugador 1:</label>
+                            <select name="player1Id" onchange="updatePlayerOptions()">
+                                <option value="">Seleccionar jugador 1</option>
+                                {% for player in call.players.all %}
+                                    <option value="{{ player.id }}" data-points="{{ player.snp_score }}"
+                                        {% if player.id == game.player1Id %}selected{% endif %}>
+                                        {{ player.name }} {{ player.last_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Jugador 2:</label>
+                            <select name="player2Id" onchange="updatePlayerOptions()">
+                                <option value="">Seleccionar jugador 2</option>
+                                {% for player in call.players.all %}
+                                    <option value="{{ player.id }}" data-points="{{ player.snp_score }}"
+                                        {% if player.id == game.player2Id %}selected{% endif %}>
+                                        {{ player.name }} {{ player.last_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </fieldset>
+                </div>
+            {% endfor %}
+        </div>
+        <input type="hidden" id="ordered_games" name="ordered_games">
+        <button type="submit" class="button">Guardar Cambios</button>
+    </form>
+
+    <div class="pair-order-container">
+        <h2>Orden de Juegos según Puntos</h2>
+        <ul id="pair-order-list">
+            <!-- Se llenará dinámicamente con el orden de parejas según puntos -->
+        </ul>
+    </div>
+</div>
+
+{% endblock %}

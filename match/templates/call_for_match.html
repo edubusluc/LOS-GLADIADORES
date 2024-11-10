@@ -132,7 +132,10 @@
         </div>
         {% endif %}
 
-        <h1>Partidos</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="margin: 0;">Partidos</h1>
+            <a href="{% url 'edit_games_match' match.id %}" class="btn btn-warning">Editar Partidos</a>
+        </div>
         {% if game_for_match %}
         {% for g in game_for_match %}
         <table class="table table-bordered mb-4">
@@ -186,10 +189,12 @@
         {% endif %}
         {% endif %}
 
+        {% if user.is_authenticated %}
         {% if match.draft_mode and not call_for_match.draft_mode and game_for_match.count < 5 %}
         <div class="text-center">
             <a href="{% url 'create_game' match_id %}" class="btn btn-info">Crear Partidos</a>
         </div>
+        {% endif %}
         {% endif %}
     </div>
 </div>

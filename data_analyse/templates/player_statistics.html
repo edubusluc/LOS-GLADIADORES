@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-<body>
   <script>
     // Pasar datos desde Django a JavaScript
     const playerStatsData = {
@@ -18,6 +17,10 @@
       won_games_visiting: {{ won_games_visiting|escape }},
       lost_games_visiting: {{ lost_games_visiting|escape }},
       degree_afinity: {{ degree_afinity|safe }},
+      local_games_won: {{ local_games_won|default:0|escape }},
+      local_games_lost: {{ local_games_lost|default:0|escape }},
+      visiting_games_won: {{ visiting_games_won|default:0|escape }},
+      visiting_games_lost: {{ visiting_games_lost|default:0|escape }},
     };
     </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -52,10 +55,26 @@
       <button type="submit" class="btn btn-primary" style="background-color: #083C64; margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
     </form>
 
+    <div class="card">
+      <h2>Puntos obtenidos por el jugador</h2>
+      {% if selected_player and selected_season %}
+        {% if total_match == 0 %}
+          <p class="message">Aún no se ha cerrado ningún partido</p>
+        {% else %}
+          <div class="points-container" style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="font-size: 36px; font-weight: bold; color: #083C64;">{{ points_player }}</h3>
+            <p style="font-size: 16px; color: #555;">Puntos obtenidos</p>
+          </div>
+        {% endif %}
+      {% else %}
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
+      {% endif %}
+    </div>
+
     <div class="card-container" style="margin-bottom: 20px;">
       <div class="card">
         <h2>Partidos Ganados/Perdidos</h2>
-        {% if selected_player %}
+        {% if selected_player and selected_season %}
         {% if total_match == 0 %}
         <p class="message">Aún no se ha cerrado ningún partido</p>
         {% else %}
@@ -68,13 +87,13 @@
         </div>
         {% endif %}
         {% else %}
-        <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
       </div>
 
       <div class="card">
         <h2>Participación Convocatorias</h2>
-        {% if selected_player %}
+        {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="chartCall"></canvas>
         </div>
@@ -83,29 +102,51 @@
           No se apuntó a: {{ no_call }} convocatorias<br>
         </div>
         {% else %}
-        <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
       </div>
 
       <div class="card">
         <h2>Partidos Ganados/Perdidos como Local</h2>
-        {% if selected_player %}
+        {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="localWinLost"></canvas>
         </div>
         {% else %}
-        <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
       </div>
 
       <div class="card">
         <h2>Partidos Ganados/Perdidos como Visitante</h2>
-        {% if selected_player %}
+        {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="visitingWinLost"></canvas>
         </div>
         {% else %}
-        <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Juegos Ganados/Perdidos como Local</h2>
+        {% if selected_player and selected_season %}
+        <div class="chart-container">
+          <canvas id="gamesLostWonLocal"></canvas>
+        </div>
+        {% else %}
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Juegos Ganados/Perdidos como Visitante</h2>
+        {% if selected_player and selected_season %}
+        <div class="chart-container">
+          <canvas id="gamesLostWonVisiting"></canvas>
+        </div>
+        {% else %}
+        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
       </div>
 
@@ -134,5 +175,4 @@
 
   </div>
   <script src="{% static 'js/player_statistics.js' %}"></script>
-</body>
 {% endblock %}

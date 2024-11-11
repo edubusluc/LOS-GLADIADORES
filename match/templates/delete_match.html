@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="table-container mt-4">
+    <div class="alert alert-warning">
+        <h4 class="alert-heading">Confirmación de eliminación</h4>
+        <p>Estás a punto de eliminar el partido entre <strong>{{ match.local }}</strong> y <strong>{{ match.visiting }}</strong>.</p>
+        <p>¿Estás seguro de que deseas eliminar este partido?</p>
+        <hr>
+        <div class="d-flex justify-content-between">
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Eliminar</button>
+            </form>
+            <a href="{% url 'list_match' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

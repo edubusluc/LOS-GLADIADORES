@@ -84,6 +84,21 @@ def create_match(request):
 
     return render(request, CREATE_MATCH_HTML, {"form": form})
 
+@login_required
+def delete_match(request, match_id):
+    try:
+        match = get_object_or_404(Match, id=match_id)
+
+        if request.method == 'POST':
+            # Eliminar el partido si el usuario confirma
+            match.delete()
+            return redirect('list_match')
+
+        return render(request, 'delete_match.html', {'match': match})
+    except Match.DoesNotExist:
+        messages.error("El partido no existe")
+        return redirect('list_match')
+
 
 @login_required
 def create_call(request, match_id):

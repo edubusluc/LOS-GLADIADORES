@@ -17,4 +17,5 @@ urlpatterns = (
     path('delete_call/<int:match_id>/', delete_call, name='delete_call'),
     path('close_call/<int:match_id>/', close_call, name='close_call'),
     path('edit_game_match/<int:match_id>/', edit_game_match, name='edit_games_match'),
+    path('delete_match/<int:match_id>/', delete_match, name='delete_match'),
 )

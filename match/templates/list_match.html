@@ -10,6 +10,7 @@
         flex-direction: column;
         transition: transform 0.2s;
         max-width: 100%; /* Asegurar que las tarjetas no excedan el ancho de la pantalla */
+        position: relative; /* Añadir esto para poder posicionar el botón de eliminación */
     }
 
     .custom-card:hover {
@@ -79,6 +80,23 @@
             margin-bottom: 1rem; /* Espacio entre tarjetas */
         }
     }
+
+    /* Estilo para el botón de eliminación */
+    .delete-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: red;
+        font-size: 1.5rem;
+    }
+
+    /* Asegúrate de que el icono de la papelera esté bien posicionado */
+    .delete-button i {
+        font-size: 1.5rem;
+    }
 </style>
 
 <div class="table-container mt-4">
@@ -89,14 +107,24 @@
         {% endif %}
     </div>
 
-    <div class="matches-row"> <!-- Cambié a una fila para contener las tarjetas -->
+    <div class="matches-row"> 
         {% for m in matches %}
-        <div class="col-12 mb-4"> <!-- Ajuste de columnas para que cada tarjeta ocupe toda la fila -->
-            <a href="{% url 'call_for_match' m.id %}" class="text-decoration-none text-dark">
-                <div class="card h-100 custom-card">
+        <div class="col-12 mb-4 position-relative"> 
+            <div class="card h-100 custom-card">
+                <!-- Botón de eliminación -->
+                 {%if user.is_authenticated%}
+                <a href="{% url 'delete_match' m.id %}" class="delete-button">
+                    <i class="fas fa-trash"></i>
+                </a>
+                {%endif%}
+                <a href="{% url 'call_for_match' m.id %}" class="text-decoration-none text-dark">
                     <div class="card-body d-flex flex-column justify-content-between">
                         <div class="info-container mb-3">
+                            {%if m.local.photo%}
                             <img src="{{ m.local.photo.url }}" alt="{{ m.local }}" class="team-logo">
+                            {%else%}
+                            <img src="{% static 'team/unknow_team.png' %}" alt="{{ m.local }}" class="team-logo">
+                            {%endif%}
                             <div class="info-details">
                                 <h5 class="card-title">{{ m.local }} vs {{ m.visiting }}</h5>
                                 <div class="result-container">
@@ -112,11 +140,15 @@
                                     </p>
                                 </div>
                             </div>
-                            <img src="{{ m.visiting.photo.url }}" alt="{{ m.visiting }}" class="team-logo">
+                            {%if m.visiting.photo%}
+                            <img src="{{ m.visiting.photo.url}}" alt="{{ m.visiting }}" class="team-logo">
+                            {%else%}
+                            <img src="{% static 'team/unknow_team.png' %}" alt="{{ m.visiting }}" class="team-logo">
+                            {%endif%}
                         </div>
                     </div>
-                </div>
-            </a>
+                </a>
+            </div>
         </div>
         {% empty %}
         <div class="col-12 text-center">

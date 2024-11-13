@@ -180,7 +180,6 @@ def find_player_score(player_name, scores_list):
 #SNP SCORE
 load_dotenv()
 def get_snp_score(request):
-    print(os.getenv("SCRAPPER_KEY"))
     dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", os.getenv('SCRAPPER_KEY'))
 
     if dicc:

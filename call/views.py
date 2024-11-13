@@ -1,7 +1,5 @@
 from django.shortcuts import redirect, get_object_or_404
-from players.models import *
-from match.models import *
-from .models import *
+from .models import Call
 
 # Create your views here.
 def delete_call(request, match_id):

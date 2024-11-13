@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import *
-from .models import *
+from .forms import MatchForm
+from .models import Match, Game, Result
+from players.models import Player
 from call.models import Call
 from team.models import Team
 from datetime import datetime

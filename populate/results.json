@@ -367,5 +367,128 @@
                 ]
             }
         ]
+    },
+    {
+        "match_criteria": {
+            "local_team": "LOS GLADIADORES",
+            "visitor_team": "ASOCIACION DE PERSONAL LA CAIXA"
+        },
+        "games": [
+            {
+                "game_criteria": {
+                    "player_1_local":{
+                    "name": "EDUARDO",
+                    "last_name": "BUSTAMANTE LUCENA"  
+                },
+                "player_2_local":{
+                    "name": "AURELIO",
+                    "last_name": "BIELSA MARTIN"  
+                }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "4",
+                        "set2_local": "7",
+                        "set2_visiting": "5",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local":{
+                        "name": "JORDI",
+                        "last_name": "BELTRAN VEGA"  
+                    },
+                    "player_2_local":{
+                        "name": "GONZALO",
+                        "last_name": "SANTANA ALONSO"
+                    }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "1",
+                        "set1_visiting": "6",
+                        "set2_local": "1",
+                        "set2_visiting": "6",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local":{
+                    "name": "TONI",
+                    "last_name": "MORILLO RODRIGUEZ"  
+                },
+                "player_2_local":{
+                    "name": "FABRIZIO",
+                    "last_name": "BRAVI"  
+                }
+                },
+                "results": [
+                    {
+                        "result": "Visitante",
+                        "set1_local": "2",
+                        "set1_visiting": "6",
+                        "set2_local": "6",
+                        "set2_visiting": "3",
+                        "set3_local": "3",
+                        "set3_visiting": "6"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local":{
+                    "name": "JUAN ANTONIO",
+                    "last_name": "LOPEZ MUMPAO"  
+                },
+                "player_2_local":{
+                    "name": "DANIEL",
+                    "last_name": "CARRATALA RIUS"  
+                }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "4",
+                        "set2_local": "6",
+                        "set2_visiting": "2",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            },
+            {
+                "game_criteria": {
+                    "player_1_local": {
+                    "name": "ALBERTO",
+                    "last_name": "MONTAÑO LEON"  
+                },
+                "player_2_local": {
+                    "name": "ANTONIO",
+                    "last_name": "CARO BERMÚDEZ"  
+                }
+                },
+                "results": [
+                    {
+                        "result": "Local",
+                        "set1_local": "6",
+                        "set1_visiting": "4",
+                        "set2_local": "6",
+                        "set2_visiting": "3",
+                        "set3_local": "0",
+                        "set3_visiting": "0"
+                    }
+                ]
+            }
+        ]
     }
 ]

@@ -88,26 +88,31 @@ def create_match(request):
 def delete_match(request, match_id):
     try:
         match = get_object_or_404(Match, id=match_id)
+        if match.draft_mode != False:
 
-        if request.method == 'POST':
-            # Eliminar el partido si el usuario confirma
-            match.delete()
+            if request.method == 'POST':
+                # Eliminar el partido si el usuario confirma
+                match.delete()
+                return redirect('list_match')
+
+            return render(request, 'delete_match.html', {'match': match})
+        else:
+            messages.error(request, "No se puede eliminar un partido ya confirmado")
+
             return redirect('list_match')
-
-        return render(request, 'delete_match.html', {'match': match})
     except Match.DoesNotExist:
-        messages.error("El partido no existe")
+        messages.error(request, "El partido no existe")
         return redirect('list_match')
 
 
 @login_required
 def create_call(request, match_id):
-    players = Player.objects.all()  # Asegúrate de que esto sea correcto
-    match = Match.objects.get(id=match_id)  # Asegúrate de que esto sea correcto
+    players = Player.objects.all()  
+    match = Match.objects.get(id=match_id) 
     existing_call = Call.objects.filter(match_id=match_id).exists()
 
 
-    if existing_call:
+    if existing_call or match.draft_mode == False:
         return redirect('existing_call', match.id)
     
     player_penalties = {

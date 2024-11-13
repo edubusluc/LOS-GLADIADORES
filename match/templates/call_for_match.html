@@ -132,9 +132,11 @@
         {% if user.is_authenticated %}
         <div class="mb-4">
             <div class="btn-group">
+                {% if match.draft_mode%}
                 {% if not call_for_match %}
                 <a href="{% url 'create_call' match_id %}" class="btn btn-primary" style="background-color: #083C64;">Crear Convocatoria</a>
                 {% endif %}
+                {%endif%}
             
                 {% if call_for_match and match.draft_mode %}
                 <a href="{% url 'view_call_log' call_for_match.id %}" class="btn btn-danger">Penalizaciones</a>

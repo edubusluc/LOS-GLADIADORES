@@ -7,7 +7,6 @@ def scrape_scores(url, username, password):
     with sync_playwright() as p:
         try:
             # Lanzar el navegador
-            print("Iniciando el navegador...")
             browser = p.chromium.launch(headless=True)  # Usa headless=False si deseas ver el navegador
             page = browser.new_page()
 

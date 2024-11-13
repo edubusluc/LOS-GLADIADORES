@@ -34,14 +34,5 @@
         "location":"SITING PADEL CLUB",
         "in_group": true,
         "photo": "static/team/La_Caixa_logo.png"
-    },
-    {
-        "name": "CÍRCULO MERCANTIL E INDUSTRIAL DE SEVILLA",
-        "location":"Círculo Mercantil e Industrial de Sevilla (Instalaciones Deportivas)",
-        "in_group": false,
-        "photo": null
-    }
-
-
-    
+    }    
 ]

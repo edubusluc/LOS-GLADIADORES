@@ -4,10 +4,18 @@ from .models import Post, Image
 from .forms import PostForm
 from match.models import Match
 from django.contrib import messages
+from django.core.paginator import Paginator
+
 
 def home(request):
     posts = Post.objects.prefetch_related('images').all().order_by('-created_at')
-    return render(request, 'home.html', {'posts': posts})
+    
+    # Configuración de la paginación
+    paginator = Paginator(posts, 3)  # 3 publicaciones por página
+    page_number = request.GET.get('page')  # Obtiene el número de página desde la URL
+    page_obj = paginator.get_page(page_number)  # Paginación de los posts
+
+    return render(request, 'home.html', {'page_obj': page_obj})
 
 
 @login_required
@@ -24,7 +32,12 @@ def create_post(request):
                 return handle_error(request, form, matches, 'Debes seleccionar al menos una imagen')
 
             post = form.save(commit=False)
-            post.content = generate_post_content(request.POST.get('match_id'))
+            
+            match_id = request.POST.get('match_id')
+            if match_id:
+                post.content = generate_post_content(match_id)  # Generar contenido desde el partido
+            else:
+                post.content = form.cleaned_data['content']  # Usar el contenido del formulario si no hay partido
 
             post.save()
             save_post_images(post, files)

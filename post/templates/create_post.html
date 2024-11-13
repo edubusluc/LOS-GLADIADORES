@@ -27,8 +27,8 @@
             {% endfor %}
 
             <div class="form-group mb-3">
-                <label for="match_select" class="form-label">Selecciona un partido:</label>
-                <select id="match_select" name="match_id" class="form-select" required>
+                <label for="match_select" class="form-label">Añade una descripción por defecto:</label>
+                <select id="match_select" name="match_id" class="form-select">
                     <option value="">-- Selecciona un partido --</option>
                     {% for match in matches %}
                         <option value="{{ match.id }}">{{ match }}</option>

@@ -129,5 +129,38 @@
             "last_name": "BELTRAN VEGA"}
         ],
         "draft_mode": false
+    },
+    {
+        "match_criteria": {
+            "local_team": "LOS GLADIADORES",
+            "visitor_team": "ASOCIACION DE PERSONAL LA CAIXA"
+        },
+        "players": [
+            {"name": "ALBERTO",
+            "last_name": "MONTAÑO LEON"},
+            {"name": "EDUARDO",
+            "last_name": "BUSTAMANTE LUCENA"},
+            {"name": "AURELIO",
+            "last_name": "BIELSA MARTIN"},
+            {"name": "GONZALO",
+            "last_name": "SANTANA ALONSO"},
+            {"name": "JULIAN",
+            "last_name": "RUIZ DELGADO"},
+            {"name": "ALBERTO",
+            "last_name": "CASTRO LUQUE"},
+            {"name": "DANIEL",
+            "last_name": "CARRATALA RIUS"},
+            {"name": "JUAN ANTONIO",
+            "last_name": "LOPEZ MUMPAO"},
+            {"name": "FABRIZIO",
+            "last_name": "BRAVI"},
+            {"name": "ANTONIO",
+            "last_name": "CARO BERMÚDEZ"},
+            {"name": "TONI",
+            "last_name": "MORILLO RODRIGUEZ"},
+            {"name": "JORDI",
+            "last_name": "BELTRAN VEGA"}
+        ],
+        "draft_mode": false
     }
 ]

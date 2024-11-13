@@ -55,7 +55,7 @@
       <button type="submit" class="btn btn-primary" style="background-color: #083C64; margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
     </form>
 
-    <div class="card">
+    <div class="card" style="margin-bottom: 20px;">
       <h2>Puntos obtenidos por el jugador</h2>
       {% if selected_player and selected_season %}
         {% if total_match == 0 %}
@@ -108,6 +108,9 @@
 
       <div class="card">
         <h2>Partidos Ganados/Perdidos como Local</h2>
+        {% if total_match == 0 %}
+          <p class="message">Aún no se ha cerrado ningún partido</p>
+        {%else%}
         {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="localWinLost"></canvas>
@@ -115,10 +118,14 @@
         {% else %}
         <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
+        {%endif%}
       </div>
 
       <div class="card">
         <h2>Partidos Ganados/Perdidos como Visitante</h2>
+        {% if total_match == 0 %}
+        <p class="message">Aún no se ha cerrado ningún partido</p>
+      {%else%}
         {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="visitingWinLost"></canvas>
@@ -126,10 +133,14 @@
         {% else %}
         <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
+        {% endif %}
       </div>
 
       <div class="card">
         <h2>Juegos Ganados/Perdidos como Local</h2>
+        {% if total_match == 0 %}
+        <p class="message">Aún no se ha cerrado ningún partido</p>
+      {%else%}
         {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="gamesLostWonLocal"></canvas>
@@ -137,16 +148,21 @@
         {% else %}
         <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
         {% endif %}
+        {% endif %}
       </div>
 
       <div class="card">
         <h2>Juegos Ganados/Perdidos como Visitante</h2>
+        {% if total_match == 0 %}
+        <p class="message">Aún no se ha cerrado ningún partido</p>
+      {%else%}
         {% if selected_player and selected_season %}
         <div class="chart-container">
           <canvas id="gamesLostWonVisiting"></canvas>
         </div>
         {% else %}
         <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
+        {% endif %}
         {% endif %}
       </div>
 

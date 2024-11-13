@@ -304,8 +304,6 @@ def create_game_for_match(request, match_id):
     if request.method == "POST":
         ordered_games_data = json.loads(request.POST.get("ordered_games", "[]"))
 
-        print(match.local)
-
         for idx, game in enumerate(ordered_games_data, start=1):
             try:
                 player_1 = Player.objects.get(id=game['player1Id'])

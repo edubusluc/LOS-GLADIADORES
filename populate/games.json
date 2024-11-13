@@ -271,6 +271,96 @@
             }
         ]
 
+    },
+    {
+        "match_criteria":{
+            "local_team":"LOS GLADIADORES",
+            "visitor_team": "ASOCIACION DE PERSONAL LA CAIXA"
+        },
+        "matches": [
+            {
+                "n_game":1,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "EDUARDO",
+                    "last_name": "BUSTAMANTE LUCENA"  
+                },
+                "player_2_local":{
+                    "name": "AURELIO",
+                    "last_name": "BIELSA MARTIN"  
+                },
+                "score": "3",
+                "winner": "Local",
+                "draft_mode": false
+            },
+            {
+                "n_game":2,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "JORDI",
+                    "last_name": "BELTRAN VEGA"  
+                },
+                "player_2_local":{
+                    "name": "GONZALO",
+                    "last_name": "SANTANA ALONSO"
+                },
+                "score": "3",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+            {
+                "n_game":3,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "TONI",
+                    "last_name": "MORILLO RODRIGUEZ"  
+                },
+                "player_2_local":{
+                    "name": "FABRIZIO",
+                    "last_name": "BRAVI"  
+                },
+                "score": "2",
+                "winner": "Visitante",
+                "draft_mode": false
+            },
+
+            {
+                "n_game":4,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local":{
+                    "name": "JUAN ANTONIO",
+                    "last_name": "LOPEZ MUMPAO"  
+                },
+                "player_2_local":{
+                    "name": "DANIEL",
+                    "last_name": "CARRATALA RIUS"  
+                },
+                "score": "2",
+                "winner": "Local",
+                "draft_mode": false
+            },
+
+            {
+                "n_game": 5,
+                "player_1_visiting": null,
+                "player_2_visiting": null,
+                "player_1_local": {
+                    "name": "ALBERTO",
+                    "last_name": "MONTAÑO LEON"  
+                },
+                "player_2_local": {
+                    "name": "ANTONIO",
+                    "last_name": "CARO BERMÚDEZ"  
+                },
+                "score": "2",
+                "winner": "Local",
+                "draft_mode": false
+            }
+        ]
     }
 
 ]

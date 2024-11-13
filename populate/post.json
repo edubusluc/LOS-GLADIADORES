@@ -1,0 +1,20 @@
+{
+    "posts": [
+      {
+        "fields": {
+          "title": "SNP GLADIADORES 2024-2025",
+          "content": "¡BIENVENIDOS GLADIADORES!",
+          "created_at": "2024-11-11T00:00:00Z"
+        }
+      }
+    ],
+    "images": [
+      {
+        "fields": {
+          "post": 1,
+          "image": "static/img/img.png"
+        }
+      }
+    ]
+  }
+  

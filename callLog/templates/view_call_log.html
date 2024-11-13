@@ -11,17 +11,23 @@
 </style>
 <div class="table-container">
     <h1 class="ms-4">Cambios realizados en la convocatoria</h1>
-    <div class="log-container ms-3">
-        {% for l in log_lines %}
-        {% if "convocatoria abierta" in l %}
-        <p class="alert-log">{{ l }}</p>
-        <p>&nbsp</p>
-        {% endif %}
-        {% if "convocatoria cerrada" in l %}
-        <p class="warning">{{ l }}</p>
-        {% endif %}
-        {% endfor %}
-    </div>
+
+    {% if log_lines %}
+        <div class="log-container ms-3">
+            {% for l in log_lines %}
+                {% if "convocatoria abierta" in l %}
+                    <p class="alert-log">{{ l }}</p>
+                    <p>&nbsp;</p>
+                {% endif %}
+                {% if "convocatoria cerrada" in l %}
+                    <p class="warning">{{ l }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class = "alert-log">No hay cambios registrados en la convocatoria.</p>
+    {% endif %}
+
     <div class="ms-3" style="margin-top: 10px;">
         <form method="POST" action="{% url 'create_penalty' call_id %}">
             {% csrf_token %}
@@ -38,7 +44,7 @@
                 </div>
                 {% endfor %}
             </div>
-            <button type="submit" class="button">Aplicar sanciones</button>
+            <button type="submit" class="btn btn-primary" style="background-color: #083C64;">Aplicar sanciones</button>
         </form>
     </div>
 </div>

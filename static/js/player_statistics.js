@@ -7,6 +7,8 @@ function initializeCharts(data) {
     const visitingWinLost = document.getElementById('visitingWinLost');
     const lineGamesChart = document.getElementById('myLineGamesChart');
     const affinityChart = document.getElementById('myAffinityChart');
+    const gamesLostWonLocal = document.getElementById('gamesLostWonLocal');
+    const gamesLostWonVisiting = document.getElementById('gamesLostWonVisiting');
 
     if (pieChart) {
         const pieCtx = pieChart.getContext('2d');
@@ -31,7 +33,7 @@ function initializeCharts(data) {
         new Chart(pieCallCtx, {
             type: 'pie',
             data: {
-                labels: ['Llamado', 'No llamado'],
+                labels: ['Apuntado', 'No apuntado'],
                 datasets: [{
                     data: [presentCall, noCall],
                     backgroundColor: ['#083C64', '#ff6384'],
@@ -80,6 +82,62 @@ function initializeCharts(data) {
                 labels: ['Partidos Ganados', 'Partidos Perdidos'],
                 datasets: [{
                     data: [data.won_games_visiting, data.lost_games_visiting],
+                    backgroundColor: ['#083C64', '#ff6384'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    if (gamesLostWonLocal) {
+        const gamesLostWonLocalCtx = gamesLostWonLocal.getContext('2d');
+        new Chart(gamesLostWonLocalCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Juegos Ganados', 'Juegos Perdidos'],
+                datasets: [{
+                    data: [data.local_games_won, data.local_games_lost],
+                    backgroundColor: ['#083C64', '#ff6384'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    if (gamesLostWonVisiting) {
+        const gamesLostWonVisitingCtx = gamesLostWonVisiting.getContext('2d');
+        new Chart(gamesLostWonVisitingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Juegos Ganados', 'Juegos Perdidos'],
+                datasets: [{
+                    data: [data.visiting_games_won, data.visiting_games_lost],
                     backgroundColor: ['#083C64', '#ff6384'],
                 }]
             },

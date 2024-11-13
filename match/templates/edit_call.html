@@ -33,7 +33,7 @@
                                         <input class="form-check-input" type="checkbox" name="players" value="{{ player.id }}" id="player-{{ player.id }}"
                                             {% if player.id in selected_players %} checked {% endif %}>
                                         <label class="form-check-label" for="player-{{ player.id }}">
-                                            {{ player.name }}
+                                            {{ player }}
                                         </label>
                                     </div>
                                 </div>
@@ -41,7 +41,7 @@
                         </div>
                     </div>
                     <div class="text-center">
-                        <button type="submit" class="button" name="update_call">Actualizar Convocatoria</button>
+                        <button type="submit" class="btn btn-primary" style="background-color: #083C64;" name="update_call">Actualizar Convocatoria</button>
                     </div>
                 </form>
             </div>

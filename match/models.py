@@ -76,6 +76,14 @@ class Game(models.Model):
         self.clean()  # Llamar a la validación antes de guardar
         super().save(*args, **kwargs)
 
+
+    def __str__(self):
+        if self.player_1_local:
+            return f'{self.match}-{self.n_game}: {self.player_1_local} - {self.player_2_local}'
+        else:
+            return f'{self.player_1_visiting} - {self.player_2_visiting}'
+
+
 def validate_set_value(value):
     if value < 0 or value > 7:
         raise ValidationError('El valor debe estar entre 0 y 7.')

@@ -7,6 +7,8 @@ from django.contrib import messages
 from match.models import Game
 from players.models import Player
 from django.db.models import Q
+import os
+from dotenv import load_dotenv
 
 from .scraper import scrape_scores
 # Create your views here.
@@ -34,7 +36,10 @@ def create_player(request):
 
 def list_players(request):
     order_by = request.GET.get('order_by', 'name')
-    players = Player.objects.all().order_by(order_by)
+    if request.user.is_authenticated:
+        players = Player.objects.all().order_by('-in_team', order_by)
+    else:
+        players = Player.objects.filter(in_team=True).order_by(order_by)
     paginator = Paginator(players, 6)  # Puedes ajustar el número de jugadores por página
 
     # Obtén el número de página de la solicitud GET
@@ -57,10 +62,12 @@ def edit_player(request, player_id):
         name = request.POST.get("name")
         position = request.POST.get("position")
         skillfull_hand = request.POST.get("skillfull_hand")
+        in_team = 'in_team' in request.POST
 
         player.name = name
         player.position = position
         player.skillfull_hand = skillfull_hand
+        player.in_team = in_team
         player.save()
 
         return redirect('list_players')  # Redirigir a la lista de jugadores después de guardar
@@ -70,15 +77,6 @@ def edit_player(request, player_id):
     }
     return render(request, 'edit_player.html', context)  # Renderizar con el contexto correcto
 
-
-@login_required
-def delete_player(request, player_id):
-    player = get_object_or_404(Player, id=player_id)
-    if request.method == "POST":
-        player.delete()
-        return redirect('list_players')
-    
-    return render(request, 'confirm_delete.html', {'player': player})
 
 def show_player(request, player_id):
     player = get_object_or_404(Player, id=player_id)
@@ -181,27 +179,34 @@ def find_player_score(player_name, scores_list):
 
 
 #SNP SCORE
+load_dotenv()
 def get_snp_score(request):
-    dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", "j3du")
+    print(os.getenv("SCRAPPER_KEY"))
+    dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", os.getenv('SCRAPPER_KEY'))
 
-    for p in dicc:
-        name = p["name"]
-        score = p["score"]
-        name_parts = name.split()
+    if dicc:
+        for p in dicc:
+            name = p["name"]
+            score = p["score"]
+            name_parts = name.split()
 
-        if not name_parts:
-            continue  # Salta si el nombre está vacío
+            if not name_parts:
+                continue  # Salta si el nombre está vacío
 
-        name, last_name = extract_name_last_name(name_parts)
+            name, last_name = extract_name_last_name(name_parts)
 
-        try:
-            player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
-            player.snp_score = score
-            player.save()
-        except Player.DoesNotExist:  # Manejo específico de la excepción
-            print(f"NO se encontró al jugador {name} {last_name}")
+            try:
+                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
+                player.snp_score = score
+                player.save()
+            except Player.DoesNotExist:  # Manejo específico de la excepción
+                messages.error(request, f"NO se encontró al jugador {name} {last_name}")
+                return redirect("list_players")
 
-    return redirect("list_players")
+        return redirect("list_players")
+    else:
+        messages.error(request, "No se ha podido actualizar la puntuación")
+        return redirect("list_players")
 
 def extract_name_last_name(name_parts):
     """Extrae el nombre y el apellido(s) de la lista de partes del nombre."""

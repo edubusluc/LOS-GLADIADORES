@@ -4,7 +4,6 @@ from penalty.models import Penalty
 from post.models import Image, Post
 from team.models import Team
 
-
 # Register your models here.
 admin.site.register(CallLog)
 admin.site.register(Penalty)

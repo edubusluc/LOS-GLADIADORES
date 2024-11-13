@@ -18,7 +18,10 @@ def view_call_log(request, call_id):
         })
 
     players = Player.objects.all()
-    log_lines = call_log.text.split(";")
+    if call_log.text:
+        log_lines = call_log.text.split(";")
+    else:
+        log_lines = []  # Si no tiene contenido, usar una lista vacía
 
     return render(request, "view_call_log.html", {
         "log_lines": log_lines,

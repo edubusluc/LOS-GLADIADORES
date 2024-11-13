@@ -381,29 +381,103 @@ def degree_of_affinity(player):
 
     return dict(sorted(affinity_results.items(), key=lambda item: item[1], reverse=True))
 
+def points_per_players(player_id,season):
+    player = Player.objects.get(id = player_id)
+    games = Game.objects.filter(
+        Q(player_1_local = player) |
+        Q(player_2_local = player) |
+        Q(player_1_visiting = player) |
+        Q(player_2_visiting = player),
+        match__season=season,
+        draft_mode=False,
+    )
+
+    score = 0
+
+    for game in games:
+        if ((game.player_1_local or game.player_2_local)and(game.winner == "Local")):
+            game_score = game.score
+            score += game_score
+        if ((game.player_1_visiting or game.player_2_visiting)and(game.winner == "Visitante")):
+            game_score = game.score
+            score += game_score
+
+    return score
+
+def games_won_per_player_local_visiting(player_id, season):
+    player = Player.objects.get(id=player_id)
+    
+    # Filtrar los juegos donde participa el jugador
+    games = Game.objects.filter(
+        Q(player_1_local=player) |
+        Q(player_2_local=player) |
+        Q(player_1_visiting=player) |
+        Q(player_2_visiting=player),
+        match__season=season,
+        draft_mode=False,
+    )
+
+    # Si no hay juegos, devolver 0 para todos los contadores
+    if not games.exists():
+        return 0, 0, 0, 0
+    
+    # Inicializar contadores
+    local_games_won = 0
+    local_games_lost = 0
+    visiting_games_won = 0
+    visiting_games_lost = 0
+    
+    # Iterar sobre los juegos encontrados
+    for game in games:
+        # Obtener los resultados del juego
+        results = game.results.all()
+        
+        if game.player_1_local == player or game.player_2_local == player:
+            # Si el jugador es local, sumar sus juegos ganados y perdidos
+            for result in results:
+                local_games_won += sum(filter(None, [result.set1_local, result.set2_local, result.set3_local]))
+                local_games_lost += sum(filter(None, [result.set1_visiting, result.set2_visiting, result.set3_visiting]))
+        
+        if game.player_1_visiting == player or game.player_2_visiting == player:
+            # Si el jugador es visitante, sumar sus juegos ganados y perdidos
+            for result in results:
+                visiting_games_won += sum(filter(None, [result.set1_visiting, result.set2_visiting, result.set3_visiting]))
+                visiting_games_lost += sum(filter(None, [result.set1_local, result.set2_local, result.set3_local]))
+    
+    # Devolver los resultados
+    return local_games_won, local_games_lost, visiting_games_won, visiting_games_lost
 
 @require_GET
 def statistics_per_player(request):
     all_match = Match.objects.all()
     players = Player.objects.all()
-    seasons = get_total_season(all_match)
-
-    
+    seasons = get_total_season(all_match)   
 
     seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
 
     player_id = request.GET.get('player')
     selected_season = request.GET.get('season')
+
     if player_id:
         player = Player.objects.get(id=player_id)
     else:
         return render(request, 'player_statistics.html', {"players": players, "seasons":seasons})
     
+    
     degree_afinity = degree_of_affinity(player)
+
+    points_player = points_per_players(player_id,selected_season)
+
+
+    local_games_won, local_games_lost, visiting_games_won, visiting_games_lost = games_won_per_player_local_visiting(player_id,selected_season)
+    print(local_games_won)
+
 
     stats = get_player_statistics(player, selected_season)
     current_season = get_current_season(request)
     stats['present_call'] = get_present_calls(player, current_season)
+
+    #Juegos ganados como local/visitante
 
     # Historial de partidos
     dicc_match = get_match_history(player, all_match)
@@ -424,6 +498,13 @@ def statistics_per_player(request):
     stats['games_won_per_year'] = json.dumps(stats['games_won_per_year'])
     stats['games_lost_per_year'] = json.dumps(stats['games_lost_per_year'])
 
+    if not selected_season:
+        return render(request, 'player_statistics.html', {"players": players,
+                                                          "selected_player":player.id,
+                                                           "seasons":seasons,
+                                                           **stats,
+                                                           "player":player_id})
+
     context = {
         "players": players,
         "selected_season": selected_season,
@@ -431,6 +512,12 @@ def statistics_per_player(request):
         **stats,
         "years": years,
         "seasons": seasons,
+        "points_player":points_player,
+        "local_games_won":local_games_won,
+        "local_games_lost":local_games_lost,
+        "visiting_games_won":visiting_games_won,
+        "visiting_games_lost":visiting_games_lost,
+
 
     }
 

@@ -10,7 +10,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 @require_GET
 def list_team(request):
     # Determina si el usuario está autenticado para filtrar el queryset
-    teams = Team.objects.all() if request.user.is_authenticated else Team.objects.filter(in_group=True)
+    teams = Team.objects.all().order_by('-in_group') if request.user.is_authenticated else Team.objects.filter(in_group=True)
     paginator = Paginator(teams, 4)  # Número de equipos por página
     page = request.GET.get('page')
 
@@ -48,23 +48,22 @@ def edit_team(request, team_id):
     team = get_object_or_404(Team, id=team_id)
 
     if request.method == "POST":
-        form = Teamform(request.POST, instance=team)
+        form = Teamform(request.POST, request.FILES, instance=team)  # Agregar request.FILES aquí
         if form.is_valid():
             form.save(commit=False)  # Guarda el equipo
             team.in_group = 'in_group' in request.POST
-            team.save()           
+            team.save()
             return redirect('list_teams')
         else:
             messages.error(request, "Error al editar el equipo. Por favor, verifica los datos.")
-
     else:
-        form = Teamform(instance=team)  
+        form = Teamform(instance=team)
 
     context = {
         'form': form,  
         'team': team,
     }
-    return render(request, 'edit_team.html', context)  
+    return render(request, 'edit_team.html', context)
 
 
 

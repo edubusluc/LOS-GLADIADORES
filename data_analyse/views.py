@@ -470,8 +470,6 @@ def statistics_per_player(request):
 
 
     local_games_won, local_games_lost, visiting_games_won, visiting_games_lost = games_won_per_player_local_visiting(player_id,selected_season)
-    print(local_games_won)
-
 
     stats = get_player_statistics(player, selected_season)
     current_season = get_current_season(request)

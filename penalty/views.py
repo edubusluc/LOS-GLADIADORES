@@ -2,8 +2,9 @@ from django.shortcuts import redirect
 from players.models import Player
 from .models import Penalty
 from call.models import Call
+from django.contrib.auth.decorators import login_required
 
-# Create your views here.
+@login_required
 def create_penalty(request, call_id):
     call = Call.objects.get(id=call_id)
     match = call.match

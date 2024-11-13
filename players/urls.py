@@ -1,6 +1,5 @@
 from django.urls import path
-from .views import *
-from players.views import *
+from .views import create_player, list_players, edit_player, show_player, get_snp_score, force_update_score
 
 urlpatterns = (
     path("create_player",create_player, name='create_player'),

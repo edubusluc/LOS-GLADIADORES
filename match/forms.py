@@ -1,5 +1,5 @@
 from django import forms
-from .models import *
+from .models import Match, Game, Result
 from team.models import Team
 
 class MatchForm(forms.ModelForm):

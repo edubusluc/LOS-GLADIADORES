@@ -11,6 +11,7 @@ from callLog.models import CallLog
 from penalty.models import Penalty
 from players.views import calculate_score
 import json
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
@@ -296,6 +297,10 @@ def create_game_for_match(request, match_id):
     call = Call.objects.filter(match_id=match_id).first()
     match = get_object_or_404(Match, id=match_id)
 
+    if Game.objects.filter(match=match).exists():
+        messages.error(request, "Ya se han creado los partidos para este enfrentamiento.")
+        return redirect('call_for_match', match_id=match_id)
+
     is_valid, error_message = validate_game_for_match(call)
     if not is_valid:
         messages.error(request, error_message)
@@ -322,7 +327,7 @@ def create_game_for_match(request, match_id):
                     player_2_visiting=None,  # Si es local, puedes dejarlo en None
                     score=calculate_score(idx),
                     winner=None,  # Asigna el ganador si es necesario
-                    draft_mode=True  # Cambia según la lógica de tu aplicación
+                    draft_mode=False  # Cambia según la lógica de tu aplicación
                 )
             elif match.visiting.name == LOS_GLADIADORES:
                 new_game = Game(
@@ -334,7 +339,7 @@ def create_game_for_match(request, match_id):
                     player_2_visiting=player_2,
                     score=calculate_score(idx),
                     winner=None,  # Asigna el ganador si es necesario
-                    draft_mode=True  # Cambia según la lógica de tu aplicación
+                    draft_mode=False  # Cambia según la lógica de tu aplicación
                 )
             else:
                 messages.error(request, "El partido no es de LOS GLADIADORES.")

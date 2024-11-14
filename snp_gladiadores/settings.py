@@ -33,7 +33,7 @@ LOGOUT_REDIRECT_URL = '/'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'snp-gladiadores.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'snp-gladiadores.onrender.com', 'https://snp-gladiadores.netlify.app/']
 
 # Application definition
 

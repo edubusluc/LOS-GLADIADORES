@@ -178,42 +178,42 @@ def find_player_score(player_name, scores_list):
 
 
 #SNP SCORE
-load_dotenv()
-def get_snp_score(request):
-    dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", os.getenv('SCRAPPER_KEY'))
+# load_dotenv()
+# def get_snp_score(request):
+#     dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", os.getenv('SCRAPPER_KEY'))
 
-    if dicc:
-        for p in dicc:
-            name = p["name"]
-            score = p["score"]
-            name_parts = name.split()
+#     if dicc:
+#         for p in dicc:
+#             name = p["name"]
+#             score = p["score"]
+#             name_parts = name.split()
 
-            if not name_parts:
-                continue  # Salta si el nombre está vacío
+#             if not name_parts:
+#                 continue  # Salta si el nombre está vacío
 
-            name, last_name = extract_name_last_name(name_parts)
+#             name, last_name = extract_name_last_name(name_parts)
 
-            try:
-                player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
-                player.snp_score = score
-                player.save()
-            except Player.DoesNotExist:  # Manejo específico de la excepción
-                messages.error(request, f"NO se encontró al jugador {name} {last_name}")
-                return redirect("list_players")
+#             try:
+#                 player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
+#                 player.snp_score = score
+#                 player.save()
+#             except Player.DoesNotExist:  # Manejo específico de la excepción
+#                 messages.error(request, f"NO se encontró al jugador {name} {last_name}")
+#                 return redirect("list_players")
 
-        return redirect("list_players")
-    else:
-        messages.error(request, "No se ha podido actualizar la puntuación")
-        return redirect("list_players")
+#         return redirect("list_players")
+#     else:
+#         messages.error(request, "No se ha podido actualizar la puntuación")
+#         return redirect("list_players")
 
-def extract_name_last_name(name_parts):
-    """Extrae el nombre y el apellido(s) de la lista de partes del nombre."""
-    if len(name_parts) == 2:
-        return name_parts[0], name_parts[1]
-    elif len(name_parts) == 3:
-        return name_parts[0], ' '.join(name_parts[1:])
-    else:
-        return ' '.join(name_parts[:2]), ' '.join(name_parts[2:])
+# def extract_name_last_name(name_parts):
+#     """Extrae el nombre y el apellido(s) de la lista de partes del nombre."""
+#     if len(name_parts) == 2:
+#         return name_parts[0], name_parts[1]
+#     elif len(name_parts) == 3:
+#         return name_parts[0], ' '.join(name_parts[1:])
+#     else:
+#         return ' '.join(name_parts[:2]), ' '.join(name_parts[2:])
 
 
 

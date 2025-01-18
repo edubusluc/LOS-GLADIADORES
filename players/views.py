@@ -9,7 +9,7 @@ from django.db.models import Q
 import os
 from dotenv import load_dotenv
 
-from .scraper import scrape_scores
+
 # Create your views here.
 
 

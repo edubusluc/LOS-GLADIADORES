@@ -12,6 +12,7 @@ from penalty.models import Penalty
 from players.views import calculate_score
 import json
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.core.exceptions import ValidationError
 
 
 CREATE_MATCH_HTML = "create_match.html"

@@ -19,7 +19,7 @@ class Player(models.Model):
     last_name = models.CharField(max_length=100)
     position = models.CharField(max_length=10,choices= POSITIONS,default="NONE")
     skillfull_hand = models.CharField(max_length=10,choices=HAND,default="NONE")
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team", default=1)
     photo = models.ImageField(upload_to='static/profile', null=True, blank=True)
     snp_score = models.FloatField(null=True)
     score = models.IntegerField(default=5, null = True)

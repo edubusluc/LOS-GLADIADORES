@@ -1,0 +1,115 @@
+"""
+Datos del informe que se envía al cerrar una convocatoria.
+
+Las estadísticas se calculan para el escenario del partido: si el club juega
+como visitante, el rendimiento "en la sede" es el de sus partidos fuera (y
+viceversa).
+"""
+from django.db.models import Q
+
+from data_analyse.pairs import club_game_log
+
+from . import advisor
+from .models import Match
+
+MAX_PLAYERS_TABLE = 16
+MAX_PAIRS_TABLE = 6
+MAX_PRECEDENTS = 4
+
+
+def _outcome(match):
+    if match.result == "Victoria Local":
+        return "V" if match.own_is_local else "D"
+    if match.result == "Victoria Visitante":
+        return "V" if match.own_is_visiting else "D"
+    return "E"
+
+
+def _own_score(match):
+    """'3/9' (local/visitante) -> '9-3' desde el punto de vista del club."""
+    try:
+        local, visiting = match.result_points.split("/")
+    except (AttributeError, ValueError):
+        return "-"
+    return f"{local}-{visiting}" if match.own_is_local else f"{visiting}-{local}"
+
+
+def build_report(call):
+    match = call.match
+    club = match.club
+    own_local = match.own_is_local
+    venue_label = "local" if own_local else "visitante"
+    rival = match.visiting if own_local else match.local
+
+    called = list(call.players.order_by("name", "last_name"))
+    # Solo la historia anterior a este partido (el informe de un partido antiguo no ve el futuro)
+    log = [g for g in club_game_log(club) if g['date'] < match.start_date]
+    forms, pairs = advisor.build_forms(log, called, own_local)
+    player_rows = sorted(forms.values(), key=lambda f: (f.strength, f.snp), reverse=True)
+
+    # Rachas destacadas
+    hot = sorted((f for f in player_rows if f.streak[0] == 'V' and f.streak[1] >= 2), key=lambda f: -f.streak[1])
+    cold = sorted((f for f in player_rows if f.streak[0] == 'D' and f.streak[1] >= 2), key=lambda f: -f.streak[1])
+
+    # Parejas entre los convocados con historial, mejores en la sede del partido
+    pair_rows = sorted(
+        (p for p in pairs.values() if p.played),
+        key=lambda p: (advisor._smooth(p.venue_wins, p.venue_played), p.played),
+        reverse=True,
+    )[:MAX_PAIRS_TABLE]
+
+    # Balance de la temporada (general y en la sede)
+    season_matches = list(
+        Match.objects.filter(club=club, season=match.season, draft_mode=False, start_date__lt=match.start_date)
+        .exclude(pk=match.pk).select_related("local", "visiting")
+    )
+    season = {"played": 0, "won": 0, "venue_played": 0, "venue_won": 0}
+    for m in season_matches:
+        won = _outcome(m) == "V"
+        season["played"] += 1
+        season["won"] += won
+        if m.own_is_local == own_local:
+            season["venue_played"] += 1
+            season["venue_won"] += won
+
+    # Precedentes contra el mismo rival
+    precedents = [
+        {
+            "date": m.start_date,
+            "season": m.season,
+            "venue": "Local" if m.own_is_local else "Visitante",
+            "score": _own_score(m),
+            "outcome": _outcome(m),
+        }
+        for m in Match.objects.filter(club=club, draft_mode=False, start_date__lt=match.start_date)
+        .filter(Q(local=rival) | Q(visiting=rival))
+        .select_related("local", "visiting")
+        .order_by("-start_date")[:MAX_PRECEDENTS]
+    ]
+
+    lineup_a, lineup_b = advisor.recommend(forms, pairs, [p.id for p in called])
+    lineups = []
+    for letter, lineup, compare_to in (("A", lineup_a, None), ("B", lineup_b, lineup_a)):
+        if lineup:
+            lineups.append({
+                "title": f"Alineación {letter} · {lineup.title}",
+                "lineup": lineup,
+                "explanation": advisor.explain(lineup, venue_label, compare_to=compare_to),
+            })
+
+    return {
+        "club": club,
+        "match": match,
+        "rival": rival,
+        "venue_label": venue_label,
+        "called": called,
+        "players": player_rows[:MAX_PLAYERS_TABLE],
+        "hidden_players": max(0, len(player_rows) - MAX_PLAYERS_TABLE),
+        "hot": hot[:4],
+        "cold": cold[:3],
+        "pairs": pair_rows,
+        "season": season,
+        "precedents": precedents,
+        "lineups": lineups,
+        "enough_players": len(called) >= advisor.PLAYERS_PER_LINEUP,
+    }

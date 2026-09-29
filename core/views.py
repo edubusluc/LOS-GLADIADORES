@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -92,6 +94,15 @@ def _is_last_admin(membership):
 def update_member(request, membership_id):
     membership = get_object_or_404(Membership, id=membership_id, club=request.club)
     role = request.POST.get("role")
+    email = request.POST.get("email", "").strip()
+    try:
+        validate_email(email) if email else None
+    except ValidationError:
+        messages.error(request, f"'{email}' no es un email válido.")
+        return redirect("club_members")
+    if email != membership.user.email:
+        membership.user.email = email
+        membership.user.save(update_fields=["email"])
     if role not in dict(Membership.ROLES):
         messages.error(request, "Rol no válido.")
     elif role != Membership.ADMIN and _is_last_admin(membership):

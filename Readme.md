@@ -50,3 +50,26 @@ python manage.py fix_duplicate_games             # conserva el que tiene resulta
 python manage.py makemigrations match
 python manage.py migrate
 ```
+
+## Informe automático al cerrar una convocatoria
+
+Al cerrar una convocatoria se genera un PDF (2 páginas, estilo Zyra) y se envía
+por email a los **administradores del club que tengan email** (se configura en
+*Miembros*). Incluye el rendimiento de convocados y parejas como local o
+visitante según el partido, jugadores en racha, precedentes contra el rival y
+dos alineaciones recomendadas según el formato de la SNP. También se puede
+descargar desde el detalle del partido (botón *Informe PDF*).
+
+Configura el correo con variables de entorno (o en `.env`):
+
+```
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=tu_cuenta@gmail.com
+EMAIL_HOST_PASSWORD=contraseña_de_aplicación
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=Zyra <tu_cuenta@gmail.com>
+```
+
+Sin `EMAIL_HOST` los correos se muestran en la consola (útil en desarrollo).
+Si el envío falla, la convocatoria se cierra igualmente y se avisa en pantalla.

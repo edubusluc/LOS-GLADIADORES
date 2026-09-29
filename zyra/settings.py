@@ -146,16 +146,20 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email (informes de convocatoria). Sin EMAIL_HOST se usa la consola: los
-# correos se muestran en el terminal en lugar de enviarse.
-EMAIL_HOST = config('EMAIL_HOST', default='')
-EMAIL_BACKEND = config(
-    'EMAIL_BACKEND',
-    default='django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST else 'django.core.mail.backends.console.EmailBackend',
-)
+# Email (informes de convocatoria). Se envían desde join.zyra@gmail.com por
+# Gmail. La contraseña de aplicación NUNCA va en el código: se define en la
+# variable de entorno EMAIL_HOST_PASSWORD (o en .env). Mientras no exista, los
+# correos se muestran en la consola en lugar de enviarse.
+ZYRA_SENDER = 'join.zyra@gmail.com'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default=ZYRA_SENDER)
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_TIMEOUT = 20
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'Zyra <no-reply@zyra.app>')
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST_PASSWORD
+    else 'django.core.mail.backends.console.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'Zyra <{ZYRA_SENDER}>')

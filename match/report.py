@@ -10,11 +10,15 @@ from django.db.models import Q
 from data_analyse.pairs import club_game_log
 
 from . import advisor
+from call.models import Call
+from players.models import Player
+
 from .models import Match
 
 MAX_PLAYERS_TABLE = 16
 MAX_PAIRS_TABLE = 6
 MAX_PRECEDENTS = 4
+MAX_USAGE_ROWS = 5
 
 
 def _outcome(match):
@@ -87,6 +91,30 @@ def build_report(call):
         .order_by("-start_date")[:MAX_PRECEDENTS]
     ]
 
+    # Reparto de partidos en la temporada: toda la plantilla actual (no solo los convocados)
+    squad = list(Player.objects.filter(club=club, in_team=True).order_by("name", "last_name"))
+    season_log = [g for g in log if g["season"] == match.season]
+    usage = {p.id: {"player": p, "games": 0, "last": None, "calls": 0,
+                     "called_now": False} for p in squad}
+    for g in season_log:
+        for pid in g["pair"]:
+            if pid in usage:
+                usage[pid]["games"] += 1
+                usage[pid]["last"] = max(filter(None, (usage[pid]["last"], g["date"])))
+    calls = (Call.objects.filter(match__club=club, match__season=match.season, draft_mode=False,
+                                 match__start_date__lt=match.start_date)
+             .values_list("players", flat=True))
+    for pid in calls:
+        if pid in usage:
+            usage[pid]["calls"] += 1
+    for p in called:
+        if p.id in usage:
+            usage[p.id]["called_now"] = True
+    usage_rows = list(usage.values())
+    most_games = sorted(usage_rows, key=lambda u: (-u["games"], u["player"].name))[:MAX_USAGE_ROWS]
+    least_games = sorted(usage_rows, key=lambda u: (u["games"], -u["calls"], u["player"].name))[:MAX_USAGE_ROWS]
+    never_played = sum(1 for u in usage_rows if not u["games"])
+
     lineup_a, lineup_b = advisor.recommend(forms, pairs, [p.id for p in called])
     lineups = []
     for letter, lineup, compare_to in (("A", lineup_a, None), ("B", lineup_b, lineup_a)):
@@ -111,5 +139,9 @@ def build_report(call):
         "season": season,
         "precedents": precedents,
         "lineups": lineups,
+        "most_games": most_games,
+        "least_games": least_games,
+        "never_played": never_played,
+        "squad_size": len(squad),
         "enough_players": len(called) >= advisor.PLAYERS_PER_LINEUP,
     }

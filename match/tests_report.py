@@ -126,3 +126,13 @@ class ReportTests(TestCase):
         report = build_report(call)
         self.assertEqual(report["precedents"], [])
         self.assertTrue(all(f.played == 0 for f in report["players"]))
+
+    def test_usage_tables_count_whole_squad_this_season(self):
+        Player.objects.create(club=self.club, name="Suplente", last_name="Sin Jugar")
+        report = build_report(self.call)
+        least = report["least_games"]
+        self.assertEqual(len(least), 5)
+        self.assertTrue(all(u["games"] == 0 for u in least))
+        self.assertEqual(report["squad_size"], 21)             # cuenta también a quien no está convocado
+        self.assertEqual(report["most_games"][0]["games"], 2)  # jugaron los 2 enfrentamientos de la temporada
+        self.assertEqual(report["never_played"], 11)            # 10 sin jugar de los 20 + el suplente

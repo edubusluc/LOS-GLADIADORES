@@ -60,16 +60,16 @@ visitante según el partido, jugadores en racha, precedentes contra el rival y
 dos alineaciones recomendadas según el formato de la SNP. También se puede
 descargar desde el detalle del partido (botón *Informe PDF*).
 
-Configura el correo con variables de entorno (o en `.env`):
+Los informes se envían desde **join.zyra@gmail.com** (Gmail ya viene
+configurado). Solo falta la contraseña de aplicación de esa cuenta, que nunca
+se guarda en el código: defínela como variable de entorno (o en `.env`):
 
 ```
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=tu_cuenta@gmail.com
-EMAIL_HOST_PASSWORD=contraseña_de_aplicación
-EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=Zyra <tu_cuenta@gmail.com>
+EMAIL_HOST_PASSWORD=contraseña_de_aplicación_de_16_letras
 ```
 
-Sin `EMAIL_HOST` los correos se muestran en la consola (útil en desarrollo).
+La contraseña de aplicación se crea en la cuenta de Google de join.zyra@gmail.com:
+Seguridad → Verificación en dos pasos → Contraseñas de aplicaciones.
+
+Sin `EMAIL_HOST_PASSWORD` los correos se muestran en la consola (útil en desarrollo).
 Si el envío falla, la convocatoria se cierra igualmente y se avisa en pantalla.

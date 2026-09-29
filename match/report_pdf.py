@@ -253,6 +253,37 @@ def render_report(report):
     story.append(Spacer(1, 3))
     story.append(Paragraph(note, st["muted"]))
 
+    # Reparto de partidos en la temporada (toda la plantilla)
+    def usage_table(rows):
+        body = [[
+            Paragraph(f"<font color='{'#B4F100' if u['called_now'] else '#F4F4F4'}'>"
+                      f"<b>{u['player'].name} {u['player'].get_first_last_name()}</b></font>", st["cell"]),
+            Paragraph(f"<b>{u['games']}</b>", st["cell"]),
+            Paragraph(str(u["calls"]), st["cell"]),
+            Paragraph(f"{u['last']:%d/%m}" if u["last"] else "—", st["cell"]),
+        ] for u in rows]
+        half = (CONTENT_W - 6 * mm) / 2
+        return _data_table(["Jugador", "Partidos", "Convoc.", "Último"], body,
+                           [half - 49 * mm, 18 * mm, 16 * mm, 15 * mm], st)
+
+    never = report["never_played"]
+    usage_block = Table([[
+        [Paragraph("JUGADORES CON MÁS PARTIDOS", st["section"]), usage_table(report["most_games"])],
+        [Paragraph("JUGADORES CON MENOS PARTIDOS", st["section"]), usage_table(report["least_games"])],
+    ]], colWidths=[(CONTENT_W + 6 * mm) / 2, (CONTENT_W - 6 * mm) / 2])
+    usage_block.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                     ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (0, 0), 6 * mm)]))
+    story.append(KeepTogether([
+        usage_block,
+        Spacer(1, 3),
+        Paragraph(
+            f"Temporada {match.season}, toda la plantilla ({report['squad_size']} jugadores). "
+            + (f"<font color='#FF5C63'><b>{never} sin jugar todavía.</b></font> " if never else "Todos han jugado ya. ")
+            + "En <font color='#B4F100'><b>lima</b></font>, convocados para este partido. "
+            "Convoc.: convocatorias cerradas en la temporada.",
+            st["muted"]),
+    ]))
+
     # ---------------- Página 2 ----------------
     story.append(PageBreak())
     story.append(Paragraph("PAREJAS CON HISTORIAL ENTRE LOS CONVOCADOS", st["section"]))

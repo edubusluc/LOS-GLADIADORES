@@ -1,17 +1,10 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convocatoria Existente</title>
-</head>
-<body>
-    <div class="container">
-        <h1>Convocatoria Existente</h1>
-        <p>Ya existe una convocatoria para este partido.</p>
-        <p>Por favor, revisa las convocatorias existentes o crea una nueva para otro partido.</p>       
-    </div>
-</body>
+<div class="z-empty">
+    <i class="fa-solid fa-clipboard-check"></i>
+    <h1 class="text-center">Convocatoria existente</h1>
+    <p>Ya existe una convocatoria para este partido.</p>
+    <a href="{% url 'call_for_match' match.id %}" class="btn btn-primary">Ver convocatoria</a>
+</div>
 {% endblock %}

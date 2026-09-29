@@ -1,5 +1,5 @@
 """
-WSGI config for snp_gladiadores project.
+WSGI config for zyra project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'snp_gladiadores.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zyra.settings')
 
 application = get_wsgi_application()

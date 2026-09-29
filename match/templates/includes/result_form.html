@@ -1,0 +1,46 @@
+{# Formulario de sets compartido por crear y editar resultado. Recibe l1, v1, l2, v2, l3, v3. #}
+<div class="z-page-head">
+    <div>
+        <a href="{% url 'call_for_match' game.match.id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ game.match.local }} vs {{ game.match.visiting }}</a>
+        <h1>{{ title }}</h1>
+    </div>
+    <span class="z-badge z-badge--outline">Partido {{ game.n_game }}</span>
+</div>
+
+<div class="z-panel">
+    {% if error %}<div class="alert-message warning">{{ error }}</div>{% endif %}
+    <form method="POST" onsubmit="setEmptyFieldsToZero()">
+        {% csrf_token %}
+        <div class="set-row">
+            <div class="z-set-legend" aria-hidden="true">
+                <span>{{ game.match.local }}</span>
+                <span>{{ game.match.visiting }}</span>
+            </div>
+            <div class="set">
+                <label for="set1_local">Set 1</label>
+                <input type="number" name="set1_local" id="set1_local" min="0" max="7" placeholder="0" required value="{{ l1|default_if_none:'' }}" aria-label="Set 1 {{ game.match.local }}">
+                <input type="number" name="set1_visiting" id="set1_visiting" min="0" max="7" placeholder="0" required value="{{ v1|default_if_none:'' }}" aria-label="Set 1 {{ game.match.visiting }}">
+            </div>
+            <div class="set">
+                <label for="set2_local">Set 2</label>
+                <input type="number" name="set2_local" id="set2_local" min="0" max="7" placeholder="0" required value="{{ l2|default_if_none:'' }}" aria-label="Set 2 {{ game.match.local }}">
+                <input type="number" name="set2_visiting" id="set2_visiting" min="0" max="7" placeholder="0" required value="{{ v2|default_if_none:'' }}" aria-label="Set 2 {{ game.match.visiting }}">
+            </div>
+            <div class="set">
+                <label for="set3_local">Set 3</label>
+                <input type="number" name="set3_local" id="set3_local" min="0" max="7" placeholder="0" value="{{ l3|default_if_none:'' }}" aria-label="Set 3 {{ game.match.local }}">
+                <input type="number" name="set3_visiting" id="set3_visiting" min="0" max="7" placeholder="0" value="{{ v3|default_if_none:'' }}" aria-label="Set 3 {{ game.match.visiting }}">
+            </div>
+        </div>
+        <p class="text-muted small">Deja el set 3 vacío si el partido se decidió en dos sets.</p>
+        <button type="submit" class="btn btn-primary">{{ submit }}</button>
+    </form>
+</div>
+
+<script>
+    function setEmptyFieldsToZero() {
+        document.querySelectorAll('input[type="number"]').forEach(function (field) {
+            if (field.value === "") field.value = 0;
+        });
+    }
+</script>

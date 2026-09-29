@@ -1,9 +1,13 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="table-container my-4 text-center">
-    <h1>No perteneces a ningún club</h1>
-    <p>Pide a un administrador de tu club que te añada como miembro, o registra un club nuevo.</p>
-    <a class="btn btn-primary" href="{% url 'register_club' %}">Registrar un club</a>
+<div class="z-auth">
+    <div class="z-auth-card text-center">
+        <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
+        <h1>Sin club</h1>
+        <p class="text-muted">Todavía no perteneces a ningún club. Pide a un administrador que te añada como miembro, o registra un club nuevo.</p>
+        <a class="btn btn-primary btn-lg" href="{% url 'register_club' %}">Registrar un club</a>
+    </div>
 </div>
 {% endblock %}

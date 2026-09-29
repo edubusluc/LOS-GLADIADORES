@@ -15,7 +15,8 @@ def view_call_log(request, call_id):
         return render(request, "view_call_log.html", {
             "error_message": "No se encontró el registro de llamada con el ID especificado.",
             "log_lines": [],
-            "players": players
+            "players": players,
+            "call_id": call_id,
         })
 
     if call_log.text:

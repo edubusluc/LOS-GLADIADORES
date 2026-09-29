@@ -2,22 +2,14 @@
 {% load static %}
 
 {% block content %}
-<style>
-    @media (max-width: 576px) {
-        .log-container p{
-            font-size: 1rem;
-        }
-    }
-</style>
 <div class="table-container">
-    <h1 class="ms-4">Cambios realizados en la convocatoria</h1>
+    <h1>Cambios en la convocatoria</h1>
 
     {% if log_lines %}
-        <div class="log-container ms-3">
+        <div class="log-container">
             {% for l in log_lines %}
                 {% if "convocatoria abierta" in l %}
                     <p class="alert-log">{{ l }}</p>
-                    <p>&nbsp;</p>
                 {% endif %}
                 {% if "convocatoria cerrada" in l %}
                     <p class="warning">{{ l }}</p>
@@ -28,10 +20,11 @@
         <p class = "alert-log">No hay cambios registrados en la convocatoria.</p>
     {% endif %}
 
-    <div class="ms-3" style="margin-top: 10px;">
+    <div class="mt-4">
+        <h2 class="z-section-title">Aplicar sanciones</h2>
         <form method="POST" action="{% url 'create_penalty' call_id %}">
             {% csrf_token %}
-            <div class="row">
+            <div class="z-check-grid">
                 {% for player in players %}
                 <div class="col-md-4">
                     <div class="form-check">
@@ -44,7 +37,7 @@
                 </div>
                 {% endfor %}
             </div>
-            <button type="submit" class="btn btn-primary" style="background-color: #083C64;">Aplicar sanciones</button>
+            <button type="submit" class="btn btn-primary mt-3">Aplicar sanciones</button>
         </form>
     </div>
 </div>

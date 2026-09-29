@@ -1,4 +1,18 @@
-Archivo Readme
+# Zyra
+
+Aplicación web para gestionar equipos de pádel: jugadores, convocatorias,
+partidos y estadísticas. Diseño oscuro con acento lima, responsive (barra de
+navegación inferior en móvil).
+
+El paquete de configuración de Django se llama `zyra` (antes `snp_gladiadores`):
+
+- Ajustes: `zyra.settings`
+- WSGI: `zyra.wsgi.application`
+
+Si despliegas en PythonAnywhere, actualiza el fichero WSGI del panel para usar
+`DJANGO_SETTINGS_MODULE = "zyra.settings"`.
+
+Los recursos de marca (logo, favicon, icono para móvil) están en `static/zyra/`.
 
 
 ## Multi-club

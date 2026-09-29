@@ -1,14 +1,39 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Zyra · Improve your level{% endblock %}
+
 {% block content %}
-<div class="table-container my-5 text-center">
-    <img src="{% static 'img.png' %}" alt="Logo" class="img-fluid mb-3" style="height: 100px; width: auto;">
-    <h1>Gestión de equipos de pádel</h1>
-    <p class="lead">Cada club gestiona sus jugadores, convocatorias, partidos y estadísticas de forma privada.</p>
-    <div class="d-flex justify-content-center gap-2 mt-3">
-        <a class="btn btn-primary" href="{% url 'login' %}">Iniciar sesión</a>
-        <a class="btn btn-outline-primary" href="{% url 'register_club' %}">Registrar un club</a>
+<section class="z-hero">
+    <div>
+        <p class="z-hero-tag">Improve your level</p>
+        <h1 class="z-hero-title">Zyra</h1>
+        <p class="z-hero-text">Gestiona tu equipo de pádel: jugadores, convocatorias, partidos y estadísticas, en privado para cada club.</p>
+        <div class="z-hero-actions">
+            <a class="btn btn-primary btn-lg" href="{% url 'register_club' %}">Empezar</a>
+            <a class="btn btn-outline-light btn-lg" href="{% url 'login' %}">Ya tengo cuenta</a>
+        </div>
     </div>
-</div>
+    <div class="z-hero-art">
+        <img src="{% static 'zyra/logo.svg' %}" alt="Logotipo de Zyra">
+    </div>
+</section>
+
+<section class="z-features" aria-label="Qué puedes hacer">
+    <div class="z-card z-feature">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <h3>Convocatorias</h3>
+        <p>Convoca jugadores, registra cambios y aplica sanciones.</p>
+    </div>
+    <div class="z-card z-feature">
+        <i class="fa-solid fa-table-tennis-paddle-ball"></i>
+        <h3>Partidos</h3>
+        <p>Organiza las parejas y apunta los resultados de cada set.</p>
+    </div>
+    <div class="z-card z-feature">
+        <i class="fa-solid fa-chart-line"></i>
+        <h3>Estadísticas</h3>
+        <p>Rachas, afinidad entre parejas y evolución por temporada.</p>
+    </div>
+</section>
 {% endblock %}

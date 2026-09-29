@@ -1,5 +1,5 @@
 """
-URL configuration for snp_gladiadores project.
+URL configuration for zyra project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/

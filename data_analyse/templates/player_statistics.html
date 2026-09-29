@@ -2,9 +2,11 @@
 {% load static %}
 
 {% block content %}
-  <link rel="stylesheet" href="{% static 'css/statistics.css' %}">
-
-  <div class="st-page" style="background-color: white;">
+  <div class="st-page">
+    <nav class="st-tabs z-segmented" aria-label="Tipo de estadística">
+      <a class="btn btn-sm{% if request.resolver_match.url_name == 'team_statistics' %} active{% endif %}" href="{% url 'team_statistics' %}"{% if request.resolver_match.url_name == 'team_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-users me-1"></i> Equipo</a>
+      <a class="btn btn-sm{% if request.resolver_match.url_name == 'player_statistics' %} active{% endif %}" href="{% url 'player_statistics' %}"{% if request.resolver_match.url_name == 'player_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-user me-1"></i> Jugador</a>
+    </nav>
 
     <header class="st-head">
       <div>

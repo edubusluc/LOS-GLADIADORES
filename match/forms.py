@@ -12,10 +12,11 @@ class MatchForm(forms.ModelForm):
             'start_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, club=None, **kwargs):
         super(MatchForm, self).__init__(*args, **kwargs)
-        self.fields['local'].queryset = Team.objects.filter(in_group = True)
-        self.fields['visiting'].queryset = Team.objects.filter(in_group = True)
+        teams = Team.objects.filter(club=club, in_group=True)
+        self.fields['local'].queryset = teams
+        self.fields['visiting'].queryset = teams
 
 class GameForm (forms.ModelForm):
     class Meta:

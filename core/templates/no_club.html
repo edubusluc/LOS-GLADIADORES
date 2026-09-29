@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="table-container my-4 text-center">
+    <h1>No perteneces a ningún club</h1>
+    <p>Pide a un administrador de tu club que te añada como miembro, o registra un club nuevo.</p>
+    <a class="btn btn-primary" href="{% url 'register_club' %}">Registrar un club</a>
+</div>
+{% endblock %}

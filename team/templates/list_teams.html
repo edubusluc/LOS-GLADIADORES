@@ -130,7 +130,7 @@
 <div class="table-container mt-4">
     <div class="d-flex align-items-center mb-3">
         <h1 class="flex-grow-1">Listado de Equipos</h1>
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
         <a href="{% url 'create_team' %}" class="btn btn-primary" style="background-color: #083C64;">Nuevo Equipo</a>
         {% endif %}
     </div>
@@ -182,7 +182,7 @@
                             <p class="card-text">
                                 <strong>Ubicación:</strong> {{ team.location }}
                             </p>
-                            {% if user.is_authenticated %}
+                            {% if is_club_admin %}
                             <p class="card-text">
                                 {% if team.in_group %}
                                     <span class="badge bg-success">Está en tu grupo</span>
@@ -216,7 +216,7 @@
                     <th></th>
                     <th>Nombre</th>
                     <th>Ubicación</th>
-                    {% if user.is_authenticated %}
+                    {% if is_club_admin %}
                     <th>Grupo</th>
                     <th>Acciones</th>
                     {% endif %}
@@ -234,7 +234,7 @@
                     </td>
                     <td><strong>{{ team.name }}</strong></td>
                     <td>{{ team.location }}</td>
-                    {% if user.is_authenticated %}
+                    {% if is_club_admin %}
                     <td>
                         {% if team.in_group %}
                         <span class="badge bg-success">Está en tu grupo</span>

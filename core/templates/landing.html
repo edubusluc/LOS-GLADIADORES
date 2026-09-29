@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="table-container my-5 text-center">
+    <img src="{% static 'img.png' %}" alt="Logo" class="img-fluid mb-3" style="height: 100px; width: auto;">
+    <h1>Gestión de equipos de pádel</h1>
+    <p class="lead">Cada club gestiona sus jugadores, convocatorias, partidos y estadísticas de forma privada.</p>
+    <div class="d-flex justify-content-center gap-2 mt-3">
+        <a class="btn btn-primary" href="{% url 'login' %}">Iniciar sesión</a>
+        <a class="btn btn-outline-primary" href="{% url 'register_club' %}">Registrar un club</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,28 +1,21 @@
-from django.shortcuts import redirect
-from players.models import Player
+from django.shortcuts import redirect, get_object_or_404
 from .models import Penalty
 from call.models import Call
-from django.contrib.auth.decorators import login_required
+from core.decorators import club_admin_required
 
-@login_required
+@club_admin_required
 def create_penalty(request, call_id):
-    call = Call.objects.get(id=call_id)
+    call = get_object_or_404(Call, id=call_id, match__club=request.club)
     match = call.match
     if request.method == "POST":
         selected_players_ids = request.POST.getlist('players')
-        for selected in selected_players_ids:
-            player = Player.objects.get(id = selected)
-
-            penalty = Penalty.objects.create(
+        # Solo se puede sancionar a jugadores de la propia convocatoria
+        for player in call.players.filter(id__in=[i for i in selected_players_ids if i.isdigit()]):
+            Penalty.objects.create(
                 player = player,
                 reason = "Advertencia en el partido " + match.local.name + " VS " + match.visiting.name + ".",
                 call = call
             )
-            penalty.save()
-        
+
         return redirect("call_for_match", match.id)
     return redirect("call_for_match", match.id)
-
-
-
-

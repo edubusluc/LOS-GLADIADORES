@@ -6,9 +6,11 @@ from datetime import datetime
 # Create your models here.
 
 from django.db import models
+from core.models import Club
 from team.models import Team
 
 class Match(models.Model):
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name='matches', null=True)
     local = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='local_matches', null=True)
     visiting = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='visiting_matches', null=True)
     
@@ -38,6 +40,14 @@ class Match(models.Model):
         # Llama al método de guardado del padre
         super().save(*args, **kwargs)
     
+    @property
+    def own_is_local(self):
+        return bool(self.local and self.local.is_own)
+
+    @property
+    def own_is_visiting(self):
+        return bool(self.visiting and self.visiting.is_own)
+
     def __str__(self):
         return f'{self.local} - {self.visiting}'
 

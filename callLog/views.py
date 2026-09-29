@@ -2,22 +2,22 @@ from django.shortcuts import render
 from callLog.models import CallLog
 from players.models import Player
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
+from core.decorators import club_required
 
 # Create your views here.
-@login_required
+@club_required
 @require_http_methods(["GET", "POST"])
 def view_call_log(request, call_id):
+    players = Player.objects.filter(club=request.club)
     try:
-        call_log = CallLog.objects.get(call=call_id)
+        call_log = CallLog.objects.get(call=call_id, call__match__club=request.club)
     except CallLog.DoesNotExist:
         return render(request, "view_call_log.html", {
             "error_message": "No se encontró el registro de llamada con el ID especificado.",
             "log_lines": [],
-            "players": Player.objects.all()
+            "players": players
         })
 
-    players = Player.objects.all()
     if call_log.text:
         log_lines = call_log.text.split(";")
     else:

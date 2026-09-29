@@ -1,7 +1,14 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from . import views
 
 urlpatterns = (
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('register_club/', views.register_club, name='register_club'),
+    path('no_club/', views.no_club, name='no_club'),
+    path('switch_club/', views.switch_club, name='switch_club'),
+    path('members/', views.club_members, name='club_members'),
+    path('members/<int:membership_id>/update/', views.update_member, name='update_member'),
+    path('members/<int:membership_id>/remove/', views.remove_member, name='remove_member'),
 )

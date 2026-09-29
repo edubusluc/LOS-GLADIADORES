@@ -5,6 +5,8 @@ from team.models import Team
 from call.models import Call
 from django.db.models import Q, Count
 from django.views.decorators.http import require_GET
+from django.shortcuts import get_object_or_404
+from core.decorators import club_required
 
 # ---------------------------------------------------------------
 # ESTADÍSTICAS EQUIPO (sin cambios)
@@ -20,18 +22,13 @@ def get_total_season(matchs):
     return seasons
 
 
-def get_team():
-    team = Team.objects.filter(name="LOS GLADIADORES").first()
-    return team if team else None
-
-
 def calculate_match_statistics(season, team):
     if season is None:
-        total_matches = Match.objects.filter(draft_mode=False).count()
+        total_matches = Match.objects.filter(club=team.club, draft_mode=False).count()
         won_local = Match.objects.filter(local=team, result=LOCAL_WIN, draft_mode=False).count()
         won_visiting = Match.objects.filter(visiting=team, result=VISITING_WIN, draft_mode=False).count()
     else:
-        total_matches = Match.objects.filter(season=season, draft_mode=False).count()
+        total_matches = Match.objects.filter(club=team.club, season=season, draft_mode=False).count()
         won_local = Match.objects.filter(season=season, local=team, result=LOCAL_WIN, draft_mode=False).count()
         won_visiting = Match.objects.filter(season=season, visiting=team, result=VISITING_WIN, draft_mode=False).count()
 
@@ -89,7 +86,7 @@ def calculate_matches_won_per_year(team):
     dicc_match = {}
     year = set()
 
-    all_matchs = Match.objects.filter(draft_mode=False)
+    all_matchs = Match.objects.filter(club=team.club, draft_mode=False)
     for m in all_matchs:
         year.add(m.season)
 
@@ -120,8 +117,8 @@ def count_games(player, role, winner, n_games, season):
     return Game.objects.filter(filter_conditions).count()
 
 
-def column_chart(season):
-    players = Player.objects.all()
+def column_chart(club, season):
+    players = Player.objects.filter(club=club)
     dicc = {
         f"{p.name} {p.last_name}": {
             'Partidos de 2 puntos ganados': 0,
@@ -163,15 +160,16 @@ def format_for_chart(dic):
     return players
 
 
+@club_required
 @require_GET
 def team_statistics(request):
-    seasons = get_total_season(Match.objects.all())
+    seasons = get_total_season(Match.objects.filter(club=request.club))
     selected_season = request.GET.get("season")
-    team = get_team()
+    team = request.club.own_team
 
     seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
 
-    dicc = column_chart(selected_season)
+    dicc = column_chart(request.club, selected_season)
     column_chart_data = format_for_chart(dicc)
 
     if not team:
@@ -234,7 +232,7 @@ def degree_of_affinity(player):
         winner__in=('Local', 'Visitante'),
     )
 
-    people = {p.id: p for p in Player.objects.exclude(id=player.id)}
+    people = {p.id: p for p in Player.objects.filter(club=player.club).exclude(id=player.id)}
     acc = {}
 
     for g in games:
@@ -317,7 +315,7 @@ def build_game_log(player):
 
 def calls_by_season(player):
     """Convocatorias por temporada: ({temporada: a las que se apuntó}, {temporada: total})."""
-    base = Call.objects.filter(draft_mode=False)
+    base = Call.objects.filter(match__club=player.club, draft_mode=False)
     total = dict(base.order_by().values_list('match__season').annotate(n=Count('id', distinct=True)))
     present = dict(
         base.filter(players__id=player.id)
@@ -427,18 +425,20 @@ def summarize_by_season(log, calls_present, calls_total):
     return rows
 
 
+@club_required
 @require_GET
 def statistics_per_player(request):
-    players = Player.objects.filter(in_team = True)
+    players = Player.objects.filter(club=request.club, in_team = True)
     player_id = request.GET.get('player')
 
-    if not player_id:
+    if not player_id or not player_id.isdigit():
         return render(request, 'player_statistics.html', {'players': players})
 
-    player = Player.objects.get(id=player_id)
+    # Solo jugadores del club activo: los de otros clubes dan 404
+    player = get_object_or_404(Player, id=player_id, club=request.club)
 
-    # Chips de temporada: todas las que existen (como antes)
-    all_seasons = sorted(get_total_season(Match.objects.all()),
+    # Chips de temporada: todas las del club
+    all_seasons = sorted(get_total_season(Match.objects.filter(club=request.club)),
                          key=lambda s: int(s.split('-')[0]), reverse=True)
     selected_season = request.GET.get('season')
     if selected_season not in all_seasons:

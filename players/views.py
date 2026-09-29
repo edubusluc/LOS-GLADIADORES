@@ -106,6 +106,9 @@ def show_player(request, player_id):
         (Q(player_1_local=player) | Q(player_2_local=player) |
         Q(player_1_visiting=player) | Q(player_2_visiting=player)) &
         Q(draft_mode=False)
+    ).select_related(
+        'match__local', 'match__visiting',
+        'player_1_local', 'player_2_local', 'player_1_visiting', 'player_2_visiting',
     ).order_by('-match__start_date')[:5]
     # Calcula la puntuación, si es necesario
     normalized_score = calculate_score(player)  # Llama a la función y guarda el resultado
@@ -181,8 +184,9 @@ def calculate_game_statistics(games, player):
     games_win = games_lost = consecutive_wins = max_consecutive_wins = three_point_wins = 0
 
     for game in games:
-        is_local = player in [game.player_1_local, game.player_2_local]
-        is_visiting = player in [game.player_1_visiting, game.player_2_visiting]
+        # Se comparan ids: no hace falta cargar los jugadores de cada partido
+        is_local = player.id in (game.player_1_local_id, game.player_2_local_id)
+        is_visiting = player.id in (game.player_1_visiting_id, game.player_2_visiting_id)
         
         if (is_local and game.winner == "Local") or (is_visiting and game.winner == "Visitante"):
             games_win += 1

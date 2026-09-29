@@ -1,6 +1,7 @@
 from django.db import models
 from players.models import Player
 from django.core.exceptions import ValidationError
+from . import scoring
 from datetime import datetime
 
 # Create your models here.
@@ -28,6 +29,11 @@ class Match(models.Model):
     draft_mode = models.BooleanField(default=True)
     season = models.CharField(max_length=9, blank = True, default="NONE")
     
+    class Meta:
+        indexes = [
+            models.Index(fields=["club", "season", "start_date"], name="match_club_season_idx"),
+        ]
+
     def save(self, *args, **kwargs):
         # Asignar la temporada según la fecha de inicio
         if not self.season or self.season == "NONE":
@@ -82,6 +88,14 @@ class Game(models.Model):
     winner = models.CharField(max_length=10, null=True)
     draft_mode = models.BooleanField(default=True)
 
+    class Meta:
+        constraints = [
+            # Cada enfrentamiento tiene como mucho un partido 1, un partido 2... (evita duplicados)
+            models.UniqueConstraint(fields=["match", "n_game"], name="unique_game_number_per_match"),
+            models.CheckConstraint(check=models.Q(n_game__gte=1, n_game__lte=5) | models.Q(n_game__isnull=True),
+                                   name="game_number_between_1_and_5"),
+        ]
+
     def save(self, *args, **kwargs):
         self.clean()  # Llamar a la validación antes de guardar
         super().save(*args, **kwargs)
@@ -95,45 +109,12 @@ class Game(models.Model):
 
 
 def validate_set_value(value):
-    if value < 0 or value > 7:
-        raise ValidationError('El valor debe estar entre 0 y 7.')
-    
-def validate_padle_score(s):
-    valid_scores = [
-        ('6', '0'), ('6', '1'), ('6', '2'), ('6', '3'), ('6', '4'), ('7', '5'),
-        ('7', '6'), ('0', '6'), ('1', '6'), ('2', '6'), ('3', '6'), ('4', '6'), ('5', '7'), ('6', '7')
-    ]
-    if s not in valid_scores:
-        raise ValidationError(f'El resultado {s} no es un resultado válido.')
-
-def get_winner(score):
-    local, visiting = score
-    if int(local) > int(visiting):
-        return 'local'  
-    elif int(local) < int(visiting):
-        return 'visiting' 
-    else:
-        return 'tie' 
-
-def validate_result(set1, set2, set3):
-    # Validar los sets 1 y 2
-    validate_padle_score(set1)
-    validate_padle_score(set2)
-
-    # Obtener ganadores de los sets 1 y 2
-    winner_set1 = get_winner(set1)
-    winner_set2 = get_winner(set2)
-
-    # Validar el set 3 solo si los ganadores de los sets 1 y 2 son diferentes
-    if winner_set1 != winner_set2:
-        validate_padle_score(set3)
-    # Si los ganadores de set1 y set2 son idénticos, set3 debe ser 0-0
-    
-    elif set3 != ("0", "0"):
-        raise ValidationError('El resultado no es válido.')
+    # Límite amplio para admitir un super tie-break en el tercer set; las reglas
+    # completas de pádel están en match/scoring.py (Result.clean).
+    if value < 0 or value > 30:
+        raise ValidationError('El valor debe estar entre 0 y 30.')
 
 
-    
 class Result(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='results')
     result = models.CharField(max_length=100, null = True)
@@ -145,34 +126,35 @@ class Result(models.Model):
     set3_visiting = models.IntegerField(validators=[validate_set_value], null=True)
     draft_mode = models.BooleanField(default=True)
 
+    class Meta:
+        constraints = [
+            # Un solo resultado por partido
+            models.UniqueConstraint(fields=["game"], name="unique_result_per_game"),
+        ]
 
-    def determine_winner(self):
-        local_sets_won = 0
-        visiting_sets_won = 0
-
-        sets = [
+    def sets(self):
+        return [
             (self.set1_local, self.set1_visiting),
             (self.set2_local, self.set2_visiting),
             (self.set3_local, self.set3_visiting),
         ]
 
-        for local_points, visiting_points in sets:
-            if local_points > visiting_points:
-                local_sets_won += 1
-            elif visiting_points > local_points:
-                visiting_sets_won += 1
-
-        if local_sets_won > visiting_sets_won:
-            return "Victoria Local"
-        else:
-            return "Victoria visitante"
     def clean(self):
-        validate_result(
-            (self.set1_local, self.set1_visiting), 
-            (self.set2_local, self.set2_visiting), 
-            (self.set3_local, self.set3_visiting)
+        """Valida el resultado con las reglas del pádel y normaliza el set 3 no jugado."""
+        values = [scoring.to_int(v) for pair in self.sets() for v in pair]
+        sets, self._winner = scoring.validate_padel_result(
+            (values[0], values[1]), (values[2], values[3]), (values[4], values[5])
         )
-        
+        (self.set1_local, self.set1_visiting), (self.set2_local, self.set2_visiting), \
+            (self.set3_local, self.set3_visiting) = sets
+
+    def determine_winner(self):
+        winner = getattr(self, "_winner", None)
+        if winner is None:
+            self.clean()
+            winner = self._winner
+        return "Victoria Local" if winner == "local" else "Victoria Visitante"
+
     def save(self, *args, **kwargs):
         self.clean() 
         super().save(*args, **kwargs)

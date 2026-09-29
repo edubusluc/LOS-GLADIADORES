@@ -1,0 +1,37 @@
+{# Alineación de 5 parejas. Recibe: players, slots (lista de {gameId, player1Id, player2Id}) o nada, submit_label #}
+{% load static %}
+<form method="post" data-lineup>
+    {% csrf_token %}
+    <div class="z-games-grid">
+        {% for slot in slots %}
+        <fieldset data-slot data-game-id="{{ slot.gameId|default_if_none:'' }}">
+            <legend>Pareja {{ forloop.counter }}</legend>
+            {% for key in "12" %}
+            <div>
+                <label for="slot{{ forloop.parentloop.counter }}-p{{ key }}">Jugador {{ key }}</label>
+                <select id="slot{{ forloop.parentloop.counter }}-p{{ key }}" data-player>
+                    <option value="">Elegir jugador</option>
+                    {% for p in players %}
+                    <option value="{{ p.id }}" data-points="{{ p.snp_score|default:0 }}"
+                        {% if key == "1" and p.id == slot.player1Id or key == "2" and p.id == slot.player2Id %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+        </fieldset>
+        {% endfor %}
+    </div>
+
+    <div class="pair-order-container">
+        <h2>Orden de juego</h2>
+        <p class="text-muted small mb-2">Se ordena por la suma de puntos SNP: las dos parejas más fuertes juegan los partidos de 3 puntos.</p>
+        <ol id="pair-order-list"></ol>
+    </div>
+
+    <input type="hidden" name="ordered_games" data-lineup-output>
+    <div class="z-selector-bar">
+        <div><b data-lineup-count>0</b> de {{ slots|length }} parejas <small data-lineup-hint></small></div>
+        <button type="submit" class="btn btn-primary" data-lineup-save disabled>{{ submit_label }}</button>
+    </div>
+</form>
+<script src="{% static 'js/lineup.js' %}" defer></script>

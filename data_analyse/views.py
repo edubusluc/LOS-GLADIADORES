@@ -1,5 +1,7 @@
 from django.shortcuts import render
-from match.models import Match, Game
+from match.models import Match, Game, Result
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
 from players.models import Player
 from team.models import Team
 from call.models import Call
@@ -13,17 +15,14 @@ from players.models import current_season
 from . import pairs as pair_stats
 
 # ---------------------------------------------------------------
-# ESTADÍSTICAS EQUIPO (sin cambios)
+# ESTADÍSTICAS EQUIPO
 # ---------------------------------------------------------------
 LOCAL_WIN = "Victoria Local"
 VISITING_WIN = "Victoria Visitante"
 
 
 def get_total_season(matchs):
-    seasons = set()
-    for m in matchs:
-        seasons.add(m.season)
-    return seasons
+    return set(matchs.values_list('season', flat=True).distinct())
 
 
 def calculate_match_statistics(season, team):
@@ -44,112 +43,74 @@ def calculate_match_statistics(season, team):
     return total_matches, total_won, lost_matches, percentage_won, percentage_lost
 
 
+def _games_totals(season, team, own_local):
+    """
+    Juegos ganados y perdidos por el equipo jugando en casa (own_local) o fuera,
+    sumados en la base de datos con una sola consulta.
+    """
+    results = Result.objects.filter(game__match__draft_mode=False)
+    results = results.filter(game__match__local=team) if own_local else results.filter(game__match__visiting=team)
+    if season is not None:
+        results = results.filter(game__match__season=season)
+    sums = results.aggregate(**{
+        f"{side}{n}": Coalesce(Sum(f"set{n}_{side}"), 0)
+        for side in ("local", "visiting") for n in (1, 2, 3)
+    })
+    local = sums["local1"] + sums["local2"] + sums["local3"]
+    visiting = sums["visiting1"] + sums["visiting2"] + sums["visiting3"]
+    won, lost = (local, visiting) if own_local else (visiting, local)
+    total = won + lost
+    return (
+        won, lost,
+        round(won / total * 100, 2) if total else 0,
+        round(lost / total * 100, 2) if total else 0,
+    )
+
+
 def calculate_local_game_statistics(season, team):
-    if season is None:
-        match_local = Match.objects.filter(local=team, draft_mode=False)
-    else:
-        match_local = Match.objects.filter(season=season, local=team, draft_mode=False)
-
-    local_games_won, local_games_lost = 0, 0
-
-    for m in match_local:
-        for g in m.games.all():
-            result = g.results.first()
-            if result is None:
-                continue  # partido sin resultado registrado
-            local_games_won += result.set1_local + result.set2_local + (result.set3_local or 0)
-            local_games_lost += result.set1_visiting + result.set2_visiting + (result.set3_visiting or 0)
-
-    total_local_games = local_games_won + local_games_lost
-    percentage_local_games_won = round((local_games_won / total_local_games * 100), 2) if total_local_games > 0 else 0
-    percentage_local_games_lost = round((local_games_lost / total_local_games * 100), 2) if total_local_games > 0 else 0
-
-    return local_games_won, local_games_lost, percentage_local_games_won, percentage_local_games_lost
+    return _games_totals(season, team, own_local=True)
 
 
 def calculate_visiting_game_statistics(season, team):
-    if season is None:
-        match_visiting = Match.objects.filter(visiting=team, draft_mode=False)
-    else:
-        match_visiting = Match.objects.filter(season=season, visiting=team, draft_mode=False)
-
-    visiting_games_won, visiting_games_lost = 0, 0
-
-    for m in match_visiting:
-        for g in m.games.all():
-            result = g.results.first()
-            if result is None:
-                continue  # partido sin resultado registrado
-            visiting_games_won += result.set1_visiting + result.set2_visiting + (result.set3_visiting or 0)
-            visiting_games_lost += result.set1_local + result.set2_local + (result.set3_local or 0)
-
-    total_visiting_games = visiting_games_won + visiting_games_lost
-    percentage_visiting_games_won = round((visiting_games_won / total_visiting_games * 100), 2) if total_visiting_games > 0 else 0
-    percentage_visiting_games_lost = round((visiting_games_lost / total_visiting_games * 100), 2) if total_visiting_games > 0 else 0
-
-    return visiting_games_won, visiting_games_lost, percentage_visiting_games_won, percentage_visiting_games_lost
+    return _games_totals(season, team, own_local=False)
 
 
 def calculate_matches_won_per_year(team):
+    """{temporada: {'won', 'lost'}} en orden, con una sola consulta."""
     dicc_match = {}
-    year = set()
-
-    all_matchs = Match.objects.filter(club=team.club, draft_mode=False)
-    for m in all_matchs:
-        year.add(m.season)
-
-    for y in year:
-        if y not in dicc_match:
-            dicc_match[y] = {'won': 0, 'lost': 0}
-
-        match_won_local = Match.objects.filter(season=y, local=team, result="Victoria Local", draft_mode=False).count()
-        match_lost_local = Match.objects.filter(season=y, local=team, result="Victoria Visitante", draft_mode=False).count()
-        match_won_visiting = Match.objects.filter(season=y, visiting=team, result="Victoria Visitante", draft_mode=False).count()
-        match_lost_visiting = Match.objects.filter(season=y, visiting=team, result="Victoria Local", draft_mode=False).count()
-
-        dicc_match[y]['won'] += match_won_local + match_won_visiting
-        dicc_match[y]['lost'] += match_lost_local + match_lost_visiting
-        dicc_match = dict(sorted(dicc_match.items()))
-
-    return dicc_match
-
-
-def count_games(player, role, winner, n_games, season):
-    """Helper function to count games for a player."""
-    filter_conditions = Q(**{f'player_1_{role}': player.id}) | Q(**{f'player_2_{role}': player.id})
-    filter_conditions &= Q(winner=winner, draft_mode=False, n_game__in=n_games)
-
-    if season:
-        filter_conditions &= Q(match__season=season)
-
-    return Game.objects.filter(filter_conditions).count()
+    rows = Match.objects.filter(club=team.club, draft_mode=False).values_list('season', 'result', 'local_id', 'visiting_id')
+    for season, result, local_id, visiting_id in rows:
+        d = dicc_match.setdefault(season, {'won': 0, 'lost': 0})
+        if (result == LOCAL_WIN and local_id == team.id) or (result == VISITING_WIN and visiting_id == team.id):
+            d['won'] += 1
+        elif result in (LOCAL_WIN, VISITING_WIN):
+            d['lost'] += 1
+    return dict(sorted(dicc_match.items()))
 
 
 def column_chart(club, season):
-    # Solo los jugadores que siguen en el equipo
+    """Partidos de 2 y 3 puntos ganados/perdidos por jugador actual (una sola consulta)."""
     players = Player.objects.filter(club=club, in_team=True)
+    names = {p.id: f"{p.name} {p.last_name}" for p in players}
     dicc = {
-        f"{p.name} {p.last_name}": {
+        name: {
             'Partidos de 2 puntos ganados': 0,
             'Partidos de 2 puntos perdidos': 0,
             'Partidos de 3 puntos ganados': 0,
             'Partidos de 3 puntos perdidos': 0,
-        } for p in players
+        } for name in names.values()
     }
 
-    for player in players:
-        player_key = f"{player.name} {player.last_name}"
-        # Partidos locales
-        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2], season)
-        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2], season)
-        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5], season)
-        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5], season)
-
-        # Partidos visitantes
-        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2], season)
-        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2], season)
-        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5], season)
-        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5], season)
+    games = Game.objects.filter(match__club=club, draft_mode=False, winner__in=("Local", "Visitante"), n_game__in=[1, 2, 3, 4, 5])
+    if season:
+        games = games.filter(match__season=season)
+    rows = games.values_list('n_game', 'winner', 'player_1_local', 'player_2_local', 'player_1_visiting', 'player_2_visiting')
+    for n_game, winner, l1, l2, v1, v2 in rows:
+        kind = '3' if n_game in (1, 2) else '2'
+        for pid, side in ((l1, "Local"), (l2, "Local"), (v1, "Visitante"), (v2, "Visitante")):
+            if pid in names:
+                outcome = 'ganados' if winner == side else 'perdidos'
+                dicc[names[pid]][f'Partidos de {kind} puntos {outcome}'] += 1
 
     return dicc
 

@@ -1,42 +1,20 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
-    <div class="container px-0">
-        <div class="card shadow-lg">
-            <div class="card-body">
-                <h1 class="card-title text-center">Editar Convocatoria</h1>
-                <h2 class="card-title text-center">{{ call.match.local }} VS {{ call.match.visiting }}</h2>
-                <p class="warning">Cualquier cambio realizado en una convocatoria cerrada quedará registrado</p>
-                {% if form.non_field_errors %}
-                    <div class="error">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
-                <form method="POST" class="mt-4">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label>Selecciona Jugadores:</label>
-                        <div class="z-check-grid">
-                            {% for player in all_players %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="players" value="{{ player.id }}" id="player-{{ player.id }}"
-                                            {% if player.id in selected_players %} checked {% endif %}>
-                                        <label class="form-check-label" for="player-{{ player.id }}">
-                                            {{ player }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary" name="update_call">Actualizar Convocatoria</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="z-page-head">
+    <div>
+        <a href="{% url 'call_for_match' call.match.id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ call.match.local }} vs {{ call.match.visiting }}</a>
+        <h1>Editar convocatoria</h1>
     </div>
+</div>
+
+{% if not call.draft_mode %}
+<p class="warning">La convocatoria está cerrada: cualquier cambio quedará registrado.</p>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="update_call" value="1">
+    {% include 'includes/player_selector.html' with players=all_players selected=selected_players submit_label="Guardar convocatoria" min_players=10 %}
+</form>
 {% endblock %}

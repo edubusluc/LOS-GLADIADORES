@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+  <script src="{% static 'js/player-picker.js' %}" defer></script>
   <div class="st-page">
     {% include 'includes/stats_tabs.html' %}
 
@@ -17,14 +18,14 @@
 
       <form class="st-picker" method="GET" action="{% url 'pair_statistics' %}">
         <label class="visually-hidden" for="p1">Jugador 1</label>
-        <select class="st-select" name="p1" id="p1">
+        <select class="st-select" name="p1" id="p1" data-picker data-placeholder="Jugador 1: buscar...">
           <option value="">Jugador 1</option>
           {% for p in players %}
             <option value="{{ p.id }}" {% if p.id == selected_p1 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} (fuera del equipo){% endif %}</option>
           {% endfor %}
         </select>
         <label class="visually-hidden" for="p2">Jugador 2</label>
-        <select class="st-select" name="p2" id="p2">
+        <select class="st-select" name="p2" id="p2" data-picker data-placeholder="Jugador 2: buscar...">
           <option value="">Jugador 2</option>
           {% for p in players %}
             <option value="{{ p.id }}" {% if p.id == selected_p2 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} (fuera del equipo){% endif %}</option>
@@ -32,6 +33,14 @@
         </select>
         <button class="st-btn" type="submit">Ver pareja</button>
       </form>
+      <script>
+        // Al elegir los dos jugadores se abre directamente su detalle
+        document.querySelectorAll('#p1, #p2').forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            if (document.getElementById('p1').value && document.getElementById('p2').value) sel.form.submit();
+          });
+        });
+      </script>
     </header>
 
     {% if error %}

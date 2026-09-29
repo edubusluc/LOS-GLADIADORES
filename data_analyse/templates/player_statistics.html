@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+  <script src="{% static 'js/player-picker.js' %}" defer></script>
   <div class="st-page">
     {% include 'includes/stats_tabs.html' %}
 
@@ -15,7 +16,7 @@
 
       <form class="st-picker" method="GET" action="{% url 'player_statistics' %}">
         <label class="st-label" for="player">Jugador</label>
-        <select class="st-select" name="player" id="player" onchange="this.form.submit()">
+        <select class="st-select" name="player" id="player" onchange="this.form.submit()" data-picker data-placeholder="Buscar jugador...">
           <option value="">Elige un jugador</option>
           {% for p in players %}
             <option value="{{ p.id }}" {% if p.id == selected_player %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>

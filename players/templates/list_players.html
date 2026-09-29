@@ -12,6 +12,7 @@
     {% if is_club_admin %}
     <div class="z-actions">
         <a href="{% url 'force_update_score' %}" class="btn btn-secondary" onclick="return confirmAndShowLoading();"><i class="fa-solid fa-rotate me-1"></i> Actualizar rendimiento</a>
+        <a href="{% url 'manage_roster' %}" class="btn btn-secondary"><i class="fa-solid fa-user-check me-1"></i> Gestionar plantilla</a>
         <a href="{% url 'create_player' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Nuevo jugador</a>
     </div>
     {% endif %}

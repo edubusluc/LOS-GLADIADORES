@@ -8,7 +8,8 @@ from core.decorators import club_required
 @club_required
 @require_http_methods(["GET", "POST"])
 def view_call_log(request, call_id):
-    players = Player.objects.filter(club=request.club)
+    # Solo los jugadores que siguen en el equipo, por orden alfabético
+    players = Player.objects.filter(club=request.club, in_team=True).order_by('name', 'last_name')
     try:
         call_log = CallLog.objects.get(call=call_id, call__match__club=request.club)
     except CallLog.DoesNotExist:

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from core.decorators import club_required, club_admin_required
 from .models import Post, Image
 from .forms import PostForm
 from match.models import Match
@@ -8,7 +8,12 @@ from django.core.paginator import Paginator
 
 
 def home(request):
-    posts = Post.objects.prefetch_related('images').all().order_by('-created_at')
+    if not request.user.is_authenticated:
+        return render(request, 'landing.html')
+    if request.club is None:
+        return redirect('no_club')
+
+    posts = Post.objects.filter(club=request.club).prefetch_related('images').order_by('-created_at')
     
     # Configuración de la paginación
     paginator = Paginator(posts, 3)  # 3 publicaciones por página
@@ -18,9 +23,9 @@ def home(request):
     return render(request, 'home.html', {'page_obj': page_obj})
 
 
-@login_required
+@club_admin_required
 def create_post(request):
-    matches = Match.objects.filter(draft_mode=False)
+    matches = Match.objects.filter(club=request.club, draft_mode=False)
 
     if request.method == 'POST':
         form = PostForm(request.POST)
@@ -32,10 +37,11 @@ def create_post(request):
                 return handle_error(request, form, matches, 'Debes seleccionar al menos una imagen')
 
             post = form.save(commit=False)
+            post.club = request.club
             
             match_id = request.POST.get('match_id')
             if match_id:
-                post.content = generate_post_content(match_id)  # Generar contenido desde el partido
+                post.content = generate_post_content(matches, match_id)  # Generar contenido desde el partido
             else:
                 post.content = form.cleaned_data['content']  # Usar el contenido del formulario si no hay partido
 
@@ -61,12 +67,12 @@ def handle_error(request, form, matches, error_message):
         'matches': matches
     })
 
-def generate_post_content(match_id):
+def generate_post_content(matches, match_id):
     if match_id:
         try:
-            match = Match.objects.get(id=match_id)
+            match = matches.get(id=match_id)
             return f"{match.result}, en el partido {match.local} vs {match.visiting} con resultado final: {match.result_points}"
-        except Match.DoesNotExist:
+        except (Match.DoesNotExist, ValueError):
             return "Partido no válido."
     return ""
 

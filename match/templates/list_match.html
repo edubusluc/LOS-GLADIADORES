@@ -145,7 +145,7 @@
 
     <div class="d-flex align-items-center mb-3">
         <h1 class="flex-grow-1">Listado de Partidos</h1>
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
         <a href="{% url 'create_match' %}" class="btn btn-primary" style="background-color: #083C64;"s>Nuevo Partido</a>
         {% endif %}
     </div>
@@ -167,7 +167,7 @@
             <div class="card h-100 custom-card">
                 <!-- Botón de eliminación -->
                 {%if m.draft_mode%}
-                {%if user.is_authenticated%}
+                {% if is_club_admin %}
                 <a href="{% url 'delete_match' m.id %}" class="delete-button">
                     <i class="fas fa-trash"></i>
                 </a>

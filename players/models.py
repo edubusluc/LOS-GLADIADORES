@@ -2,6 +2,7 @@ import datetime
 
 from django.core.validators import RegexValidator
 from django.db import models
+from core.models import Club
 from team.models import Team
 
 # Mes en el que empieza la temporada (9 = septiembre).
@@ -32,7 +33,8 @@ class Player(models.Model):
     last_name = models.CharField(max_length=100)
     position = models.CharField(max_length=10, choices=POSITIONS, default="NONE")
     skillfull_hand = models.CharField(max_length=10, choices=HAND, default="NONE")
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team", default=1)
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="players", null=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team")
     photo = models.ImageField(upload_to='static/profile', null=True, blank=True)
     snp_score = models.FloatField(null=True)
     score = models.IntegerField(default=5, null=True)
@@ -44,6 +46,12 @@ class Player(models.Model):
         validators=[RegexValidator(r'^\d{4}-\d{4}$', 'Usa el formato 2024-2025.')],
         help_text="Formato 2024-2025. Se usa para contar a cuántas convocatorias no se ha apuntado.",
     )
+
+    def save(self, *args, **kwargs):
+        # Los jugadores siempre pertenecen al equipo propio de su club.
+        if self.club_id and not self.team_id:
+            self.team = self.club.own_team
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return str(f'{self.name} {self.last_name}')

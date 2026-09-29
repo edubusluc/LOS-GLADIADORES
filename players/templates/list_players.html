@@ -286,7 +286,7 @@
 <div class="table-container">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <h1 class="mb-0">Listado de Jugadores</h1>
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
         <div class="d-flex align-items-center gap-2">
             <a href="{% url 'create_player' %}" class="btn btn-primary">Nuevo Jugador</a>
             <a href="{% url 'force_update_score' %}" class="btn btn-danger" onclick="return confirmAndShowLoading();">
@@ -344,7 +344,7 @@
         {% for player in players %}
         <div class="col-md-6 col-lg-4 mb-4 player-item">
             <div class="card-player h-100 position-relative">
-                {% if user.is_authenticated %}
+                {% if is_club_admin %}
                 <div class="d-flex justify-content-end position-absolute top-0 end-0 p-2">
                     <a href="{% url 'edit_player' player.id %}" class="me-2">
                         <i class="fas fa-pen"></i>
@@ -365,7 +365,7 @@
                             <p class="card-player-text"><i class="fas fa-map-marker-alt me-2"></i><strong>Posición:</strong> {{ player.position }}</p>
                             <p class="card-player-text"><i class="fas fa-hand-paper me-2"></i><strong>Mano hábil:</strong> {{ player.skillfull_hand }}</p>
                             <p class="card-player-text"><i class="fas fa-trophy me-2"></i><strong>Puntos SNP:</strong> {{ player.snp_score }}</p>
-                            {% if user.is_authenticated %}
+                            {% if is_club_admin %}
                             {% if player.in_team %}
                             <div class="performance-score score-light-green"> En el equipo </div>
                             {% else %}
@@ -412,7 +412,7 @@
                     <th>Puntos SNP</th>
                     <th>Rendimiento</th>
                     <th>Temporada</th>
-                    {% if user.is_authenticated %}
+                    {% if is_club_admin %}
                     <th>Equipo</th>
                     <th>Acciones</th>
                     {% endif %}
@@ -447,7 +447,7 @@
                         {% endif %}
                     </td>
                     <td>{{ player.joined_season }}</td>
-                    {% if user.is_authenticated %}
+                    {% if is_club_admin %}
                     <td>
                         {% if player.in_team %}
                         <span class="badge-score score-light-green">En el equipo</span>

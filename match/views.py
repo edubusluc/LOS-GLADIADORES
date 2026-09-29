@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from core.decorators import club_required, club_admin_required
 from django.contrib import messages
 from .forms import MatchForm
 from .models import Match, Game, Result
@@ -16,18 +16,35 @@ from django.core.exceptions import ValidationError
 
 
 CREATE_MATCH_HTML = "create_match.html"
-LOS_GLADIADORES = "LOS GLADIADORES"
 # Create your views here.
+
+
+def club_match(request, match_id):
+    """Partido del club activo o 404: nunca se accede a partidos de otros clubes."""
+    return get_object_or_404(Match, id=match_id, club=request.club)
+
+
+def club_call(request, **filters):
+    return get_object_or_404(Call, match__club=request.club, **filters)
+
+
+def club_players(request, ids):
+    """Jugadores del club activo cuyos ids vienen del formulario (ignora ids ajenos)."""
+    return Player.objects.filter(club=request.club, id__in=[i for i in ids if str(i).isdigit()])
+
+
+@club_required
 def list_match(request):
     season = request.GET.get('season', '')
 
-    matches = Match.objects.all().order_by('-start_date')
+    club_matches = Match.objects.filter(club=request.club)
+    matches = club_matches.order_by('-start_date')
 
     if season:
         matches = matches.filter(season=season)
 
     # Lista de temporadas distintas para el selector (ordenadas desc)
-    seasons = Match.objects.order_by('-season').values_list('season', flat=True).distinct()
+    seasons = club_matches.order_by('-season').values_list('season', flat=True).distinct()
 
     paginator = Paginator(matches, 5)
     page = request.GET.get('page')
@@ -45,8 +62,10 @@ def list_match(request):
         'selected_season': season,
     })
 
-@login_required
+@club_admin_required
 def create_match(request):
+    club = request.club
+    own_team = club.own_team
     if request.method == "POST":
         # Obtiene los datos del formulario
         local_id = request.POST.get('local')
@@ -58,51 +77,52 @@ def create_match(request):
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
         except ValueError:
             return render(request, CREATE_MATCH_HTML, {
-                "form": MatchForm(request.POST),
+                "form": MatchForm(request.POST, club=club),
                 "error": "Fecha no válida. Usa el formato AAAA-MM-DD."
             })
 
         # Verifica que todos los campos necesarios están presentes
         try:
-            local_team = Team.objects.get(id=local_id)
-            visiting_team = Team.objects.get(id=visiting_id)
-        except Team.DoesNotExist:
+            local_team = Team.objects.get(id=local_id, club=club)
+            visiting_team = Team.objects.get(id=visiting_id, club=club)
+        except (Team.DoesNotExist, ValueError):
             return render(request, CREATE_MATCH_HTML, {
-                "form": MatchForm(request.POST),
+                "form": MatchForm(request.POST, club=club),
                 "error": "Uno de los equipos no existe."
             })
 
         # Verifica si el enfrentamiento es válido
-        if local_team.name != LOS_GLADIADORES and visiting_team.name != LOS_GLADIADORES:
-            form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
+        if local_team == visiting_team or own_team not in (local_team, visiting_team):
+            form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
             return render(request, CREATE_MATCH_HTML, {
                 "form": form,
-                "error": "No es un enfrentamiento válido. LOS GLADIADORES deben ser locales o visitantes"
+                "error": f"No es un enfrentamiento válido. {own_team} debe ser local o visitante"
             })
 
         # Verifica si los campos están completos
         if local_id and visiting_id and start_date:
             Match.objects.create(
+                club=club,
                 local_id=local_id,
                 visiting_id=visiting_id,
                 start_date=start_date,
             )
             return redirect("list_match")  # Redirección después de crear el partido
         else:
-            form = MatchForm(request.POST)  # Re-crea el formulario con los datos enviados
+            form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
             return render(request,CREATE_MATCH_HTML, {
                 "form": form,
                 "error": "Por favor, completa todos los campos."
             })
     else:
-        form = MatchForm()
+        form = MatchForm(club=club)
 
     return render(request, CREATE_MATCH_HTML, {"form": form})
 
-@login_required
+@club_admin_required
 def delete_match(request, match_id):
     try:
-        match = get_object_or_404(Match, id=match_id)
+        match = club_match(request, match_id)
         if match.draft_mode != False:
 
             if request.method == 'POST':
@@ -120,10 +140,10 @@ def delete_match(request, match_id):
         return redirect('list_match')
 
 
-@login_required
+@club_admin_required
 def create_call(request, match_id):
-    players = Player.objects.filter(in_team=True)
-    match = Match.objects.get(id=match_id) 
+    players = Player.objects.filter(club=request.club, in_team=True)
+    match = club_match(request, match_id)
     existing_call = Call.objects.filter(match_id=match_id).exists()
 
 
@@ -137,7 +157,7 @@ def create_call(request, match_id):
     
     
     if request.method == 'POST':
-        players = request.POST.getlist('players')
+        players = club_players(request, request.POST.getlist('players'))
         if not players:
               messages.error(request, "Debes seleccionar al menos un jugador.")
         else:
@@ -164,9 +184,9 @@ def validate_call(call):
     
     return True, None
 
-@login_required
+@club_admin_required
 def close_call(request, match_id):
-    call = Call.objects.get(match__id=match_id)
+    call = club_call(request, match__id=match_id)
     is_valid, error_message = validate_call(call)
 
     if not is_valid:
@@ -180,10 +200,10 @@ def close_call(request, match_id):
     
     return redirect('call_for_match', call.match.id)
 
-@login_required
+@club_admin_required
 def edit_call(request, call_id):
-    call = get_object_or_404(Call, id=call_id)
-    all_players = Player.objects.all()
+    call = club_call(request, id=call_id)
+    all_players = Player.objects.filter(club=request.club)
     selected_players = call.players.values_list('id', flat=True)
     call_log = get_object_or_404(CallLog, call=call_id)
     
@@ -192,8 +212,8 @@ def edit_call(request, call_id):
         return redirect('call_for_match', call.match.id)
     else:
         if request.method == "POST":
-            selected_players_ids = request.POST.getlist("players")  # Lista de jugadores seleccionados
-            selected_set = set(map(int, selected_players_ids))
+            selected_players_ids = list(club_players(request, request.POST.getlist("players")).values_list('id', flat=True))
+            selected_set = set(selected_players_ids)
             call_set = set(selected_players)
 
             added_players = selected_set - call_set
@@ -236,24 +256,25 @@ def edit_call(request, call_id):
     return render(request, 'edit_call.html', context)
 
 #VISTA POR SI SE INTENTA MODIFICAR UNA CONVOCATORIA YA CERRADA
-@login_required
+@club_admin_required
 def closed_call(request, call_id):
-    call = Call.objects.get(id=call_id)
+    call = club_call(request, id=call_id)
     return render(request, 'closed_call.html', {'match': call})
 
 
 #VISTA POR SI SE INTENTA CREAR UNA CONVOCATORIA YA EXISTENTE
-@login_required
+@club_admin_required
 def existing_call_view(request, match_id):
-    match = Match.objects.get(id=match_id)
+    match = club_match(request, match_id)
     return render(request, 'existing_call.html', {'match': match})
 
 #VISTA PARA MOSTRAR LA CONVOCATORIA
+@club_required
 def call_for_match(request,match_id):
+    match = club_match(request, match_id)
     try:
-        call_for_match = Call.objects.get(match_id=match_id)
+        call_for_match = Call.objects.get(match=match)
     except Call.DoesNotExist:
-        match = Match.objects.get(id=match_id)  # Asegúrate de que esto siempre tenga una coincidencia
         return render(request, "call_for_match.html", {
             "match": match,
             "call_for_match": None,  # Indica que no hay convocatoria
@@ -265,7 +286,6 @@ def call_for_match(request,match_id):
             "no_call": True  # Indicador que puedes usar en tu plantilla
         })
 
-    match = Match.objects.get(id=match_id)
     game_for_match = Game.objects.filter(match_id=match_id).order_by("n_game")
 
     backhand_players = []
@@ -305,10 +325,10 @@ def validate_game_for_match(call):
     return True, None
 
 #FUNCIÓN PARA CREAR PARTIDOS DENTRO DE UN ENFRENTAMIENTO
-@login_required
+@club_admin_required
 def create_game_for_match(request, match_id):
-    call = Call.objects.filter(match_id=match_id).first()
-    match = get_object_or_404(Match, id=match_id)
+    match = club_match(request, match_id)
+    call = Call.objects.filter(match=match).first()
 
     is_valid, error_message = validate_game_for_match(call)
     if not is_valid:
@@ -320,13 +340,14 @@ def create_game_for_match(request, match_id):
 
         for idx, game in enumerate(ordered_games_data, start=1):
             try:
-                player_1 = Player.objects.get(id=game['player1Id'])
-                player_2 = Player.objects.get(id=game['player2Id'])
-            except Player.DoesNotExist:
+                # Solo jugadores de la convocatoria (y por tanto del club)
+                player_1 = call.players.get(id=game['player1Id'])
+                player_2 = call.players.get(id=game['player2Id'])
+            except (Player.DoesNotExist, KeyError, ValueError, TypeError):
                 messages.error(request, "Uno de los jugadores no existe.")
                 return redirect('call_for_match', match_id=match_id)
 
-            if match.local.name == LOS_GLADIADORES:
+            if match.own_is_local:
                 new_game = Game(
                     match=match,
                     n_game=idx,  # Asigna el número de juego según el índice
@@ -338,7 +359,7 @@ def create_game_for_match(request, match_id):
                     winner=None,  # Asigna el ganador si es necesario
                     draft_mode=True  # Cambia según la lógica de tu aplicación
                 )
-            elif match.visiting.name == LOS_GLADIADORES:
+            elif match.own_is_visiting:
                 new_game = Game(
                     match=match,
                     n_game=idx,  # Asigna el número de juego según el índice
@@ -351,7 +372,7 @@ def create_game_for_match(request, match_id):
                     draft_mode=True  # Cambia según la lógica de tu aplicación
                 )
             else:
-                messages.error(request, "El partido no es de LOS GLADIADORES.")
+                messages.error(request, f"El partido no es de {request.club.own_team}.")
                 return redirect('create_game', match_id=match_id)
 
             try:
@@ -369,9 +390,9 @@ def calculate_score(index):
     if index == 1 or index == 2: return 3
     else: return 2
 
-@login_required
+@club_admin_required
 def create_result(request, game_id):
-    game = get_object_or_404(Game, id=game_id)
+    game = get_object_or_404(Game, id=game_id, match__club=request.club)
 
     if request.method == "POST":
         set1_local = request.POST.get('set1_local')
@@ -419,9 +440,9 @@ def create_result(request, game_id):
 
 
 
-@login_required
+@club_admin_required
 def edit_result(request, game_id):
-    game = get_object_or_404(Game, id=game_id)
+    game = get_object_or_404(Game, id=game_id, match__club=request.club)
     match = game.match
     result = get_object_or_404(Result, game=game)  # Obtener el resultado del juego
 
@@ -510,9 +531,9 @@ def valid_close_match(games,match):
     
     return True, None     
 
-@login_required
+@club_admin_required
 def close_match(request, match_id):
-    match = Match.objects.get(id=match_id)
+    match = club_match(request, match_id)
     games = match.games.all()
 
     # Validar si se pueden cerrar las actas
@@ -536,9 +557,9 @@ def close_match(request, match_id):
     match.save()
 
     # Actualizar el rendimiento de los jugadores
-    if match.local.name == LOS_GLADIADORES:
+    if match.own_is_local:
         update_player_scores(games, is_local=True)
-    elif match.visiting.name == LOS_GLADIADORES:
+    elif match.own_is_visiting:
         update_player_scores(games, is_local=False)
 
     return redirect('list_match')
@@ -556,9 +577,9 @@ def update_player_scores(games, is_local):
             player.score = player_score
             player.save()
 
-@login_required
+@club_admin_required
 def edit_game_match(request, match_id):
-    match = get_object_or_404(Match, id=match_id)
+    match = club_match(request, match_id)
 
     if not match.draft_mode:
         messages.error(request, "No se pueden editar los partidos que se encuentran ya confirmados")
@@ -569,18 +590,18 @@ def edit_game_match(request, match_id):
     def get_player(game_data, player_key):
         """Obtiene un jugador dado un diccionario de datos de juego y la clave del jugador."""
         try:
-            return Player.objects.get(id=game_data[player_key])
-        except Player.DoesNotExist:
+            return Player.objects.get(id=game_data[player_key], club=request.club)
+        except (Player.DoesNotExist, KeyError, ValueError, TypeError):
             return None
 
     def update_game(game, player_1, player_2, idx):
         """Actualiza un juego con los jugadores y el número de juego."""
-        if match.local.name == "LOS GLADIADORES":
+        if match.own_is_local:
             game.player_1_local = player_1
             game.player_2_local = player_2
             game.player_1_visiting = None
             game.player_2_visiting = None
-        elif match.visiting.name == "LOS GLADIADORES":
+        elif match.own_is_visiting:
             game.player_1_visiting = player_1
             game.player_2_visiting = player_2
             game.player_1_local = None
@@ -607,7 +628,7 @@ def edit_game_match(request, match_id):
         used_players = set()
 
         for idx, game_data in enumerate(ordered_games_data, start=1):
-            game = Game.objects.filter(id=game_data['gameId']).first()
+            game = Game.objects.filter(id=game_data.get('gameId'), match=match).first()
             if not game:
                 messages.error(request, "Uno de los juegos no existe.")
                 return redirect('edit_game_match', match_id=match_id)
@@ -652,7 +673,7 @@ def edit_game_match(request, match_id):
         for game in games
     ]
 
-    call = Call.objects.get(match_id=match_id)
+    call = club_call(request, match_id=match_id)
 
     return render(request, "edit_game_match.html", {"games": games_data, "match": match, "call": call})
 

@@ -9,7 +9,7 @@
 
     <!-- Botón para crear una nueva publicación -->
     <div class="d-flex justify-content-end mb-3">
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
             <a class="btn btn-primary" style="background-color: #083C64;" href="{% url 'create_post' %}">Crear nueva publicación</a>
         {% endif %}
     </div>

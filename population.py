@@ -13,6 +13,8 @@ from penalty.models import Penalty
 from callLog.models import CallLog
 from post.models import Post, Image
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.management import call_command
+from core.models import Club
 
 
 LOS_GLADIADORES = "LOS GLADIADORES"
@@ -28,7 +30,8 @@ def truncate_all_tables():
         Result,
         Penalty,
         CallLog,
-        Post
+        Post,
+        Club
     ]
     for model1 in models_to_truncate:
         model1.objects.all().delete()
@@ -290,6 +293,8 @@ def populate_database():
     create_games()
     create_result()
     create_post()
+    # Asigna todo lo cargado al club LOS GLADIADORES (multi-club)
+    call_command('assign_default_club', name=LOS_GLADIADORES)
     
 
 if __name__ == "__main__":

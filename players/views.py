@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from core.decorators import club_required, club_admin_required
 from .forms import PlayerForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
@@ -13,12 +13,15 @@ from dotenv import load_dotenv
 # Create your views here.
 
 
-@login_required
+@club_admin_required
 def create_player(request):
     if request.method == "POST":
         form = PlayerForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            player = form.save(commit=False)
+            player.club = request.club
+            player.team = request.club.own_team
+            player.save()
             return redirect("list_players")
         else: 
             messages.error(request, "Error al crear el jugador. Por favor, verifica los datos.")
@@ -32,15 +35,21 @@ def create_player(request):
     return render(request, "create_player.html", {"form": form})
 
 
+ORDER_FIELDS = {'name', '-name', 'last_name', '-last_name', 'position', '-position', 'score', '-score', 'snp_score', '-snp_score'}
 
+
+@club_required
 def list_players(request):
     order_by = request.GET.get('order_by', 'name')
+    if order_by not in ORDER_FIELDS:
+        order_by = 'name'
     search = request.GET.get('search', '').strip()
 
-    if request.user.is_authenticated:
-        players = Player.objects.all().order_by('-in_team', order_by)
+    players = Player.objects.filter(club=request.club)
+    if request.membership.is_admin:
+        players = players.order_by('-in_team', order_by)
     else:
-        players = Player.objects.filter(in_team=True).order_by(order_by)
+        players = players.filter(in_team=True).order_by(order_by)
 
     if search:
         players = players.filter(
@@ -64,9 +73,9 @@ def list_players(request):
         'search': search,
     })
 
-@login_required
+@club_admin_required
 def edit_player(request, player_id):
-    player = get_object_or_404(Player, id=player_id)  # Asegúrate de que estás usando el modelo correcto
+    player = get_object_or_404(Player, id=player_id, club=request.club)  # Asegúrate de que estás usando el modelo correcto
 
     if request.method == "POST":
         name = request.POST.get("name")
@@ -90,8 +99,9 @@ def edit_player(request, player_id):
     return render(request, 'edit_player.html', context)  # Renderizar con el contexto correcto
 
 
+@club_required
 def show_player(request, player_id):
-    player = get_object_or_404(Player, id=player_id)
+    player = get_object_or_404(Player, id=player_id, club=request.club)
     games = Game.objects.filter(
         (Q(player_1_local=player) | Q(player_2_local=player) |
         Q(player_1_visiting=player) | Q(player_2_visiting=player)) &
@@ -104,9 +114,9 @@ def show_player(request, player_id):
                                                    "games":games})
 
 
-@login_required
+@club_admin_required
 def force_update_score(request):
-    players = Player.objects.all()
+    players = Player.objects.filter(club=request.club)
     for player in players:
         score = calculate_score(player)
         player.score = score

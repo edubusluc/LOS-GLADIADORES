@@ -129,7 +129,7 @@
         </table>
 
         <!-- Actions for authenticated users -->
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
         <div class="mb-4">
             <div class="btn-group">
                 {% if match.draft_mode%}
@@ -171,7 +171,7 @@
                         <a href="{% url 'edit_result' g.id %}" style="color: white;"><i class="fa-solid fa-pen"></i></a>
                         {% endif %}
                         {% if g.results.first == None %}
-                        {% if user.is_authenticated %}
+                        {% if is_club_admin %}
                         <a href="{% url 'create_result' g.id %}" style="color: white;"><i class="fa-solid fa-plus"></i></a>
                         {% endif %}
                         {% endif %}
@@ -215,7 +215,7 @@
         {% endif %}
 
         <!-- Close match button for authenticated users -->
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
         {% if game_for_match.count == 5 and match.draft_mode %}
         <div class="text-center mt-4">
             <form method="POST" action="{% url 'close_match' match.id %}">
@@ -227,7 +227,7 @@
         {% endif %}
 
         <!-- Create game button if match is not closed -->
-        {% if user.is_authenticated %}
+        {% if is_club_admin %}
         {% if match.draft_mode and not call_for_match.draft_mode and game_for_match.count < 5 %}
         <div class="text-center mt-4">
             <a href="{% url 'create_game' match_id %}" class="btn btn-primary" style="background-color: #083C64;">Crear Partidos</a>

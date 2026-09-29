@@ -35,14 +35,21 @@ def create_player(request):
 
 def list_players(request):
     order_by = request.GET.get('order_by', 'name')
+    search = request.GET.get('search', '').strip()
+
     if request.user.is_authenticated:
         players = Player.objects.all().order_by('-in_team', order_by)
     else:
         players = Player.objects.filter(in_team=True).order_by(order_by)
+
+    if search:
+        players = players.filter(
+            Q(name__icontains=search) | Q(last_name__icontains=search)
+        )
+
     paginator = Paginator(players, 6)  # Puedes ajustar el número de jugadores por página
 
-    # Obtén el número de página de la solicitud GET
-    page = request.GET.get('page')  
+    page = request.GET.get('page')
 
     try:
         players = paginator.page(page)
@@ -51,7 +58,11 @@ def list_players(request):
     except EmptyPage:
         players = paginator.page(paginator.num_pages)
 
-    return render(request, 'list_players.html', {'players': players, 'order_by':order_by})
+    return render(request, 'list_players.html', {
+        'players': players,
+        'order_by': order_by,
+        'search': search,
+    })
 
 @login_required
 def edit_player(request, player_id):
@@ -61,12 +72,14 @@ def edit_player(request, player_id):
         name = request.POST.get("name")
         position = request.POST.get("position")
         skillfull_hand = request.POST.get("skillfull_hand")
+        joined_season = request.POST.get("joined_season")
         in_team = 'in_team' in request.POST
 
         player.name = name
         player.position = position
         player.skillfull_hand = skillfull_hand
         player.in_team = in_team
+        player.joined_season = joined_season
         player.save()
 
         return redirect('list_players')  # Redirigir a la lista de jugadores después de guardar

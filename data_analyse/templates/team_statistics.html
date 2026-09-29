@@ -2,103 +2,146 @@
 {% load static %}
 
 {% block content %}
-    <script>
-      const teamData = {
-        wonMatches: {{ won_matches }},
-        lostMatches: {{ lost_matches }},
-        localGamesWon: {{ local_games_won }},
-        localGamesLost: {{ local_games_lost }},
-        visitingGamesWon: {{ visiting_games_won }},
-        visitingGamesLost: {{ visiting_games_lost }},
-        matchesWonPerYear: {{ dicc_line_chart|safe }},
-        column_chart_data: {{column_chart_data|safe}}
-      };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <div class="table-container">
-      <h1 class="title">Estadísticas {{ team.name }}</h1>
-      <form method="GET" action="{% url 'team_statistics' %}">
-        <label for="season" style="margin-top: 10px;">Seleccione una temporada:</label>
-        <select name="season" id="season">
-          <option value="">Todas las temporadas</option>
-          {% for season in seasons %}
-            <option value="{{ season }}" {% if season == selected_season %}selected{% endif %}>
-              {{ season }}
-            </option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="btn btn-primary" style="background-color: #083C64; margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
-      </form>
+  <link rel="stylesheet" href="{% static 'css/statistics.css' %}">
 
-      <div class="card-container">
-        <div class="card">
-          <h2>Partidos Ganados/Perdidos</h2>
-          {% if not total_matches %}
-            <p class="message">Aún no se ha cerrado ningún partido</p>
-          {% else %}
-            <div class="chart-container">
-              <canvas id="myPieChart"></canvas>
-            </div>
-            <div class="percentage">
-              Ganados: {{ percentage_won }}%
-              Perdidos: {{ percentage_lost }}%
-            </div>
-          {% endif %}
-        </div>
+  <script>
+    const teamData = {
+      wonMatches: {{ won_matches|default:0 }},
+      lostMatches: {{ lost_matches|default:0 }},
+      localGamesWon: {{ local_games_won|default:0 }},
+      localGamesLost: {{ local_games_lost|default:0 }},
+      visitingGamesWon: {{ visiting_games_won|default:0 }},
+      visitingGamesLost: {{ visiting_games_lost|default:0 }},
+      matchesWonPerYear: {% if dicc_line_chart %}{{ dicc_line_chart|safe }}{% else %}{}{% endif %},
+      column_chart_data: {% if column_chart_data %}{{ column_chart_data|safe }}{% else %}[]{% endif %}
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <div class="card">
-          <h2>Juegos Ganados/Perdidos Local</h2>
-          {% if not total_matches %}
-            <p class="message">Aún no se ha cerrado ningún partido</p>
-          {% else %}
-            <div class="chart-container">
-              <canvas id="myBarChart"></canvas>
-            </div>
-            <div class="percentage">
-              Ganados: {{ percentage_local_games_won }}%
-              Perdidos: {{ percentage_local_games_lost }}%
-            </div>
-          {% endif %}
-        </div>
-
-        <div class="card">
-          <h2>Juegos Ganados/Perdidos Visitante</h2>
-          {% if not total_matches %}
-            <p class="message">Aún no se ha cerrado ningún partido</p>
-          {% else %}
-            <div class="chart-container">
-              <canvas id="myVisitingBarChart"></canvas>
-            </div>
-            <div class="percentage">
-              Ganados: {{ percentage_visiting_games_won }}%
-              Perdidos: {{ percentage_visiting_games_lost }}%
-            </div>
-          {% endif %}
-        </div>
-
-        <div class="card">
-          <h2>Número de Partidos Ganados por Año</h2>
-          {% if not total_matches %}
-            <p class="message">Aún no se ha cerrado ningún partido</p>
-          {% else %}
-            <div class="chart-container">
-              <canvas id="myLineChart"></canvas>
-            </div>
-          {% endif %}
-        </div>
+  <div class="st-page">
+    <header class="st-head">
+      <div>
+        <h1 class="st-title">{{ team.name|default:"Estadísticas del equipo" }}</h1>
+        <p class="st-subtitle">
+          {% if selected_season %}Estadísticas de la temporada {{ selected_season }}{% else %}Estadísticas de todas las temporadas{% endif %}
+        </p>
       </div>
-      <div class="card" style="margin-top: 20px; height: 650px; width: 100%;">
-        <h2>Balance de Partidos</h2>
-        {% if not total_matches %}
-        <p class="message">Aún no se ha cerrado ningún partido</p>
-        {% else %}
-        <div class="chart-container" style="width: 100%; height: calc(100% - 40px);">
-            <div class="chart-scroll" style="width: 100%; height: 100%;">
-                <canvas id="myColumnChart"></canvas>
+    </header>
+
+    <nav aria-label="Temporadas">
+      <ul class="st-seasons">
+        <li>
+          <a class="st-chip" href="{% url 'team_statistics' %}" {% if not selected_season %}aria-current="page"{% endif %}>Todas</a>
+        </li>
+        {% for season in seasons %}
+          <li>
+            <a class="st-chip" href="{% url 'team_statistics' %}?season={{ season|urlencode:'' }}" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    {% if not total_matches %}
+      <div class="st-empty">
+        <strong>Todavía no hay partidos cerrados</strong>
+        Las estadísticas aparecerán cuando se cierre el primero{% if selected_season %} de la temporada {{ selected_season }}{% endif %}.
+      </div>
+    {% else %}
+
+      <section class="st-board" aria-label="Resumen de partidos">
+        <div>
+          <p class="st-board-label">Balance de partidos</p>
+          <div class="st-record">
+            <div class="st-score">
+              <span class="st-record-num">{{ won_matches }}</span>
+              <span class="st-score-cap">Victorias</span>
             </div>
+            <span class="st-record-sep" aria-hidden="true">–</span>
+            <div class="st-score">
+              <span class="st-record-num">{{ lost_matches }}</span>
+              <span class="st-score-cap">Derrotas</span>
+            </div>
+          </div>
+          <div class="st-bar" role="img" aria-label="{{ percentage_won }} % de partidos ganados">
+            <span class="st-bar-win" style="width: {% widthratio won_matches total_matches 100 %}%"></span>
+          </div>
         </div>
-        {% endif %}
-    </div>
-    </div>
-    <script src="{% static 'js/team_statistics.js' %}"></script>
+
+        <dl class="st-facts">
+          <div class="st-fact st-fact--gold">
+            <dt>Partidos ganados</dt>
+            <dd>{{ percentage_won }} %</dd>
+          </div>
+          <div class="st-fact">
+            <dt>Partidos jugados</dt>
+            <dd>{{ total_matches }}</dd>
+          </div>
+          <div class="st-fact">
+            <dt>Juegos como local</dt>
+            <dd>{{ local_games_won }}–{{ local_games_lost }}</dd>
+          </div>
+          <div class="st-fact">
+            <dt>Juegos como visitante</dt>
+            <dd>{{ visiting_games_won }}–{{ visiting_games_lost }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <div class="st-grid">
+        <section class="st-card">
+          <h2 class="st-card-title">Partidos ganados y perdidos</h2>
+          <div class="st-chart">
+            <canvas id="myPieChart"></canvas>
+          </div>
+          <div class="st-tally">
+            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_won }} %</b> ganados</span>
+            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_lost }} %</b> perdidos</span>
+          </div>
+        </section>
+
+        <section class="st-card">
+          <h2 class="st-card-title">Juegos como local</h2>
+          <div class="st-chart">
+            <canvas id="myBarChart"></canvas>
+          </div>
+          <div class="st-tally">
+            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_local_games_won }} %</b> ganados</span>
+            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_local_games_lost }} %</b> perdidos</span>
+          </div>
+        </section>
+
+        <section class="st-card">
+          <h2 class="st-card-title">Juegos como visitante</h2>
+          <div class="st-chart">
+            <canvas id="myVisitingBarChart"></canvas>
+          </div>
+          <div class="st-tally">
+            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_visiting_games_won }} %</b> ganados</span>
+            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_visiting_games_lost }} %</b> perdidos</span>
+          </div>
+        </section>
+
+        <section class="st-card st-card--wide">
+          <h2 class="st-card-title">Partidos ganados por año</h2>
+          <p class="st-card-note">Evolución de victorias y derrotas del equipo en cada temporada.</p>
+          <div class="st-chart">
+            <canvas id="myLineChart"></canvas>
+          </div>
+        </section>
+
+        <section class="st-card st-card--wide">
+          <h2 class="st-card-title">Balance de partidos por jugador</h2>
+          <p class="st-card-note">Partidos de 2 y de 3 puntos, ganados y perdidos, de cada jugador.</p>
+          <div class="st-chart st-chart--tall">
+            <div class="chart-scroll st-scroll">
+              <canvas id="myColumnChart"></canvas>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    {% endif %}
+  </div>
+
+  <script src="{% static 'js/team_statistics.js' %}"></script>
 {% endblock %}

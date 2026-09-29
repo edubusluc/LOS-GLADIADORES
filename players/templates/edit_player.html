@@ -34,6 +34,11 @@
                 {% endfor %}
             </select>
         </div>
+
+        <div>
+            <label for="name">Temporada en la que se unió al equipo:</label>
+            <input type="text" id="joined_season" name="joined_season" value="{{ player.joined_season }}" required>
+        </div>
         
         <div>
             <input type="checkbox" id="in_team" name="in_team" {% if player.in_team %}checked{% endif %}>

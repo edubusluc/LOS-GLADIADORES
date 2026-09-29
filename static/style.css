@@ -390,8 +390,256 @@ img {
       flex: 1 1 100%;
     }
   }
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap');
 
-  
+/* ------------------------------------------------------------------
+   Estadísticas (equipo y jugador). Prefijo st- para no chocar con el CSS global.
+   ------------------------------------------------------------------ */
+
+.st-page {
+  --st-navy: #083C64;
+  --st-navy-soft: #B8CADB;
+  --st-gold: #E0AE55;
+  --st-win: #1F8A70;
+  --st-loss: #C8434F;
+  --st-ink: #14263A;
+  --st-muted: #5F7286;
+  --st-line: #DCE3EA;
+  --st-tint: #F3F6F9;
+  --st-display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 56px;
+  font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--st-ink);
+  line-height: 1.5;
+}
+
+.st-page *, .st-page *::before, .st-page *::after { box-sizing: border-box; }
+.st-page h1, .st-page h2, .st-page h3, .st-page p { text-align: left; }
+
+.st-up { color: var(--st-win); }
+.st-down { color: var(--st-loss); }
+.st-muted { color: var(--st-muted); }
+
+/* ---------- Cabecera ---------- */
+
+.st-head {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: 16px 32px; margin-bottom: 24px;
+}
+.st-title {
+  margin: 0; font-family: var(--st-display);
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem); font-weight: 700; line-height: 1.05; color: var(--st-navy);
+}
+.st-subtitle { margin: 6px 0 0; font-size: 1.05rem; color: var(--st-muted); }
+
+.st-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.st-label { margin: 0; font-weight: 500; color: var(--st-muted); }
+
+.st-select {
+  min-width: 220px; width: auto; padding: 9px 40px 9px 14px;
+  font: inherit; font-weight: 500; color: var(--st-ink); background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23083C64' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  border: 1px solid var(--st-line); border-radius: 10px;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+}
+.st-select:hover { border-color: var(--st-navy); }
+.st-btn { padding: 9px 18px; font: inherit; font-weight: 600; color: #fff; background: var(--st-navy); border: 0; border-radius: 10px; cursor: pointer; }
+.st-select:focus-visible, .st-btn:focus-visible { outline: 3px solid var(--st-gold); outline-offset: 2px; }
+
+/* ---------- KPIs ---------- */
+
+.st-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 16px; margin-bottom: 16px;
+}
+
+.st-kpi {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 20px 22px; background: #fff;
+  border: 1px solid var(--st-line); border-radius: 14px;
+}
+.st-kpi-label { margin: 0; font-size: 0.98rem; font-weight: 500; color: var(--st-muted); }
+.st-kpi-value {
+  margin: 2px 0 0; font-family: var(--st-display); font-size: 3.4rem; font-weight: 700;
+  line-height: 1; font-variant-numeric: tabular-nums; color: var(--st-navy);
+}
+.st-kpi-sub { margin: 6px 0 0; font-size: 0.92rem; color: var(--st-muted); }
+
+/* Tarjeta destacada: anillo con el % total */
+.st-kpi--ring {
+  flex-direction: row; align-items: center; gap: 18px;
+  color: #fff; background: var(--st-navy); border-color: var(--st-navy);
+}
+.st-kpi--ring .st-kpi-label { color: var(--st-navy-soft); }
+.st-kpi--ring .st-kpi-sub { color: #fff; }
+
+.st-ring {
+  --size: 96px;
+  flex: none; display: grid; place-items: center;
+  width: var(--size); height: var(--size); border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--st-navy) 78%, transparent 80%),
+    conic-gradient(#46C2A0 calc(var(--pct) * 1%), rgba(255, 255, 255, 0.18) 0);
+}
+.st-ring span { font-family: var(--st-display); font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Filas y tarjetas ---------- */
+
+.st-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 16px; margin-bottom: 16px;
+}
+
+.st-card {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: 22px; background: #fff; border: 1px solid var(--st-line); border-radius: 14px;
+}
+.st-card-title {
+  margin: 0; font-family: var(--st-display); font-size: 1.4rem; font-weight: 600;
+  line-height: 1.2; color: var(--st-navy);
+}
+.st-card-note { margin: 4px 0 0; font-size: 0.92rem; color: var(--st-muted); }
+
+/* ---------- Forma reciente ---------- */
+
+.st-form { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+.st-pip {
+  display: grid; place-items: center; width: 40px; height: 40px;
+  font-family: var(--st-display); font-size: 1.15rem; font-weight: 700; color: #fff; border-radius: 10px;
+}
+.st-pip--w { background: var(--st-win); }
+.st-pip--l { background: var(--st-loss); }
+
+/* ---------- Local / visitante ---------- */
+
+.st-split { margin-top: 18px; }
+.st-split-head { display: flex; align-items: baseline; justify-content: space-between; font-weight: 500; }
+.st-split-head b { font-family: var(--st-display); font-size: 1.6rem; font-weight: 600; color: var(--st-navy); font-variant-numeric: tabular-nums; }
+.st-meter { height: 10px; margin-top: 4px; overflow: hidden; background: var(--st-tint); border-radius: 999px; }
+.st-meter span { display: block; height: 100%; background: var(--st-navy); border-radius: 999px; }
+.st-split-foot { margin: 6px 0 0; font-size: 0.92rem; color: var(--st-muted); }
+
+/* ---------- Secciones ---------- */
+
+.st-section { margin-top: 40px; }
+.st-section-title {
+  margin: 0 0 16px; padding-bottom: 8px; font-family: var(--st-display);
+  font-size: 1.9rem; font-weight: 700; color: var(--st-navy); border-bottom: 2px solid var(--st-gold);
+  display: inline-block;
+}
+
+.st-chart { position: relative; height: 280px; margin-top: 16px; }
+.st-chart--tall { height: 520px; }
+
+/* ---------- Tabla por temporadas ---------- */
+
+.st-table-wrap { margin-top: 12px; overflow-x: auto; }
+.st-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.st-table th, .st-table td { padding: 12px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--st-line); }
+.st-table thead th { font-size: 0.9rem; font-weight: 500; color: var(--st-muted); }
+.st-table th:first-child, .st-table td:first-child { text-align: left; }
+.st-table tbody th { font-weight: 600; color: var(--st-navy); }
+.st-table tbody tr:last-child th, .st-table tbody tr:last-child td { border-bottom: 0; }
+.st-table tbody tr:hover { background: var(--st-tint); }
+
+/* ---------- Estados vacíos ---------- */
+
+.st-empty {
+  margin-bottom: 24px; padding: 36px 24px; text-align: center; color: var(--st-muted);
+  background: var(--st-tint); border: 1px dashed var(--st-line); border-radius: 14px;
+}
+.st-empty strong { display: block; margin-bottom: 4px; font-size: 1.2rem; color: var(--st-ink); }
+
+/* ---------- Móvil ---------- */
+
+@media (max-width: 760px) {
+  .st-page { padding: 16px 14px 40px; }
+  .st-select { min-width: 0; width: 100%; }
+  .st-picker { width: 100%; }
+  .st-chart { height: 260px; }
+  .st-chart--tall { height: 460px; }
+  .st-kpi-value { font-size: 2.8rem; }
+}
+
+/* ==================================================================
+   Selector de temporadas y detalle de temporada
+   ================================================================== */
+
+.st-section { scroll-margin-top: 16px; }
+
+.st-seasons {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 0 0 20px; padding: 0; list-style: none;
+}
+.st-chip {
+  display: inline-block; padding: 7px 16px;
+  font-size: 0.95rem; font-weight: 500; color: var(--st-ink); text-decoration: none;
+  background: #fff; border: 1px solid var(--st-line); border-radius: 999px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.st-chip:hover { border-color: var(--st-navy); }
+.st-chip[aria-current="page"] { color: #fff; background: var(--st-navy); border-color: var(--st-navy); }
+.st-chip:focus-visible { outline: 3px solid var(--st-gold); outline-offset: 2px; }
+
+.st-detail {
+  margin-bottom: 24px; padding: 22px;
+  background: var(--st-tint); border-radius: 18px;
+}
+.st-detail-title {
+  margin: 0 0 16px; font-family: var(--st-display);
+  font-size: 1.7rem; font-weight: 700; color: var(--st-navy);
+}
+.st-detail .st-kpis, .st-detail .st-row { margin-bottom: 16px; }
+.st-detail .st-row:last-child { margin-bottom: 0; }
+
+.st-kpi--accent { border-left: 4px solid var(--st-gold); }
+
+/* Barra doble ganados/perdidos */
+.st-vs { margin-top: 18px; }
+.st-vs-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-weight: 500;
+}
+.st-vs-head b {
+  font-family: var(--st-display); font-size: 1.35rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.st-vs-bar {
+  height: 10px; margin-top: 4px; overflow: hidden;
+  background: var(--st-loss); border-radius: 999px;
+}
+.st-vs-bar span { display: block; height: 100%; background: var(--st-win); }
+.st-vs-bar--neutral { background: var(--st-line); }
+.st-vs-bar--neutral span { background: var(--st-navy); }
+
+.st-tally { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--st-line); }
+.st-tally-item { display: inline-flex; align-items: baseline; gap: 6px; color: var(--st-muted); }
+.st-tally-item::before { content: ""; width: 10px; height: 10px; align-self: center; border-radius: 50%; background: var(--st-muted); }
+.st-tally-item b { font-family: var(--st-display); font-size: 1.3rem; font-weight: 600; color: var(--st-ink); font-variant-numeric: tabular-nums; }
+.st-tally-item--win::before { background: var(--st-win); }
+.st-tally-item--loss::before { background: var(--st-loss); }
+.st-tally-item--neutral::before { background: var(--st-navy); }
+.st-tally-item--muted::before { background: var(--st-line); }
+
+.st-table tbody tr.st-current { background: #FBF3E2; }
+.st-table tbody tr.st-current th { box-shadow: inset 3px 0 0 var(--st-gold); }
+.st-table a { color: inherit; text-decoration: underline; text-decoration-color: var(--st-line); text-underline-offset: 3px; }
+.st-table a:hover { text-decoration-color: var(--st-navy); }
+
+.st-empty--inline { padding: 18px 24px; text-align: left; margin-bottom: 16px; }
+.st-empty--inline strong { display: inline; margin: 0 6px 0 0; font-size: 1rem; }
+
+@media (prefers-reduced-motion: reduce) { .st-chip { transition: none; } }
+
+.st-kpi-of { font-size: 1.4rem; font-weight: 600; color: var(--st-muted); }
+.st-page h4 { margin: 0; }
+.st-card-title + .st-vs { margin-top: 14px; }
   
 
 

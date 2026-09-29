@@ -150,6 +150,17 @@
         {% endif %}
     </div>
 
+    <!-- Selector de temporada -->
+    <form method="get" class="mb-3 d-flex align-items-center gap-2">
+        <label for="season" class="mb-0">Temporada:</label>
+        <select name="season" id="season" class="form-select" style="width: auto;" onchange="this.form.submit()">
+            <option value="">Todas</option>
+            {% for s in seasons %}
+                <option value="{{ s }}" {% if s == selected_season %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
     <div class="matches-row"> 
         {% for m in matches %}
         <div class="col-12 mb-4 position-relative"> 
@@ -207,10 +218,10 @@
           <ul class="pagination justify-content-center">
             {% if matches.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page=1&order_by={{ order_by }}">&laquo;</a>
+              <a class="page-link" href="?page=1&season={{ selected_season }}">&laquo;</a>
             </li>
             <li class="page-item">
-              <a class="page-link" href="?page={{ matches.previous_page_number }}&order_by={{ order_by }}">Previous</a>
+              <a class="page-link" href="?page={{ matches.previous_page_number }}&season={{ selected_season }}">Previous</a>
             </li>
             {% else %}
             <li class="page-item disabled">
@@ -229,10 +240,10 @@
       
             {% if matches.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ matches.next_page_number }}&order_by={{ order_by }}">Next</a>
+              <a class="page-link" href="?page={{ matches.next_page_number }}&season={{ selected_season }}">Next</a>
             </li>
             <li class="page-item">
-              <a class="page-link" href="?page={{ matches.paginator.num_pages }}&order_by={{ order_by }}">&raquo;</a>
+              <a class="page-link" href="?page={{ matches.paginator.num_pages }}&season={{ selected_season }}">&raquo;</a>
             </li>
             {% else %}
             <li class="page-item disabled">

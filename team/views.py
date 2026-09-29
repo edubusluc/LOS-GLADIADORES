@@ -5,12 +5,21 @@ from django.contrib import messages
 from django.views.decorators.http import require_GET, require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db.models import Q
 
 # Create your views here.
 @require_GET
 def list_team(request):
+    search = request.GET.get('search', '').strip()
+
     # Determina si el usuario está autenticado para filtrar el queryset
     teams = Team.objects.all().order_by('-in_group') if request.user.is_authenticated else Team.objects.filter(in_group=True)
+
+    if search:
+        teams = teams.filter(
+            Q(name__icontains=search) | Q(location__icontains=search)
+        )
+
     paginator = Paginator(teams, 4)  # Número de equipos por página
     page = request.GET.get('page')
 
@@ -21,7 +30,7 @@ def list_team(request):
     except EmptyPage:
         teams = paginator.page(paginator.num_pages)
 
-    return render(request, "list_teams.html", {"teams": teams})
+    return render(request, "list_teams.html", {"teams": teams, "search": search})
 
 @login_required
 @require_http_methods(["GET", "POST"])

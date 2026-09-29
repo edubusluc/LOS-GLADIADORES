@@ -19,7 +19,16 @@ CREATE_MATCH_HTML = "create_match.html"
 LOS_GLADIADORES = "LOS GLADIADORES"
 # Create your views here.
 def list_match(request):
+    season = request.GET.get('season', '')
+
     matches = Match.objects.all().order_by('-start_date')
+
+    if season:
+        matches = matches.filter(season=season)
+
+    # Lista de temporadas distintas para el selector (ordenadas desc)
+    seasons = Match.objects.order_by('-season').values_list('season', flat=True).distinct()
+
     paginator = Paginator(matches, 5)
     page = request.GET.get('page')
 
@@ -30,7 +39,11 @@ def list_match(request):
     except EmptyPage:
         matches = paginator.page(paginator.num_pages)
 
-    return render(request, "list_match.html", {'matches': matches})
+    return render(request, "list_match.html", {
+        'matches': matches,
+        'seasons': seasons,
+        'selected_season': season,
+    })
 
 @login_required
 def create_match(request):
@@ -109,7 +122,7 @@ def delete_match(request, match_id):
 
 @login_required
 def create_call(request, match_id):
-    players = Player.objects.all()  
+    players = Player.objects.filter(in_team=True)
     match = Match.objects.get(id=match_id) 
     existing_call = Call.objects.filter(match_id=match_id).exists()
 

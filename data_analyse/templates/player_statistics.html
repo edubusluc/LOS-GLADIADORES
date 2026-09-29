@@ -2,193 +2,269 @@
 {% load static %}
 
 {% block content %}
-  <script>
-    // Pasar datos desde Django a JavaScript
-    const playerStatsData = {
-      totalWins: {{ total_wins|escape }},
-      totalLost: {{ total_lost|escape }},
-      presentCall: {{ present_call|escape }},
-      noCall: {{ no_call|escape }},
-      years: {{ years|safe }},
-      gamesWonPerYear: {{ games_won_per_year|safe }},
-      gamesLostPerYear: {{ games_lost_per_year|safe }},
-      won_games_local: {{ won_games_local|escape }},
-      lost_games_local: {{ lost_games_local|escape }},
-      won_games_visiting: {{ won_games_visiting|escape }},
-      lost_games_visiting: {{ lost_games_visiting|escape }},
-      degree_afinity: {{ degree_afinity|safe }},
-      local_games_won: {{ local_games_won|default:0|escape }},
-      local_games_lost: {{ local_games_lost|default:0|escape }},
-      visiting_games_won: {{ visiting_games_won|default:0|escape }},
-      visiting_games_lost: {{ visiting_games_lost|default:0|escape }},
-    };
-    </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeCharts(playerStatsData);
-    });
-  </script>
-  <div class="table-container">
-    <h1 class="title">Estadísticas de jugadores</h1>
-    <form method="GET" action="{% url 'player_statistics' %}">
-      <label for="player">Selecciona el jugador:</label>
-      <select name="player" id="player">
-        <option value="">-- Selecciona un jugador --</option>
-        {% for player in players %}
-        <option value="{{ player.id }}" {% if player.id == selected_player %}selected{% endif %}>
-          {{ player.name|escape }} {{player.last_name}}
-        </option>
-        {% endfor %}
-      </select>
-  
-      <label for="season" style="margin-top: 10px;">Selecciona la temporada:</label>
-      <select name="season" id="season">
-        <option value="">-- Todas las temporadas --</option>
-        {% for season in seasons %}
-        <option value="{{ season|escape }}" {% if season == selected_season %}selected{% endif %}>
-          {{ season|escape }}
-        </option>
-        {% endfor %}
-      </select>
-  
-      <button type="submit" class="btn btn-primary" style="background-color: #083C64; margin-top: 10px; margin-bottom: 10px;">Filtrar</button>
-    </form>
+  <link rel="stylesheet" href="{% static 'css/statistics.css' %}">
 
-    <div class="card" style="margin-bottom: 20px;">
-      <h2>Puntos obtenidos por el jugador</h2>
-      {% if selected_player and selected_season %}
-        {% if total_match == 0 %}
-          <p class="message">Aún no se ha cerrado ningún partido</p>
-        {% else %}
-          <div class="points-container" style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; text-align: center;">
-            <h3 style="font-size: 36px; font-weight: bold; color: #083C64;">{{ points_player }}</h3>
-            <p style="font-size: 16px; color: #555;">Puntos obtenidos</p>
+  <div class="st-page" style="background-color: white;">
+
+    <header class="st-head">
+      <div>
+        <h1 class="st-title">{% if selected_player %}{{ player.name }} {{ player.last_name }}{% else %}Estadísticas de jugadores{% endif %}</h1>
+        {% if selected_player %}
+          <p class="st-subtitle">{{ s.played }} partidos jugados en {{ seasons_asc|length }} temporada{{ seasons_asc|length|pluralize }}</p>
+        {% endif %}
+      </div>
+
+      <form class="st-picker" method="GET" action="{% url 'player_statistics' %}">
+        <label class="st-label" for="player">Jugador</label>
+        <select class="st-select" name="player" id="player" onchange="this.form.submit()">
+          <option value="">Elige un jugador</option>
+          {% for p in players %}
+            <option value="{{ p.id }}" {% if p.id == selected_player %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>
+          {% endfor %}
+        </select>
+        {% if selected_season %}<input type="hidden" name="season" value="{{ selected_season }}">{% endif %}
+        <noscript><button class="st-btn" type="submit">Ver</button></noscript>
+      </form>
+    </header>
+
+    {% if not selected_player %}
+
+      <div class="st-empty">
+        <strong>Elige un jugador</strong>
+        Verás su balance, sus rachas y cómo evoluciona temporada a temporada.
+      </div>
+
+    {% else %}
+
+      {# ============ 1. RESUMEN GLOBAL ============ #}
+      <section aria-label="Resumen del jugador">
+        <div class="st-kpis">
+
+          <article class="st-kpi st-kpi--ring">
+            <div class="st-ring" style="--pct: {{ pct_w }}" role="img" aria-label="{{ s.pct }}% de victorias">
+              <span>{{ s.pct|floatformat:0 }}%</span>
+            </div>
+            <div>
+              <h2 class="st-kpi-label">Victorias</h2>
+              <p class="st-kpi-sub">{{ s.wins }} ganados · {{ s.losses }} perdidos</p>
+            </div>
+          </article>
+
+          <article class="st-kpi">
+            <h2 class="st-kpi-label">Partidos jugados</h2>
+            <p class="st-kpi-value">{{ s.played }}</p>
+            <p class="st-kpi-sub">{{ s.points }} puntos obtenidos</p>
+          </article>
+
+          <article class="st-kpi">
+            <h2 class="st-kpi-label">Racha actual</h2>
+            <p class="st-kpi-value {% if s.streak_type == 'V' %}st-up{% else %}st-down{% endif %}">{{ s.streak_len }}{{ s.streak_type }}</p>
+            <p class="st-kpi-sub">{% if s.streak_type == 'V' %}victorias seguidas{% else %}derrotas seguidas{% endif %}</p>
+          </article>
+
+          <article class="st-kpi">
+            <h2 class="st-kpi-label">Mejor racha</h2>
+            <p class="st-kpi-value st-up">{{ s.best_win_streak }}V</p>
+            <p class="st-kpi-sub">peor racha: {{ s.worst_loss_streak }}D</p>
+          </article>
+
+        </div>
+
+        <div class="st-row">
+          <article class="st-card">
+            <h2 class="st-card-title">Forma reciente</h2>
+            <p class="st-card-note">Últimos {{ s.form|length }} partidos, el más reciente a la derecha.</p>
+            <ol class="st-form">
+              {% for r in s.form %}
+                <li class="st-pip {% if r %}st-pip--w{% else %}st-pip--l{% endif %}" title="{% if r %}Victoria{% else %}Derrota{% endif %}">{% if r %}V{% else %}D{% endif %}</li>
+              {% endfor %}
+            </ol>
+          </article>
+
+          <article class="st-card">
+            <h2 class="st-card-title">Local y visitante</h2>
+            <p class="st-card-note">% de victorias según dónde juega.</p>
+
+            <div class="st-split">
+              <div class="st-split-head"><span>Como local</span><b>{{ s.local_pct|floatformat:0 }}%</b></div>
+              <div class="st-meter"><span style="width: {{ local_pct_w }}%"></span></div>
+              <p class="st-split-foot">{{ s.local_wins }}V – {{ s.local_losses }}D · mejor racha {{ s.best_local_streak }}V</p>
+            </div>
+
+            <div class="st-split">
+              <div class="st-split-head"><span>Como visitante</span><b>{{ s.visiting_pct|floatformat:0 }}%</b></div>
+              <div class="st-meter"><span style="width: {{ visiting_pct_w }}%"></span></div>
+              <p class="st-split-foot">{{ s.visiting_wins }}V – {{ s.visiting_losses }}D · mejor racha {{ s.best_visiting_streak }}V</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {# ============ 2. POR TEMPORADAS ============ #}
+      <section aria-labelledby="seasons-title" class="st-section" id="temporadas">
+        <h2 class="st-section-title" id="seasons-title">Por temporadas</h2>
+
+        <nav aria-label="Temporadas">
+          <ul class="st-seasons">
+            <li>
+              <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}#temporadas" {% if not selected_season %}aria-current="page"{% endif %}>Todas</a>
+            </li>
+            {% for season in seasons %}
+              <li>
+                <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ season|urlencode:'' }}#temporadas" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+
+        {# ---- Detalle de la temporada elegida ---- #}
+        {% if selected_season %}
+          <div class="st-detail">
+            <h3 class="st-detail-title">Temporada {{ selected_season }}</h3>
+              <div class="st-kpis">
+                <article class="st-kpi st-kpi--accent">
+                  <h4 class="st-kpi-label">Puntos obtenidos</h4>
+                  <p class="st-kpi-value">{{ d.points }}</p>
+                </article>
+                <article class="st-kpi">
+                  <h4 class="st-kpi-label">Partidos jugados</h4>
+                  <p class="st-kpi-value">{{ d.played }}</p>
+                  <p class="st-kpi-sub">{{ d.pct|floatformat:0 }}% de victorias</p>
+                </article>
+                <article class="st-kpi">
+                  <h4 class="st-kpi-label">Convocatorias</h4>
+                  <p class="st-kpi-value">{{ d.calls_present }} <span class="st-kpi-of">de {{ d.calls_total }}</span></p>
+                </article>
+              </div>
+
+            <div class="st-row">
+              {% if d.played != 0 %}
+                <article class="st-card">
+                  <h4 class="st-card-title">Partidos ganados y perdidos</h4>
+                  <div class="st-vs">
+                    <div class="st-vs-head"><span>Balance de la temporada</span><span><b class="st-up">{{ d.wins }}</b> – <b class="st-down">{{ d.losses }}</b></span></div>
+                    <div class="st-vs-bar"><span style="width: {% widthratio d.wins d.played 100 %}%"></span></div>
+                  </div>
+                  <div class="st-tally">
+                    <span class="st-tally-item st-tally-item--win"><b>{{ d.wins }}</b> ganados</span>
+                    <span class="st-tally-item st-tally-item--loss"><b>{{ d.losses }}</b> perdidos</span>
+                  </div>
+                </article>
+              {% endif %}
+
+              <article class="st-card">
+                <h4 class="st-card-title">Participación en convocatorias</h4>
+                <div class="st-vs">
+                  <div class="st-vs-head"><span>Se apuntó</span><span><b>{{ d.calls_present }}</b> de {{ d.calls_total }}</span></div>
+                  <div class="st-vs-bar st-vs-bar--loss"><span style="width: {% widthratio d.calls_present d.calls_total 100 %}%"></span></div>
+                </div>
+                <div class="st-tally">
+                  <span class="st-tally-item st-tally-item--neutral"><b>{{ d.calls_present }}</b> se apuntó</span>
+                  <span class="st-tally-item st-tally-item--loss"><b>{{ d.calls_absent }}</b> no se apuntó</span>
+                </div>
+              </article>
+
+              {% if d.played != 0 %}
+                <article class="st-card">
+                  <h4 class="st-card-title">Como local</h4>
+                  <div class="st-vs">
+                    <div class="st-vs-head"><span>Partidos</span><span><b class="st-up">{{ d.local_wins }}</b> – <b class="st-down">{{ d.local_losses }}</b></span></div>
+                    <div class="st-vs-bar"><span style="width: {% widthratio d.local_wins d.local_played 100 %}%"></span></div>
+                  </div>
+                  <div class="st-vs">
+                    <div class="st-vs-head"><span>Juegos</span><span><b class="st-up">{{ d.local_sets_won }}</b> – <b class="st-down">{{ d.local_sets_lost }}</b></span></div>
+                    <div class="st-vs-bar"><span style="width: {% widthratio d.local_sets_won d.local_sets_total 100 %}%"></span></div>
+                  </div>
+                </article>
+
+                <article class="st-card">
+                  <h4 class="st-card-title">Como visitante</h4>
+                  <div class="st-vs">
+                    <div class="st-vs-head"><span>Partidos</span><span><b class="st-up">{{ d.visiting_wins }}</b> – <b class="st-down">{{ d.visiting_losses }}</b></span></div>
+                    <div class="st-vs-bar"><span style="width: {% widthratio d.visiting_wins d.visiting_played 100 %}%"></span></div>
+                  </div>
+                  <div class="st-vs">
+                    <div class="st-vs-head"><span>Juegos</span><span><b class="st-up">{{ d.visiting_sets_won }}</b> – <b class="st-down">{{ d.visiting_sets_lost }}</b></span></div>
+                    <div class="st-vs-bar"><span style="width: {% widthratio d.visiting_sets_won d.visiting_sets_total 100 %}%"></span></div>
+                  </div>
+                </article>
+              {% endif %}
+            </div>
           </div>
         {% endif %}
-      {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-      {% endif %}
-    </div>
 
-    <div class="card-container" style="margin-bottom: 20px;">
-      <div class="card">
-        <h2>Partidos Ganados/Perdidos</h2>
-        {% if selected_player and selected_season %}
-        {% if total_match == 0 %}
-        <p class="message">Aún no se ha cerrado ningún partido</p>
-        {% else %}
-        <div class="chart-container">
-          <canvas id="myPieChart"></canvas>
-        </div>
-        <div class="percentage">
-          Ganados: {{ total_wins }} <br>
-          Perdidos: {{ total_lost }}
-        </div>
-        {% endif %}
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-        {% endif %}
-      </div>
+        {# ---- Evolución (todas las temporadas) ---- #}
+        <div class="st-row">
+          <article class="st-card">
+            <h3 class="st-card-title">Partidos jugados</h3>
+            <p class="st-card-note">Ganados y perdidos en cada temporada.</p>
+            <div class="st-chart"><canvas id="chartPlayed"></canvas></div>
+          </article>
 
-      <div class="card">
-        <h2>Participación Convocatorias</h2>
-        {% if selected_player and selected_season %}
-        <div class="chart-container">
-          <canvas id="chartCall"></canvas>
+          <article class="st-card">
+            <h3 class="st-card-title">Evolución del % de victorias</h3>
+            <p class="st-card-note">Porcentaje de partidos ganados por temporada.</p>
+            <div class="st-chart"><canvas id="chartPct"></canvas></div>
+          </article>
         </div>
-        <div class="percentage">
-          Se apuntó a: {{ present_call }} convocatorias<br>
-          No se apuntó a: {{ no_call }} convocatorias<br>
-        </div>
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-        {% endif %}
-      </div>
 
-      <div class="card">
-        <h2>Partidos Ganados/Perdidos como Local</h2>
-        {% if total_match == 0 %}
-          <p class="message">Aún no se ha cerrado ningún partido</p>
-        {%else%}
-        {% if selected_player and selected_season %}
-        <div class="chart-container">
-          <canvas id="localWinLost"></canvas>
-        </div>
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-        {% endif %}
-        {%endif%}
-      </div>
+        <article class="st-card">
+          <h3 class="st-card-title">Detalle por temporada</h3>
+          <div class="st-table-wrap">
+            <table class="st-table">
+              <thead>
+                <tr>
+                  <th scope="col">Temporada</th>
+                  <th scope="col">Jugados</th>
+                  <th scope="col">Ganados</th>
+                  <th scope="col">Perdidos</th>
+                  <th scope="col">% victorias</th>
+                  <th scope="col">Cambio</th>
+                  <th scope="col">Puntos</th>
+                  <th scope="col">Convocatorias</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in seasons_desc %}
+                  <tr {% if r.season == selected_season %}class="st-current"{% endif %}>
+                    <th scope="row">
+                      <a href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ r.season|urlencode:'' }}#temporadas">{{ r.season }}</a>
+                    </th>
+                    <td>{{ r.played }}</td>
+                    <td>{{ r.wins }}</td>
+                    <td>{{ r.losses }}</td>
+                    <td>{{ r.pct|floatformat:0 }}%</td>
+                    <td>
+                      {% if r.delta is None %}<span class="st-muted">—</span>
+                      {% elif r.delta > 0 %}<span class="st-up">▲ {{ r.delta|floatformat:0 }}</span>
+                      {% elif r.delta < 0 %}<span class="st-down">▼ {{ r.delta|floatformat:0 }}</span>
+                      {% else %}<span class="st-muted">=</span>{% endif %}
+                    </td>
+                    <td>{{ r.points }}</td>
+                    <td>{{ r.calls_present }} de {{ r.calls_total }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
 
-      <div class="card">
-        <h2>Partidos Ganados/Perdidos como Visitante</h2>
-        {% if total_match == 0 %}
-        <p class="message">Aún no se ha cerrado ningún partido</p>
-      {%else%}
-        {% if selected_player and selected_season %}
-        <div class="chart-container">
-          <canvas id="visitingWinLost"></canvas>
-        </div>
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-        {% endif %}
-        {% endif %}
-      </div>
+      {# ============ 3. AFINIDAD ============ #}
+      <section aria-labelledby="aff-title" class="st-section">
+        <h2 class="st-section-title" id="aff-title">Compañeros</h2>
+        <article class="st-card">
+          <h3 class="st-card-title">Grado de afinidad</h3>
+          <p class="st-card-note">Con qué compañeros rinde mejor cuando juegan en pareja.</p>
+          <div class="st-chart st-chart--tall"><canvas id="chartAffinity"></canvas></div>
+        </article>
+      </section>
 
-      <div class="card">
-        <h2>Juegos Ganados/Perdidos como Local</h2>
-        {% if total_match == 0 %}
-        <p class="message">Aún no se ha cerrado ningún partido</p>
-      {%else%}
-        {% if selected_player and selected_season %}
-        <div class="chart-container">
-          <canvas id="gamesLostWonLocal"></canvas>
-        </div>
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-        {% endif %}
-        {% endif %}
-      </div>
+      {{ chart_seasons|json_script:"data-seasons" }}
+      {{ chart_affinity|json_script:"data-affinity" }}
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="{% static 'js/player_statistics.js' %}"></script>
 
-      <div class="card">
-        <h2>Juegos Ganados/Perdidos como Visitante</h2>
-        {% if total_match == 0 %}
-        <p class="message">Aún no se ha cerrado ningún partido</p>
-      {%else%}
-        {% if selected_player and selected_season %}
-        <div class="chart-container">
-          <canvas id="gamesLostWonVisiting"></canvas>
-        </div>
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador/temporada para ver las estadísticas.</p>
-        {% endif %}
-        {% endif %}
-      </div>
-
-      <div class="card">
-        <h2>Historial de partidos</h2>
-        {% if selected_player %}
-        <div class="chart-container">
-          <canvas id="myLineGamesChart"></canvas>
-        </div>
-        {% else %}
-        <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Grado de afinidad</h2>
-      {% if selected_player %}
-      <div class="chart-container" style="margin-top: 20px;">
-        <canvas id="myAffinityChart"></canvas>
-      </div>
-      {% else %}
-      <p class="message">Por favor, selecciona un jugador para ver las estadísticas.</p>
-      {% endif %}
-    </div>
-
+    {% endif %}
   </div>
-  <script src="{% static 'js/player_statistics.js' %}"></script>
 {% endblock %}

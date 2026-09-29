@@ -2,17 +2,16 @@ from django.shortcuts import render
 from match.models import Match, Game
 from players.models import Player
 from team.models import Team
-from django.db.models import Q
 from call.models import Call
+from django.db.models import Q, Count
 from django.views.decorators.http import require_GET
-import json
 
-#ESTADISTICAS EQUIPO
+# ---------------------------------------------------------------
+# ESTADÍSTICAS EQUIPO (sin cambios)
+# ---------------------------------------------------------------
 LOCAL_WIN = "Victoria Local"
 VISITING_WIN = "Victoria Visitante"
 
-def get_current_season(request):
-    return request.GET.get('season')
 
 def get_total_season(matchs):
     seasons = set()
@@ -20,9 +19,11 @@ def get_total_season(matchs):
         seasons.add(m.season)
     return seasons
 
+
 def get_team():
     team = Team.objects.filter(name="LOS GLADIADORES").first()
     return team if team else None
+
 
 def calculate_match_statistics(season, team):
     if season is None:
@@ -40,6 +41,7 @@ def calculate_match_statistics(season, team):
     percentage_lost = round((lost_matches / total_matches) * 100, 2) if total_matches > 0 else 0
 
     return total_matches, total_won, lost_matches, percentage_won, percentage_lost
+
 
 def calculate_local_game_statistics(season, team):
     if season is None:
@@ -61,6 +63,7 @@ def calculate_local_game_statistics(season, team):
 
     return local_games_won, local_games_lost, percentage_local_games_won, percentage_local_games_lost
 
+
 def calculate_visiting_game_statistics(season, team):
     if season is None:
         match_visiting = Match.objects.filter(visiting=team, draft_mode=False)
@@ -81,54 +84,46 @@ def calculate_visiting_game_statistics(season, team):
 
     return visiting_games_won, visiting_games_lost, percentage_visiting_games_won, percentage_visiting_games_lost
 
+
 def calculate_matches_won_per_year(team):
     dicc_match = {}
     year = set()
-    
-    # Filtra partidos que no están en modo draft
-    all_matchs = Match.objects.filter(draft_mode=False)
 
-    # Agrega las temporadas al conjunto
+    all_matchs = Match.objects.filter(draft_mode=False)
     for m in all_matchs:
         year.add(m.season)
 
-    # Recorre cada año en el conjunto
-    for y in year:    
+    for y in year:
         if y not in dicc_match:
-            dicc_match[y] = {'won': 0, 'lost': 0}  # Inicializa contadores para ganados y perdidos
+            dicc_match[y] = {'won': 0, 'lost': 0}
 
-        # Contar partidos ganados como local
         match_won_local = Match.objects.filter(season=y, local=team, result="Victoria Local", draft_mode=False).count()
-        # Contar partidos perdidos como local
         match_lost_local = Match.objects.filter(season=y, local=team, result="Victoria Visitante", draft_mode=False).count()
-        
-        # Contar partidos ganados como visitante
         match_won_visiting = Match.objects.filter(season=y, visiting=team, result="Victoria Visitante", draft_mode=False).count()
-        # Contar partidos perdidos como visitante
         match_lost_visiting = Match.objects.filter(season=y, visiting=team, result="Victoria Local", draft_mode=False).count()
 
-        # Suma los partidos ganados
         dicc_match[y]['won'] += match_won_local + match_won_visiting
-        
-        # Suma los partidos perdidos
         dicc_match[y]['lost'] += match_lost_local + match_lost_visiting
         dicc_match = dict(sorted(dicc_match.items()))
 
     return dicc_match
+
+
 def count_games(player, role, winner, n_games, season):
     """Helper function to count games for a player."""
     filter_conditions = Q(**{f'player_1_{role}': player.id}) | Q(**{f'player_2_{role}': player.id})
     filter_conditions &= Q(winner=winner, draft_mode=False, n_game__in=n_games)
-    
-    if season:  # Solo aplica el filtro de temporada si `season` tiene un valor
+
+    if season:
         filter_conditions &= Q(match__season=season)
 
     return Game.objects.filter(filter_conditions).count()
 
+
 def column_chart(season):
     players = Player.objects.all()
     dicc = {
-        f"{p.name} {p.last_name}": {  # Usar el nombre y apellido como clave
+        f"{p.name} {p.last_name}": {
             'Partidos de 2 puntos ganados': 0,
             'Partidos de 2 puntos perdidos': 0,
             'Partidos de 3 puntos ganados': 0,
@@ -136,29 +131,28 @@ def column_chart(season):
         } for p in players
     }
 
-
     for player in players:
         player_key = f"{player.name} {player.last_name}"
         # Partidos locales
-        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2],season)
-        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2],season)
-        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5],season)
-        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'local', "Local", [1, 2], season)
+        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'local', "Visitante", [1, 2], season)
+        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'local', "Local", [3, 4, 5], season)
+        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'local', "Visitante", [3, 4, 5], season)
 
         # Partidos visitantes
-        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2],season)
-        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2],season)
-        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5],season)
-        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5],season)
+        dicc[player_key]['Partidos de 3 puntos ganados'] += count_games(player, 'visiting', "Visitante", [1, 2], season)
+        dicc[player_key]['Partidos de 3 puntos perdidos'] += count_games(player, 'visiting', "Local", [1, 2], season)
+        dicc[player_key]['Partidos de 2 puntos ganados'] += count_games(player, 'visiting', "Visitante", [3, 4, 5], season)
+        dicc[player_key]['Partidos de 2 puntos perdidos'] += count_games(player, 'visiting', "Local", [3, 4, 5], season)
 
+    return dicc
 
-    return dicc  # No olvides devolver el diccionario resultante
 
 def format_for_chart(dic):
     players = []
     for player_name, stats in dic.items():
         players.append({
-            'player': player_name, 
+            'player': player_name,
             'data': [
                 stats['Partidos de 2 puntos ganados'],
                 stats['Partidos de 2 puntos perdidos'],
@@ -167,6 +161,7 @@ def format_for_chart(dic):
             ]
         })
     return players
+
 
 @require_GET
 def team_statistics(request):
@@ -182,15 +177,11 @@ def team_statistics(request):
     if not team:
         return render(request, 'team_statistics.html', {"seasons": seasons})
 
-    # Se pasa None si no hay season seleccionada
     total_matches, total_won, lost_matches, percentage_won, percentage_lost = calculate_match_statistics(selected_season or None, team)
     local_games_won, local_games_lost, percentage_local_games_won, percentage_local_games_lost = calculate_local_game_statistics(selected_season or None, team)
     visiting_games_won, visiting_games_lost, percentage_visiting_games_won, percentage_visiting_games_lost = calculate_visiting_game_statistics(selected_season or None, team)
-    
-    #LINE CHART
+
     dicc_line_chart = calculate_matches_won_per_year(team)
-
-
 
     context = {
         'team': team,
@@ -207,7 +198,7 @@ def team_statistics(request):
         'percentage_local_games_lost': percentage_local_games_lost,
         'percentage_visiting_games_won': percentage_visiting_games_won,
         'percentage_visiting_games_lost': percentage_visiting_games_lost,
-        'dicc_line_chart':dicc_line_chart,
+        'dicc_line_chart': dicc_line_chart,
         "seasons": seasons,
         "selected_season": selected_season,
         "column_chart_data": column_chart_data
@@ -216,308 +207,281 @@ def team_statistics(request):
     return render(request, 'team_statistics.html', context)
 
 
+# ---------------------------------------------------------------
+# ESTADÍSTICAS JUGADORES
+# ---------------------------------------------------------------
 
+# Orden cronológico de los partidos del jugador. De esto dependen las rachas.
+# Si Match tiene un campo de fecha, cámbialo:
+#   ORDER = ('match__date', 'match_id', 'n_game')
+ORDER = ('match__season', 'match_id', 'n_game')
 
+# Peso del "punto de partida" neutro (50 %) en la afinidad, medido en puntos en juego.
+PRIOR_POINTS = 6
 
-# ESTADIISTICAS JUGADORES:
-def get_player_statistics(player, season):
-    # Obtener estadísticas del jugador
-    stats = {
-        'won_games_local': 0,
-        'lost_games_local': 0,
-        'won_games_visiting': 0,
-        'lost_games_visiting': 0,
-        'total_match': 0,
-        'present_call': 0,
-        'total_wins': 0,
-        'total_lost': 0,
-        'dicc_match': {},
-    }
-
-    # Contar partidos ganados/perdidos como local
-    stats['won_games_local'] = Game.objects.filter(
-        Q(player_1_local=player.id) | Q(player_2_local=player.id),
-        winner="Local",
-        draft_mode=False,
-        match__season=season
-    ).count()
-
-    stats['lost_games_local'] = Game.objects.filter(
-        Q(player_1_local=player.id) | Q(player_2_local=player.id),
-        winner="Visitante",
-        draft_mode=False,
-        match__season=season
-    ).count()
-
-    # Contar partidos ganados/perdidos como visitante
-    stats['won_games_visiting'] = Game.objects.filter(
-        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-        winner="Visitante",
-        draft_mode=False,
-        match__season=season
-    ).count()
-
-    stats['lost_games_visiting'] = Game.objects.filter(
-        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-        winner="Local",
-        draft_mode=False,
-        match__season=season
-    ).count()
-
-    # Total de partidos jugados
-    stats['total_match'] = Game.objects.filter(
-        Q(player_1_local=player.id) | Q(player_2_local=player.id) | 
-        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-        draft_mode=False,
-        match__season=season
-    ).count()
-
-    return stats
-
-
-def get_present_calls(player, current_season):
-    """Contar las convocatorias presentes para la temporada actual."""
-    return Call.objects.filter(
-        draft_mode=False,
-        players__id=player.id,
-        match__season=current_season
-    ).count()
-
-def get_match_history(player, all_match):
-    """Obtener historial de partidos por año."""
-    dicc_match = {}
-    for m in all_match:
-        year = m.season
-
-        if year not in dicc_match:
-            dicc_match[year] = {'won': 0, 'lost': 0}
-
-    won_games_local = Game.objects.filter(
-        Q(player_1_local=player.id) | Q(player_2_local=player.id),
-        winner="Local",
-        draft_mode=False,
-        match__season = year
-    ).count()
-
-
-    won_games_visiting = Game.objects.filter(
-        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-        winner="Visitante",
-        draft_mode=False,
-        match__season = year
-    ).count()
-
-    lost_games_local = Game.objects.filter(
-        Q(player_1_local=player.id) | Q(player_2_local=player.id),
-        winner="Visitante",
-        draft_mode=False,
-        match__season = year
-    ).count()
-
-    lost_games_visiting = Game.objects.filter(
-        Q(player_1_visiting=player.id) | Q(player_2_visiting=player.id),
-        winner="Local",
-        draft_mode=False,
-        match__season = year
-    ).count()
-
-    dicc_match[year]['won'] += (won_games_local + won_games_visiting)
-    dicc_match[year]['lost'] += (lost_games_local + lost_games_visiting)
-
-    return dicc_match
-
-
-def player_won(m, player):
-    """Determina si el jugador ganó el partido."""
-    return (m.winner == 'Local' and (m.player_1_local == player or m.player_2_local == player)) or \
-           (m.winner == 'Visitante' and (m.player_1_visiting == player or m.player_2_visiting == player))
-
-def player_lost(m, player):
-    """Determina si el jugador perdió el partido."""
-    return (m.winner == 'Visitante' and (m.player_1_local == player or m.player_2_local == player)) or \
-           (m.winner == 'Local' and (m.player_1_visiting == player or m.player_2_visiting == player))
 
 def degree_of_affinity(player):
-    player = Player.objects.get(id=player.id)
-    other_players = Player.objects.exclude(id=player.id)
-    affinity_results = {}
+    """
+    Afinidad (0-100) con cada compañero con el que ha jugado en pareja.
+    % de puntos ganados en pareja (cada partido pesa game.score), suavizado
+    hacia el 50 % cuando hay pocos partidos.
+    Devuelve: [{'name', 'affinity', 'games', 'wins', 'losses'}, ...] de mayor a menor.
+    """
+    games = Game.objects.filter(
+        Q(player_1_local=player) | Q(player_2_local=player) |
+        Q(player_1_visiting=player) | Q(player_2_visiting=player),
+        draft_mode=False,
+        winner__in=('Local', 'Visitante'),
+    )
 
-    for other in other_players:
-        # Filtra los juegos donde el jugador y el otro jugador forman pareja
-        games = Game.objects.filter(
-            Q(player_1_local=player, player_2_local=other) | 
-            Q(player_1_local=other, player_2_local=player) |
-            Q(player_1_visiting=player, player_2_visiting=other) | 
-            Q(player_1_visiting=other, player_2_visiting=player)
-        )
+    people = {p.id: p for p in Player.objects.exclude(id=player.id)}
+    acc = {}
 
-        # Contadores de victorias y derrotas
-        game_2_wins, game_2_losses = 0, 0
-        game_3_wins, game_3_losses = 0, 0
+    for g in games:
+        if player.id in (g.player_1_local_id, g.player_2_local_id):
+            side, pair = 'Local', (g.player_1_local_id, g.player_2_local_id)
+        else:
+            side, pair = 'Visitante', (g.player_1_visiting_id, g.player_2_visiting_id)
 
-        for game in games:
-            if game.score == 2:
-                game_2_wins += player_won(game, player)
-                game_2_losses += player_lost(game, player)
-            elif game.score == 3:
-                game_3_wins += player_won(game, player)
-                game_3_losses += player_lost(game, player)
-
-        # Cálculo de afinidad
-        total_matches = game_2_wins + game_2_losses + game_3_wins + game_3_losses
-        if total_matches == 0:
-            affinity_results[other.name] = 0.0
+        partner_id = pair[1] if pair[0] == player.id else pair[0]
+        if partner_id not in people:
             continue
 
-        weighted_wins = game_3_wins * 2 + game_2_wins
-        loss_penalty = (game_2_losses + game_3_losses) * 1.5
-        affinity = ((weighted_wins - loss_penalty) / total_matches) * 100
+        won = g.winner == side
+        weight = g.score or 1
+        a = acc.setdefault(partner_id, {'games': 0, 'wins': 0, 'stake': 0, 'won_pts': 0})
+        a['games'] += 1
+        a['wins'] += won
+        a['stake'] += weight
+        a['won_pts'] += weight if won else 0
 
-        # Factor de experiencia y límites
-        experience_factor = min(1 + total_matches / 10, 2)
-        affinity = max(0, min(affinity * experience_factor, 100))
+    results = []
+    for partner_id, a in acc.items():
+        p = people[partner_id]
+        rate = (a['won_pts'] + PRIOR_POINTS * 0.5) / (a['stake'] + PRIOR_POINTS)
+        results.append({
+            'name': f"{p.name} {p.last_name}",
+            'affinity': round(rate * 100),
+            'games': a['games'],
+            'wins': a['wins'],
+            'losses': a['games'] - a['wins'],
+        })
 
-        affinity_results[other.name] = affinity
+    results.sort(key=lambda r: (r['affinity'], r['games']), reverse=True)
+    return results
 
-    return dict(sorted(affinity_results.items(), key=lambda item: item[1], reverse=True))
 
-def points_per_players(player_id,season):
-    player = Player.objects.get(id = player_id)
-    games = Game.objects.filter(
-        Q(player_1_local = player) |
-        Q(player_2_local = player) |
-        Q(player_1_visiting = player) |
-        Q(player_2_visiting = player),
-        match__season=season,
-        draft_mode=False,
+def build_game_log(player):
+    """
+    Una sola consulta (+1 prefetch): lista cronológica de los partidos (Game) del jugador.
+    Cada elemento: {'season', 'local', 'won', 'points', 'sets_won', 'sets_lost'}
+    'sets_*' son los "juegos" que suma el jugador y su rival dentro del partido.
+    """
+    games = (
+        Game.objects
+        .filter(
+            Q(player_1_local=player) | Q(player_2_local=player) |
+            Q(player_1_visiting=player) | Q(player_2_visiting=player),
+            draft_mode=False,
+        )
+        .select_related('match')
+        .prefetch_related('results')
+        .order_by(*ORDER)
     )
 
-    score = 0
+    log = []
+    for g in games:
+        if g.winner not in ('Local', 'Visitante'):
+            continue  # partido sin cerrar
+        is_local = player.id in (g.player_1_local_id, g.player_2_local_id)
+        won = (g.winner == 'Local') == is_local
 
-    for game in games:
-        if ((game.player_1_local or game.player_2_local)and(game.winner == "Local")):
-            game_score = game.score
-            score += game_score
-        if ((game.player_1_visiting or game.player_2_visiting)and(game.winner == "Visitante")):
-            game_score = game.score
-            score += game_score
+        sets_won = sets_lost = 0
+        for r in g.results.all():
+            loc = sum(filter(None, [r.set1_local, r.set2_local, r.set3_local]))
+            vis = sum(filter(None, [r.set1_visiting, r.set2_visiting, r.set3_visiting]))
+            mine, theirs = (loc, vis) if is_local else (vis, loc)
+            sets_won += mine
+            sets_lost += theirs
 
-    return score
+        log.append({
+            'season': g.match.season,
+            'local': is_local,
+            'won': won,
+            'points': g.score if won else 0,
+            'sets_won': sets_won,
+            'sets_lost': sets_lost,
+        })
+    return log
 
-def games_won_per_player_local_visiting(player_id, season):
-    player = Player.objects.get(id=player_id)
-    
-    # Filtrar los juegos donde participa el jugador
-    games = Game.objects.filter(
-        Q(player_1_local=player) |
-        Q(player_2_local=player) |
-        Q(player_1_visiting=player) |
-        Q(player_2_visiting=player),
-        match__season=season,
-        draft_mode=False,
+
+def calls_by_season(player):
+    """Convocatorias por temporada: ({temporada: a las que se apuntó}, {temporada: total})."""
+    base = Call.objects.filter(draft_mode=False)
+    total = dict(base.order_by().values_list('match__season').annotate(n=Count('id', distinct=True)))
+    present = dict(
+        base.filter(players__id=player.id)
+        .order_by().values_list('match__season').annotate(n=Count('id', distinct=True))
     )
+    return present, total
 
-    # Si no hay juegos, devolver 0 para todos los contadores
-    if not games.exists():
-        return 0, 0, 0, 0
-    
-    # Inicializar contadores
-    local_games_won = 0
-    local_games_lost = 0
-    visiting_games_won = 0
-    visiting_games_lost = 0
-    
-    # Iterar sobre los juegos encontrados
-    for game in games:
-        # Obtener los resultados del juego
-        results = game.results.all()
-        
-        if game.player_1_local == player or game.player_2_local == player:
-            # Si el jugador es local, sumar sus juegos ganados y perdidos
-            for result in results:
-                local_games_won += sum(filter(None, [result.set1_local, result.set2_local, result.set3_local]))
-                local_games_lost += sum(filter(None, [result.set1_visiting, result.set2_visiting, result.set3_visiting]))
-        
-        if game.player_1_visiting == player or game.player_2_visiting == player:
-            # Si el jugador es visitante, sumar sus juegos ganados y perdidos
-            for result in results:
-                visiting_games_won += sum(filter(None, [result.set1_visiting, result.set2_visiting, result.set3_visiting]))
-                visiting_games_lost += sum(filter(None, [result.set1_local, result.set2_local, result.set3_local]))
-    
-    # Devolver los resultados
-    return local_games_won, local_games_lost, visiting_games_won, visiting_games_lost
+
+def _pct(wins, total):
+    return round(wins / total * 100, 1) if total else 0
+
+
+def _longest_run(results, target):
+    best = run = 0
+    for r in results:
+        run = run + 1 if r == target else 0
+        best = max(best, run)
+    return best
+
+
+def _current_run(results):
+    """Devuelve ('V', 4) o ('D', 2). Sin partidos: (None, 0)."""
+    if not results:
+        return None, 0
+    last, n = results[-1], 0
+    for r in reversed(results):
+        if r != last:
+            break
+        n += 1
+    return ('V' if last else 'D'), n
+
+
+def summarize(log):
+    """Todas las métricas a partir de un log (global o de una temporada)."""
+    results = [g['won'] for g in log]
+    local_games = [g for g in log if g['local']]
+    visiting_games = [g for g in log if not g['local']]
+    local = [g['won'] for g in local_games]
+    visiting = [g['won'] for g in visiting_games]
+
+    total, wins = len(results), sum(results)
+    streak_type, streak_len = _current_run(results)
+
+    local_sets_won = sum(g['sets_won'] for g in local_games)
+    local_sets_lost = sum(g['sets_lost'] for g in local_games)
+    visiting_sets_won = sum(g['sets_won'] for g in visiting_games)
+    visiting_sets_lost = sum(g['sets_lost'] for g in visiting_games)
+
+    return {
+        'played': total,
+        'wins': wins,
+        'losses': total - wins,
+        'pct': _pct(wins, total),
+        'points': sum(g['points'] for g in log),
+
+        'local_played': len(local),
+        'local_wins': sum(local),
+        'local_losses': len(local) - sum(local),
+        'local_pct': _pct(sum(local), len(local)),
+        'local_sets_won': local_sets_won,
+        'local_sets_lost': local_sets_lost,
+        'local_sets_total': local_sets_won + local_sets_lost,
+
+        'visiting_played': len(visiting),
+        'visiting_wins': sum(visiting),
+        'visiting_losses': len(visiting) - sum(visiting),
+        'visiting_pct': _pct(sum(visiting), len(visiting)),
+        'visiting_sets_won': visiting_sets_won,
+        'visiting_sets_lost': visiting_sets_lost,
+        'visiting_sets_total': visiting_sets_won + visiting_sets_lost,
+
+        'streak_type': streak_type,
+        'streak_len': streak_len,
+        'best_win_streak': _longest_run(results, True),
+        'worst_loss_streak': _longest_run(results, False),
+        'best_local_streak': _longest_run(local, True),
+        'best_visiting_streak': _longest_run(visiting, True),
+
+        # últimos 10, el más reciente a la derecha
+        'form': results[-10:],
+    }
+
+
+def summarize_by_season(log, calls_present, calls_total):
+    """Temporadas (ascendente) con métricas, convocatorias y variación de % vs. la anterior."""
+    by_season = {}
+    for g in log:
+        by_season.setdefault(g['season'], []).append(g)
+
+    rows, previous = [], None
+    for season in sorted(by_season, key=lambda s: int(s.split('-')[0])):
+        games = by_season[season]
+        wins = sum(g['won'] for g in games)
+        pct = _pct(wins, len(games))
+        rows.append({
+            'season': season,
+            'played': len(games),
+            'wins': wins,
+            'losses': len(games) - wins,
+            'pct': pct,
+            'points': sum(g['points'] for g in games),
+            'calls_present': calls_present.get(season, 0),
+            'calls_total': calls_total.get(season, 0),
+            'delta': round(pct - previous, 1) if previous is not None else None,
+        })
+        previous = pct
+    return rows
+
 
 @require_GET
 def statistics_per_player(request):
-    all_match = Match.objects.all()
-    players = Player.objects.all()
-    seasons = get_total_season(all_match)   
-
-    seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
-
+    players = Player.objects.filter(in_team = True)
     player_id = request.GET.get('player')
+
+    if not player_id:
+        return render(request, 'player_statistics.html', {'players': players})
+
+    player = Player.objects.get(id=player_id)
+
+    # Chips de temporada: todas las que existen (como antes)
+    all_seasons = sorted(get_total_season(Match.objects.all()),
+                         key=lambda s: int(s.split('-')[0]), reverse=True)
     selected_season = request.GET.get('season')
+    if selected_season not in all_seasons:
+        selected_season = None
 
-    if player_id:
-        player = Player.objects.get(id=player_id)
-    else:
-        return render(request, 'player_statistics.html', {"players": players, "seasons":seasons})
-    
-    
-    degree_afinity = degree_of_affinity(player)
+    log = build_game_log(player)
+    summary = summarize(log)
+    calls_present, calls_total = calls_by_season(player)
+    rows = summarize_by_season(log, calls_present, calls_total)
 
-    points_player = points_per_players(player_id,selected_season)
-
-
-    local_games_won, local_games_lost, visiting_games_won, visiting_games_lost = games_won_per_player_local_visiting(player_id,selected_season)
-
-    stats = get_player_statistics(player, selected_season)
-    current_season = get_current_season(request)
-    stats['present_call'] = get_present_calls(player, current_season)
-
-    #Juegos ganados como local/visitante
-
-    # Historial de partidos
-    dicc_match = get_match_history(player, all_match)
-    years = sorted(dicc_match.keys())
-    stats['games_won_per_year'] = [dicc_match[y]['won'] for y in years]
-    stats['games_lost_per_year'] = [dicc_match[y]['lost'] for y in years]
-    stats['degree_afinity'] = json.dumps(degree_afinity)
-
-    # Cálculos finales
-    stats['total_wins'] = stats['won_games_local'] + stats['won_games_visiting']
-    stats['total_lost'] = stats['lost_games_local'] + stats['lost_games_visiting']
-    total_call = Call.objects.filter(draft_mode=False).count()
-    stats['percentage_call'] = (stats['present_call'] / total_call) * 100 if total_call > 0 else 0
-    stats['no_call'] = total_call - stats['present_call']
-
-    # Serializa los datos de años y estadísticas a JSON
-    stats['years'] = json.dumps(years)
-    stats['games_won_per_year'] = json.dumps(stats['games_won_per_year'])
-    stats['games_lost_per_year'] = json.dumps(stats['games_lost_per_year'])
-
-    if not selected_season:
-        return render(request, 'player_statistics.html', {"players": players,
-                                                          "selected_player":player.id,
-                                                           "seasons":seasons,
-                                                           **stats,
-                                                           "player":player_id})
+    # Detalle de la temporada elegida
+    detail = None
+    if selected_season:
+        detail = summarize([g for g in log if g['season'] == selected_season])
+        present = calls_present.get(selected_season, 0)
+        total = calls_total.get(selected_season, 0)
+        detail.update({
+            'calls_present': present,
+            'calls_total': total,
+            'calls_absent': total - present,
+        })
 
     context = {
-        "players": players,
-        "selected_season": selected_season,
-        "selected_player": player.id,
-        **stats,
-        "years": years,
-        "seasons": seasons,
-        "points_player":points_player,
-        "local_games_won":local_games_won,
-        "local_games_lost":local_games_lost,
-        "visiting_games_won":visiting_games_won,
-        "visiting_games_lost":visiting_games_lost,
-
-
+        'players': players,
+        'selected_player': player.id,
+        'player': player,
+        'seasons': all_seasons,
+        'selected_season': selected_season,
+        's': summary,
+        'd': detail,
+        'seasons_asc': rows,
+        'seasons_desc': list(reversed(rows)),
+        # enteros para anchos de barra (evita comas decimales en style="")
+        'pct_w': round(summary['pct']),
+        'local_pct_w': round(summary['local_pct']),
+        'visiting_pct_w': round(summary['visiting_pct']),
+        # datos de los gráficos (json_script en la plantilla)
+        'chart_seasons': {
+            'labels': [r['season'] for r in rows],
+            'wins': [r['wins'] for r in rows],
+            'losses': [r['losses'] for r in rows],
+            'pct': [r['pct'] for r in rows],
+        },
+        'chart_affinity': degree_of_affinity(player),
     }
-
     return render(request, 'player_statistics.html', context)
-

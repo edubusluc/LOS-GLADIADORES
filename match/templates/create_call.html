@@ -1,57 +1,19 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load custom_filters %}
 
 {% block content %}
-    <div class="container px-0">
-        <div class="card shadow-lg">
-            <div class="card-body">
-                <h1 class="card-title text-center">Crear Convocatoria</h1>
-                <h2 class="card-title text-center">{{ match.local }} VS {{ match.visiting }}</h2>
-
-                {% if form.non_field_errors %}
-                    <div class="error">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
-                <form method="POST" class="mt-4">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label>Selecciona Jugadores:</label>
-                        <div class="z-check-grid">
-                            {% for player in players %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="players" value="{{ player.id }}" id="player-{{ player.id }}"
-                                            {% if player.id in selected_players %} checked {% endif %}>
-                                        <label class="form-check-label" for="player-{{ player.id }}" 
-                                               data-bs-toggle="tooltip" 
-                                               data-bs-placement="top" 
-                                               data-bs-html="true" 
-                                               title="{% if player_penalties|get_item:player.id %}<p>{% for reason in player_penalties|get_item:player.id %}{{ reason }}<br>{% endfor %}</p>{% else %}Sin penalizaciones{% endif %}">
-                                            {{ player.name }} {{player.last_name}}
-                                            {% if player_penalties|get_item:player.id|length > 0 %}
-                                                <span class="text-danger">(!)</span>
-                                            {% endif %}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">Crear Convocatoria</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="z-page-head">
+    <div>
+        <a href="{% url 'call_for_match' match.id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ match.local }} vs {{ match.visiting }}</a>
+        <h1>Crear convocatoria</h1>
     </div>
+</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
-    });
-</script>
+{% if messages %}
+<div>{% for message in messages %}<p class="alert warning">{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+    {% include 'includes/player_selector.html' with selected=selected_players submit_label="Crear convocatoria" min_players=10 %}
+</form>
 {% endblock %}

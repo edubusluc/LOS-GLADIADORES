@@ -7,7 +7,9 @@ from django.db.models import Q, Count
 from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
 from django.http import Http404
-from core.decorators import club_required
+from core.decorators import club_required, club_admin_required
+from penalty.models import Penalty
+from players.models import current_season
 from . import pairs as pair_stats
 
 # ---------------------------------------------------------------
@@ -445,7 +447,7 @@ def summarize_by_season(log, calls_present, calls_total):
 @club_required
 @require_GET
 def statistics_per_player(request):
-    players = Player.objects.filter(club=request.club, in_team = True)
+    players = Player.objects.filter(club=request.club, in_team=True).order_by('name', 'last_name')
     player_id = request.GET.get('player')
 
     if not player_id or not player_id.isdigit():
@@ -511,7 +513,7 @@ def statistics_per_player(request):
 @club_required
 @require_GET
 def statistics_per_pair(request):
-    club_players = list(Player.objects.filter(club=request.club).order_by('-in_team', 'name', 'last_name'))
+    club_players = list(Player.objects.filter(club=request.club).order_by('name', 'last_name'))
     by_id = {p.id: p for p in club_players}
     log = pair_stats.club_game_log(request.club)
     pairs = pair_stats.all_pairs(log, club_players)
@@ -549,3 +551,46 @@ def statistics_per_pair(request):
             })
 
     return render(request, 'pair_statistics.html', context)
+
+
+# ---------------------------------------------------------------
+# ADVERTENCIAS (solo administradores)
+# ---------------------------------------------------------------
+
+ALL_SEASONS = "all"
+
+
+@club_admin_required
+@require_GET
+def warnings_statistics(request):
+    penalties = (
+        Penalty.objects
+        .filter(player__club=request.club, call__match__club=request.club)
+        .select_related('player', 'call__match__local', 'call__match__visiting')
+        .order_by('-call__match__start_date', '-id')
+    )
+
+    seasons = set(penalties.values_list('call__match__season', flat=True)) | {current_season()}
+    seasons = sorted((x for x in seasons if x and x != "NONE"), reverse=True)
+    selected_season = request.GET.get('season') or current_season()
+    if selected_season != ALL_SEASONS:
+        penalties = penalties.filter(call__match__season=selected_season)
+    penalties = list(penalties)
+
+    by_player = {}
+    for pen in penalties:
+        row = by_player.setdefault(pen.player_id, {'player': pen.player, 'count': 0, 'items': []})
+        row['count'] += 1
+        row['items'].append(pen)
+    ranking = sorted(by_player.values(), key=lambda r: (-r['count'], r['player'].name, r['player'].last_name))
+
+    return render(request, 'warnings_statistics.html', {
+        'seasons': seasons,
+        'selected_season': selected_season,
+        'all_seasons': ALL_SEASONS,
+        'penalties': penalties,
+        'ranking': ranking,
+        'total': len(penalties),
+        'players_warned': len(by_player),
+        'matches_warned': len({p.call.match_id for p in penalties}),
+    })

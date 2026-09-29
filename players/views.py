@@ -115,6 +115,27 @@ def show_player(request, player_id):
 
 
 @club_admin_required
+def manage_roster(request):
+    """Marca de una vez qué jugadores están en el equipo."""
+    players = Player.objects.filter(club=request.club).order_by('name', 'last_name')
+
+    if request.method == "POST":
+        in_team_ids = {int(i) for i in request.POST.getlist('in_team') if i.isdigit()}
+        joined = players.filter(id__in=in_team_ids, in_team=False).update(in_team=True)
+        left = players.exclude(id__in=in_team_ids).filter(in_team=True).update(in_team=False)
+        if joined or left:
+            messages.success(request, f"Plantilla actualizada: {joined} alta{'s' if joined != 1 else ''} y {left} baja{'s' if left != 1 else ''}.")
+        else:
+            messages.info(request, "No había cambios que guardar.")
+        return redirect('manage_roster')
+
+    return render(request, 'manage_roster.html', {
+        'players': players,
+        'in_team_count': sum(p.in_team for p in players),
+    })
+
+
+@club_admin_required
 def force_update_score(request):
     players = Player.objects.filter(club=request.club)
     for player in players:

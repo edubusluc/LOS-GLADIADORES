@@ -57,7 +57,7 @@ class ClubIsolationTests(TestCase):
         teams = self.client.get(reverse("list_teams")).context["teams"]
         self.assertTrue(all(t.club_id == self.club_a.id for t in teams))
 
-        matches = self.client.get(reverse("list_match")).context["matches"]
+        matches = self.client.get(reverse("list_match"), {"season": "all"}).context["matches"]
         self.assertEqual([m.id for m in matches], [self.match_a.id])
 
         posts = self.client.get(reverse("home")).context["page_obj"]

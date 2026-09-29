@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="st-page">
+    {% include 'includes/stats_tabs.html' %}
+
+    <header class="st-head">
+      <div>
+        <h1 class="st-title">Advertencias</h1>
+        <p class="st-subtitle">
+          {% if selected_season == all_seasons %}Todas las temporadas{% else %}Temporada {{ selected_season }}{% endif %}
+          · solo visible para administradores
+        </p>
+      </div>
+    </header>
+
+    <nav aria-label="Temporadas">
+      <ul class="st-seasons">
+        {% for season in seasons %}
+          <li><a class="st-chip" href="?season={{ season|urlencode:'' }}" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a></li>
+        {% endfor %}
+        <li><a class="st-chip" href="?season={{ all_seasons }}" {% if selected_season == all_seasons %}aria-current="page"{% endif %}>Todas</a></li>
+      </ul>
+    </nav>
+
+    {% if not total %}
+      <div class="st-empty">
+        <strong>Sin advertencias</strong>
+        No se ha añadido ninguna advertencia{% if selected_season != all_seasons %} en la temporada {{ selected_season }}{% endif %}.
+      </div>
+    {% else %}
+      <div class="st-kpis">
+        <article class="st-kpi st-kpi--accent">
+          <h2 class="st-kpi-label">Advertencias</h2>
+          <p class="st-kpi-value">{{ total }}</p>
+        </article>
+        <article class="st-kpi">
+          <h2 class="st-kpi-label">Jugadores advertidos</h2>
+          <p class="st-kpi-value">{{ players_warned }}</p>
+        </article>
+        <article class="st-kpi">
+          <h2 class="st-kpi-label">Partidos con advertencias</h2>
+          <p class="st-kpi-value">{{ matches_warned }}</p>
+        </article>
+      </div>
+
+      <div class="st-row">
+        <article class="st-card">
+          <h2 class="st-card-title">Por jugador</h2>
+          <p class="st-card-note">De más a menos advertencias.</p>
+          <ol class="st-top">
+            {% for r in ranking %}
+              <li class="st-top-row">
+                <span class="st-top-pos">{{ forloop.counter }}</span>
+                <span class="st-top-name">{{ r.player.name }} {{ r.player.last_name }}{% if not r.player.in_team %} <small class="d-inline">(fuera del equipo)</small>{% endif %}
+                  <small>{% for p in r.items %}{{ p.call.match.start_date|date:"d/m" }}{% if not forloop.last %} · {% endif %}{% endfor %}</small>
+                </span>
+                <b class="st-top-pct st-warn-count">{{ r.count }}</b>
+              </li>
+            {% endfor %}
+          </ol>
+        </article>
+
+        <article class="st-card">
+          <h2 class="st-card-title">Historial</h2>
+          <p class="st-card-note">Todas las advertencias, la más reciente primero.</p>
+          <div class="st-table-wrap">
+            <table class="st-table">
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Jugador</th>
+                  <th scope="col">Partido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in penalties %}
+                  <tr>
+                    <td>{{ p.call.match.start_date|date:"d/m/Y" }}</td>
+                    <td>{{ p.player.name }} {{ p.player.last_name }}</td>
+                    <td><a href="{% url 'call_for_match' p.call.match_id %}">{{ p.call.match.local }} vs {{ p.call.match.visiting }}</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

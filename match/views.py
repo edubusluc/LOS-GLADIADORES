@@ -3,16 +3,17 @@ from core.decorators import club_required, club_admin_required
 from django.contrib import messages
 from .forms import MatchForm
 from .models import Match, Game, Result
-from players.models import Player
+from players.models import Player, current_season
 from call.models import Call
 from team.models import Team
 from datetime import datetime
 from callLog.models import CallLog
 from penalty.models import Penalty
-from players.views import calculate_score
+from players.views import calculate_score as calculate_player_score
 import json
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 
 CREATE_MATCH_HTML = "create_match.html"
@@ -33,22 +34,45 @@ def club_players(request, ids):
     return Player.objects.filter(club=request.club, id__in=[i for i in ids if str(i).isdigit()])
 
 
+MATCHES_PER_PAGE = 12
+ALL_SEASONS = "all"
+
+
+def match_outcome(match):
+    """'V', 'D' o 'E' desde el punto de vista del club; None si el acta sigue abierta."""
+    if match.draft_mode or match.result in ("", "NONE", None):
+        return None
+    if match.result == "Victoria Local":
+        return "V" if match.own_is_local else "D"
+    if match.result == "Victoria Visitante":
+        return "V" if match.own_is_visiting else "D"
+    return "E"
+
+
 @club_required
 def list_match(request):
-    season = request.GET.get('season', '')
+    # Por defecto, la temporada actual; "all" muestra todas.
+    season = request.GET.get('season') or current_season()
 
-    club_matches = Match.objects.filter(club=request.club)
-    matches = club_matches.order_by('-start_date')
-
-    if season:
+    club_matches = Match.objects.filter(club=request.club).select_related('local', 'visiting')
+    matches = club_matches.order_by('-start_date', '-id')
+    if season != ALL_SEASONS:
         matches = matches.filter(season=season)
 
-    # Lista de temporadas distintas para el selector (ordenadas desc)
-    seasons = club_matches.order_by('-season').values_list('season', flat=True).distinct()
+    # Temporadas para el selector (desc), incluida la actual aunque aún no tenga partidos
+    seasons = set(club_matches.values_list('season', flat=True)) | {current_season()}
+    seasons = sorted((x for x in seasons if x and x != "NONE"), reverse=True)
 
-    paginator = Paginator(matches, 5)
+    outcomes = [match_outcome(m) for m in matches]
+    summary = {
+        'played': sum(o is not None for o in outcomes),
+        'won': outcomes.count('V'),
+        'lost': outcomes.count('D'),
+        'pending': outcomes.count(None),
+    }
+
+    paginator = Paginator(matches, MATCHES_PER_PAGE)
     page = request.GET.get('page')
-
     try:
         matches = paginator.page(page)
     except PageNotAnInteger:
@@ -56,10 +80,15 @@ def list_match(request):
     except EmptyPage:
         matches = paginator.page(paginator.num_pages)
 
+    for m in matches:
+        m.outcome = match_outcome(m)
+
     return render(request, "list_match.html", {
         'matches': matches,
         'seasons': seasons,
         'selected_season': season,
+        'all_seasons': ALL_SEASONS,
+        'summary': summary,
     })
 
 @club_admin_required
@@ -140,40 +169,48 @@ def delete_match(request, match_id):
         return redirect('list_match')
 
 
+def selectable_players(club, include_ids=()):
+    """
+    Jugadores para el selector de convocatorias: los que están en el equipo
+    (más los ya convocados aunque ya no estén), en orden alfabético y con sus
+    sanciones en `penalty_reasons`.
+    """
+    players = list(
+        Player.objects.filter(club=club)
+        .filter(Q(in_team=True) | Q(id__in=list(include_ids)))
+        .order_by('name', 'last_name')
+    )
+    reasons = {}
+    for pid, reason in Penalty.objects.filter(player__in=players).values_list('player_id', 'reason'):
+        reasons.setdefault(pid, []).append(reason)
+    for p in players:
+        p.penalty_reasons = reasons.get(p.id, [])
+    return players
+
+
 @club_admin_required
 def create_call(request, match_id):
-    players = Player.objects.filter(club=request.club, in_team=True)
     match = club_match(request, match_id)
-    existing_call = Call.objects.filter(match_id=match_id).exists()
-
-
-    if existing_call or match.draft_mode == False:
+    if Call.objects.filter(match=match).exists() or match.draft_mode == False:
         return redirect('existing_call', match.id)
-    
-    player_penalties = {
-        player.id: Penalty.objects.filter(player=player).values_list('reason', flat=True) 
-        for player in players
-    }
-    
-    
-    if request.method == 'POST':
-        players = club_players(request, request.POST.getlist('players'))
-        if not players:
-              messages.error(request, "Debes seleccionar al menos un jugador.")
-        else:
-            call = Call(
-                match = match, 
-            )
-            call.save()
-            call.players.set(players)
 
-            call_log = CallLog(
-                call = call,
-            )
-            call_log.save()
+    selected_ids = []
+    if request.method == 'POST':
+        chosen = club_players(request, request.POST.getlist('players'))
+        selected_ids = list(chosen.values_list('id', flat=True))
+        if not selected_ids:
+            messages.error(request, "Debes seleccionar al menos un jugador.")
+        else:
+            call = Call.objects.create(match=match)
+            call.players.set(selected_ids)
+            CallLog.objects.create(call=call, text="")
             return redirect('call_for_match', match.id)
-        
-    return render(request, "create_call.html", {"players": players, "match": match, "player_penalties":player_penalties})
+
+    return render(request, "create_call.html", {
+        "players": selectable_players(request.club),
+        "selected_players": selected_ids,
+        "match": match,
+    })
 
 
 def validate_call(call):
@@ -203,9 +240,9 @@ def close_call(request, match_id):
 @club_admin_required
 def edit_call(request, call_id):
     call = club_call(request, id=call_id)
-    all_players = Player.objects.filter(club=request.club)
-    selected_players = call.players.values_list('id', flat=True)
-    call_log = get_object_or_404(CallLog, call=call_id)
+    selected_players = list(call.players.values_list('id', flat=True))
+    all_players = selectable_players(request.club, include_ids=selected_players)
+    call_log, _ = CallLog.objects.get_or_create(call=call, defaults={'text': ''})
     
     current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     if call.match.draft_mode == False:
@@ -355,7 +392,7 @@ def create_game_for_match(request, match_id):
                     player_2_local=player_2,
                     player_1_visiting=None,  # Si es local, puedes dejarlo en None
                     player_2_visiting=None,  # Si es local, puedes dejarlo en None
-                    score=calculate_score(idx),
+                    score=game_points(idx),
                     winner=None,  # Asigna el ganador si es necesario
                     draft_mode=True  # Cambia según la lógica de tu aplicación
                 )
@@ -367,7 +404,7 @@ def create_game_for_match(request, match_id):
                     player_2_local=None,
                     player_1_visiting=player_1,
                     player_2_visiting=player_2,
-                    score=calculate_score(idx),
+                    score=game_points(idx),
                     winner=None,  # Asigna el ganador si es necesario
                     draft_mode=True  # Cambia según la lógica de tu aplicación
                 )
@@ -386,7 +423,8 @@ def create_game_for_match(request, match_id):
     return render(request, "create_game.html", {"call": call})
 
     
-def calculate_score(index):
+def game_points(index):
+    """Puntos en juego según el orden del partido: los dos primeros valen 3, el resto 2."""
     if index == 1 or index == 2: return 3
     else: return 2
 
@@ -573,9 +611,10 @@ def update_player_scores(games, is_local):
             players = [game.player_1_visiting, game.player_2_visiting]
 
         for player in players:
-            player_score = calculate_score(player)
-            player.score = player_score
-            player.save()
+            if player is None:
+                continue
+            player.score = calculate_player_score(player)
+            player.save(update_fields=['score'])
 
 @club_admin_required
 def edit_game_match(request, match_id):

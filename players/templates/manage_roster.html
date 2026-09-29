@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <a href="{% url 'list_players' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> Jugadores</a>
+        <h1>Gestionar plantilla</h1>
+    </div>
+</div>
+
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+<p class="text-muted">Activa o desactiva a los jugadores que están en el equipo y guarda todos los cambios de una vez. Los jugadores fuera del equipo no aparecen en convocatorias, sanciones ni en los rankings.</p>
+
+<form method="post" data-roster>
+    {% csrf_token %}
+    <div class="z-selector-tools">
+        <div class="z-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" placeholder="Buscar jugador..." data-roster-search aria-label="Buscar jugador">
+        </div>
+        <div class="z-segmented" role="group" aria-label="Filtrar">
+            <button type="button" class="btn btn-sm active" data-roster-filter="">Todos</button>
+            <button type="button" class="btn btn-sm" data-roster-filter="in">En el equipo</button>
+            <button type="button" class="btn btn-sm" data-roster-filter="out">Fuera</button>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-roster-set="1">Activar visibles</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-roster-set="0">Desactivar visibles</button>
+        </div>
+    </div>
+
+    <div class="z-selector-grid">
+        {% for p in players %}
+        <label class="z-roster" data-name="{{ p.name }} {{ p.last_name }}">
+            <img src="{% if p.photo %}{{ p.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="" class="z-avatar z-avatar--sm">
+            <span class="z-pick-body">
+                <span class="z-pick-name">{{ p.name }} {{ p.last_name }}</span>
+                <span class="z-pick-meta" data-roster-state></span>
+            </span>
+            <span class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" role="switch" name="in_team" value="{{ p.id }}" {% if p.in_team %}checked{% endif %} data-initial="{% if p.in_team %}1{% else %}0{% endif %}" aria-label="{{ p.name }} {{ p.last_name }} en el equipo">
+            </span>
+        </label>
+        {% empty %}
+        <div class="z-empty" style="grid-column: 1 / -1;">Todavía no hay jugadores.</div>
+        {% endfor %}
+        <p class="z-empty" data-roster-empty hidden style="grid-column: 1 / -1;">Ningún jugador coincide con la búsqueda.</p>
+    </div>
+
+    <div class="z-selector-bar">
+        <div>
+            <b data-roster-count>{{ in_team_count }}</b> en el equipo
+            <small data-roster-changes>Sin cambios</small>
+        </div>
+        <button type="submit" class="btn btn-primary" data-roster-save disabled>Guardar cambios</button>
+    </div>
+</form>
+
+<script>
+(function () {
+  const root = document.querySelector('[data-roster]');
+  if (!root) return;
+  const norm = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const rows = Array.from(root.querySelectorAll('.z-roster'));
+  const box = (r) => r.querySelector('input[name="in_team"]');
+  const search = root.querySelector('[data-roster-search]');
+  let filter = '';
+
+  function refresh() {
+    const q = norm(search.value);
+    let visible = 0, changes = 0, count = 0;
+    rows.forEach(function (r) {
+      const on = box(r).checked;
+      const changed = on !== (box(r).dataset.initial === '1');
+      count += on;
+      changes += changed;
+      r.classList.toggle('is-on', on);
+      r.classList.toggle('is-changed', changed);
+      r.querySelector('[data-roster-state]').textContent = (on ? 'En el equipo' : 'Fuera del equipo') + (changed ? ' · cambio pendiente' : '');
+      r.hidden = !((!q || norm(r.dataset.name).includes(q)) && (!filter || (filter === 'in') === on));
+      if (!r.hidden) visible++;
+    });
+    root.querySelector('[data-roster-empty]').hidden = visible > 0 || !rows.length;
+    root.querySelector('[data-roster-count]').textContent = count;
+    root.querySelector('[data-roster-changes]').textContent = changes ? `${changes} cambio${changes === 1 ? '' : 's'} sin guardar` : 'Sin cambios';
+    root.querySelector('[data-roster-save]').disabled = !changes;
+  }
+
+  search.addEventListener('input', refresh);
+  root.querySelectorAll('[data-roster-filter]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      filter = b.dataset.rosterFilter;
+      root.querySelectorAll('[data-roster-filter]').forEach((x) => x.classList.toggle('active', x === b));
+      refresh();
+    });
+  });
+  root.querySelectorAll('[data-roster-set]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      rows.forEach((r) => { if (!r.hidden) box(r).checked = b.dataset.rosterSet === '1'; });
+      refresh();
+    });
+  });
+  rows.forEach((r) => box(r).addEventListener('change', refresh));
+  window.addEventListener('beforeunload', function (e) {
+    if (!root.querySelector('[data-roster-save]').disabled && !root.dataset.submitting) { e.preventDefault(); e.returnValue = ''; }
+  });
+  root.addEventListener('submit', () => { root.dataset.submitting = '1'; });
+  refresh();
+})();
+</script>
+{% endblock %}

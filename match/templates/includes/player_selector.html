@@ -1,0 +1,53 @@
+{# Selector de jugadores para convocatorias. Recibe: players (con penalty_reasons), selected, submit_label, min_players #}
+{% load static %}
+<div class="z-selector" data-selector data-min="{{ min_players|default:0 }}">
+    <div class="z-selector-tools">
+        <div class="z-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" placeholder="Buscar jugador..." data-selector-search aria-label="Buscar jugador">
+        </div>
+        <div class="z-segmented" role="group" aria-label="Filtrar por posición">
+            <button type="button" class="btn btn-sm active" data-selector-filter="">Todos</button>
+            <button type="button" class="btn btn-sm" data-selector-filter="Derecha">Derecha</button>
+            <button type="button" class="btn btn-sm" data-selector-filter="Revés">Revés</button>
+            <button type="button" class="btn btn-sm" data-selector-filter="Mixto">Mixto</button>
+            <button type="button" class="btn btn-sm" data-selector-filter="selected">Elegidos</button>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-selector-all>Marcar visibles</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-selector-none>Quitar todos</button>
+        </div>
+    </div>
+
+    <div class="z-selector-grid">
+        {% for player in players %}
+        <label class="z-pick" data-name="{{ player.name }} {{ player.last_name }}" data-position="{{ player.position }}">
+            <input type="checkbox" name="players" value="{{ player.id }}" {% if player.id in selected %}checked{% endif %}>
+            <span class="z-pick-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+            <span class="z-pick-body">
+                <span class="z-pick-name">{{ player.name }} {{ player.last_name }}</span>
+                <span class="z-pick-meta">
+                    {{ player.position|default:"—" }}{% if not player.in_team %} · fuera del equipo{% endif %}
+                </span>
+            </span>
+            {% if player.penalty_reasons %}
+            <span class="z-pick-warn" title="{% for r in player.penalty_reasons %}{{ r }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
+                <i class="fa-solid fa-triangle-exclamation"></i> {{ player.penalty_reasons|length }}
+            </span>
+            {% endif %}
+        </label>
+        {% empty %}
+        <div class="z-empty" style="grid-column: 1 / -1;">No hay jugadores en el equipo.</div>
+        {% endfor %}
+        <p class="z-empty" data-selector-empty hidden style="grid-column: 1 / -1;">Ningún jugador coincide con la búsqueda.</p>
+    </div>
+
+    <div class="z-selector-bar">
+        <div>
+            <b data-selector-count>0</b> seleccionados
+            <small data-selector-hint></small>
+        </div>
+        <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+    </div>
+</div>
+<script src="{% static 'js/player-selector.js' %}" defer></script>

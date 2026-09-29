@@ -102,3 +102,126 @@ class MatchesAndCallsTests(TestCase):
         self.client.login(username="viewer", password="pass-12345")
         self.client.post(reverse("manage_roster"), {"in_team": []})
         self.assertEqual(Player.objects.filter(in_team=True).count(), 2)
+
+
+import io
+import json
+
+from django.core.exceptions import ValidationError
+from django.core.management import call_command
+from django.db import IntegrityError, transaction
+
+from match import scoring
+
+
+class PadelScoringTests(TestCase):
+    def ok(self, s1, s2, s3=(None, None)):
+        return scoring.validate_padel_result(s1, s2, s3)[1]
+
+    def bad(self, s1, s2, s3=(None, None)):
+        with self.assertRaises(ValidationError):
+            scoring.validate_padel_result(s1, s2, s3)
+
+    def test_valid_results(self):
+        self.assertEqual(self.ok((6, 3), (6, 4)), "local")
+        self.assertEqual(self.ok((7, 6), (7, 5)), "local")
+        self.assertEqual(self.ok((3, 6), (6, 7)), "visiting")
+        self.assertEqual(self.ok((6, 3), (4, 6), (6, 2)), "local")
+        self.assertEqual(self.ok((6, 3), (4, 6), (8, 10)), "visiting")   # super tie-break
+        self.assertEqual(self.ok((6, 3), (4, 6), (12, 10)), "local")
+        self.assertEqual(self.ok((6, 3), (6, 4), (0, 0)), "local")        # 0-0 = no jugado
+
+    def test_invalid_results(self):
+        self.bad((6, 5), (6, 4))          # 6-5 no existe
+        self.bad((7, 3), (6, 4))          # 7 solo con 5 o 6
+        self.bad((6, 6), (6, 4))
+        self.bad((None, None), (6, 4))    # falta el set 1
+        self.bad((6, 3), (6, 4), (6, 2))  # set 3 sin necesidad
+        self.bad((6, 3), (4, 6))          # falta el set 3
+        self.bad((6, 3), (4, 6), (10, 9)) # super tie-break sin 2 de diferencia
+        self.bad((6, 3), (4, 6), (13, 10))
+        self.bad((6, 3), (4, 6), (8, 7))
+
+
+class LineupTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.players = [Player.objects.create(club=self.club, name=f"P{i}", last_name="X", snp_score=i) for i in range(10)]
+        self.match = Match.objects.create(club=self.club, local=rival, visiting=self.club.own_team,
+                                          start_date=datetime.date(2025, 10, 1))
+        self.call = Call.objects.create(match=self.match, draft_mode=False)
+        self.call.players.set(self.players)
+        self.client.login(username="admin", password="pass-12345")
+
+    def lineup(self, n=5, games=None):
+        data = [{"player1Id": self.players[2 * i].id, "player2Id": self.players[2 * i + 1].id} for i in range(n)]
+        for item, g in zip(data, games or []):
+            item["gameId"] = g.id
+        return json.dumps(data)
+
+    def test_incomplete_lineup_saves_nothing(self):
+        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": self.lineup(3)})
+        self.assertEqual(self.match.games.count(), 0)
+
+    def test_creating_twice_does_not_duplicate(self):
+        url = reverse("create_game", args=[self.match.id])
+        self.client.post(url, {"ordered_games": self.lineup()})
+        response = self.client.post(url, {"ordered_games": self.lineup()})
+        self.assertRedirects(response, reverse("edit_games_match", args=[self.match.id]), fetch_redirect_response=False)
+        self.assertEqual(sorted(self.match.games.values_list("n_game", flat=True)), [1, 2, 3, 4, 5])
+        # El club juega como visitante: las parejas van en ese lado y el orden fija los puntos
+        g1 = self.match.games.get(n_game=1)
+        self.assertIsNone(g1.player_1_local)
+        self.assertEqual([g.score for g in self.match.games.order_by("n_game")], [3, 3, 2, 2, 2])
+
+    def test_repeated_player_is_rejected(self):
+        data = json.loads(self.lineup())
+        data[1]["player1Id"] = data[0]["player1Id"]
+        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": json.dumps(data)})
+        self.assertEqual(self.match.games.count(), 0)
+
+    def test_edit_reorders_without_breaking_uniqueness(self):
+        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": self.lineup()})
+        games = list(self.match.games.order_by("n_game"))
+        data = json.loads(self.lineup(games=games))
+        data.reverse()  # el último pasa a ser el partido 1
+        self.client.post(reverse("edit_games_match", args=[self.match.id]), {"ordered_games": json.dumps(data)})
+        games[4].refresh_from_db()
+        self.assertEqual((games[4].n_game, games[4].score), (1, 3))
+        self.assertEqual(self.match.games.count(), 5)
+
+    def test_database_rejects_duplicate_game_numbers(self):
+        Game.objects.create(match=self.match, n_game=1)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Game.objects.create(match=self.match, n_game=1)
+
+    def test_result_views_validate_and_block_second_result(self):
+        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": self.lineup()})
+        game = self.match.games.get(n_game=1)
+        url = reverse("create_result", args=[game.id])
+        bad = {"set1_local": "6", "set1_visiting": "5", "set2_local": "6", "set2_visiting": "4"}
+        self.assertIn("errors", self.client.post(url, bad).context)
+        good = {"set1_local": "3", "set1_visiting": "6", "set2_local": "6", "set2_visiting": "4",
+                "set3_local": "8", "set3_visiting": "10"}
+        self.client.post(url, good)
+        game.refresh_from_db()
+        self.assertEqual(game.winner, "Visitante")
+        self.assertRedirects(self.client.get(url), reverse("edit_result", args=[game.id]), fetch_redirect_response=False)
+        self.assertEqual(Result.objects.filter(game=game).count(), 1)
+
+
+class FixDuplicateGamesCommandTests(TestCase):
+    def test_dry_run_without_duplicates_changes_nothing(self):
+        # Con la restricción ya migrada no se pueden crear duplicados; el caso con duplicados
+        # reales se ha probado sobre una base de datos con el esquema anterior.
+        user = User.objects.create_user("a", password="x")
+        club = create_club("Club A", "Sevilla", user)
+        rival = Team.objects.create(club=club, name="Rival", location="X", in_group=True)
+        m = Match.objects.create(club=club, local=club.own_team, visiting=rival, start_date=datetime.date(2025, 10, 1))
+        g = Game.objects.create(match=m, n_game=1)
+        out = io.StringIO()
+        call_command("fix_duplicate_games", "--dry-run", stdout=out)
+        self.assertIn("0 partidos", out.getvalue())
+        self.assertTrue(Game.objects.filter(pk=g.pk).exists())

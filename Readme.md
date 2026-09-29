@@ -37,3 +37,16 @@ python manage.py migrate
 # y da de alta a los usuarios actuales como administradores.
 python manage.py assign_default_club --name "LOS GLADIADORES"
 ```
+
+### Partidos duplicados y restricciones de integridad
+
+Desde esta versión la base de datos impide que un enfrentamiento tenga dos
+partidos con el mismo número o que un partido tenga dos resultados. Si tu base
+de datos ya tiene duplicados, límpialos **antes** de migrar:
+
+```bash
+python manage.py fix_duplicate_games --dry-run   # muestra qué se borraría
+python manage.py fix_duplicate_games             # conserva el que tiene resultado o el más reciente
+python manage.py makemigrations match
+python manage.py migrate
+```

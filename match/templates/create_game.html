@@ -1,140 +1,16 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load custom_filters %}
 
 {% block content %}
-<script>
-    function updatePlayerOptions() {
-        const playerSelects = document.querySelectorAll('select[id^="player_"]');
-        const selectedPlayers = [];
-
-        playerSelects.forEach(select => {
-            if (select.value) {
-                selectedPlayers.push(select.value);
-            }
-        });
-
-        playerSelects.forEach(select => {
-            const options = select.querySelectorAll('option');
-            options.forEach(option => {
-                if (selectedPlayers.includes(option.value) && option.value !== select.value) {
-                    option.style.display = 'none';
-                } else {
-                    option.style.display = 'block';
-                }
-            });
-        });
-
-        updateGameOrder();
-    }
-
-    function updateGameOrder() {
-        const games = [];
-        for (let i = 1; i <= 5; i++) {
-            const player1Select = document.getElementById(`player_1_${i}`);
-            const player2Select = document.getElementById(`player_2_${i}`);
-
-            if (player1Select && player2Select && player1Select.value && player2Select.value) {
-                const player1Option = player1Select.selectedOptions[0];
-                const player2Option = player2Select.selectedOptions[0];
-
-                const player1Points = parseInt(player1Option.dataset.points, 10) || 0;
-                const player2Points = parseInt(player2Option.dataset.points, 10) || 0;
-                const totalPoints = player1Points + player2Points;
-
-                const player1Name = player1Option.textContent;
-                const player2Name = player2Option.textContent;
-
-                games.push({ gameNumber: i,
-                     totalPoints: totalPoints,
-                      player1Id: player1Select.value,
-                       player2Id: player2Select.value,
-                       player1Name: player1Name,
-                       player2Name: player2Name });
-            }
-        }
-
-        games.sort((a, b) => b.totalPoints - a.totalPoints);
-
-        const orderList = document.getElementById("pair-order-list");
-        orderList.innerHTML = "";
-        const orderedGames = [];
-        games.forEach(game => {
-            const listItem = document.createElement("li");
-            listItem.textContent = `Partido: ${game.player1Name} y ${game.player2Name} - ${game.totalPoints} puntos`;
-            orderList.appendChild(listItem);
-
-            orderedGames.push({
-                player1Id: game.player1Id,
-                player2Id: game.player2Id
-            });
-        });
-
-        // Establece el valor en el campo oculto
-        document.getElementById('ordered_games').value = JSON.stringify(orderedGames);
-    }
-
-    window.onload = updatePlayerOptions;
-</script>
-
-<div class="table-container">
-    <h1>Crear partidos</h1>
-    <p class="text-muted">Elige las cinco parejas. El orden de juego se calcula con la suma de puntos SNP.</p>
-    {% if messages %}
-    <div class="alert-message">
-        {% for message in messages %}
-        <p>{{ message }}</p>
-        {% endfor %}
-    </div>
-    {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <div class="z-games-grid">
-            {% for i in "12345" %}
-                <fieldset>
-                    <legend>Partido {{ i }}</legend>
-                    <div>
-                        <label for="player_1_{{ i }}">Jugador 1:</label>
-                        <input type="hidden" id="n_game_{{ i }}" name="n_game_{{ i }}" value="{{ i }}">
-                        <select id="player_1_{{ i }}" name="player_1_{{ i }}" onchange="updatePlayerOptions()">
-                            <option value="">Seleccionar jugador 1</option>
-                            {% for player in call.players.all %}
-                            <option value="{{ player.id }}" data-points="{{ player.snp_score }}"
-                                {% with key='player_1_'|add:i %}
-                                {% if post_data|get_item:key|stringformat:"s" == player.id|stringformat:"s" %}selected{% endif %}
-                                {% endwith %}>
-                                {{ player.name }} {{ player.last_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label for="player_2_{{ i }}">Jugador 2:</label>
-                        <select id="player_2_{{ i }}" name="player_2_{{ i }}" onchange="updatePlayerOptions()">
-                            <option value="">Seleccionar jugador 2</option>
-                            {% for player in call.players.all %}
-                            <option value="{{ player.id }}" data-points="{{ player.snp_score }}"
-                                {% with key='player_2_'|add:i %}
-                                {% if post_data|get_item:key == player.id|stringformat:"s" %}selected{% endif %}
-                                {% endwith %}>
-                                {{ player.name }} {{ player.last_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </fieldset>
-            {% endfor %}
-        </div>
-        <input type="hidden" id="ordered_games" name="ordered_games">
-        <button type="submit" class="btn btn-primary mt-3">Guardar partidos</button>
-    </form>
-
-    <div class="pair-order-container">
-        <h2>Orden de juego según puntos</h2>
-        <ul id="pair-order-list">
-            <!-- Se llenará dinámicamente con el orden de parejas según puntos -->
-        </ul>
+<div class="z-page-head">
+    <div>
+        <a href="{% url 'call_for_match' match.id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ match.local }} vs {{ match.visiting }}</a>
+        <h1>Crear partidos</h1>
     </div>
 </div>
 
+{% if messages %}
+<div>{% for message in messages %}<p class="alert warning">{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+{% include 'includes/lineup_form.html' with slots="12345"|make_list submit_label="Guardar partidos" %}
 {% endblock %}

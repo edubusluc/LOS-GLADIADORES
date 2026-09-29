@@ -3,6 +3,7 @@ from core.decorators import club_required, club_admin_required
 from django.contrib import messages
 from .forms import MatchForm
 from .models import Match, Game, Result
+from . import lineup
 from players.models import Player, current_season
 from call.models import Call
 from team.models import Team
@@ -306,48 +307,42 @@ def existing_call_view(request, match_id):
     return render(request, 'existing_call.html', {'match': match})
 
 #VISTA PARA MOSTRAR LA CONVOCATORIA
+POSITION_GROUPS = (("Derecha", "Derecha"), ("Revés", "Revés"), ("Mixto", "Mixtos"))
+
+
 @club_required
-def call_for_match(request,match_id):
+def call_for_match(request, match_id):
     match = club_match(request, match_id)
-    try:
-        call_for_match = Call.objects.get(match=match)
-    except Call.DoesNotExist:
-        return render(request, "call_for_match.html", {
-            "match": match,
-            "call_for_match": None,  # Indica que no hay convocatoria
-            "match_id": match_id,
-            "game_for_match": Game.objects.filter(match_id=match_id),
-            "backhand_players": [],
-            "forehand_players": [],
-            "mixed_players": [],
-            "no_call": True  # Indicador que puedes usar en tu plantilla
-        })
+    call = Call.objects.filter(match=match).first()
+    games = list(
+        Game.objects.filter(match=match).order_by("n_game")
+        .select_related("player_1_local", "player_2_local", "player_1_visiting", "player_2_visiting")
+        .prefetch_related("results")
+    )
+    for g in games:
+        g.result = next(iter(g.results.all()), None)  # usa el prefetch: sin consulta extra por partido
 
-    game_for_match = Game.objects.filter(match_id=match_id).order_by("n_game")
+    groups = []
+    if call:
+        players = list(call.players.order_by("name", "last_name"))
+        playing = {pid for g in games for pid in (g.player_1_local_id, g.player_2_local_id,
+                                                  g.player_1_visiting_id, g.player_2_visiting_id) if pid}
+        for p in players:
+            p.is_playing = p.id in playing
+        known = {key for key, _ in POSITION_GROUPS}
+        for key, label in POSITION_GROUPS:
+            members = [p for p in players if p.position == key or (key == "Mixto" and p.position not in known)]
+            groups.append({"label": label, "players": members})
 
-    backhand_players = []
-    forehand_players = []
-    mixed_players = []
-    players = call_for_match.players.all() 
-    for p in players:
-        if p.position == "Revés":
-            backhand_players.append(p)
-        elif p.position == "Derecha":
-            forehand_players.append(p)
-        else:
-            mixed_players.append(p)    
-   
-    context = {
-        'call_for_match': call_for_match,
-        "match_id":match_id,
-        "game_for_match":game_for_match,
-        "match":match,
-        "backhand_players": backhand_players,
-        "forehand_players": forehand_players,
-        "mixed_players": mixed_players,
-    }
-
-    return render(request, "call_for_match.html",context)
+    return render(request, "call_for_match.html", {
+        "call_for_match": call,
+        "match_id": match.id,
+        "game_for_match": games,
+        "games_count": len(games),
+        "match": match,
+        "groups": groups,
+        "players_count": sum(len(g["players"]) for g in groups),
+    })
 
 
 def validate_game_for_match(call):
@@ -372,168 +367,75 @@ def create_game_for_match(request, match_id):
         messages.error(request, error_message)
         return redirect('call_for_match', match_id=match_id)
 
+    if match.games.exists():
+        messages.info(request, "Los partidos ya están creados: puedes cambiar las parejas desde aquí.")
+        return redirect('edit_games_match', match_id=match.id)
+
     if request.method == "POST":
-        ordered_games_data = json.loads(request.POST.get("ordered_games", "[]"))
-
-        for idx, game in enumerate(ordered_games_data, start=1):
-            try:
-                # Solo jugadores de la convocatoria (y por tanto del club)
-                player_1 = call.players.get(id=game['player1Id'])
-                player_2 = call.players.get(id=game['player2Id'])
-            except (Player.DoesNotExist, KeyError, ValueError, TypeError):
-                messages.error(request, "Uno de los jugadores no existe.")
-                return redirect('call_for_match', match_id=match_id)
-
-            if match.own_is_local:
-                new_game = Game(
-                    match=match,
-                    n_game=idx,  # Asigna el número de juego según el índice
-                    player_1_local=player_1,
-                    player_2_local=player_2,
-                    player_1_visiting=None,  # Si es local, puedes dejarlo en None
-                    player_2_visiting=None,  # Si es local, puedes dejarlo en None
-                    score=game_points(idx),
-                    winner=None,  # Asigna el ganador si es necesario
-                    draft_mode=True  # Cambia según la lógica de tu aplicación
-                )
-            elif match.own_is_visiting:
-                new_game = Game(
-                    match=match,
-                    n_game=idx,  # Asigna el número de juego según el índice
-                    player_1_local=None,
-                    player_2_local=None,
-                    player_1_visiting=player_1,
-                    player_2_visiting=player_2,
-                    score=game_points(idx),
-                    winner=None,  # Asigna el ganador si es necesario
-                    draft_mode=True  # Cambia según la lógica de tu aplicación
-                )
-            else:
-                messages.error(request, f"El partido no es de {request.club.own_team}.")
-                return redirect('create_game', match_id=match_id)
-
-            try:
-                new_game.save()
-            except Exception as e:
-                messages.error(request, f"Error al guardar el juego: {str(e)}")
-                return redirect('create_game', match_id=match_id)
-
+        try:
+            lineup.create_games(match, lineup.parse_lineup(request.POST.get("ordered_games"), call))
+        except lineup.LineupError as e:
+            messages.error(request, str(e))
+            return redirect('create_game', match_id=match.id)
+        messages.success(request, "Partidos creados.")
         return redirect('call_for_match', match_id=match.id)
 
-    return render(request, "create_game.html", {"call": call})
+    return render(request, "create_game.html", {
+        "call": call,
+        "match": match,
+        "players": call.players.order_by('name', 'last_name'),
+        "games_per_match": lineup.GAMES_PER_MATCH,
+    })
 
-    
-def game_points(index):
-    """Puntos en juego según el orden del partido: los dos primeros valen 3, el resto 2."""
-    if index == 1 or index == 2: return 3
-    else: return 2
+
+SET_FIELDS = ('set1_local', 'set1_visiting', 'set2_local', 'set2_visiting', 'set3_local', 'set3_visiting')
+
+
+def _save_result(request, game, result, template):
+    """Valida y guarda el resultado de un partido; si hay errores, vuelve al formulario."""
+    values = {f: request.POST.get(f, '').strip() for f in SET_FIELDS}
+    for field, value in values.items():
+        setattr(result, field, value)
+    try:
+        result.full_clean(exclude=['game', 'result'] + list(SET_FIELDS), validate_unique=False)
+        result.result = result.determine_winner()
+        result.save()
+    except ValidationError as e:
+        return render(request, template, {"game": game, "result": result, "values": values, "errors": e.messages})
+
+    game.winner = "Local" if result.result == "Victoria Local" else "Visitante"
+    game.save(update_fields=['winner'])
+    return redirect('call_for_match', match_id=game.match_id)
+
 
 @club_admin_required
 def create_result(request, game_id):
-    game = get_object_or_404(Game, id=game_id, match__club=request.club)
+    game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), id=game_id, match__club=request.club)
+    if not game.match.draft_mode:
+        messages.error(request, "No se pueden añadir resultados a un partido ya confirmado")
+        return redirect('call_for_match', match_id=game.match_id)
+    if game.results.exists():
+        return redirect('edit_result', game_id=game.id)
 
     if request.method == "POST":
-        set1_local = request.POST.get('set1_local')
-        set1_visiting = request.POST.get('set1_visiting')
-        set2_local = request.POST.get('set2_local')
-        set2_visiting = request.POST.get('set2_visiting')
-        set3_local = request.POST.get('set3_local')
-        set3_visiting = request.POST.get('set3_visiting')
-
-        result = Result(
-            game=game,
-            set1_local=set1_local,
-            set1_visiting=set1_visiting,
-            set2_local=set2_local,
-            set2_visiting=set2_visiting,
-            set3_local=set3_local,
-            set3_visiting=set3_visiting,
-        )
-
-        try:
-            result.result = result.determine_winner()
-            result.save()
-
-            if result.determine_winner() == "Victoria Local":
-                game.winner = "Local"
-            else:
-                game.winner = "Visitante"
-            game.save()
-            return redirect('call_for_match', match_id=game.match.id)
-
-        except ValidationError as e:
-            # Pasa los valores de los campos al contexto para que se mantengan
-            return render(request, "create_result.html", {
-                "game": game,
-                "set1_local": set1_local,
-                "set1_visiting": set1_visiting,
-                "set2_local": set2_local,
-                "set2_visiting": set2_visiting,
-                "set3_local": set3_local,
-                "set3_visiting": set3_visiting,
-                "error": str(e), 
-            })
-
-    return render(request, "create_result.html", {"game": game})
-
+        return _save_result(request, game, Result(game=game), "create_result.html")
+    return render(request, "create_result.html", {"game": game, "values": {}})
 
 
 @club_admin_required
 def edit_result(request, game_id):
-    game = get_object_or_404(Game, id=game_id, match__club=request.club)
+    game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), id=game_id, match__club=request.club)
     match = game.match
-    result = get_object_or_404(Result, game=game)  # Obtener el resultado del juego
+    result = get_object_or_404(Result, game=game)
 
     if not match.draft_mode:
         messages.error(request, "No se pueden editar los resultados de un partido ya confirmado")
         return redirect('call_for_match', match_id=match.id)
 
     if request.method == "POST":
-        set1_local = request.POST.get('set1_local')
-        set1_visiting = request.POST.get('set1_visiting')
-        set2_local = request.POST.get('set2_local')
-        set2_visiting = request.POST.get('set2_visiting')
-        set3_local = request.POST.get('set3_local')
-        set3_visiting = request.POST.get('set3_visiting')
-
-        # Asignar los nuevos valores a los sets
-        result.set1_local = set1_local
-        result.set1_visiting = set1_visiting
-        result.set2_local = set2_local
-        result.set2_visiting = set2_visiting
-        result.set3_local = set3_local
-        result.set3_visiting = set3_visiting
-
-        try:
-            # Determinar el ganador basado en los sets actualizados
-            result.result = result.determine_winner()
-            result.save()
-
-            # Actualizar el ganador del partido en base al resultado
-            if result.result == "Victoria Local":
-                game.winner = "Local"
-            else:
-                game.winner = "Visitante"
-            game.save()
-
-            # Redirigir al detalle del partido después de guardar
-            return redirect('call_for_match', match_id=game.match.id)
-
-        except ValidationError as e:
-            # Si hay un error de validación, devolver el formulario con el mensaje de error
-            return render(request, "edit_result.html", {
-                "game": game,
-                "result": result,
-                "set1_local": set1_local,
-                "set1_visiting": set1_visiting,
-                "set2_local": set2_local,
-                "set2_visiting": set2_visiting,
-                "set3_local": set3_local,
-                "set3_visiting": set3_visiting,
-                "error": str(e),
-            })
-
-    return render(request, "edit_result.html", {"result": result, "game": game})
+        return _save_result(request, game, result, "edit_result.html")
+    values = {f: '' if getattr(result, f) is None else getattr(result, f) for f in SET_FIELDS}
+    return render(request, "edit_result.html", {"game": game, "result": result, "values": values})
 
 
 
@@ -623,98 +525,37 @@ def edit_game_match(request, match_id):
     if not match.draft_mode:
         messages.error(request, "No se pueden editar los partidos que se encuentran ya confirmados")
         return redirect('call_for_match', match_id=match_id)
-    
-    games = Game.objects.filter(match_id=match_id).order_by('n_game')
 
-    def get_player(game_data, player_key):
-        """Obtiene un jugador dado un diccionario de datos de juego y la clave del jugador."""
-        try:
-            return Player.objects.get(id=game_data[player_key], club=request.club)
-        except (Player.DoesNotExist, KeyError, ValueError, TypeError):
-            return None
-
-    def update_game(game, player_1, player_2, idx):
-        """Actualiza un juego con los jugadores y el número de juego."""
-        if match.own_is_local:
-            game.player_1_local = player_1
-            game.player_2_local = player_2
-            game.player_1_visiting = None
-            game.player_2_visiting = None
-        elif match.own_is_visiting:
-            game.player_1_visiting = player_1
-            game.player_2_visiting = player_2
-            game.player_1_local = None
-            game.player_2_local = None
-
-        game.n_game = idx
-        game.draft_mode = True
-
-    def is_player_repeated(player_1, player_2, used_players):
-        """Verifica si los jugadores ya han sido asignados."""
-        message=""
-        flag = False
-        if player_1.id in used_players:
-                message = f"El jugador {player_1} se encuentra repetido."
-                flag = True
-        if player_2.id in used_players:
-                message = f"El jugador {player_1} se encuentra repetido."
-                flag = True
-
-        return flag, message
+    games = list(Game.objects.filter(match=match).order_by('n_game'))
+    if not games:
+        return redirect('create_game', match_id=match.id)
+    call = club_call(request, match_id=match_id)
 
     if request.method == "POST":
-        ordered_games_data = json.loads(request.POST.get("ordered_games", "[]"))
-        used_players = set()
-
-        for idx, game_data in enumerate(ordered_games_data, start=1):
-            game = Game.objects.filter(id=game_data.get('gameId'), match=match).first()
-            if not game:
-                messages.error(request, "Uno de los juegos no existe.")
-                return redirect('edit_game_match', match_id=match_id)
-
-            player_1 = get_player(game_data, 'player1Id')
-            player_2 = get_player(game_data, 'player2Id')
-
-            if not player_1 or not player_2:
-                messages.error(request, "Uno de los jugadores no existe.")
-                return redirect('edit_game_match', match_id=match_id)
-
-            if player_1 == player_2:
-                messages.error(request, f"Existe un jugador repetido en el partido: {game.n_game}")
-                return redirect(request.path)
-            
-            flag, message = is_player_repeated(player_1, player_2, used_players)
-            if flag:
-                messages.error(request, f"{message}")
-                return redirect(request.path)
-
-            used_players.add(player_1.id)
-            used_players.add(player_2.id)
-
-            update_game(game, player_1, player_2, idx)
-
-            try:
-                game.save()
-            except Exception as e:
-                messages.error(request, f"Error al actualizar el juego: {str(e)}")
-                return redirect('edit_game_match', match_id=match_id)
-
-        messages.success(request, "Juegos actualizados exitosamente.")
+        try:
+            lineup.update_games(match, lineup.parse_lineup(request.POST.get("ordered_games"), call, match_games=games))
+        except lineup.LineupError as e:
+            messages.error(request, str(e))
+            return redirect('edit_games_match', match_id=match.id)
+        messages.success(request, "Parejas actualizadas.")
         return redirect('call_for_match', match_id=match.id)
 
     games_data = [
         {
             'gameId': game.id,
             'n_game': game.n_game,
-            'player1Id': game.player_1_local.id if game.player_1_local else game.player_1_visiting.id,
-            'player2Id': game.player_2_local.id if game.player_2_local else game.player_2_visiting.id,
+            'player1Id': game.player_1_local_id or game.player_1_visiting_id,
+            'player2Id': game.player_2_local_id or game.player_2_visiting_id,
         }
         for game in games
     ]
 
-    call = club_call(request, match_id=match_id)
-
-    return render(request, "edit_game_match.html", {"games": games_data, "match": match, "call": call})
+    return render(request, "edit_game_match.html", {
+        "games": games_data,
+        "match": match,
+        "call": call,
+        "players": call.players.order_by('name', 'last_name'),
+    })
 
 
 

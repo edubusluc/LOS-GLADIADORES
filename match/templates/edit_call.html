@@ -2,15 +2,7 @@
 {% load static %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Convocatoria</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
+    <div class="container px-0">
         <div class="card shadow-lg">
             <div class="card-body">
                 <h1 class="card-title text-center">Editar Convocatoria</h1>
@@ -26,7 +18,7 @@
                     
                     <div class="mb-3">
                         <label>Selecciona Jugadores:</label>
-                        <div class="row">
+                        <div class="z-check-grid">
                             {% for player in all_players %}
                                 <div class="col-md-4">
                                     <div class="form-check">
@@ -41,11 +33,10 @@
                         </div>
                     </div>
                     <div class="text-center">
-                        <button type="submit" class="btn btn-primary" style="background-color: #083C64;" name="update_call">Actualizar Convocatoria</button>
+                        <button type="submit" class="btn btn-primary" name="update_call">Actualizar Convocatoria</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</body>
 {% endblock %}

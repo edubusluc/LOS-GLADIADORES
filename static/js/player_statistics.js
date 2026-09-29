@@ -3,17 +3,19 @@
   const seasons = read('data-seasons');
   const affinity = read('data-affinity');
 
+  // Paleta Zyra (tema oscuro)
   const C = {
-    navy: '#083C64',
-    gold: '#E0AE55',
-    win: '#1F8A70',
-    loss: '#C8434F',
-    muted: '#5F7286',
-    line: '#DCE3EA',
+    navy: '#B4F100',
+    gold: '#B4F100',
+    win: '#B4F100',
+    loss: '#FF5C63',
+    muted: '#A3A3A3',
+    line: 'rgba(255, 255, 255, 0.08)',
   };
 
-  Chart.defaults.font.family = "'Barlow', system-ui, sans-serif";
+  Chart.defaults.font.family = "'Archivo', system-ui, sans-serif";
   Chart.defaults.color = C.muted;
+  Chart.defaults.borderColor = C.line;
 
   const base = {
     responsive: true,
@@ -49,9 +51,9 @@
         label: '% victorias',
         data: seasons.pct,
         borderColor: C.navy,
-        backgroundColor: 'rgba(8, 60, 100, 0.08)',
+        backgroundColor: 'rgba(180, 241, 0, 0.15)',
         pointBackgroundColor: C.gold,
-        pointBorderColor: C.navy,
+        pointBorderColor: '#0B0B0B',
         pointRadius: 5,
         tension: 0.3,
         fill: true,

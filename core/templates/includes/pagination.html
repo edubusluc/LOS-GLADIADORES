@@ -1,0 +1,16 @@
+{# Uso: {% include 'includes/pagination.html' with page=objetos extra='&search=...' %} #}
+{% if page.paginator.num_pages > 1 %}
+<nav aria-label="Paginación">
+  <ul class="pagination justify-content-center">
+    {% if page.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page=1{{ extra }}" aria-label="Primera">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="?page={{ page.previous_page_number }}{{ extra }}">Anterior</a></li>
+    {% endif %}
+    <li class="page-item active"><span class="page-link">{{ page.number }} de {{ page.paginator.num_pages }}</span></li>
+    {% if page.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}{{ extra }}">Siguiente</a></li>
+    <li class="page-item"><a class="page-link" href="?page={{ page.paginator.num_pages }}{{ extra }}" aria-label="Última">&raquo;</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

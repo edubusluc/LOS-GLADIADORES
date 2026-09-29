@@ -2,577 +2,185 @@
 {% load static %}
 
 {% block content %}
-<style>
-    /* Estilo general */
-    .table-container {
-        padding: 20px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
+<div class="loader"></div>
 
-    .table-container h1 {
-        font-size: 2rem;
-        color: #343a40;
-        margin: 0;
-    }
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{{ current_club.name }}</span>
+        <h1>Jugadores</h1>
+    </div>
+    {% if is_club_admin %}
+    <div class="z-actions">
+        <a href="{% url 'force_update_score' %}" class="btn btn-secondary" onclick="return confirmAndShowLoading();"><i class="fa-solid fa-rotate me-1"></i> Actualizar rendimiento</a>
+        <a href="{% url 'create_player' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Nuevo jugador</a>
+    </div>
+    {% endif %}
+</div>
 
-    .btn-primary {
-        background-color: #007bff;
-        border-color: #007bff;
-        transition: all 0.3s ease-in-out;
-    }
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
 
-    .btn-primary:hover {
-        background-color: #0056b3;
-        border-color: #0056b3;
-    }
-
-    /* Barra de controles (buscador + orden + vista) */
-    .controls-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-        background: #fff;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-    }
-
-    .controls-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    #player-search {
-        min-width: 220px;
-        border-radius: 20px;
-        padding: 6px 16px;
-        border: 1px solid #ced4da;
-    }
-
-    #player-search:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
-    }
-
-    .view-toggle .btn.active {
-        background-color: #007bff;
-        color: #fff;
-        border-color: #007bff;
-    }
-
-    .results-count {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-
-    /* Estilo de la tarjeta del jugador */
-    .card-player {
-        border: none;
-        border-radius: 10px;
-        overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .card-player:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .card-player-body {
-        background-color: #ffffff;
-        padding: 20px;
-        display: flex;
-        justify-content: space-between;
-        height: 100%;
-    }
-
-    .player-image {
-        flex-shrink: 0;
-        margin-right: 20px;
-    }
-
-    .card-player-title {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-        padding-top: 0;
-        color: #007bff;
-    }
-
-    .card-player-text {
-        margin-bottom: 5px;
-        color: #6c757d;
-    }
-
-    .btn-warning {
-        color: #fff;
-        background-color: #ffc107;
-        border-color: #ffc107;
-        margin-right: 10px;
-    }
-
-    .btn-danger {
-        color: #fff;
-        background-color: #dc3545;
-        border-color: #dc3545;
-    }
-
-    .btn-warning:hover {
-        background-color: #e0a800;
-        border-color: #d39e00;
-    }
-
-    .btn-danger:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
-    }
-
-    .img-fluid {
-        border-radius: 50%;
-        border: 3px solid #dee2e6;
-        width: 150px;
-        height: 150px;
-        object-fit: cover;
-    }
-
-    .performance-score {
-        border-radius: 5px;
-        padding: 10px;
-        color: #fff;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 10px;
-    }
-
-    .score-red { background-color: #dc3545; }
-    .score-ligth-red { background-color: #ff6978; }
-    .score-yellow { background-color: #ffc107; }
-    .score-light-green { background-color: #28a745; }
-    .score-dark-green { background-color: #155724; }
-
-    /* Badge equivalentes para vista tabla */
-    .badge-score {
-        padding: 4px 10px;
-        border-radius: 12px;
-        color: #fff;
-        font-weight: bold;
-        font-size: 0.8rem;
-        white-space: nowrap;
-    }
-
-    .pagination .page-item .page-link {
-        color: #007bff;
-        border-radius: 5px;
-        margin: 0 5px;
-        transition: background-color 0.3s, color 0.3s;
-    }
-
-    .pagination .page-item .page-link:hover {
-        background-color: #007bff;
-        color: #fff;
-    }
-
-    .pagination .page-item.active .page-link {
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        color: #6c757d;
-    }
-
-    .btn-group .btn {
-        margin: 0 5px;
-        transition: background-color 0.3s, color 0.3s;
-    }
-
-    .btn-group .btn:hover {
-        background-color: #007bff;
-        color: #fff;
-    }
-
-    .loader {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 9999;
-        background: rgba(249, 249, 249, 0.8) url("/static/tennis-ball-bouncing.gif");
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        display: none;
-    }
-
-    .btn-group .btn.active {
-        background-color: #007bff;
-        color: #fff;
-        border: 1px solid #007bff;
-    }
-
-    /* Vista tabla */
-    #table-view {
-        display: none;
-        background: #fff;
-        border-radius: 8px;
-        overflow-x: auto;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-
-    #table-view table {
-        margin-bottom: 0;
-    }
-
-    #table-view thead {
-        background-color: #343a40;
-        color: #fff;
-    }
-
-    #table-view tbody tr {
-        cursor: pointer;
-    }
-
-    #table-view tbody tr:hover {
-        background-color: #f1f7ff;
-    }
-
-    #table-view td, #table-view th {
-        vertical-align: middle;
-    }
-
-    .table-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .no-results {
-        text-align: center;
-        padding: 30px;
-        color: #6c757d;
-    }
-
-    @media (max-width: 768px) {
-        .card-player-body {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .player-image {
-            margin-bottom: 15px;
-        }
-
-        .controls-bar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        #player-search {
-            width: 100%;
-        }
-    }
-</style>
-<div class="loader" style="display: none;"> </div>
-<div class="table-container">
-    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <h1 class="mb-0">Listado de Jugadores</h1>
-        {% if is_club_admin %}
-        <div class="d-flex align-items-center gap-2">
-            <a href="{% url 'create_player' %}" class="btn btn-primary">Nuevo Jugador</a>
-            <a href="{% url 'force_update_score' %}" class="btn btn-danger" onclick="return confirmAndShowLoading();">
-                Forzar actualización de rendimiento</a>
-        </div>
+<div class="z-toolbar">
+    <div class="z-toolbar-group">
+        <form method="get" class="z-search" id="search-form" role="search">
+            <input type="hidden" name="order_by" value="{{ order_by }}">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" name="search" id="player-search" placeholder="Buscar jugador..." value="{{ search }}" aria-label="Buscar jugador">
+        </form>
+        {% if search %}
+        <span class="text-muted small">{{ players.paginator.count }} resultado{{ players.paginator.count|pluralize }}</span>
+        <a href="?order_by={{ order_by }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
         {% endif %}
     </div>
 
-    {% if messages %}
-        <div class="alert-message">
-            {% for message in messages %}
-                    {{ message }}
-            {% endfor %}
+    <div class="z-toolbar-group">
+        <div class="z-segmented" role="group" aria-label="Ordenar por">
+            <a href="?order_by=name&search={{ search }}" class="btn btn-sm {% if order_by == 'name' %}active{% endif %}">Nombre</a>
+            <a href="?order_by=-score&search={{ search }}" class="btn btn-sm {% if order_by == '-score' %}active{% endif %}">Rendimiento</a>
+            <a href="?order_by=-snp_score&search={{ search }}" class="btn btn-sm {% if order_by == '-snp_score' %}active{% endif %}">SNP</a>
         </div>
-    {% endif %}
-
-    <!-- Barra de controles: búsqueda + orden + vista -->
-    <div class="controls-bar">
-        <div class="controls-group">
-            <form method="get" class="d-flex align-items-center gap-2" id="search-form">
-                <input type="hidden" name="order_by" value="{{ order_by }}">
-                <input type="text" name="search" id="player-search" class="form-control"
-                       placeholder="🔍 Buscar jugador por nombre..." value="{{ search }}">
-                {% if search %}
-                <a href="?order_by={{ order_by }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
-                {% endif %}
-            </form>
-            <span class="results-count">
-                {% if search %}{{ players.paginator.count }} resultado{{ players.paginator.count|pluralize }}{% endif %}
-            </span>
-        </div>
-
-        <div class="controls-group">
-            <span class="me-1 text-muted">Ordenar por:</span>
-            <div class="btn-group" role="group" aria-label="Filtrar por">
-                <a href="?order_by=name&search={{ search }}" class="btn btn-outline-primary btn-sm {% if order_by == 'name' %}active{% endif %}">Nombre</a>
-                <a href="?order_by=-score&search={{ search }}" class="btn btn-outline-primary btn-sm {% if order_by == '-score' %}active{% endif %}">Rendimiento</a>
-                <a href="?order_by=-snp_score&search={{ search }}" class="btn btn-outline-primary btn-sm {% if order_by == '-snp_score' %}active{% endif %}">Puntuación SNP</a>
-            </div>
-        </div>
-
-        <div class="controls-group view-toggle" role="group" aria-label="Cambiar vista">
-            <span class="me-1 text-muted">Vista:</span>
-            <button type="button" class="btn btn-outline-secondary btn-sm active" id="btn-view-cards">
-                <i class="fas fa-th-large"></i> Tarjetas
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-view-table">
-                <i class="fas fa-table"></i> Tabla
-            </button>
+        <div class="z-segmented" role="group" aria-label="Cambiar vista">
+            <button type="button" class="btn btn-sm active" id="btn-view-cards" aria-label="Vista de tarjetas"><i class="fa-solid fa-grip"></i></button>
+            <button type="button" class="btn btn-sm" id="btn-view-table" aria-label="Vista de tabla"><i class="fa-solid fa-list"></i></button>
         </div>
     </div>
+</div>
 
-    <!-- ============ VISTA TARJETAS ============ -->
-    <div class="row" id="cards-view">
-        {% for player in players %}
-        <div class="col-md-6 col-lg-4 mb-4 player-item">
-            <div class="card-player h-100 position-relative">
-                {% if is_club_admin %}
-                <div class="d-flex justify-content-end position-absolute top-0 end-0 p-2">
-                    <a href="{% url 'edit_player' player.id %}" class="me-2">
-                        <i class="fas fa-pen"></i>
-                    </a>
-                </div>
-                {% endif %}
-                <a href="{% url 'show_player' player.id %}" class="text-decoration-none text-dark">
-                    <div class="card-player-body d-flex flex-column align-items-center text-center">
-                        <div class="player-image mb-3">
-                            {% if player.photo %}
-                            <img src="{{ player.photo.url }}" alt="Foto de {{ player.name }}" class="img-fluid rounded-circle" style="width: 100px; height: 100px;">
-                            {% else %}
-                            <img src="{% static 'profile/img.png' %}" alt="Foto de {{ player.name }}" class="img-fluid rounded-circle" style="width: 100px; height: 100px;">
-                            {% endif %}
-                        </div>
-                        <div class="player-info">
-                            <h5 class="card-player-title">{{ player.name }} {{ player.get_first_last_name }}</h5>
-                            <p class="card-player-text"><i class="fas fa-map-marker-alt me-2"></i><strong>Posición:</strong> {{ player.position }}</p>
-                            <p class="card-player-text"><i class="fas fa-hand-paper me-2"></i><strong>Mano hábil:</strong> {{ player.skillfull_hand }}</p>
-                            <p class="card-player-text"><i class="fas fa-trophy me-2"></i><strong>Puntos SNP:</strong> {{ player.snp_score }}</p>
-                            {% if is_club_admin %}
-                            {% if player.in_team %}
-                            <div class="performance-score score-light-green"> En el equipo </div>
-                            {% else %}
-                            <div class="performance-score score-ligth-red "> No en el equipo</div>
-                            {% endif %}
-                        {% endif %}
-                            {% if player.score == -1 %}
-                            <p>Aún no ha disputado ningún partido.</p>
-                            {% else %}
-                            <div class="performance-score 
-                                {% if player.score == -1 %}
-                                    no-played
-                                {% elif player.score >= 0 and player.score <= 4 %} score-red 
-                                {% elif player.score >= 5 and player.score <= 6 %} score-yellow 
-                                {% elif player.score >= 7 and player.score <= 8 %} score-light-green 
-                                {% elif player.score >= 9 and player.score <= 10 %} score-dark-green 
-                                {% endif %}">
-                                Rendimiento actual: {{ player.score }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <p class="text-center">
-                {% if search %}No se han encontrado jugadores para "{{ search }}".{% else %}No hay jugadores registrados.{% endif %}
+<!-- ============ VISTA TARJETAS ============ -->
+<div class="z-grid" id="cards-view">
+    {% for player in players %}
+    <div class="z-card z-card--link z-player">
+        {% if is_club_admin %}
+        <a href="{% url 'edit_player' player.id %}" class="z-edit" aria-label="Editar a {{ player.name }}"><i class="fa-solid fa-pen"></i></a>
+        {% endif %}
+        {% if player.photo %}
+        <img src="{{ player.photo.url }}" alt="" class="z-avatar z-avatar--lg">
+        {% else %}
+        <img src="{% static 'zyra/avatar.svg' %}" alt="" class="z-avatar z-avatar--lg">
+        {% endif %}
+        <div class="min-w-0">
+            <h2 class="z-player-name"><a href="{% url 'show_player' player.id %}" class="stretched-link text-reset">{{ player.name }} {{ player.get_first_last_name }}</a></h2>
+            <p class="z-player-meta">
+                <span><i class="fa-solid fa-location-crosshairs"></i>{{ player.position }}</span>
+                <span><i class="fa-solid fa-hand"></i>{{ player.skillfull_hand }}</span>
+                <span><i class="fa-solid fa-trophy"></i>SNP {{ player.snp_score|default:"-" }}</span>
             </p>
+            <div class="z-player-tags">
+                {% if player.score == -1 or player.score is None %}
+                <span class="z-badge">Sin partidos</span>
+                {% else %}
+                <span class="z-score {% if player.score <= 4 %}score-red{% elif player.score <= 6 %}score-yellow{% elif player.score <= 8 %}score-light-green{% else %}score-dark-green{% endif %}">Rendimiento <b>{{ player.score }}</b></span>
+                {% endif %}
+                {% if is_club_admin and not player.in_team %}
+                <span class="z-badge z-badge--danger">Fuera del equipo</span>
+                {% endif %}
+            </div>
         </div>
-        {% endfor %}
     </div>
-
-    <!-- ============ VISTA TABLA ============ -->
-    <div id="table-view">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Nombre</th>
-                    <th>Posición</th>
-                    <th>Mano hábil</th>
-                    <th>Puntos SNP</th>
-                    <th>Rendimiento</th>
-                    <th>Temporada</th>
-                    {% if is_club_admin %}
-                    <th>Equipo</th>
-                    <th>Acciones</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for player in players %}
-                <tr class="player-item" onclick="window.location='{% url 'show_player' player.id %}'">
-                    <td>
-                        {% if player.photo %}
-                        <img src="{{ player.photo.url }}" alt="Foto de {{ player.name }}" class="table-avatar">
-                        {% else %}
-                        <img src="{% static 'profile/img.png' %}" alt="Foto de {{ player.name }}" class="table-avatar">
-                        {% endif %}
-                    </td>
-                    <td><strong>{{ player.name }} {{ player.get_first_last_name }}</strong></td>
-                    <td>{{ player.position }}</td>
-                    <td>{{ player.skillfull_hand }}</td>
-                    <td>{{ player.snp_score }}</td>
-                    <td>
-                        {% if player.score == -1 %}
-                        <span class="text-muted">Sin partidos</span>
-                        {% else %}
-                        <span class="badge-score
-                            {% if player.score >= 0 and player.score <= 4 %} score-red
-                            {% elif player.score >= 5 and player.score <= 6 %} score-yellow
-                            {% elif player.score >= 7 and player.score <= 8 %} score-light-green
-                            {% elif player.score >= 9 and player.score <= 10 %} score-dark-green
-                            {% endif %}">
-                            {{ player.score }}
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td>{{ player.joined_season }}</td>
-                    {% if is_club_admin %}
-                    <td>
-                        {% if player.in_team %}
-                        <span class="badge-score score-light-green">En el equipo</span>
-                        {% else %}
-                        <span class="badge-score score-ligth-red">No en el equipo</span>
-                        {% endif %}
-                    </td>
-                    <td onclick="event.stopPropagation();">
-                        <a href="{% url 'edit_player' player.id %}"><i class="fas fa-pen"></i></a>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center py-4">
-                        {% if search %}No se han encontrado jugadores para "{{ search }}".{% else %}No hay jugadores registrados.{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    {% empty %}
+    <div class="z-empty" style="grid-column: 1 / -1;">
+        <i class="fa-solid fa-user-slash"></i>
+        {% if search %}No hay jugadores que coincidan con "{{ search }}".{% else %}Todavía no hay jugadores.{% endif %}
     </div>
+    {% endfor %}
+</div>
 
-    <!-- Paginación -->
-    <div class="mt-3">
-        <nav aria-label="Page navigation">
-          <ul class="pagination justify-content-center">
-            {% if players.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page=1&order_by={{ order_by }}&search={{ search }}">&laquo;</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ players.previous_page_number }}&order_by={{ order_by }}&search={{ search }}">Previous</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">&laquo;</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Previous</span>
-            </li>
-            {% endif %}
-      
-            <li class="page-item active">
-              <span class="page-link">
-                Page {{ players.number }} of {{ players.paginator.num_pages }}
-              </span>
-            </li>
-      
-            {% if players.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ players.next_page_number }}&order_by={{ order_by }}&search={{ search }}">Next</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ players.paginator.num_pages }}&order_by={{ order_by }}&search={{ search }}">&raquo;</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">Next</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">&raquo;</span>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
-      </div>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-      <script type="text/javascript">
-        $(window).on('load', function() {
-            $(".loader").fadeOut("slow");
-        });
-    
-        function showLoading() {
-            $(".loader").fadeIn("slow");
+<!-- ============ VISTA TABLA ============ -->
+<div id="table-view" class="z-table-wrap" hidden>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Nombre</th>
+                <th>Posición</th>
+                <th>Mano</th>
+                <th>SNP</th>
+                <th>Rendimiento</th>
+                <th>Temporada</th>
+                {% if is_club_admin %}<th>Equipo</th><th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+            <tr style="cursor: pointer;" onclick="window.location='{% url 'show_player' player.id %}'">
+                <td>
+                    {% if player.photo %}
+                    <img src="{{ player.photo.url }}" alt="" class="table-avatar">
+                    {% else %}
+                    <img src="{% static 'zyra/avatar.svg' %}" alt="" class="table-avatar">
+                    {% endif %}
+                </td>
+                <td><strong>{{ player.name }} {{ player.get_first_last_name }}</strong></td>
+                <td>{{ player.position }}</td>
+                <td>{{ player.skillfull_hand }}</td>
+                <td>{{ player.snp_score|default:"-" }}</td>
+                <td>
+                    {% if player.score == -1 or player.score is None %}
+                    <span class="text-muted">Sin partidos</span>
+                    {% else %}
+                    <span class="z-score {% if player.score <= 4 %}score-red{% elif player.score <= 6 %}score-yellow{% elif player.score <= 8 %}score-light-green{% else %}score-dark-green{% endif %}"><b>{{ player.score }}</b></span>
+                    {% endif %}
+                </td>
+                <td>{{ player.joined_season }}</td>
+                {% if is_club_admin %}
+                <td>
+                    {% if player.in_team %}<span class="z-badge z-badge--lime">En el equipo</span>{% else %}<span class="z-badge z-badge--danger">Fuera</span>{% endif %}
+                </td>
+                <td onclick="event.stopPropagation();">
+                    <a href="{% url 'edit_player' player.id %}" class="z-edit position-static" aria-label="Editar"><i class="fa-solid fa-pen"></i></a>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center py-4 text-muted">
+                    {% if search %}No hay jugadores que coincidan con "{{ search }}".{% else %}Todavía no hay jugadores.{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% with extra='&order_by='|add:order_by|add:'&search='|add:search %}
+{% include 'includes/pagination.html' with page=players extra=extra %}
+{% endwith %}
+
+<script>
+    function confirmAndShowLoading() {
+        if (confirm('¿Seguro que quieres actualizar las puntuaciones?\nEsta operación puede tardar.')) {
+            document.querySelector('.loader').style.display = 'block';
+            return true;
         }
-    
-        function confirmAndShowLoading() {
-            if (confirm('¿Estás seguro de que deseas actualizar las puntuaciones? \nESTA OPERACIÓN PUEDE LLEVAR TIEMPO')) {
-                showLoading();
-                return true;
-            }
-            return false;
-        }
+        return false;
+    }
 
-        // ---- Buscador con recarga automática (debounce), busca en todas las páginas ----
-        const searchInput = document.getElementById('player-search');
-        const searchForm = document.getElementById('search-form');
-        let debounceTimer;
+    // Buscador con recarga automática (debounce): busca en todas las páginas
+    const searchInput = document.getElementById('player-search');
+    const searchForm = document.getElementById('search-form');
+    let debounceTimer;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () { searchForm.submit(); }, 500);
+    });
 
-        searchInput.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function() {
-                searchForm.submit();
-            }, 500);
-        });
+    // Vista tarjetas / tabla (se recuerda la última elegida)
+    const btnCards = document.getElementById('btn-view-cards');
+    const btnTable = document.getElementById('btn-view-table');
+    const cardsView = document.getElementById('cards-view');
+    const tableView = document.getElementById('table-view');
 
-        // ---- Toggle vista tarjetas / tabla ----
-        const btnCards = document.getElementById('btn-view-cards');
-        const btnTable = document.getElementById('btn-view-table');
-        const cardsView = document.getElementById('cards-view');
-        const tableView = document.getElementById('table-view');
-
-        function setView(view) {
-            if (view === 'table') {
-                cardsView.style.display = 'none';
-                tableView.style.display = 'block';
-                btnTable.classList.add('active');
-                btnCards.classList.remove('active');
-            } else {
-                cardsView.style.display = '';
-                tableView.style.display = 'none';
-                btnCards.classList.add('active');
-                btnTable.classList.remove('active');
-            }
-            localStorage.setItem('playerListView', view);
-        }
-
-        btnCards.addEventListener('click', function() { setView('cards'); });
-        btnTable.addEventListener('click', function() { setView('table'); });
-
-        // Restaurar la última vista usada
-        const savedView = localStorage.getItem('playerListView');
-        if (savedView === 'table') {
-            setView('table');
-        }
-    </script>
+    function setView(view) {
+        const table = view === 'table';
+        cardsView.hidden = table;
+        tableView.hidden = !table;
+        btnTable.classList.toggle('active', table);
+        btnCards.classList.toggle('active', !table);
+        try { localStorage.setItem('playerListView', view); } catch (e) {}
+    }
+    btnCards.addEventListener('click', function () { setView('cards'); });
+    btnTable.addEventListener('click', function () { setView('table'); });
+    try { if (localStorage.getItem('playerListView') === 'table') setView('table'); } catch (e) {}
+</script>
 {% endblock %}

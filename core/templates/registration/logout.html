@@ -2,7 +2,12 @@
 {% load static %}
 
 {% block content %}
-<p>Has cerrado sesión con éxito.</p>
-<a href="{% url 'login' %}">Iniciar sesión nuevamente</a>
-
+<div class="z-auth">
+    <div class="z-auth-card text-center">
+        <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
+        <h1>Hasta pronto</h1>
+        <p class="text-muted">Has cerrado sesión correctamente.</p>
+        <a href="{% url 'login' %}" class="btn btn-primary">Iniciar sesión</a>
+    </div>
+</div>
 {% endblock %}

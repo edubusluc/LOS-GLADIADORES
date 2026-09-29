@@ -2,347 +2,118 @@
 {% load static %}
 
 {% block content %}
-<style>
-    .table-container {
-        padding: 20px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .custom-card {
-        height: auto;
-        margin: auto;
-        overflow: hidden;
-        border: none;
-        border-radius: 10px;
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .custom-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    .card-body p {
-        margin-bottom: 0.5rem;
-    }
-
-    .btn-custom {
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Barra de controles */
-    .controls-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-        background: #fff;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-    }
-
-    .controls-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    #team-search {
-        min-width: 220px;
-        border-radius: 20px;
-        padding: 6px 16px;
-        border: 1px solid #ced4da;
-    }
-
-    #team-search:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
-    }
-
-    .view-toggle .btn.active {
-        background-color: #007bff;
-        color: #fff;
-        border-color: #007bff;
-    }
-
-    .results-count {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-
-    /* Vista tabla */
-    #table-view {
-        display: none;
-        background: #fff;
-        border-radius: 8px;
-        overflow-x: auto;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-
-    #table-view table {
-        margin-bottom: 0;
-    }
-
-    #table-view thead {
-        background-color: #343a40;
-        color: #fff;
-    }
-
-    #table-view tbody tr {
-        cursor: default;
-    }
-
-    #table-view tbody tr:hover {
-        background-color: #f1f7ff;
-    }
-
-    #table-view td, #table-view th {
-        vertical-align: middle;
-    }
-
-    .table-logo {
-        width: 48px;
-        height: 48px;
-        object-fit: cover;
-        border-radius: 6px;
-    }
-
-    @media (max-width: 768px) {
-        .controls-bar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        #team-search {
-            width: 100%;
-        }
-    }
-</style>
-
-<div class="table-container mt-4">
-    <div class="d-flex align-items-center mb-3">
-        <h1 class="flex-grow-1">Listado de Equipos</h1>
-        {% if is_club_admin %}
-        <a href="{% url 'create_team' %}" class="btn btn-primary" style="background-color: #083C64;">Nuevo Equipo</a>
-        {% endif %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{{ current_club.name }}</span>
+        <h1>Equipos</h1>
     </div>
-
-    <!-- Barra de controles: búsqueda + vista -->
-    <div class="controls-bar">
-        <div class="controls-group">
-            <form method="get" class="d-flex align-items-center gap-2" id="search-form">
-                <input type="text" name="search" id="team-search" class="form-control"
-                       placeholder="🔍 Buscar por nombre o ubicación..." value="{{ search }}">
-                {% if search %}
-                <a href="{% url 'list_teams' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
-                {% endif %}
-            </form>
-            <span class="results-count">
-                {% if search %}{{ teams.paginator.count }} resultado{{ teams.paginator.count|pluralize }}{% endif %}
-            </span>
-        </div>
-
-        <div class="controls-group view-toggle" role="group" aria-label="Cambiar vista">
-            <span class="me-1 text-muted">Vista:</span>
-            <button type="button" class="btn btn-outline-secondary btn-sm active" id="btn-view-cards">
-                <i class="fas fa-th-large"></i> Tarjetas
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-view-table">
-                <i class="fas fa-table"></i> Tabla
-            </button>
-        </div>
+    {% if is_club_admin %}
+    <div class="z-actions">
+        <a href="{% url 'create_team' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Nuevo equipo</a>
     </div>
-
-    <!-- ============ VISTA TARJETAS ============ -->
-    <div class="row" id="cards-view">
-        {% for team in teams %}
-        <div class="col-12 mb-4">
-            <div class="card h-100 custom-card">
-                <div class="row no-gutters">
-                    <div class="col-4">
-                        {% if team.photo %}
-                        <img src="{{ team.photo.url }}" class="img-fluid" alt="{{ team.name }}"
-                            style="max-width: 100%; height: 150px; object-fit: cover;">
-                        {% else %}
-                        <img src="{% static 'team/default_team.png' %}" class="img-fluid" alt="{{ team.name }}"
-                            style="max-width: 100%; height: 150px; object-fit: cover;">
-                        {% endif %}
-                    </div>
-                    <div class="col-8 d-flex text-start">
-                        <div class="card-body p-2">
-                            <h5 class="card-title">{{ team.name }}</h5>
-                            <p class="card-text">
-                                <strong>Ubicación:</strong> {{ team.location }}
-                            </p>
-                            {% if is_club_admin %}
-                            <p class="card-text">
-                                {% if team.in_group %}
-                                    <span class="badge bg-success">Está en tu grupo</span>
-                                {% else %}
-                                    <span class="badge bg-danger">No está en tu grupo</span>
-                                {% endif %}
-                            </p>
-                            <a href="{% url 'edit_team' team.id %}" class="btn btn-warning btn-custom">
-                                Editar
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <p class="text-center">
-                {% if search %}No se han encontrado equipos para "{{ search }}".{% else %}No hay equipos registrados.{% endif %}
-            </p>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- ============ VISTA TABLA ============ -->
-    <div id="table-view">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Nombre</th>
-                    <th>Ubicación</th>
-                    {% if is_club_admin %}
-                    <th>Grupo</th>
-                    <th>Acciones</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for team in teams %}
-                <tr>
-                    <td>
-                        {% if team.photo %}
-                        <img src="{{ team.photo.url }}" alt="{{ team.name }}" class="table-logo">
-                        {% else %}
-                        <img src="{% static 'team/default_team.png' %}" alt="{{ team.name }}" class="table-logo">
-                        {% endif %}
-                    </td>
-                    <td><strong>{{ team.name }}</strong></td>
-                    <td>{{ team.location }}</td>
-                    {% if is_club_admin %}
-                    <td>
-                        {% if team.in_group %}
-                        <span class="badge bg-success">Está en tu grupo</span>
-                        {% else %}
-                        <span class="badge bg-danger">No está en tu grupo</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'edit_team' team.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center py-4">
-                        {% if search %}No se han encontrado equipos para "{{ search }}".{% else %}No hay equipos registrados.{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-3">
-        <nav aria-label="Page navigation">
-          <ul class="pagination justify-content-center">
-            {% if teams.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page=1&search={{ search }}">&laquo;</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ teams.previous_page_number }}&search={{ search }}">Previous</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">&laquo;</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Previous</span>
-            </li>
-            {% endif %}
-      
-            <li class="page-item active">
-              <span class="page-link">
-                Page {{ teams.number }} of {{ teams.paginator.num_pages }}
-              </span>
-            </li>
-      
-            {% if teams.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ teams.next_page_number }}&search={{ search }}">Next</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ teams.paginator.num_pages }}&search={{ search }}">&raquo;</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">Next</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">&raquo;</span>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
-      </div>
+    {% endif %}
 </div>
 
+<div class="z-toolbar">
+    <div class="z-toolbar-group">
+        <form method="get" class="z-search" id="search-form" role="search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" name="search" id="team-search" placeholder="Buscar por nombre o ubicación..." value="{{ search }}" aria-label="Buscar equipo">
+        </form>
+        {% if search %}
+        <span class="text-muted small">{{ teams.paginator.count }} resultado{{ teams.paginator.count|pluralize }}</span>
+        <a href="{% url 'list_teams' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+        {% endif %}
+    </div>
+    <div class="z-segmented" role="group" aria-label="Cambiar vista">
+        <button type="button" class="btn btn-sm active" id="btn-view-cards" aria-label="Vista de tarjetas"><i class="fa-solid fa-grip"></i></button>
+        <button type="button" class="btn btn-sm" id="btn-view-table" aria-label="Vista de tabla"><i class="fa-solid fa-list"></i></button>
+    </div>
+</div>
+
+<!-- ============ VISTA TARJETAS ============ -->
+<div class="z-grid" id="cards-view">
+    {% for team in teams %}
+    <div class="z-card z-team position-relative">
+        {% if is_club_admin %}
+        <a href="{% url 'edit_team' team.id %}" class="z-edit" aria-label="Editar {{ team.name }}"><i class="fa-solid fa-pen"></i></a>
+        {% endif %}
+        <img src="{% if team.photo %}{{ team.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
+        <div class="min-w-0">
+            <h3>{{ team.name }}</h3>
+            <p><i class="fa-solid fa-location-dot text-lime me-1"></i>{{ team.location|default:"Sin ubicación" }}</p>
+            <div class="d-flex flex-wrap gap-2">
+                {% if team.is_own %}<span class="z-badge z-badge--lime">Tu equipo</span>{% endif %}
+                {% if is_club_admin %}
+                {% if team.in_group %}<span class="z-badge z-badge--outline">En tu grupo</span>{% else %}<span class="z-badge">Fuera de grupo</span>{% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="z-empty" style="grid-column: 1 / -1;">
+        <i class="fa-solid fa-users-slash"></i>
+        {% if search %}No hay equipos que coincidan con "{{ search }}".{% else %}Todavía no hay equipos.{% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ============ VISTA TABLA ============ -->
+<div id="table-view" class="z-table-wrap" hidden>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Nombre</th>
+                <th>Ubicación</th>
+                {% if is_club_admin %}<th>Grupo</th><th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td><img src="{% if team.photo %}{{ team.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="" class="table-logo"></td>
+                <td><strong>{{ team.name }}</strong> {% if team.is_own %}<span class="z-badge z-badge--lime ms-1">Tu equipo</span>{% endif %}</td>
+                <td>{{ team.location }}</td>
+                {% if is_club_admin %}
+                <td>{% if team.in_group %}<span class="z-badge z-badge--outline">En tu grupo</span>{% else %}<span class="z-badge">Fuera</span>{% endif %}</td>
+                <td><a href="{% url 'edit_team' team.id %}" class="z-edit position-static" aria-label="Editar"><i class="fa-solid fa-pen"></i></a></td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center py-4 text-muted">{% if search %}No hay equipos que coincidan con "{{ search }}".{% else %}Todavía no hay equipos.{% endif %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% with extra='&search='|add:search %}
+{% include 'includes/pagination.html' with page=teams extra=extra %}
+{% endwith %}
+
 <script>
-    // ---- Buscador con recarga automática (debounce), busca en todas las páginas ----
     const searchInput = document.getElementById('team-search');
     const searchForm = document.getElementById('search-form');
     let debounceTimer;
-
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function() {
-            searchForm.submit();
-        }, 500);
+        debounceTimer = setTimeout(function () { searchForm.submit(); }, 500);
     });
 
-    // ---- Toggle vista tarjetas / tabla ----
     const btnCards = document.getElementById('btn-view-cards');
     const btnTable = document.getElementById('btn-view-table');
     const cardsView = document.getElementById('cards-view');
     const tableView = document.getElementById('table-view');
-
     function setView(view) {
-        if (view === 'table') {
-            cardsView.style.display = 'none';
-            tableView.style.display = 'block';
-            btnTable.classList.add('active');
-            btnCards.classList.remove('active');
-        } else {
-            cardsView.style.display = '';
-            tableView.style.display = 'none';
-            btnCards.classList.add('active');
-            btnTable.classList.remove('active');
-        }
-        localStorage.setItem('teamListView', view);
+        const table = view === 'table';
+        cardsView.hidden = table;
+        tableView.hidden = !table;
+        btnTable.classList.toggle('active', table);
+        btnCards.classList.toggle('active', !table);
+        try { localStorage.setItem('teamListView', view); } catch (e) {}
     }
-
-    btnCards.addEventListener('click', function() { setView('cards'); });
-    btnTable.addEventListener('click', function() { setView('table'); });
-
-    const savedView = localStorage.getItem('teamListView');
-    if (savedView === 'table') {
-        setView('table');
-    }
+    btnCards.addEventListener('click', function () { setView('cards'); });
+    btnTable.addEventListener('click', function () { setView('table'); });
+    try { if (localStorage.getItem('teamListView') === 'table') setView('table'); } catch (e) {}
 </script>
 {% endblock %}

@@ -3,83 +3,6 @@
 {% load custom_filters %}
 
 {% block content %}
-<style>
-    h1, h2 {
-        color: #333;
-        text-align: center;
-        margin-top: 20px;
-    }
-    fieldset {
-        border: none;
-        margin: 20px 0;
-        padding: 20px;
-        background: #fff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        max-width: 500px;
-        max-width: 100%;
-    }
-    legend {
-        font-weight: bold;
-        font-size: 1.3em;
-        color: #555;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-    label {
-        display: block;
-        font-weight: 600;
-        color: #444;
-        margin: 10px 0 5px;
-    }
-    .button {
-        display: inline-block;
-        padding: 12px 20px;
-        margin-top: 20px;
-        font-size: 1em;
-        color: #fff;
-        background-color: #007bff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: center;
-        transition: background-color 0.3s;
-    }
-    .button:hover {
-        background-color: #0056b3;
-    }
-    .pair-order-container {
-        margin-top: 30px;
-        max-width: 100%;
-        background: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        text-align: center;
-    }
-    #pair-order-list {
-        list-style-type: none;
-        padding: 0;
-        margin-top: 15px;
-        text-align: left;
-    }
-    #pair-order-list li {
-        padding: 10px;
-        border-bottom: 1px solid #c2c2c2;
-        color: #333;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-    }
-    #pair-order-list li:last-child {
-        border-bottom: none;
-    }
-    #pair-order-list li::before {
-        content: '🎾';
-        margin-right: 8px;
-        color: #007bff;
-    }
-</style>
 <script>
     function updatePlayerOptions() {
         const playerSelects = document.querySelectorAll('select[id^="player_"]');
@@ -155,7 +78,8 @@
 </script>
 
 <div class="table-container">
-    <h1>Crear Partidos para el Enfrentamiento</h1>
+    <h1>Crear partidos</h1>
+    <p class="text-muted">Elige las cinco parejas. El orden de juego se calcula con la suma de puntos SNP.</p>
     {% if messages %}
     <div class="alert-message">
         {% for message in messages %}
@@ -165,7 +89,7 @@
     {% endif %}
     <form method="post">
         {% csrf_token %}
-        <div>
+        <div class="z-games-grid">
             {% for i in "12345" %}
                 <fieldset>
                     <legend>Partido {{ i }}</legend>
@@ -202,11 +126,11 @@
             {% endfor %}
         </div>
         <input type="hidden" id="ordered_games" name="ordered_games">
-        <button type="submit" class="btn btn-primary" style="background-color: #083C64;">Guardar Partidos</button>
+        <button type="submit" class="btn btn-primary mt-3">Guardar partidos</button>
     </form>
 
     <div class="pair-order-container">
-        <h2>Orden de Juegos según Puntos</h2>
+        <h2>Orden de juego según puntos</h2>
         <ul id="pair-order-list">
             <!-- Se llenará dinámicamente con el orden de parejas según puntos -->
         </ul>

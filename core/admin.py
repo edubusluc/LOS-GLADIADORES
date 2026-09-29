@@ -30,6 +30,10 @@ class TeamAdmin(admin.ModelAdmin):
     list_filter = ("club",)
 
 
+admin.site.site_header = "Zyra"
+admin.site.site_title = "Zyra"
+admin.site.index_title = "Administración"
+
 # Register your models here.
 admin.site.register(CallLog)
 admin.site.register(Penalty)

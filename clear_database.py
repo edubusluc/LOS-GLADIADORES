@@ -1,7 +1,7 @@
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'snp_gladiadores.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zyra.settings')
 django.setup()
 
 from django.apps import apps

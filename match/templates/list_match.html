@@ -2,259 +2,64 @@
 {% load static %}
 
 {% block content %}
-<style>
-.custom-card {
-    margin: auto;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s;
-    max-width: 100%;
-    position: relative;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Sombra sutil en la tarjeta */
-}
-
-.custom-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2); /* Más sombra en hover */
-}
-
-.card-body {
-    flex: 1;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-}
-
-.team-logo {
-    width: 150px;
-    height: auto;
-    object-fit: cover;
-    margin: 10px 0; /* Espaciado entre la imagen y el texto */
-}
-
-.card-title {
-    margin: 10px 0;
-    font-weight: bold;
-    font-size: 1.2rem; /* Tamaño de fuente ligeramente mayor */
-    text-align: center;
-}
-
-.info-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.info-details {
-    flex-grow: 1;
-    margin-top: 10px;
-}
-
-.status {
-    font-weight: bold;
-    text-align: center;
-    margin-top: 5px;
-}
-
-.result-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin: 5px 0;
-}
-
-/* Mejorar la distribución de texto y los márgenes */
-.card-text {
-    margin: 5px 0; /* Añadir un poco de espacio entre los párrafos */
-    color: #333;
-}
-
-/* Estilo de los estados */
-.text-success {
-    color: green;
-}
-
-.text-danger {
-    color: red;
-}
-
-/* Media Queries para pantallas grandes */
-@media (min-width: 768px) {
-    .info-container {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .matches-row {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .col-12 {
-        flex: 0 0 100%;
-        max-width: 100%;
-        margin-bottom: 1rem;
-    }
-
-    /* Ajustes para la distribución de la información en pantallas grandes */
-    .card-body {
-        padding: 20px;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-    }
-
-    .team-logo {
-        margin-right: 20px; /* Espaciado a la derecha de la imagen */
-    }
-}
-
-/* Estilo para el botón de eliminación */
-.delete-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: red;
-    font-size: 1.5rem;
-}
-
-.delete-button i {
-    font-size: 1.5rem;
-}
-
-</style>
-
-<div class="table-container mt-4">
-     <!-- Mostrar mensajes -->
-        {% if messages %}
-        <div class="alert-message">
-                {% for message in messages %}
-                    <p>{{message}}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-    <div class="d-flex align-items-center mb-3">
-        <h1 class="flex-grow-1">Listado de Partidos</h1>
-        {% if is_club_admin %}
-        <a href="{% url 'create_match' %}" class="btn btn-primary" style="background-color: #083C64;"s>Nuevo Partido</a>
-        {% endif %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{{ current_club.name }}</span>
+        <h1>Partidos</h1>
     </div>
-
-    <!-- Selector de temporada -->
-    <form method="get" class="mb-3 d-flex align-items-center gap-2">
-        <label for="season" class="mb-0">Temporada:</label>
-        <select name="season" id="season" class="form-select" style="width: auto;" onchange="this.form.submit()">
-            <option value="">Todas</option>
-            {% for s in seasons %}
+    <div class="z-actions">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label for="season" class="visually-hidden">Temporada</label>
+            <select name="season" id="season" onchange="this.form.submit()" style="min-width: 190px;">
+                <option value="">Todas las temporadas</option>
+                {% for s in seasons %}
                 <option value="{{ s }}" {% if s == selected_season %}selected{% endif %}>{{ s }}</option>
-            {% endfor %}
-        </select>
-    </form>
+                {% endfor %}
+            </select>
+        </form>
+        {% if is_club_admin %}
+        <a href="{% url 'create_match' %}" class="btn btn-primary text-nowrap"><i class="fa-solid fa-plus me-1"></i> Nuevo partido</a>
+        {% endif %}
+    </div>
+</div>
 
-    <div class="matches-row"> 
-        {% for m in matches %}
-        <div class="col-12 mb-4 position-relative"> 
-            <div class="card h-100 custom-card">
-                <!-- Botón de eliminación -->
-                {%if m.draft_mode%}
-                {% if is_club_admin %}
-                <a href="{% url 'delete_match' m.id %}" class="delete-button">
-                    <i class="fas fa-trash"></i>
-                </a>
-                {%endif%}
-                {%endif%}
-                <a href="{% url 'call_for_match' m.id %}" class="text-decoration-none text-dark">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div class="info-container mb-3">
-                            {%if m.local.photo%}
-                            <img src="{{ m.local.photo.url }}" alt="{{ m.local }}" class="team-logo">
-                            {%else%}
-                            <img src="{% static 'team/unknow_team.png' %}" alt="{{ m.local }}" class="team-logo">
-                            {%endif%}
-                            <div class="info-details">
-                                <h5 class="card-title">{{ m.local }} vs {{ m.visiting }}</h5>
-                                <div class="result-container">
-                                    <p class="card-text">Fecha: {{ m.start_date|date:"d/m/Y" }}</p>
-                                    <p class="card-text">Resultado: {{ m.result_points|default:"-" }}</p>
-                                    <p class="card-text status">
-                                        Estado: 
-                                        {% if not m.draft_mode %}
-                                            <span class="text-success">Confirmado</span>
-                                        {% else %}
-                                            <span class="text-danger">Sin validar</span>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                            {%if m.visiting.photo%}
-                            <img src="{{ m.visiting.photo.url}}" alt="{{ m.visiting }}" class="team-logo">
-                            {%else%}
-                            <img src="{% static 'team/unknow_team.png' %}" alt="{{ m.visiting }}" class="team-logo">
-                            {%endif%}
-                        </div>
-                    </div>
-                </a>
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+<div class="d-grid gap-3">
+    {% for m in matches %}
+    <div class="z-card z-card--link z-match">
+        {% if m.draft_mode and is_club_admin %}
+        <a href="{% url 'delete_match' m.id %}" class="z-edit z-edit--danger" aria-label="Eliminar partido"><i class="fa-solid fa-trash"></i></a>
+        {% endif %}
+        <div class="z-match-team">
+            <img src="{% if m.local.photo %}{{ m.local.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
+            <span>{{ m.local }}</span>
+        </div>
+        <div class="z-match-center">
+            <a href="{% url 'call_for_match' m.id %}" class="stretched-link text-reset">
+                <div class="z-match-score">{% if m.result_points and m.result_points != "NONE" %}{{ m.result_points }}{% else %}VS{% endif %}</div>
+            </a>
+            <div class="z-match-date"><i class="fa-regular fa-calendar me-1"></i>{{ m.start_date|date:"d/m/Y" }}</div>
+            <div class="z-match-status">
+                {% if m.draft_mode %}<span class="z-badge">Sin validar</span>{% else %}<span class="z-badge z-badge--lime">Confirmado</span>{% endif %}
             </div>
         </div>
-        {% empty %}
-        <div class="col-12 text-center">
-            <p>No hay partidos disponibles</p>
+        <div class="z-match-team z-match-team--away">
+            <img src="{% if m.visiting.photo %}{{ m.visiting.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
+            <span>{{ m.visiting }}</span>
         </div>
-        {% endfor %}
     </div>
-
-    <div class="mt-3">
-        <nav aria-label="Page navigation">
-          <ul class="pagination justify-content-center">
-            {% if matches.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page=1&season={{ selected_season }}">&laquo;</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ matches.previous_page_number }}&season={{ selected_season }}">Previous</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">&laquo;</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">Previous</span>
-            </li>
-            {% endif %}
-      
-            <li class="page-item active">
-              <span class="page-link">
-                Page {{ matches.number }} of {{ matches.paginator.num_pages }}
-              </span>
-            </li>
-      
-            {% if matches.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ matches.next_page_number }}&season={{ selected_season }}">Next</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ matches.paginator.num_pages }}&season={{ selected_season }}">&raquo;</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">Next</span>
-            </li>
-            <li class="page-item disabled">
-              <span class="page-link">&raquo;</span>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
-      </div>
+    {% empty %}
+    <div class="z-empty">
+        <i class="fa-solid fa-table-tennis-paddle-ball"></i>
+        No hay partidos{% if selected_season %} en la temporada {{ selected_season }}{% endif %}.
+    </div>
+    {% endfor %}
 </div>
+
+{% with extra='&season='|add:selected_season %}
+{% include 'includes/pagination.html' with page=matches extra=extra %}
+{% endwith %}
 {% endblock %}

@@ -1,191 +1,104 @@
-// Gráfico de pastel para partidos ganados/perdidos
-const pieCtx = document.getElementById('myPieChart').getContext('2d');
-const myPieChart = new Chart(pieCtx, {
-  type: 'pie',
+// Paleta Zyra: lima para victorias, coral para derrotas, sobre fondo oscuro.
+const Z = {
+  lime: '#B4F100',
+  limeDark: '#6E9400',
+  coral: '#FF5C63',
+  coralDark: '#9E3A3F',
+  text: '#A3A3A3',
+  grid: 'rgba(255, 255, 255, 0.08)',
+  card: '#151515',
+};
+
+Chart.defaults.font.family = "'Archivo', system-ui, sans-serif";
+Chart.defaults.color = Z.text;
+Chart.defaults.borderColor = Z.grid;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+
+const scales = (extra = {}) => ({
+  x: { grid: { display: false }, ...extra.x },
+  y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: Z.grid }, ...extra.y },
+});
+
+// Partidos ganados / perdidos
+new Chart(document.getElementById('myPieChart'), {
+  type: 'doughnut',
   data: {
     labels: ['Ganados', 'Perdidos'],
     datasets: [{
       data: [teamData.wonMatches, teamData.lostMatches],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
+      backgroundColor: [Z.lime, Z.coral],
+      borderColor: Z.card,
+      borderWidth: 4,
+    }],
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false
-  }
+  options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { position: 'bottom' } } },
 });
 
-// Gráfico de barras para juegos ganados/perdidos como Local
-const barCtx = document.getElementById('myBarChart').getContext('2d');
-const myBarChart = new Chart(barCtx, {
+// Juegos ganados / perdidos como local y como visitante
+const gamesBar = (id, won, lost) => new Chart(document.getElementById(id), {
   type: 'bar',
   data: {
-    labels: ['Juegos Ganados', 'Juegos Perdidos'],
-    datasets: [{
-      data: [teamData.localGamesWon, teamData.localGamesLost],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
+    labels: ['Ganados', 'Perdidos'],
+    datasets: [{ data: [won, lost], backgroundColor: [Z.lime, Z.coral], borderRadius: 8, maxBarThickness: 64 }],
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  }
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: scales() },
 });
+gamesBar('myBarChart', teamData.localGamesWon, teamData.localGamesLost);
+gamesBar('myVisitingBarChart', teamData.visitingGamesWon, teamData.visitingGamesLost);
 
-// Gráfico de barras para juegos ganados/perdidos como Visitante
-const visitingBarCtx = document.getElementById('myVisitingBarChart').getContext('2d');
-const myVisitingBarChart = new Chart(visitingBarCtx, {
-  type: 'bar',
-  data: {
-    labels: ['Juegos Ganados', 'Juegos Perdidos'],
-    datasets: [{
-      data: [teamData.visitingGamesWon, teamData.visitingGamesLost],
-      backgroundColor: ['#083C64', '#ff6384'],
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  }
-});
-
-// Gráfico de línea para el número de partidos ganados por año
+// Partidos ganados y perdidos por temporada
 const years = Object.keys(teamData.matchesWonPerYear);
-    const wonMatches = years.map(year => teamData.matchesWonPerYear[year].won);
-    const lostMatches = years.map(year => teamData.matchesWonPerYear[year].lost);
-
-    // Configuración del gráfico
-    const ctx = document.getElementById('myLineChart').getContext('2d');
-    const myLineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: years,
-            datasets: [
-                {
-                    label: 'Partidos Ganados',
-                    data: wonMatches,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true
-                },
-                {
-                    label: 'Partidos Perdidos',
-                    data: lostMatches,
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    fill: true
-                }
-            ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Año'
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Número de Partidos Ganados'
-              },
-              beginAtZero: true
-            }
-          }
-        }
-      });
-
-// Gráfico de columnas para partidos ganados/perdidos
-const columnCtx = document.getElementById('myColumnChart').getContext('2d');
-// Procesar los datos para el gráfico de columnas
-const labels = teamData.column_chart_data.map(entry => entry.player);
-const partidos2Ganados = teamData.column_chart_data.map(entry => entry.data[0]); // Partidos de 2 puntos ganados
-const partidos2Perdidos = teamData.column_chart_data.map(entry => entry.data[1]); // Partidos de 2 puntos perdidos
-const partidos3Ganados = teamData.column_chart_data.map(entry => entry.data[2]); // Partidos de 3 puntos ganados
-const partidos3Perdidos = teamData.column_chart_data.map(entry => entry.data[3]); // Partidos de 3 puntos perdidos
-
-const myColumnChart = new Chart(columnCtx, {
-  type: 'bar',
+new Chart(document.getElementById('myLineChart'), {
+  type: 'line',
   data: {
-      labels: labels,
-      datasets: [
-          {
-              label: 'Partidos de 2 puntos ganados',
-              data: partidos2Ganados,
-              backgroundColor: '#007BFF', // Azul brillante
-          },
-          {
-              label: 'Partidos de 2 puntos perdidos',
-              data: partidos2Perdidos,
-              backgroundColor: '#FFA500', 
-          },
-          {
-              label: 'Partidos de 3 puntos ganados',
-              data: partidos3Ganados,
-              backgroundColor: '#0056b3', // Azul oscuro
-          },
-          {
-              label: 'Partidos de 3 puntos perdidos',
-              data: partidos3Perdidos,
-              backgroundColor: 'rgba(255, 215, 0, 0.8)', // Amarillo dorado
-          }
-      ]
+    labels: years,
+    datasets: [
+      {
+        label: 'Ganados',
+        data: years.map((y) => teamData.matchesWonPerYear[y].won),
+        borderColor: Z.lime,
+        backgroundColor: 'rgba(180, 241, 0, 0.18)',
+        pointBackgroundColor: Z.lime,
+        tension: 0.35,
+        fill: true,
+      },
+      {
+        label: 'Perdidos',
+        data: years.map((y) => teamData.matchesWonPerYear[y].lost),
+        borderColor: Z.coral,
+        backgroundColor: 'rgba(255, 92, 99, 0.10)',
+        pointBackgroundColor: Z.coral,
+        tension: 0.35,
+        fill: true,
+      },
+    ],
   },
   options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-          legend: {
-              display: true
-          }
-      },
-      scales: {
-          y: {
-              beginAtZero: true,
-              stacked: true,
-              title: {
-                  display: true,
-                  text: 'Número de Partidos',
-                  font: {
-                      size: 16,
-                  },
-                  padding: {
-                      top: 10,
-                      bottom: 10
-                  }
-              }
-          },
-          x: {
-              stacked: true
-          }
-      }
-  }
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: scales({ y: { title: { display: true, text: 'Partidos' } } }),
+  },
+});
+
+// Balance por jugador: partidos de 2 y 3 puntos, ganados y perdidos
+const rows = teamData.column_chart_data;
+new Chart(document.getElementById('myColumnChart'), {
+  type: 'bar',
+  data: {
+    labels: rows.map((r) => r.player),
+    datasets: [
+      { label: '2 puntos ganados', data: rows.map((r) => r.data[0]), backgroundColor: Z.lime },
+      { label: '3 puntos ganados', data: rows.map((r) => r.data[2]), backgroundColor: Z.limeDark },
+      { label: '2 puntos perdidos', data: rows.map((r) => r.data[1]), backgroundColor: Z.coral },
+      { label: '3 puntos perdidos', data: rows.map((r) => r.data[3]), backgroundColor: Z.coralDark },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: scales({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Partidos' } } }),
+  },
 });

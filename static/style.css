@@ -1366,3 +1366,18 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
     .set input[type="number"] { height: 46px; font-size: 1.1rem; padding: .4rem; }
     .z-set-legend span { height: 46px; line-height: 46px; font-size: .72rem; }
 }
+
+/* Tablas top 5 */
+.st-top-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.st-top { margin: 14px 0 0; padding: 0; list-style: none; }
+.st-top-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--st-line); }
+.st-top-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.st-top-pos {
+  display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px;
+  font-size: .8rem; font-weight: 800; color: var(--z-text); background: var(--z-surface-3); border-radius: 50%;
+}
+.st-top-row:first-child .st-top-pos { color: var(--z-ink); background: var(--z-lime); }
+.st-top-name { flex: 1; min-width: 0; font-weight: 700; color: #FFFFFF; overflow-wrap: anywhere; }
+.st-top-name small { display: block; font-size: .8rem; font-weight: 500; color: var(--st-muted); }
+.st-top-pct { font-size: 1.25rem; font-weight: 800; color: var(--z-lime); font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .st-top-grid { grid-template-columns: 1fr; } }

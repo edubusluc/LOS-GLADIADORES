@@ -6,7 +6,9 @@ from call.models import Call
 from django.db.models import Q, Count
 from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from core.decorators import club_required
+from . import pairs as pair_stats
 
 # ---------------------------------------------------------------
 # ESTADÍSTICAS EQUIPO (sin cambios)
@@ -51,6 +53,8 @@ def calculate_local_game_statistics(season, team):
     for m in match_local:
         for g in m.games.all():
             result = g.results.first()
+            if result is None:
+                continue  # partido sin resultado registrado
             local_games_won += result.set1_local + result.set2_local + (result.set3_local or 0)
             local_games_lost += result.set1_visiting + result.set2_visiting + (result.set3_visiting or 0)
 
@@ -72,6 +76,8 @@ def calculate_visiting_game_statistics(season, team):
     for m in match_visiting:
         for g in m.games.all():
             result = g.results.first()
+            if result is None:
+                continue  # partido sin resultado registrado
             visiting_games_won += result.set1_visiting + result.set2_visiting + (result.set3_visiting or 0)
             visiting_games_lost += result.set1_local + result.set2_local + (result.set3_local or 0)
 
@@ -118,7 +124,8 @@ def count_games(player, role, winner, n_games, season):
 
 
 def column_chart(club, season):
-    players = Player.objects.filter(club=club)
+    # Solo los jugadores que siguen en el equipo
+    players = Player.objects.filter(club=club, in_team=True)
     dicc = {
         f"{p.name} {p.last_name}": {
             'Partidos de 2 puntos ganados': 0,
@@ -181,6 +188,10 @@ def team_statistics(request):
 
     dicc_line_chart = calculate_matches_won_per_year(team)
 
+    # Top 5 (jugadores actuales del equipo), respetando la temporada elegida
+    squad = list(Player.objects.filter(club=request.club, in_team=True))
+    log = pair_stats.club_game_log(request.club, selected_season or None)
+
     context = {
         'team': team,
         'total_matches': total_matches,
@@ -199,7 +210,13 @@ def team_statistics(request):
         'dicc_line_chart': dicc_line_chart,
         "seasons": seasons,
         "selected_season": selected_season,
-        "column_chart_data": column_chart_data
+        "column_chart_data": column_chart_data,
+        "top_local_players": pair_stats.top_players(log, squad, local=True),
+        "top_visiting_players": pair_stats.top_players(log, squad, local=False),
+        "top_local_pairs": pair_stats.top_pairs(log, squad, local=True),
+        "top_visiting_pairs": pair_stats.top_pairs(log, squad, local=False),
+        "min_games_player": pair_stats.MIN_GAMES_PLAYER,
+        "min_games_pair": pair_stats.MIN_GAMES_PAIR,
     }
 
     return render(request, 'team_statistics.html', context)
@@ -485,3 +502,50 @@ def statistics_per_player(request):
         'chart_affinity': degree_of_affinity(player),
     }
     return render(request, 'player_statistics.html', context)
+
+
+# ---------------------------------------------------------------
+# ESTADÍSTICAS POR PAREJAS
+# ---------------------------------------------------------------
+
+@club_required
+@require_GET
+def statistics_per_pair(request):
+    club_players = list(Player.objects.filter(club=request.club).order_by('-in_team', 'name', 'last_name'))
+    by_id = {p.id: p for p in club_players}
+    log = pair_stats.club_game_log(request.club)
+    pairs = pair_stats.all_pairs(log, club_players)
+
+    p1_id, p2_id = request.GET.get('p1', ''), request.GET.get('p2', '')
+    context = {
+        'players': club_players,
+        'pairs': pairs,
+        'selected_p1': int(p1_id) if p1_id.isdigit() else None,
+        'selected_p2': int(p2_id) if p2_id.isdigit() else None,
+    }
+
+    if context['selected_p1'] and context['selected_p2']:
+        # Solo jugadores del club activo: los de otros clubes dan 404
+        p1, p2 = by_id.get(context['selected_p1']), by_id.get(context['selected_p2'])
+        if p1 is None or p2 is None:
+            raise Http404("Jugador no encontrado")
+        if p1 == p2:
+            context['error'] = "Elige dos jugadores distintos."
+        else:
+            summary = pair_stats.pair_summary(log, p1.id, p2.id)
+            context.update({
+                'p1': p1,
+                'p2': p2,
+                's': summary,
+                'pct_w': round(summary['pct']),
+                'local_pct_w': round(summary['local_pct']),
+                'visiting_pct_w': round(summary['visiting_pct']),
+                'chart_seasons': {
+                    'labels': [r['season'] for r in summary['seasons']],
+                    'wins': [r['wins'] for r in summary['seasons']],
+                    'losses': [r['losses'] for r in summary['seasons']],
+                    'pct': [r['pct'] for r in summary['seasons']],
+                },
+            })
+
+    return render(request, 'pair_statistics.html', context)

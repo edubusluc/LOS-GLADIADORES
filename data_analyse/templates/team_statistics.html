@@ -17,10 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <div class="st-page">
-    <nav class="st-tabs z-segmented" aria-label="Tipo de estadística">
-      <a class="btn btn-sm{% if request.resolver_match.url_name == 'team_statistics' %} active{% endif %}" href="{% url 'team_statistics' %}"{% if request.resolver_match.url_name == 'team_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-users me-1"></i> Equipo</a>
-      <a class="btn btn-sm{% if request.resolver_match.url_name == 'player_statistics' %} active{% endif %}" href="{% url 'player_statistics' %}"{% if request.resolver_match.url_name == 'player_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-user me-1"></i> Jugador</a>
-    </nav>
+    {% include 'includes/stats_tabs.html' %}
     <header class="st-head">
       <div>
         <h1 class="st-title">{{ team.name|default:"Estadísticas del equipo" }}</h1>
@@ -89,6 +86,18 @@
         </dl>
       </section>
 
+      <section aria-labelledby="top-title" class="st-section mt-4">
+        <h2 class="st-section-title" id="top-title">Top 5{% if selected_season %} · {{ selected_season }}{% endif %}</h2>
+        <p class="st-card-note mt-0 mb-3">Solo jugadores que siguen en el equipo.</p>
+        <div class="st-top-grid">
+          {% include 'includes/top_table.html' with title="Mejores jugadores como local" note="% de victorias jugando en casa." rows=top_local_players min_games=min_games_player empty="Ningún jugador llega al mínimo de partidos como local." %}
+          {% include 'includes/top_table.html' with title="Mejores jugadores como visitante" note="% de victorias jugando fuera." rows=top_visiting_players min_games=min_games_player empty="Ningún jugador llega al mínimo de partidos como visitante." %}
+          {% include 'includes/top_table.html' with title="Mejores parejas como local" note="% de victorias de la pareja en casa." rows=top_local_pairs min_games=min_games_pair empty="Ninguna pareja llega al mínimo de partidos como local." %}
+          {% include 'includes/top_table.html' with title="Mejores parejas como visitante" note="% de victorias de la pareja fuera." rows=top_visiting_pairs min_games=min_games_pair empty="Ninguna pareja llega al mínimo de partidos como visitante." %}
+        </div>
+      </section>
+
+      <h2 class="st-section-title mt-4">Gráficos</h2>
       <div class="st-grid">
         <section class="st-card">
           <h2 class="st-card-title">Partidos ganados y perdidos</h2>
@@ -133,7 +142,7 @@
 
         <section class="st-card st-card--wide">
           <h2 class="st-card-title">Balance de partidos por jugador</h2>
-          <p class="st-card-note">Partidos de 2 y de 3 puntos, ganados y perdidos, de cada jugador.</p>
+          <p class="st-card-note">Partidos de 2 y de 3 puntos, ganados y perdidos, de cada jugador actual del equipo.</p>
           <div class="st-chart st-chart--tall">
             <div class="chart-scroll st-scroll">
               <canvas id="myColumnChart"></canvas>

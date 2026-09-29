@@ -1,0 +1,7 @@
+{% with current=request.resolver_match.url_name %}
+<nav class="st-tabs z-segmented" aria-label="Tipo de estadística">
+  <a class="btn btn-sm{% if current == 'team_statistics' %} active{% endif %}" href="{% url 'team_statistics' %}"{% if current == 'team_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-users me-1"></i> Equipo</a>
+  <a class="btn btn-sm{% if current == 'player_statistics' %} active{% endif %}" href="{% url 'player_statistics' %}"{% if current == 'player_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-user me-1"></i> Jugador</a>
+  <a class="btn btn-sm{% if current == 'pair_statistics' %} active{% endif %}" href="{% url 'pair_statistics' %}"{% if current == 'pair_statistics' %} aria-current="page"{% endif %}><i class="fa-solid fa-user-group me-1"></i> Parejas</a>
+</nav>
+{% endwith %}

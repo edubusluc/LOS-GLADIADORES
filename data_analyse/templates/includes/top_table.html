@@ -1,0 +1,18 @@
+{# Tabla de top 5. Recibe: title, note, rows, min_games, empty #}
+<article class="st-card">
+  <h3 class="st-card-title">{{ title }}</h3>
+  <p class="st-card-note">{{ note }} Mínimo {{ min_games }} partidos.</p>
+  {% if rows %}
+    <ol class="st-top">
+      {% for r in rows %}
+        <li class="st-top-row">
+          <span class="st-top-pos">{{ forloop.counter }}</span>
+          <span class="st-top-name">{{ r.name }}<small>{{ r.wins }}V – {{ r.losses }}D · {{ r.played }} partido{{ r.played|pluralize }}</small></span>
+          <b class="st-top-pct">{{ r.pct|floatformat:0 }}%</b>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="st-muted mt-3 mb-0">{{ empty }}</p>
+  {% endif %}
+</article>

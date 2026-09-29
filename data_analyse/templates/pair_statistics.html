@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="st-page">
+    {% include 'includes/stats_tabs.html' %}
+
+    <header class="st-head">
+      <div>
+        <h1 class="st-title">{% if s %}{{ p1.name }} {{ p1.get_first_last_name }} / {{ p2.name }} {{ p2.get_first_last_name }}{% else %}Estadísticas por parejas{% endif %}</h1>
+        {% if s %}
+          <p class="st-subtitle">{{ s.played }} partido{{ s.played|pluralize }} juntos en {{ s.matches }} enfrentamiento{{ s.matches|pluralize }}</p>
+        {% else %}
+          <p class="st-subtitle">Elige dos jugadores para ver cómo rinden juntos.</p>
+        {% endif %}
+      </div>
+
+      <form class="st-picker" method="GET" action="{% url 'pair_statistics' %}">
+        <label class="visually-hidden" for="p1">Jugador 1</label>
+        <select class="st-select" name="p1" id="p1">
+          <option value="">Jugador 1</option>
+          {% for p in players %}
+            <option value="{{ p.id }}" {% if p.id == selected_p1 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} (fuera del equipo){% endif %}</option>
+          {% endfor %}
+        </select>
+        <label class="visually-hidden" for="p2">Jugador 2</label>
+        <select class="st-select" name="p2" id="p2">
+          <option value="">Jugador 2</option>
+          {% for p in players %}
+            <option value="{{ p.id }}" {% if p.id == selected_p2 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} (fuera del equipo){% endif %}</option>
+          {% endfor %}
+        </select>
+        <button class="st-btn" type="submit">Ver pareja</button>
+      </form>
+    </header>
+
+    {% if error %}
+      <div class="alert warning">{{ error }}</div>
+    {% endif %}
+
+    {% if s %}
+      {% if not s.played %}
+        <div class="st-empty">
+          <strong>Todavía no han jugado juntos</strong>
+          Cuando disputen su primer partido cerrado como pareja aparecerán aquí sus estadísticas.
+        </div>
+      {% else %}
+
+      {# ============ 1. RESUMEN ============ #}
+      <section aria-label="Resumen de la pareja">
+        <div class="st-kpis">
+          <article class="st-kpi st-kpi--ring">
+            <div class="st-ring" style="--pct: {{ pct_w }}" role="img" aria-label="{{ s.pct }}% de victorias">
+              <span>{{ s.pct|floatformat:0 }}%</span>
+            </div>
+            <div>
+              <h2 class="st-kpi-label">Victorias</h2>
+              <p class="st-kpi-sub">{{ s.wins }} ganados · {{ s.losses }} perdidos</p>
+            </div>
+          </article>
+
+          <article class="st-kpi">
+            <h2 class="st-kpi-label">Partidos jugados</h2>
+            <p class="st-kpi-value">{{ s.played }}</p>
+            <p class="st-kpi-sub">en {{ s.matches }} enfrentamiento{{ s.matches|pluralize }} · {{ s.points }} puntos</p>
+          </article>
+
+          <article class="st-kpi">
+            <h2 class="st-kpi-label">Racha actual</h2>
+            <p class="st-kpi-value {% if s.streak_type == 'V' %}st-up{% else %}st-down{% endif %}">{{ s.streak_len }}{{ s.streak_type }}</p>
+            <p class="st-kpi-sub">{% if s.streak_type == 'V' %}victoria{{ s.streak_len|pluralize }} seguida{{ s.streak_len|pluralize }}{% else %}derrota{{ s.streak_len|pluralize }} seguida{{ s.streak_len|pluralize }}{% endif %}</p>
+          </article>
+
+          <article class="st-kpi">
+            <h2 class="st-kpi-label">Mejor racha</h2>
+            <p class="st-kpi-value st-up">{{ s.best_win_streak }}V</p>
+            <p class="st-kpi-sub">peor racha: {{ s.worst_loss_streak }}D</p>
+          </article>
+        </div>
+
+        <div class="st-row">
+          <article class="st-card">
+            <h2 class="st-card-title">Forma reciente</h2>
+            <p class="st-card-note">Últimos {{ s.form|length }} partidos juntos, el más reciente a la derecha.</p>
+            <ol class="st-form">
+              {% for r in s.form %}
+                <li class="st-pip {% if r %}st-pip--w{% else %}st-pip--l{% endif %}" title="{% if r %}Victoria{% else %}Derrota{% endif %}">{% if r %}V{% else %}D{% endif %}</li>
+              {% endfor %}
+            </ol>
+          </article>
+
+          <article class="st-card">
+            <h2 class="st-card-title">Local y visitante</h2>
+            <p class="st-card-note">Victorias de la pareja según dónde juega.</p>
+            <div class="st-split">
+              <div class="st-split-head"><span>Como local</span><b>{% if s.local_played %}{{ s.local_pct|floatformat:0 }}%{% else %}—{% endif %}</b></div>
+              <div class="st-meter"><span style="width: {{ local_pct_w }}%"></span></div>
+              <p class="st-split-foot">{% if s.local_played %}{{ s.local_wins }}V – {{ s.local_losses }}D en {{ s.local_played }} partido{{ s.local_played|pluralize }}{% else %}Sin partidos todavía{% endif %}</p>
+            </div>
+            <div class="st-split">
+              <div class="st-split-head"><span>Como visitante</span><b>{% if s.visiting_played %}{{ s.visiting_pct|floatformat:0 }}%{% else %}—{% endif %}</b></div>
+              <div class="st-meter"><span style="width: {{ visiting_pct_w }}%"></span></div>
+              <p class="st-split-foot">{% if s.visiting_played %}{{ s.visiting_wins }}V – {{ s.visiting_losses }}D en {{ s.visiting_played }} partido{{ s.visiting_played|pluralize }}{% else %}Sin partidos todavía{% endif %}</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {# ============ 2. POR TEMPORADAS ============ #}
+      <section aria-labelledby="seasons-title" class="st-section">
+        <h2 class="st-section-title" id="seasons-title">Rendimiento por temporada</h2>
+        <div class="st-row">
+          <article class="st-card">
+            <h3 class="st-card-title">Partidos jugados</h3>
+            <p class="st-card-note">Ganados y perdidos en cada temporada.</p>
+            <div class="st-chart"><canvas id="chartPlayed"></canvas></div>
+          </article>
+          <article class="st-card">
+            <h3 class="st-card-title">Evolución del % de victorias</h3>
+            <p class="st-card-note">Porcentaje de partidos ganados juntos por temporada.</p>
+            <div class="st-chart"><canvas id="chartPct"></canvas></div>
+          </article>
+        </div>
+
+        <article class="st-card">
+          <h3 class="st-card-title">Detalle por temporada</h3>
+          <div class="st-table-wrap">
+            <table class="st-table">
+              <thead>
+                <tr>
+                  <th scope="col">Temporada</th>
+                  <th scope="col">Enfrentamientos</th>
+                  <th scope="col">Jugados</th>
+                  <th scope="col">Ganados</th>
+                  <th scope="col">Perdidos</th>
+                  <th scope="col">% victorias</th>
+                  <th scope="col">Cambio</th>
+                  <th scope="col">Puntos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in s.seasons reversed %}
+                  <tr>
+                    <th scope="row">{{ r.season }}</th>
+                    <td>{{ r.matches }}</td>
+                    <td>{{ r.played }}</td>
+                    <td>{{ r.wins }}</td>
+                    <td>{{ r.losses }}</td>
+                    <td>{{ r.pct|floatformat:0 }}%</td>
+                    <td>
+                      {% if r.delta is None %}<span class="st-muted">—</span>
+                      {% elif r.delta > 0 %}<span class="st-up">▲ {{ r.delta|floatformat:0 }}</span>
+                      {% elif r.delta < 0 %}<span class="st-down">▼ {{ r.delta|floatformat:0 }}</span>
+                      {% else %}<span class="st-muted">=</span>{% endif %}
+                    </td>
+                    <td>{{ r.points }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      {{ chart_seasons|json_script:"data-seasons" }}
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="{% static 'js/pair_statistics.js' %}"></script>
+      {% endif %}
+    {% endif %}
+
+    {# ============ 3. TODAS LAS PAREJAS ============ #}
+    <section aria-labelledby="pairs-title" class="st-section">
+      <h2 class="st-section-title" id="pairs-title">Todas las parejas</h2>
+      {% if pairs %}
+        <article class="st-card">
+          <p class="st-card-note mt-0">Parejas que han jugado juntas, de más a menos partidos. Pulsa una para ver su detalle.</p>
+          <div class="st-table-wrap">
+            <table class="st-table">
+              <thead>
+                <tr>
+                  <th scope="col">Pareja</th>
+                  <th scope="col">Jugados</th>
+                  <th scope="col">Ganados</th>
+                  <th scope="col">Perdidos</th>
+                  <th scope="col">% victorias</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in pairs %}
+                  <tr {% if r.p1.id == p1.id and r.p2.id == p2.id or r.p1.id == p2.id and r.p2.id == p1.id %}class="st-current"{% endif %}>
+                    <th scope="row"><a href="{% url 'pair_statistics' %}?p1={{ r.p1.id }}&p2={{ r.p2.id }}">{{ r.p1.name }} {{ r.p1.get_first_last_name }} / {{ r.p2.name }} {{ r.p2.get_first_last_name }}</a></th>
+                    <td>{{ r.played }}</td>
+                    <td>{{ r.wins }}</td>
+                    <td>{{ r.losses }}</td>
+                    <td>{{ r.pct|floatformat:0 }}%</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      {% else %}
+        <div class="st-empty">
+          <strong>Todavía no hay parejas</strong>
+          Aparecerán cuando se cierre el primer partido.
+        </div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

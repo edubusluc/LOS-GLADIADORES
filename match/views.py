@@ -4,6 +4,13 @@ from django.contrib import messages
 from .forms import MatchForm
 from .models import Match, Game, Result
 from . import lineup
+from .notifications import send_call_report, report_filename
+from .report import build_report
+from .report_pdf import render_report
+from django.http import HttpResponse
+import logging
+
+logger = logging.getLogger(__name__)
 from players.models import Player, current_season
 from call.models import Call
 from team.models import Team
@@ -234,9 +241,33 @@ def close_call(request, match_id):
     if request.method == "POST":
         call.draft_mode = False
         call.save()
+        # Automatización: informe PDF a los administradores. Si falla el envío,
+        # la convocatoria queda cerrada igualmente.
+        try:
+            recipients = send_call_report(call)
+        except Exception:
+            logger.exception("No se pudo enviar el informe de la convocatoria %s", call.pk)
+            messages.warning(request, "Convocatoria cerrada, pero no se pudo enviar el informe por email. "
+                                      "Puedes descargarlo desde esta página.")
+        else:
+            if recipients:
+                messages.success(request, f"Convocatoria cerrada. Informe enviado a {', '.join(recipients)}.")
+            else:
+                messages.info(request, "Convocatoria cerrada. Ningún administrador tiene email: añádelo en "
+                                       "Miembros para recibir el informe automáticamente.")
         return redirect('call_for_match', call.match.id)
-    
+
     return redirect('call_for_match', call.match.id)
+
+
+@club_admin_required
+def call_report_pdf(request, match_id):
+    """Descarga manual del informe de convocatoria."""
+    call = club_call(request, match__id=match_id)
+    pdf = render_report(build_report(call))
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="{report_filename(call.match)}"'
+    return response
 
 @club_admin_required
 def edit_call(request, call_id):

@@ -73,6 +73,7 @@ def club_game_log(club, season=None):
             'won': won,
             'season': g.match.season,
             'match_id': g.match_id,
+            'date': g.match.start_date,
             'points': (g.score or 0) if won else 0,
         })
     return log

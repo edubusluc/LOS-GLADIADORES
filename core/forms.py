@@ -25,6 +25,10 @@ class AddMemberForm(forms.Form):
         label="Contraseña", required=False, widget=forms.PasswordInput,
         help_text="Solo si el usuario no existe todavía: se creará con esta contraseña.",
     )
+    email = forms.EmailField(
+        label="Email", required=False,
+        help_text="Los administradores con email reciben el informe al cerrar cada convocatoria.",
+    )
     role = forms.ChoiceField(label="Rol", choices=Membership.ROLES, initial=Membership.MEMBER)
 
     def __init__(self, *args, club=None, **kwargs):
@@ -51,9 +55,14 @@ class AddMemberForm(forms.Form):
 
     def save(self):
         user = self.cleaned_data["user"]
+        email = self.cleaned_data.get("email", "")
         if user is None:
             user = User.objects.create_user(
                 username=self.cleaned_data["username"],
                 password=self.cleaned_data["password"],
+                email=email,
             )
+        elif email and not user.email:
+            user.email = email
+            user.save(update_fields=["email"])
         return Membership.objects.create(user=user, club=self.club, role=self.cleaned_data["role"])

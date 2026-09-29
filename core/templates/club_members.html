@@ -12,18 +12,19 @@
 
     <h1>Miembros de {{ current_club.name }}</h1>
 
-    <table class="table align-middle">
+    <div class="z-table-wrap"><table class="table align-middle">
         <thead>
-            <tr><th>Usuario</th><th>Rol</th><th></th></tr>
+            <tr><th>Usuario</th><th>Email y rol</th><th></th></tr>
         </thead>
         <tbody>
         {% for m in memberships %}
             <tr>
                 <td>{{ m.user.username }}</td>
                 <td>
-                    <form method="post" action="{% url 'update_member' m.id %}" class="d-flex gap-2">
+                    <form method="post" action="{% url 'update_member' m.id %}" class="d-flex flex-wrap gap-2">
                         {% csrf_token %}
-                        <select name="role" class="form-select form-select-sm">
+                        <input type="email" name="email" value="{{ m.user.email }}" placeholder="email@ejemplo.com" class="form-control form-control-sm" style="max-width: 240px;" aria-label="Email de {{ m.user.username }}">
+                        <select name="role" style="max-width: 220px;" class="form-select form-select-sm">
                             {% for value, label in roles %}
                             <option value="{{ value }}" {% if m.role == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
@@ -40,7 +41,7 @@
             </tr>
         {% endfor %}
         </tbody>
-    </table>
+    </table></div>
 
     <h4 class="mt-4">Añadir miembro</h4>
     <form method="post" novalidate>

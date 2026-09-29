@@ -34,6 +34,9 @@
         <a href="{% url 'edit_call' call_for_match.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i> Editar</a>
         <a href="{% url 'view_call_log' call_for_match.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-triangle-exclamation me-1"></i> Penalizaciones</a>
         {% endif %}
+        {% if call_for_match %}
+        <a href="{% url 'call_report' match.id %}" class="btn btn-secondary btn-sm" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i> Informe PDF</a>
+        {% endif %}
         {% if call_for_match.draft_mode %}
         <form action="{% url 'close_call' match.id %}" method="post" class="d-inline">
             {% csrf_token %}

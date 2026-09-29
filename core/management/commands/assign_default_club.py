@@ -29,13 +29,27 @@ class Command(BaseCommand):
         club, created = Club.objects.get_or_create(name=name)
         self.stdout.write(f"Club {'creado' if created else 'existente'}: {club} (id={club.id})")
 
-        n_teams = Team.objects.filter(club__isnull=True).update(club=club)
+        # Equipos antiguos (sin club). Si el club ya tiene un equipo con el mismo
+        # nombre (p. ej. el equipo propio que se crea al registrar el club), se
+        # fusiona en el antiguo, que es el que tiene el historial de partidos.
+        n_teams = n_merged = 0
+        for legacy in Team.objects.filter(club__isnull=True):
+            duplicate = Team.objects.filter(club=club, name__iexact=legacy.name).first()
+            if duplicate:
+                self._merge(duplicate, into=legacy)
+                n_merged += 1
+            legacy.club = club
+            legacy.save()
+            n_teams += 1
 
         own_team = club.own_team
         if own_team is None:
             own_team = Team.objects.filter(club=club, name__iexact=name).first()
             if own_team is None:
                 own_team = Team.objects.create(club=club, name=name, location=location, in_group=True)
+                self.stdout.write(self.style.WARNING(
+                    f"No había ningún equipo llamado {name!r}: se ha creado uno nuevo (id={own_team.id})."
+                ))
             own_team.is_own = True
             own_team.save()
 
@@ -52,6 +66,22 @@ class Command(BaseCommand):
                 n_members += new
 
         self.stdout.write(self.style.SUCCESS(
-            f"Asignados al club: {n_teams} equipos, {n_players} jugadores, {n_matches} partidos, "
-            f"{n_posts} publicaciones. Equipo propio: {own_team}. Nuevas membresías: {n_members}."
+            f"Asignados al club: {n_teams} equipos ({n_merged} duplicados fusionados), {n_players} jugadores, "
+            f"{n_matches} partidos, {n_posts} publicaciones. Equipo propio: {own_team} (id={own_team.id}). "
+            f"Nuevas membresías: {n_members}."
         ))
+
+    def _merge(self, duplicate, into):
+        """Pasa jugadores y partidos de `duplicate` a `into` y borra `duplicate`."""
+        Player.objects.filter(team=duplicate).update(team=into)
+        Match.objects.filter(local=duplicate).update(local=into)
+        Match.objects.filter(visiting=duplicate).update(visiting=into)
+        if duplicate.is_own:
+            into.is_own = True
+            into.in_group = True
+        if not into.photo and duplicate.photo:
+            into.photo = duplicate.photo
+        if not into.location:
+            into.location = duplicate.location
+        self.stdout.write(f"Fusionado el equipo duplicado {duplicate} (id={duplicate.id}) en el id={into.id}.")
+        duplicate.delete()

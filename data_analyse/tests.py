@@ -97,11 +97,62 @@ class PairStatisticsTests(TestCase):
         response = self.client.get(reverse("pair_statistics"), {"p1": self.a.id, "p2": self.b.id})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["s"]["played"], 4)
-        self.assertEqual(len(response.context["pairs"]), 3)  # A+B, C+D, A+C
+        # Con una pareja elegida ya no se muestra el listado de parejas destacadas
+        self.assertNotContains(response, "Parejas destacadas")
 
-        self.assertEqual(self.client.get(reverse("pair_statistics")).status_code, 200)
+        overview = self.client.get(reverse("pair_statistics"))
+        self.assertEqual(overview.status_code, 200)
+        self.assertContains(overview, "Parejas destacadas")
         same = self.client.get(reverse("pair_statistics"), {"p1": self.a.id, "p2": self.a.id})
         self.assertIn("error", same.context)
+
+    def test_best_and_worst_pairs(self):
+        # A+B 3/4 y C+D 1/2; A+C solo 1 partido, no llega al mínimo
+        response = self.client.get(reverse("pair_statistics"))
+        key = lambda rows: [(r["p1"].name, r["p2"].name, r["played"], r["pct"]) for r in rows]
+        self.assertEqual(key(response.context["best_pairs"]), [("A", "B", 4, 75.0)])
+        self.assertEqual(key(response.context["worst_pairs"]), [("C", "D", 2, 50.0)])
+
+    def test_best_and_worst_pairs_ranking(self):
+        row = lambda name, played, wins: {'name': name, 'played': played, 'wins': wins,
+                                          'pct': pair_stats._pct(wins, played)}
+        pairs = [row('a', 10, 9), row('b', 5, 1), row('c', 4, 4), row('d', 6, 3),
+                 row('e', 8, 2), row('f', 3, 2), row('g', 1, 0), row('h', 7, 5)]
+        best, worst = pair_stats.best_and_worst_pairs(pairs)
+        self.assertEqual([r['name'] for r in best], ['c', 'a', 'h'])
+        self.assertEqual([r['name'] for r in worst], ['b', 'e', 'd'])  # 'g' no llega al mínimo
+
+        # Con pocas parejas se reparten sin repetir: 3 parejas -> 2 mejores y 1 peor
+        best, worst = pair_stats.best_and_worst_pairs(pairs[:3])
+        self.assertEqual(([r['name'] for r in best], [r['name'] for r in worst]), (['c', 'a'], ['b']))
+
+    def test_pair_last_games(self):
+        # Cinco partidos más de A+B: la tabla muestra solo los cinco más recientes
+        own, rival = self.club.own_team, Team.objects.get(club=self.club, name="Rival")
+        for day in range(1, 6):
+            m = Match.objects.create(club=self.club, local=own, visiting=rival,
+                                     start_date=datetime.date(2026, 1, day), draft_mode=False)
+            Game.objects.create(match=m, n_game=1, score=3, winner='Visitante', draft_mode=False,
+                                player_1_local=self.b, player_2_local=self.a)
+        response = self.client.get(reverse("pair_statistics"), {"p1": self.a.id, "p2": self.b.id})
+        games = response.context["last_games"]
+        self.assertEqual([g["date"] for g in games], [datetime.date(2026, 1, d) for d in (5, 4, 3, 2, 1)])
+        self.assertTrue(all(g["local"] and not g["won"] and g["rival"] == rival for g in games))
+        self.assertContains(response, "Últimos 5 partidos")
+
+    def test_pair_last_games_sets_and_side(self):
+        m = Match.objects.get(start_date=datetime.date(2024, 11, 1))
+        Result.objects.create(game=m.games.get(n_game=1), set1_local=6, set1_visiting=3,
+                              set2_local=6, set2_visiting=4)
+        response = self.client.get(reverse("pair_statistics"), {"p1": self.b.id, "p2": self.a.id})
+        games = response.context["last_games"]
+        self.assertEqual([(g["date"], g["n_game"], g["local"], g["won"]) for g in games], [
+            (datetime.date(2025, 10, 1), 1, True, True),
+            (datetime.date(2024, 11, 1), 1, False, False),
+            (datetime.date(2024, 10, 1), 2, True, True),
+            (datetime.date(2024, 10, 1), 1, True, True),
+        ])
+        self.assertEqual(games[1]["sets"], "3-6 4-6")
 
     def test_pair_view_rejects_other_club_players(self):
         other = create_club("Club B", "Madrid", User.objects.create_user("b", password="x"))

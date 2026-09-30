@@ -10,9 +10,9 @@
       <div>
         <h1 class="st-title">{% if s %}{{ p1.name }} {{ p1.get_first_last_name }} / {{ p2.name }} {{ p2.get_first_last_name }}{% else %}Estadísticas por parejas{% endif %}</h1>
         {% if s %}
-          <p class="st-subtitle">{{ s.played }} partido{{ s.played|pluralize }} juntos en {{ s.matches }} enfrentamiento{{ s.matches|pluralize }}</p>
+          <p class="st-subtitle">{{ s.played }} partido{{ s.played|pluralize }} juntos en {{ s.matches }} enfrentamiento{{ s.matches|pluralize }} · <a href="{% url 'pair_statistics' %}">Ver mejores y peores parejas</a></p>
         {% else %}
-          <p class="st-subtitle">Elige dos jugadores para ver cómo rinden juntos.</p>
+          <p class="st-subtitle">Busca dos jugadores para ver cómo rinden juntos.</p>
         {% endif %}
       </div>
 
@@ -115,7 +115,44 @@
         </div>
       </section>
 
-      {# ============ 2. POR TEMPORADAS ============ #}
+      {# ============ 2. ÚLTIMOS PARTIDOS ============ #}
+      <section aria-labelledby="last-title" class="st-section">
+        <h2 class="st-section-title" id="last-title">Últimos {{ last_games|length }} partido{{ last_games|length|pluralize }}</h2>
+        <article class="st-card">
+          <p class="st-card-note mt-0">Del más reciente al más antiguo. Pulsa un partido para verlo en la sección de partidos.</p>
+          <div class="st-table-wrap">
+            <table class="st-table st-table--links">
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Rival</th>
+                  <th scope="col">Partido</th>
+                  <th scope="col">Resultado</th>
+                  <th scope="col">Puntos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for g in last_games %}
+                  <tr>
+                    <th scope="row">
+                      <a href="{% url 'call_for_match' g.match_id %}#partido-{{ g.n_game }}">{{ g.date|date:"d/m/Y" }}</a>
+                    </th>
+                    <td>{{ g.rival }} <span class="st-muted">({% if g.local %}local{% else %}visitante{% endif %})</span></td>
+                    <td>{{ g.n_game }}</td>
+                    <td>
+                      <span class="{% if g.won %}st-up{% else %}st-down{% endif %}">{% if g.won %}V{% else %}D{% endif %}</span>
+                      {% if g.sets %}<span class="st-muted">{{ g.sets }}</span>{% endif %}
+                    </td>
+                    <td>{{ g.points }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      {# ============ 3. POR TEMPORADAS ============ #}
       <section aria-labelledby="seasons-title" class="st-section">
         <h2 class="st-section-title" id="seasons-title">Rendimiento por temporada</h2>
         <div class="st-row">
@@ -177,43 +214,23 @@
       {% endif %}
     {% endif %}
 
-    {# ============ 3. TODAS LAS PAREJAS ============ #}
-    <section aria-labelledby="pairs-title" class="st-section">
-      <h2 class="st-section-title" id="pairs-title">Todas las parejas</h2>
-      {% if pairs %}
-        <article class="st-card">
-          <p class="st-card-note mt-0">Parejas que han jugado juntas, de más a menos partidos. Pulsa una para ver su detalle.</p>
-          <div class="st-table-wrap">
-            <table class="st-table">
-              <thead>
-                <tr>
-                  <th scope="col">Pareja</th>
-                  <th scope="col">Jugados</th>
-                  <th scope="col">Ganados</th>
-                  <th scope="col">Perdidos</th>
-                  <th scope="col">% victorias</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for r in pairs %}
-                  <tr {% if r.p1.id == p1.id and r.p2.id == p2.id or r.p1.id == p2.id and r.p2.id == p1.id %}class="st-current"{% endif %}>
-                    <th scope="row"><a href="{% url 'pair_statistics' %}?p1={{ r.p1.id }}&p2={{ r.p2.id }}">{{ r.p1.name }} {{ r.p1.get_first_last_name }} / {{ r.p2.name }} {{ r.p2.get_first_last_name }}</a></th>
-                    <td>{{ r.played }}</td>
-                    <td>{{ r.wins }}</td>
-                    <td>{{ r.losses }}</td>
-                    <td>{{ r.pct|floatformat:0 }}%</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+    {# ============ PAREJAS DESTACADAS (solo sin pareja elegida) ============ #}
+    {% if not s %}
+      <section aria-labelledby="pairs-title" class="st-section">
+        <h2 class="st-section-title" id="pairs-title">Parejas destacadas</h2>
+        {% if best_pairs or worst_pairs %}
+          <div class="st-row">
+            {% include 'includes/pair_rank_table.html' with title="Mejores parejas" rows=best_pairs note="Mayor % de victorias juntos." %}
+            {% include 'includes/pair_rank_table.html' with title="Peores parejas" rows=worst_pairs note="Menor % de victorias juntos." %}
           </div>
-        </article>
-      {% else %}
-        <div class="st-empty">
-          <strong>Todavía no hay parejas</strong>
-          Aparecerán cuando se cierre el primer partido.
-        </div>
-      {% endif %}
-    </section>
+          <p class="st-card-note">Para ver cualquier otra pareja, búscala arriba.</p>
+        {% else %}
+          <div class="st-empty">
+            <strong>Todavía no hay parejas destacadas</strong>
+            Aparecerán cuando alguna pareja juegue al menos {{ min_games_pair }} partidos juntos. Mientras tanto puedes buscar cualquier pareja arriba.
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
   </div>
 {% endblock %}

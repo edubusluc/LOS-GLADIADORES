@@ -160,6 +160,25 @@ def all_pairs(log, players):
     return rows
 
 
+# Parejas destacadas en la página de parejas (el resto se busca con el buscador).
+HIGHLIGHT_N = 3
+
+
+def best_and_worst_pairs(pairs, n=HIGHLIGHT_N, min_games=MIN_GAMES_PAIR):
+    """
+    (mejores, peores) de `all_pairs` por % de victorias, solo parejas con al menos
+    `min_games` partidos. Si hay menos de 2*n, se reparten entre las dos listas
+    para que ninguna pareja salga en ambas.
+    """
+    ranked = [r for r in pairs if r['played'] >= min_games]
+    n_best = min(n, (len(ranked) + 1) // 2)
+    n_worst = min(n, len(ranked) - n_best)
+    best = sorted(ranked, key=lambda r: (-r['pct'], -r['played'], -r['wins']))[:n_best]
+    rest = [r for r in ranked if r not in best]
+    worst = sorted(rest, key=lambda r: (r['pct'], -r['played'], r['wins']))[:n_worst]
+    return best, worst
+
+
 def pair_summary(log, p1_id, p2_id):
     """Métricas de una pareja: balance, local/visitante, rachas y temporadas."""
     key = pair_key(p1_id, p2_id)

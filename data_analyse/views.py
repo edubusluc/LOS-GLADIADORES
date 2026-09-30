@@ -293,6 +293,17 @@ def build_game_log(player):
     return log
 
 
+def _sets_text(game, is_local):
+    """Sets desde el punto de vista del club ("6-3 4-6 10-8"). Usa game.results prefetched."""
+    result = next(iter(game.results.all()), None)
+    if not result:
+        return ""
+    return " ".join(
+        f"{loc}-{vis}" if is_local else f"{vis}-{loc}"
+        for loc, vis in result.sets() if loc is not None and vis is not None
+    )
+
+
 def season_games(player, season):
     """
     Partidos (Game) cerrados del jugador en una temporada, del más reciente al más antiguo.
@@ -323,14 +334,6 @@ def season_games(player, season):
         partner = next((p for p in pair if p and p.id != player.id), None)
         won = (g.winner == 'Local') == is_local
 
-        # Sets desde el punto de vista del jugador ("6-3 4-6 10-8")
-        sets = []
-        result = next(iter(g.results.all()), None)
-        if result:
-            for loc, vis in result.sets():
-                if loc is not None and vis is not None:
-                    sets.append(f"{loc}-{vis}" if is_local else f"{vis}-{loc}")
-
         rows.append({
             'match_id': g.match_id,
             'n_game': g.n_game,
@@ -338,7 +341,7 @@ def season_games(player, season):
             'rival': g.match.visiting if is_local else g.match.local,
             'local': is_local,
             'partner': partner,
-            'sets': " ".join(sets),
+            'sets': _sets_text(g, is_local),
             'won': won,
             'points': g.score if won else 0,
         })
@@ -530,12 +533,14 @@ def statistics_per_pair(request):
     club_players = list(Player.objects.filter(club=request.club).order_by('name', 'last_name'))
     by_id = {p.id: p for p in club_players}
     log = pair_stats.club_game_log(request.club)
-    pairs = pair_stats.all_pairs(log, club_players)
+    best_pairs, worst_pairs = pair_stats.best_and_worst_pairs(pair_stats.all_pairs(log, club_players))
 
     p1_id, p2_id = request.GET.get('p1', ''), request.GET.get('p2', '')
     context = {
         'players': club_players,
-        'pairs': pairs,
+        'best_pairs': best_pairs,
+        'worst_pairs': worst_pairs,
+        'min_games_pair': pair_stats.MIN_GAMES_PAIR,
         'selected_p1': int(p1_id) if p1_id.isdigit() else None,
         'selected_p2': int(p2_id) if p2_id.isdigit() else None,
     }
@@ -553,6 +558,7 @@ def statistics_per_pair(request):
                 'p1': p1,
                 'p2': p2,
                 's': summary,
+                'last_games': pair_last_games(request.club, p1, p2),
                 'pct_w': round(summary['pct']),
                 'local_pct_w': round(summary['local_pct']),
                 'visiting_pct_w': round(summary['visiting_pct']),
@@ -565,6 +571,43 @@ def statistics_per_pair(request):
             })
 
     return render(request, 'pair_statistics.html', context)
+
+
+PAIR_LAST_GAMES = 5
+
+
+def pair_last_games(club, p1, p2, n=PAIR_LAST_GAMES):
+    """
+    Últimos `n` partidos (Game) cerrados de la pareja en el club, del más reciente al más antiguo.
+    Cada elemento: {'match_id', 'n_game', 'date', 'season', 'rival', 'local', 'sets', 'won', 'points'}
+    """
+    together = (
+        Q(player_1_local=p1, player_2_local=p2) | Q(player_1_local=p2, player_2_local=p1) |
+        Q(player_1_visiting=p1, player_2_visiting=p2) | Q(player_1_visiting=p2, player_2_visiting=p1)
+    )
+    games = (
+        Game.objects
+        .filter(together, draft_mode=False, winner__in=('Local', 'Visitante'), match__club=club)
+        .select_related('match__local', 'match__visiting')
+        .prefetch_related('results')
+        .order_by('-match__start_date', '-match_id', '-n_game')[:n]
+    )
+    rows = []
+    for g in games:
+        is_local = p1.id in (g.player_1_local_id, g.player_2_local_id)
+        won = (g.winner == 'Local') == is_local
+        rows.append({
+            'match_id': g.match_id,
+            'n_game': g.n_game,
+            'date': g.match.start_date,
+            'season': g.match.season,
+            'rival': g.match.visiting if is_local else g.match.local,
+            'local': is_local,
+            'sets': _sets_text(g, is_local),
+            'won': won,
+            'points': (g.score or 0) if won else 0,
+        })
+    return rows
 
 
 # ---------------------------------------------------------------

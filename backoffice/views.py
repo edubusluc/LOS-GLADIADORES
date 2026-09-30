@@ -13,7 +13,10 @@ from match.models import Match
 from players.models import Player
 
 from .decorators import staff_required
-from .metrics import AT_RISK_DAYS, annotate_clubs, dashboard_kpis, google_user_ids
+from .metrics import (
+    AT_RISK_DAYS, ONLINE_MINUTES, annotate_clubs, dashboard_kpis, google_user_ids, load_metrics, online_users,
+)
+from .middleware import SLOW_MS, flush_metrics
 
 User = get_user_model()
 
@@ -32,8 +35,18 @@ def _extra(request, *keys):
 
 @staff_required
 def dashboard(request):
+    flush_metrics()
     return render(request, "backoffice/dashboard.html", {
         "section": "dashboard", "kpis": dashboard_kpis(), "at_risk_days": AT_RISK_DAYS,
+    })
+
+
+@staff_required
+def load(request):
+    flush_metrics()
+    return render(request, "backoffice/load.html", {
+        "section": "load", "online": online_users(), "online_minutes": ONLINE_MINUTES,
+        "load": load_metrics(), "slow_ms": SLOW_MS,
     })
 
 

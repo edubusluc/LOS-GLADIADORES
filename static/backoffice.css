@@ -127,3 +127,16 @@ a.bo-kpi:hover { color: inherit; border-color: var(--z-lime); }
     .bo-side-foot { grid-auto-flow: column; justify-content: start; gap: 16px; margin-top: 8px; }
     .bo-grid { grid-template-columns: 1fr; }
 }
+
+/* Barras densas (60 minutos, 24 horas) */
+.bo-bars--dense { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2px; height: 170px; padding-bottom: 20px; }
+.bo-bars--dense li { position: relative; }
+.bo-bars--dense .bo-bar {
+    max-width: none;
+    border-radius: 3px 3px 1px 1px;
+    --stop: max(var(--e, 0%), var(--emin, 0px));
+    background: linear-gradient(to top, var(--z-danger) 0 var(--stop), var(--z-lime) var(--stop));
+}
+.bo-bars--dense small { position: absolute; bottom: -20px; left: 0; white-space: nowrap; }
+.bo-kpi--alert { border-color: var(--z-danger); }
+.bo-kpi--alert b { color: var(--z-danger); }

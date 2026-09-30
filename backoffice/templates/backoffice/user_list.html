@@ -1,4 +1,5 @@
 {% extends 'backoffice/base.html' %}
+{% load backoffice_tags %}
 {% block title %}Usuarios{% endblock %}
 
 {% block content %}
@@ -34,7 +35,7 @@
             </td>
             <td>{{ u.email|default:"—" }}</td>
             <td class="text-end">{{ u.n_clubs }}</td>
-            <td>{% if u.last_login %}hace {{ u.last_login|timesince }}{% else %}nunca{% endif %}</td>
+            <td>{{ u.last_login|ago }}</td>
             <td>{{ u.date_joined|date:"j M Y" }}</td>
         </tr>
     {% empty %}

@@ -1,0 +1,20 @@
+{# Uso: {% include 'backoffice/includes/club_rows.html' with clubs=... empty="..." %} (clubes anotados con annotate_clubs) #}
+{% if clubs %}
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr><th>Club</th><th class="text-end">Miembros</th><th class="text-end">Jugadores</th><th class="text-end">Partidos</th><th>Último partido</th><th>Alta</th></tr></thead>
+    <tbody>
+    {% for c in clubs %}
+        <tr>
+            <td><a href="{% url 'backoffice:club_detail' c.id %}">{{ c.name }}</a></td>
+            <td class="text-end">{{ c.n_members|default:0 }}</td>
+            <td class="text-end">{{ c.n_players|default:0 }}</td>
+            <td class="text-end">{{ c.n_matches|default:0 }}</td>
+            <td>{{ c.last_match|date:"j M Y"|default:"—" }}</td>
+            <td>{{ c.created_at|date:"j M Y" }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+{% else %}
+<p class="text-muted mb-0">{{ empty }}</p>
+{% endif %}

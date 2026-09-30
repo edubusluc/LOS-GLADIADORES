@@ -1,0 +1,59 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}{{ member.username }}{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:user_list' %}">Usuarios</a> · alta el {{ member.date_joined|date:"j M Y" }}</span>
+        <h1>{{ member.username }}</h1>
+    </div>
+    {% if user.is_superuser %}
+    <div class="z-actions">
+        <a href="{% url 'admin:auth_user_change' member.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> Abrir en Django admin</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="bo-grid">
+    <section class="z-panel">
+        <h2 class="h5">Cuenta</h2>
+        <dl class="bo-facts">
+            <div><dt>Nombre</dt><dd>{{ member.get_full_name|default:"—" }}</dd></div>
+            <div><dt>Email</dt><dd>{{ member.email|default:"—" }}</dd></div>
+            <div><dt>Último acceso</dt><dd>{% if member.last_login %}{{ member.last_login|date:"j M Y H:i" }} (hace {{ member.last_login|timesince }}){% else %}nunca{% endif %}</dd></div>
+            <div><dt>Acceso</dt><dd>{{ login_methods|join:" · "|default:"Sin método de acceso" }}</dd></div>
+            <div><dt>Estado</dt><dd>{% if member.is_active %}Activo{% else %}<span class="z-badge z-badge--danger">Inactivo</span>{% endif %}{% if member.is_staff %} · <span class="z-badge z-badge--lime">Staff</span>{% endif %}{% if member.is_superuser %} · Superusuario{% endif %}</dd></div>
+        </dl>
+    </section>
+
+    <section class="z-panel">
+        <h2 class="h5">Cómo llegó</h2>
+        <dl class="bo-facts">
+            {% if invitation_used %}
+            <div><dt>Invitación</dt><dd>de {{ invitation_used.created_by.username|default:"—" }} a <a href="{% url 'backoffice:club_detail' invitation_used.club_id %}">{{ invitation_used.club.name }}</a></dd></div>
+            <div><dt>Usada el</dt><dd>{{ invitation_used.used_at|date:"j M Y H:i" }}</dd></div>
+            {% else %}
+            <div><dt>Invitación</dt><dd>No entró por invitación</dd></div>
+            {% endif %}
+            <div><dt>Invitaciones creadas</dt><dd>{{ invitations_sent }}</dd></div>
+        </dl>
+    </section>
+</div>
+
+<section class="z-panel">
+    <h2 class="h5">Clubes</h2>
+    <div class="z-table-wrap"><table class="table align-middle">
+        <thead><tr><th>Club</th><th>Rol</th></tr></thead>
+        <tbody>
+        {% for m in memberships %}
+            <tr>
+                <td><a href="{% url 'backoffice:club_detail' m.club_id %}">{{ m.club.name }}</a></td>
+                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">Administrador</span>{% else %}Miembro{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="2" class="text-muted">No pertenece a ningún club.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% endblock %}

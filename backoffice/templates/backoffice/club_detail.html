@@ -1,0 +1,87 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}{{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">Clubes</a> · alta el {{ club.created_at|date:"j M Y" }}</span>
+        <h1>{{ club.name }}</h1>
+    </div>
+    {% if user.is_superuser %}
+    <div class="z-actions">
+        <a href="{% url 'admin:core_club_change' club.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> Abrir en Django admin</a>
+    </div>
+    {% endif %}
+</div>
+
+<section class="bo-kpis" aria-label="Resumen del club">
+    <div class="bo-kpi"><span class="bo-kpi-label">Miembros</span><b>{{ club.n_members|default:0 }}</b><small>{{ club.n_admins|default:0 }} administrador{{ club.n_admins|pluralize:"es" }}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">Jugadores</span><b>{{ players_active }}</b><small>{{ players_total }} en total, contando bajas</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">Partidos</span><b>{{ club.n_matches|default:0 }}</b><small>{{ rivals }} equipo{{ rivals|pluralize }} rival{{ rivals|pluralize:"es" }}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">Último partido</span><b class="bo-kpi-date">{{ club.last_match|date:"j M Y"|default:"—" }}</b><small>{% if club.last_match %}hace {{ club.last_match|timesince }}{% else %}sin partidos jugados{% endif %}</small></div>
+</section>
+
+<section class="z-panel">
+    <h2 class="h5">Miembros</h2>
+    <div class="z-table-wrap"><table class="table align-middle">
+        <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Último acceso</th></tr></thead>
+        <tbody>
+        {% for m in memberships %}
+            <tr>
+                <td><a href="{% url 'backoffice:user_detail' m.user.id %}">{{ m.user.username }}</a></td>
+                <td>{{ m.user.email|default:"—" }}</td>
+                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">Administrador</span>{% else %}Miembro{% endif %}</td>
+                <td>{% if m.user.last_login %}hace {{ m.user.last_login|timesince }}{% else %}nunca{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4" class="text-muted">Sin miembros.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+
+<div class="bo-grid">
+    <section class="z-panel">
+        <h2 class="h5">Últimos partidos</h2>
+        <ul class="bo-list">
+            {% for m in past_matches %}
+            <li><span>{{ m.local }} – {{ m.visiting }}</span><small class="text-muted ms-auto">{{ m.start_date|date:"j M Y" }}{% if m.result_points != "NONE" %} · {{ m.result_points }}{% endif %}</small></li>
+            {% empty %}
+            <li class="text-muted">Sin partidos jugados.</li>
+            {% endfor %}
+        </ul>
+    </section>
+    <section class="z-panel">
+        <h2 class="h5">Próximos partidos</h2>
+        <ul class="bo-list">
+            {% for m in upcoming_matches %}
+            <li><span>{{ m.local }} – {{ m.visiting }}</span><small class="text-muted ms-auto">{{ m.start_date|date:"j M Y" }}</small></li>
+            {% empty %}
+            <li class="text-muted">Nada programado.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+
+<section class="z-panel">
+    <h2 class="h5">Últimas invitaciones</h2>
+    <div class="z-table-wrap"><table class="table align-middle">
+        <thead><tr><th>Creada</th><th>Por</th><th>Estado</th></tr></thead>
+        <tbody>
+        {% for inv in invitations %}
+            <tr>
+                <td>{{ inv.created_at|date:"j M Y H:i" }}</td>
+                <td>{{ inv.created_by.username|default:"—" }}</td>
+                <td>
+                    {% if inv.is_used %}<span class="z-badge z-badge--lime">Usada por {{ inv.used_by.username|default:"—" }}</span>
+                    {% elif inv.is_expired %}<span class="z-badge z-badge--outline">Caducada</span>
+                    {% else %}<span class="z-badge z-badge--warning">Vigente</span>{% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3" class="text-muted">Este club no ha creado invitaciones.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% endblock %}

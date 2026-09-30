@@ -128,7 +128,7 @@ class SnpAccountTests(TestCase):
 
         calls = []
 
-        def fake_scrape(username, password, team_id):
+        def fake_scrape(username, password, team_id, **options):
             calls.append(username)
             return [{"name": "Ana Alvarez", "score": 1.0}, {"name": "Bea Beta", "score": 2.0}]
 
@@ -139,6 +139,11 @@ class SnpAccountTests(TestCase):
         self.assertEqual(Player.objects.get(name="Ana").snp_score, 1.0)
         self.assertEqual(Player.objects.get(name="Bea").snp_score, 2.0)
         self.assertIn("Clubes procesados: 2; con error: 0.", out.getvalue())
+
+        calls.clear()
+        with mock.patch("players.snp.scrape_scores", fake_scrape):
+            call_command("update_snp_scores", "--club", "club b", stdout=StringIO())
+        self.assertEqual(len(calls), 1)
 
     def test_admin_can_save_account_and_password_is_kept_when_blank(self):
         self.client.login(username="admin", password="pass-12345")

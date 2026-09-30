@@ -140,7 +140,8 @@ los puntos de los jugadores (`players/scraper.py`) y actualiza los «Puntos SNP�
 nombres se cruzan sin tener en cuenta mayúsculas, tildes, la categoría final (500,
 Future) ni el segundo apellido si falta en un lado; lo que no encaja se muestra en la
 página de la cuenta SNP. Solo el staff puede lanzarlo a mano, desde el back-office
-(*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club <slug>]`.
+(*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club "<nombre o slug>"] [--headed]`
+(`--headed` abre el navegador a la vista para seguir cada paso).
 
 Define una clave de cifrado propia en `.env` (si falta se deriva de
 `DJANGO_SECRET_KEY`, y cambiar esa clave dejaría ilegibles las cuentas guardadas):

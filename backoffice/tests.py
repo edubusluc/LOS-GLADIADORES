@@ -2,7 +2,7 @@ import datetime
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -417,6 +417,24 @@ class SchedulerTests(TestCase):
         JobRun.objects.create(job=job, status=JobRun.OK, started_at=timezone.now())
         call_command("purge_job_runs", stdout=open("/dev/null", "w"))
         self.assertEqual(JobRun.objects.count(), 1)
+
+
+class LiveOutputAsyncTests(TransactionTestCase):
+    """Procesos que escriben su salida con un event loop en marcha (Playwright en update_snp_scores)."""
+
+    def test_live_output_is_saved_from_async_context(self):
+        import asyncio
+        from .scheduler import LiveOutput, sync_jobs
+        sync_jobs()
+        run = JobRun.objects.create(job=ScheduledJob.objects.first(), started_at=timezone.now())
+        out = LiveOutput(run, every=0)
+
+        async def write_from_loop():
+            out.write("Iniciando sesión en SNP…\n")
+
+        asyncio.run(write_from_loop())  # antes: SynchronousOnlyOperation
+        run.refresh_from_db()
+        self.assertEqual(run.output, "Iniciando sesión en SNP…\n")
 
 
 class SqlConsoleTests(TestCase):

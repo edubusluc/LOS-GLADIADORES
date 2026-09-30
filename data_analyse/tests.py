@@ -65,6 +65,17 @@ class PairStatisticsTests(TestCase):
             [('2024-2025', 3, 2, 66.7), ('2025-2026', 1, 1, 100.0)],
         )
 
+    def test_hot_streaks(self):
+        """A encadena 2 victorias; ninguna pareja del equipo llega al mínimo (C está fuera)."""
+        squad = list(Player.objects.filter(club=self.club, in_team=True))
+        player, pair = pair_stats.hot_streaks(pair_stats.club_game_log(self.club), squad)
+        self.assertEqual((player['player'], player['streak']), (self.a, 2))
+        self.assertIsNone(pair)
+
+        # Con C en la lista, A+C (1 victoria) sigue sin llegar; C+D va perdiendo
+        everyone = list(Player.objects.filter(club=self.club))
+        self.assertIsNone(pair_stats.hot_streaks(pair_stats.club_game_log(self.club), everyone)[1])
+
     def test_top_tables(self):
         log = pair_stats.club_game_log(self.club)
         squad = list(Player.objects.filter(club=self.club, in_team=True))

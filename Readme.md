@@ -18,10 +18,10 @@ Los recursos de marca (logo, favicon, icono para móvil) están en `static/zyra/
 ## Multi-club
 
 La aplicación gestiona varios clubes. Cada club (`core.Club`) tiene sus propios jugadores,
-equipos rivales, partidos, convocatorias, publicaciones y estadísticas, y sus usuarios
+equipos rivales, partidos, convocatorias y estadísticas, y sus usuarios
 (`core.Membership`) solo pueden ver los datos de los clubes a los que pertenecen.
 
-- **Administrador**: gestiona jugadores, equipos, partidos, convocatorias, publicaciones y miembros.
+- **Administrador**: gestiona jugadores, equipos, partidos, convocatorias y miembros.
 - **Miembro**: solo consulta.
 
 Un club nuevo se registra desde `/core/register_club/`; los administradores añaden
@@ -31,7 +31,7 @@ activo con el selector de la barra superior.
 ### Actualizar una base de datos existente
 
 ```bash
-python manage.py makemigrations core team players match post
+python manage.py makemigrations core team players match
 python manage.py migrate
 # Crea el club "LOS GLADIADORES", le asigna todos los datos existentes
 # y da de alta a los usuarios actuales como administradores.
@@ -50,6 +50,25 @@ python manage.py fix_duplicate_games             # conserva el que tiene resulta
 python manage.py makemigrations match
 python manage.py migrate
 ```
+
+### Portada y ubicación de los partidos
+
+La portada muestra el escudo del equipo propio, el próximo partido (con enlace a
+Google Maps) y el jugador y la pareja con la racha de victorias activa más larga.
+El módulo de publicaciones ya no existe.
+
+Cada partido guarda una **copia** de la ubicación del equipo local al crearse
+(`Match.location`): si el equipo cambia de sede, los partidos ya creados no cambian.
+Para rellenar los partidos que ya existían:
+
+```bash
+python manage.py makemigrations match
+python manage.py migrate
+python manage.py fill_match_locations
+```
+
+Las tablas antiguas de publicaciones (`post_post`, `post_image`) quedan en la base
+de datos sin uso; se pueden borrar a mano si se quiere.
 
 ## Informe automático al cerrar una convocatoria
 

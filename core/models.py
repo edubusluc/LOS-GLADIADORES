@@ -6,7 +6,7 @@ from django.utils.text import slugify
 class Club(models.Model):
     """
     Cada club es un "inquilino" de la aplicación: tiene sus propios jugadores,
-    equipos rivales, partidos, convocatorias, publicaciones y estadísticas.
+    equipos rivales, partidos, convocatorias y estadísticas.
     Ningún usuario puede ver datos de un club al que no pertenece.
     """
     name = models.CharField(max_length=100)

@@ -17,11 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from core.views import error_404_view
+from core.views import error_404_view, home
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", include("post.urls")),
+    path("", home, name="home"),
     path('players/', include('players.urls')),
     path('match/', include('match.urls')),
     path('data_analyse/',include('data_analyse.urls')),

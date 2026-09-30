@@ -3,6 +3,7 @@ from players.models import Player
 from django.core.exceptions import ValidationError
 from . import scoring
 from datetime import datetime
+from urllib.parse import quote
 
 # Create your models here.
 
@@ -28,6 +29,9 @@ class Match(models.Model):
     result_points = models.CharField(max_length=20, blank = True, default="NONE")
     draft_mode = models.BooleanField(default=True)
     season = models.CharField(max_length=9, blank = True, default="NONE")
+    # Copia de la ubicación del equipo local al crear el partido. Es una copia, no un
+    # enlace: si el equipo cambia de sede después, los partidos ya creados no cambian.
+    location = models.CharField(max_length=100, blank=True, default="")
     
     class Meta:
         indexes = [
@@ -43,9 +47,19 @@ class Match(models.Model):
                 else:  # Antes de septiembre (enero a agosto)
                     self.season = f"{self.start_date.year - 1}-{self.start_date.year}"
 
+        if not self.location and self.local_id:
+            self.location = self.local.location
+
         # Llama al método de guardado del padre
         super().save(*args, **kwargs)
     
+    @property
+    def maps_url(self):
+        """Enlace de Google Maps a la ubicación del partido; '' si no tiene."""
+        if not self.location:
+            return ""
+        return "https://www.google.com/maps/search/?api=1&query=" + quote(self.location)
+
     @property
     def own_is_local(self):
         return bool(self.local and self.local.is_own)

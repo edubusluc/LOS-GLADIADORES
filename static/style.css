@@ -1051,57 +1051,64 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
     .z-profile-stats { width: 100%; margin: 0; justify-content: center; }
 }
 
-/* ---------- Publicaciones ---------- */
+/* ---------- Portada ---------- */
 
-.post {
-    margin-bottom: 20px;
-    padding: 20px;
-    background: var(--z-surface);
+.z-home-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(var(--z-lime-rgb), .12), rgba(var(--z-lime-rgb), 0) 60%), var(--z-surface-2);
     border: 1px solid var(--z-border);
     border-radius: var(--z-radius);
 }
-.post h2 { margin: 0 0 6px; font-size: 1.05rem; }
-.post p { color: var(--z-muted); }
-.post-date { font-size: .8rem; color: var(--z-muted); }
-.image-css { width: 100%; max-height: 520px; object-fit: contain; background: #000; cursor: zoom-in; border-radius: 12px; }
-.carousel-control-prev, .carousel-control-next {
-    top: 50%;
-    width: 42px;
-    height: 42px;
-    margin: 0 10px;
-    background: rgba(0, 0, 0, .6);
-    border-radius: 50%;
-    transform: translateY(-50%);
-    opacity: 1;
+.z-home-hero h1 { margin: 0; }
+.z-home-logo {
+    flex-shrink: 0;
+    width: 112px;
+    height: 112px;
+    padding: 6px;
+    object-fit: contain;
+    background: var(--z-surface);
+    border: 3px solid var(--z-lime);
+    border-radius: 50% !important;
 }
-.carousel-control-prev-icon, .carousel-control-next-icon { width: 1.1rem; height: 1.1rem; }
 
-.z-lightbox {
-    position: fixed;
-    inset: 0;
-    z-index: 2000;
-    display: none;
+.z-next-match { display: grid; gap: 18px; }
+.z-next-match-when { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--z-muted); }
+.z-next-match-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.z-next-match-team { display: grid; justify-items: center; gap: 6px; text-align: center; font-weight: 800; text-transform: uppercase; color: #FFFFFF; }
+.z-next-match-team img { width: 64px; height: 64px; object-fit: contain; }
+.z-next-match-team small { font-size: .7rem; font-weight: 700; letter-spacing: .1em; color: var(--z-muted); }
+.z-next-match-team.is-own span { color: var(--z-lime); }
+.z-next-match-foot {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, .92);
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--z-border);
 }
-.z-lightbox img { max-width: min(92vw, 1000px); max-height: 86vh; object-fit: contain; }
-.z-lightbox button {
-    position: absolute;
-    display: grid;
-    place-items: center;
-    width: 46px;
-    height: 46px;
-    font-size: 1.2rem;
-    color: #FFFFFF;
-    background: rgba(255, 255, 255, .1);
-    border: 1px solid rgba(255, 255, 255, .2);
-    border-radius: 50%;
+.z-location { display: inline-flex; align-items: flex-start; gap: 8px; min-width: 0; font-weight: 600; color: var(--z-text); }
+.z-location i { margin-top: 3px; color: var(--z-lime); }
+a.z-location:hover span { text-decoration: underline; }
+
+.z-hot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.z-hot { display: grid; gap: 14px; align-content: start; }
+.z-hot .z-eyebrow { color: var(--z-lime); }
+.z-hot .btn { justify-self: start; }
+.z-hot-body { display: flex; align-items: center; gap: 14px; }
+.z-hot-body strong { display: block; font-size: 1.05rem; color: #FFFFFF; }
+.z-hot-body span { color: var(--z-muted); }
+.z-hot-avatars { display: flex; flex-shrink: 0; }
+.z-hot-avatars .z-avatar + .z-avatar { margin-left: -14px; }
+
+@media (max-width: 575.98px) {
+    .z-home-hero { flex-direction: column; text-align: center; }
+    .z-home-logo { width: 96px; height: 96px; }
+    .z-next-match-team img { width: 48px; height: 48px; }
 }
-.z-lightbox button:hover { color: var(--z-ink); background: var(--z-lime); }
-.z-lightbox .z-lb-close { top: 18px; right: 18px; }
-.z-lightbox .z-lb-prev { left: 18px; top: 50%; transform: translateY(-50%); }
-.z-lightbox .z-lb-next { right: 18px; top: 50%; transform: translateY(-50%); }
 
 .z-empty {
     padding: 36px 20px;

@@ -32,7 +32,7 @@ class SignUpForm(UserCreationForm):
         self.fields["password2"].help_text = ""
 
     def clean_email(self):
-        email = self.cleaned_data["email"].strip()
+        email = self.cleaned_data["email"].strip().lower()
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Ya hay una cuenta con este email: inicia sesión con ella.")
         return email

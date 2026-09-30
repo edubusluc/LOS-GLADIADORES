@@ -1,5 +1,8 @@
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.account.models import EmailAddress
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.contrib.auth import get_user_model
+from django.db.models import Count
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -18,3 +21,42 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         # Cualquiera puede crear su cuenta con Google; para ver datos de un club
         # tiene que unirse con una invitación o registrar el suyo.
         return True
+
+    def authenticate_by_email(self, sociallogin):
+        """
+        Quien entra con Google accede a la cuenta que ya existe con ese email.
+
+        Frente al comportamiento por defecto de allauth:
+        - El email se compara sin distinguir mayúsculas (Edu@Gmail.com = edu@gmail.com).
+        - Si por datos antiguos hay varias cuentas con el mismo email, se elige la que
+          pertenece a más clubes (y, a igualdad, la más antigua).
+        - El email queda marcado como verificado, porque Google lo acaba de verificar.
+          Así allauth no invalida la contraseña de la cuenta: el usuario puede seguir
+          entrando también con usuario/email y contraseña.
+        """
+        User = get_user_model()
+        for address in sociallogin.email_addresses:
+            if not address.verified or not self.can_authenticate_by_email(sociallogin, address.email):
+                continue
+            user = (
+                User.objects.filter(email__iexact=address.email, is_active=True)
+                .annotate(n_clubs=Count("memberships"))
+                .order_by("-n_clubs", "id")
+                .first()
+            )
+            if user is not None:
+                _mark_verified(user, address.email)
+                return user, address.email
+        return None
+
+
+def _mark_verified(user, email):
+    record = EmailAddress.objects.filter(user=user, email__iexact=email).first()
+    if record is None:
+        EmailAddress.objects.create(
+            user=user, email=email.lower(), verified=True,
+            primary=not EmailAddress.objects.filter(user=user, primary=True).exists(),
+        )
+    elif not record.verified:
+        record.verified = True
+        record.save(update_fields=["verified"])

@@ -144,21 +144,30 @@ def _read_rows(page):
     return rows
 
 
-def scrape_scores(username, password, team_id=None):
+def scrape_scores(username, password, team_id=None, headed=False, log=None):
     """
     Puntos SNP de los jugadores del equipo ``team_id`` (o del único equipo de la cuenta
     si no se indica). Lanza SnpScrapeError si algo falla.
+
+    ``headed`` abre el navegador a la vista (y más despacio) para seguir la ejecución;
+    ``log`` recibe una línea por cada paso.
     """
+    log = log or (lambda message: None)
     players = []
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(headless=not headed, slow_mo=500 if headed else 0)
             try:
                 page = browser.new_page()
+                log("Iniciando sesión en SNP…")
                 _login(page, username, password)
+                log("Sesión iniciada. Abriendo Series Nacionales → España → Mis equipos…")
                 _open_team_page(page, team_id)
+                log(f"Página del equipo abierta: {page.url}")
                 for page_number in range(2, MAX_PAGES + 2):
-                    players.extend(_read_rows(page))
+                    rows = _read_rows(page)
+                    log(f"Página {page_number - 1} de la tabla: {len(rows)} jugadores.")
+                    players.extend(rows)
                     next_button = page.query_selector(NEXT_PAGE.format(page_number))
                     if not next_button or not next_button.is_visible():
                         break

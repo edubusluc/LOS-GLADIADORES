@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from core.services import create_club
 from data_analyse import pairs as pair_stats
-from match.models import Game, Match
+from match.models import Game, Match, Result
 from players.models import Player
 from team.models import Team
 
@@ -104,3 +104,40 @@ class PairStatisticsTests(TestCase):
         self.assertNotIn("C Cson", names)
         self.assertIn("A Ason", names)
         self.assertEqual(len(response.context["top_local_players"]), 2)
+
+    def test_player_season_games_table(self):
+        response = self.client.get(reverse("player_statistics"), {"player": self.a.id, "season": "2024-2025"})
+        games = response.context["d"]["games"]
+        # Del más reciente al más antiguo: visitante (1 nov) y luego los 2 partidos en casa (1 oct)
+        self.assertEqual(
+            [(g["date"], g["n_game"], g["local"], g["won"], g["points"]) for g in games],
+            [
+                (datetime.date(2024, 11, 1), 1, False, False, 0),
+                (datetime.date(2024, 10, 1), 1, True, True, 3),
+                (datetime.date(2024, 10, 1), 2, True, True, 3),
+            ],
+        )
+        self.assertEqual(games[0]["partner"], self.b)
+        self.assertEqual(games[0]["rival"].name, "Rival")
+
+        # Cada fila enlaza a su partido en la sección de partidos
+        match_id = games[0]["match_id"]
+        self.assertContains(response, f'{reverse("call_for_match", args=[match_id])}#partido-1')
+        self.assertContains(self.client.get(reverse("call_for_match", args=[match_id])), 'id="partido-1"')
+
+    def test_player_season_games_show_sets_from_player_side(self):
+        m = Match.objects.get(start_date=datetime.date(2024, 11, 1))
+        game = m.games.get(n_game=1)  # A+B de visitantes, pierden
+        Result.objects.create(game=game, set1_local=6, set1_visiting=3, set2_local=6, set2_visiting=4)
+        response = self.client.get(reverse("player_statistics"), {"player": self.a.id, "season": "2024-2025"})
+        self.assertEqual(response.context["d"]["games"][0]["sets"], "3-6 4-6")
+
+    def test_player_season_games_empty_and_only_selected_season(self):
+        response = self.client.get(reverse("player_statistics"), {"player": self.d.id, "season": "2025-2026"})
+        self.assertEqual([g["n_game"] for g in response.context["d"]["games"]], [2])
+        self.assertIsNone(self.client.get(reverse("player_statistics"), {"player": self.d.id}).context["d"])
+
+        e = Player.objects.create(club=self.club, name="E", last_name="Eson")
+        response = self.client.get(reverse("player_statistics"), {"player": e.id, "season": "2025-2026"})
+        self.assertEqual(response.context["d"]["games"], [])
+        self.assertContains(response, "No jugó ningún partido esta temporada.")

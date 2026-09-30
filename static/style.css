@@ -1284,6 +1284,12 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 .st-table tbody tr.st-current th { box-shadow: inset 3px 0 0 var(--z-lime); }
 .st-table a { color: inherit; text-decoration: underline; text-decoration-color: var(--z-border-strong); text-underline-offset: 3px; }
 .st-table a:hover { text-decoration-color: var(--z-lime); }
+/* Tabla de partidos del jugador: toda la fila lleva al partido */
+.st-table--links tbody tr { position: relative; cursor: pointer; }
+.st-table--links tbody th a::after { content: ""; position: absolute; inset: 0; }
+/* Partido enlazado desde las estadísticas (call_for_match#partido-N) */
+.z-game { scroll-margin-top: 90px; }
+.z-game:target { box-shadow: 0 0 0 2px var(--z-lime); }
 
 .st-empty--inline { padding: 18px 24px; text-align: left; margin-bottom: 16px; }
 .st-empty--inline strong { display: inline; margin: 0 6px 0 0; font-size: 1rem; }

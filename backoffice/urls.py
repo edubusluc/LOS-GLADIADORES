@@ -10,6 +10,7 @@ urlpatterns = [
     path("jobs/", views.job_list, name="job_list"),
     path("jobs/runs/", views.run_list, name="run_list"),
     path("jobs/runs/<int:run_id>/", views.run_detail, name="run_detail"),
+    path("jobs/runs/<int:run_id>/live/", views.run_live, name="run_live"),
     path("jobs/<str:name>/", views.job_detail, name="job_detail"),
     path("jobs/<str:name>/toggle/", views.job_toggle, name="job_toggle"),
     path("jobs/<str:name>/run/", views.job_run_now, name="job_run_now"),

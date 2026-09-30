@@ -6,11 +6,15 @@ lanza los procesos a los que les toca y los pedidos con "Ejecutar ahora".
 import datetime
 import io
 import logging
+import threading
+import time
 import traceback
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import connections as db_connections
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -65,44 +69,123 @@ def _release_stale_locks(now):
         ScheduledJob.objects.filter(pk=job.pk).update(running_since=None)
 
 
-def run_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):
+class LiveOutput(io.TextIOBase):
     """
-    Ejecuta un proceso y guarda la ejecución. Devuelve el JobRun, o None si el proceso
-    ya estaba en marcha (otra pasada del lanzador lo tiene cogido).
+    Salida de un proceso que se va guardando en su JobRun mientras se ejecuta (como mucho
+    una vez por segundo), para poder seguirla en directo desde el back-office.
+    """
+
+    def __init__(self, run, every=1.0):
+        self.run = run
+        self.every = every
+        self.parts = []
+        self.size = 0
+        self.saved_at = 0.0
+        self.clipped = False
+
+    def writable(self):
+        return True
+
+    def write(self, text):
+        if self.clipped or not text:
+            return len(text or "")
+        if self.size + len(text) > MAX_OUTPUT:
+            text = text[:MAX_OUTPUT - self.size] + "\n… (salida recortada)\n"
+            self.clipped = True
+        self.parts.append(text)
+        self.size += len(text)
+        if time.monotonic() - self.saved_at >= self.every:
+            self.save()
+        return len(text)
+
+    def log(self, message):
+        """Línea de traza del propio lanzador, con la hora."""
+        stamp = timezone.localtime(timezone.now(), ZoneInfo(SCHEDULER_TIME_ZONE)).strftime("%H:%M:%S")
+        self.write(f"[{stamp}] {message}\n")
+
+    def getvalue(self):
+        return "".join(self.parts)
+
+    def save(self):
+        self.saved_at = time.monotonic()
+        JobRun.objects.filter(pk=self.run.pk).update(output=self.getvalue())
+
+
+def claim_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):
+    """
+    Marca el proceso como "en ejecución" y crea su JobRun. Devuelve None si ya estaba en
+    marcha (otra pasada del lanzador o de la web lo tiene cogido).
     """
     now = now or timezone.now()
-    spec = job.spec
     # Coger el proceso de forma atómica: solo una pasada puede ponerle la marca.
     if not ScheduledJob.objects.filter(pk=job.pk, running_since__isnull=True).update(running_since=now):
         return None
+    return JobRun.objects.create(job=job, trigger=trigger, triggered_by=user, started_at=now)
 
-    run = JobRun.objects.create(job=job, trigger=trigger, triggered_by=user, started_at=now)
-    out = io.StringIO()
+
+def execute_run(run):
+    """Ejecuta un JobRun ya reclamado, guardando la salida en directo, y libera el proceso."""
+    job = run.job
+    spec = job.spec
+    out = LiveOutput(run)
+    started = time.monotonic()
     try:
         if spec is None:
             raise RuntimeError(f"El proceso {job.name} ya no existe en backoffice/jobs.py.")
+        out.log(f"Inicio: python manage.py {' '.join([spec.command, *spec.args])}")
         call_command(spec.command, *spec.args, stdout=out, stderr=out)
         run.status = JobRun.OK
+        out.log(f"Fin: correcto en {time.monotonic() - started:.1f} s")
     except BaseException as exc:  # SystemExit/CommandError incluidos: nada debe tumbar el lanzador
         run.status = JobRun.ERROR
         run.error = _clip("".join(traceback.format_exception(exc)))
+        out.log(f"Fin: error en {time.monotonic() - started:.1f} s: {exc}")
         if isinstance(exc, KeyboardInterrupt):
             raise
     finally:
         finished = timezone.now()
-        run.output = _clip(out.getvalue())
+        run.output = out.getvalue()
         run.finished_at = finished
         run.save()
-        changes = {"running_since": None, "last_run_at": now}
-        if trigger == JobRun.SCHEDULE and spec:
+        changes = {"running_since": None, "last_run_at": run.started_at}
+        if run.trigger == JobRun.SCHEDULE and spec:
             changes["next_run_at"] = next_run(spec, finished)
-        if trigger == JobRun.MANUAL:
+        if run.trigger == JobRun.MANUAL:
             changes["run_requested_at"] = None
             changes["run_requested_by"] = None
         ScheduledJob.objects.filter(pk=job.pk).update(**changes)
 
     if run.status == JobRun.ERROR:
         notify_failure(run)
+    return run
+
+
+def run_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):
+    """Reclama y ejecuta un proceso. Devuelve el JobRun, o None si ya estaba en marcha."""
+    run = claim_job(job, trigger, user, now)
+    return execute_run(run) if run else None
+
+
+def start_manual_run(job, user):
+    """
+    "Ejecutar ahora" desde el back-office: el proceso arranca al momento en segundo plano
+    y la página de la ejecución muestra su salida en directo. Devuelve el JobRun, o None
+    si ya estaba en marcha.
+    """
+    run = claim_job(job, JobRun.MANUAL, user)
+    if run is None:
+        return None
+    if getattr(settings, "BACKOFFICE_RUN_JOBS_INLINE", False):  # tests
+        execute_run(run)
+        return run
+
+    def target():
+        try:
+            execute_run(run)
+        finally:
+            db_connections.close_all()
+
+    threading.Thread(target=target, name=f"job-{job.name}", daemon=True).start()
     return run
 
 

@@ -11,7 +11,7 @@
     <div class="z-actions">
         <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="btn btn-sm btn-primary" {% if job.run_requested_at or job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
+            <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
         </form>
         <form method="post" action="{% url 'backoffice:job_toggle' job.name %}">{% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
@@ -27,7 +27,7 @@
         <div><dt>Qué hace</dt><dd class="bo-wrap">{{ job.spec.description|default:"Ya no está definido en backoffice/jobs.py" }}</dd></div>
         <div><dt>Comando</dt><dd><code>python manage.py {{ job.spec.command }} {{ job.spec.args|join:" " }}</code></dd></div>
         <div><dt>Cuándo</dt><dd>{{ job|cron_text }} <span class="text-muted">({{ job.spec.schedule }}, hora de {{ time_zone }})</span></dd></div>
-        <div><dt>Estado</dt><dd>{% if job.running_since %}<span class="z-badge z-badge--warning">En curso</span>{% elif job.enabled %}Activo{% else %}<span class="z-badge z-badge--outline">En pausa</span>{% endif %}{% if job.run_requested_at %} · pedida a mano por {{ job.run_requested_by.username|default:"—" }}{% endif %}</dd></div>
+        <div><dt>Estado</dt><dd>{% if job.running_since %}{% with running=job.runs.first %}{% if running %}<a href="{% url 'backoffice:run_detail' running.id %}" class="z-badge z-badge--warning">En curso · ver en directo</a>{% else %}<span class="z-badge z-badge--warning">En curso</span>{% endif %}{% endwith %}{% elif job.enabled %}Activo{% else %}<span class="z-badge z-badge--outline">En pausa</span>{% endif %}{% if job.run_requested_at %} · pedida a mano por {{ job.run_requested_by.username|default:"—" }}{% endif %}</dd></div>
         <div><dt>Próxima ejecución</dt><dd>{% if job.enabled %}{{ job.next_run_at|timezone:time_zone|date:"j M Y H:i" }}{% else %}—{% endif %}</dd></div>
         <div><dt>Ejecuciones</dt><dd>{{ ok_count }} correcta{{ ok_count|pluralize }} · {{ error_count }} con error</dd></div>
     </dl>

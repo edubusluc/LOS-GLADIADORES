@@ -192,8 +192,10 @@ Con cron, por ejemplo (ajusta las rutas):
 * * * * * cd /ruta/a/LOS-GLADIADORES && /ruta/a/python manage.py run_scheduler >> /tmp/zyra-scheduler.log 2>&1
 ```
 
-En local basta con ejecutarlo a mano cuando quieras probar un proceso ("Ejecutar
-ahora" lo deja pedido y el lanzador lo recoge en su siguiente pasada).
+**Ejecutar ahora** no espera al lanzador: arranca el proceso en el momento y abre su
+ficha con la **traza en directo** (se va guardando cada segundo, con la hora de cada
+línea). Si el proceso ya está en marcha, no se lanza otra vez. Puedes cerrar la página:
+la ejecución sigue y la traza queda en el log.
 
 ### Consola SQL
 
@@ -207,6 +209,13 @@ sobre toda la base de datos, al estilo del Data Export de Salesforce:
 - Las contraseñas, sesiones y tokens no se pueden consultar y se ocultan en un `SELECT *`.
 - Consultas guardadas, esquema de tablas a la vista y registro de todas las consultas
   lanzadas (quién, cuándo y cuántas filas).
+- **Campos de los registros relacionados**, como en Salesforce: en una clave ajena se
+  puede seguir con un punto. Por ejemplo
+  `SELECT local_id, local_id.name, visiting.name FROM match_match LIMIT 100`
+  (vale con o sin `_id`, con alias de tabla y hasta 4 saltos, p. ej.
+  `local_id.club_id.name`). La consola lo convierte en `LEFT JOIN` y enseña el SQL
+  ejecutado. En el esquema, las claves ajenas indican a qué tabla apuntan. No funciona
+  dentro de subconsultas.
 
 ### Importar datos
 

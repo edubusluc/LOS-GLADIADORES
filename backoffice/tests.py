@@ -2,7 +2,7 @@ import datetime
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -339,16 +339,21 @@ class SchedulerTests(TestCase):
         ScheduledJob.objects.filter(name="ok_job").update(next_run_at=timezone.now() - datetime.timedelta(minutes=30))
         self.assertTrue(scheduler_is_late())
 
+    @override_settings(BACKOFFICE_RUN_JOBS_INLINE=True)
     def test_pages_and_actions(self):
-        from .scheduler import run_due_jobs, sync_jobs
+        from .scheduler import sync_jobs
         sync_jobs()
         self.client.login(username="staff", password="pass-12345")
         self.assertContains(self.client.get(reverse("backoffice:job_list")), "ok_job")
 
+        # "Ejecutar ahora" arranca al momento y lleva a la traza de la ejecución.
         response = self.client.post(reverse("backoffice:job_run_now", args=["ok_job"]))
-        self.assertRedirects(response, reverse("backoffice:job_list"))
-        self.assertIsNotNone(ScheduledJob.objects.get(name="ok_job").run_requested_at)
-        [run] = run_due_jobs()
+        run = JobRun.objects.get()
+        self.assertRedirects(response, reverse("backoffice:run_detail", args=[run.id]))
+        self.assertEqual((run.trigger, run.triggered_by, run.status), (JobRun.MANUAL, self.staff, JobRun.OK))
+        self.assertIn("Inicio: python manage.py purge_request_metrics", run.output)
+        self.assertIn("Fin: correcto", run.output)
+        self.assertIsNone(ScheduledJob.objects.get(name="ok_job").running_since)
 
         detail = reverse("backoffice:job_detail", args=["ok_job"])
         self.client.post(reverse("backoffice:job_toggle", args=["ok_job"]), {"next": detail})
@@ -361,6 +366,40 @@ class SchedulerTests(TestCase):
         self.assertContains(self.client.get(reverse("backoffice:run_detail", args=[run.id])), "Borradas")
         log = self.client.get(reverse("backoffice:run_list"), {"status": "ok", "job": "ok_job"})
         self.assertEqual([r.id for r in log.context["page"]], [run.id])
+
+    def test_run_now_while_running_is_refused(self):
+        from .scheduler import sync_jobs
+        sync_jobs()
+        ScheduledJob.objects.filter(name="ok_job").update(running_since=timezone.now())
+        self.client.login(username="staff", password="pass-12345")
+        response = self.client.post(reverse("backoffice:job_run_now", args=["ok_job"]))
+        self.assertRedirects(response, reverse("backoffice:job_list"))
+        self.assertFalse(JobRun.objects.exists())
+
+    def test_live_output_endpoint(self):
+        from .scheduler import sync_jobs
+        sync_jobs()
+        job = ScheduledJob.objects.get(name="ok_job")
+        run = JobRun.objects.create(job=job, started_at=timezone.now(), output="línea 1\nlínea 2\n")
+        self.client.login(username="staff", password="pass-12345")
+        url = reverse("backoffice:run_live", args=[run.id])
+        data = self.client.get(url).json()
+        self.assertEqual((data["finished"], data["output"], data["offset"]), (False, "línea 1\nlínea 2\n", 16))
+        self.assertContains(self.client.get(reverse("backoffice:run_detail", args=[run.id])), "En directo")
+
+        JobRun.objects.filter(pk=run.pk).update(output=run.output + "línea 3\n", status=JobRun.ERROR,
+                                                 finished_at=timezone.now(), error="Boom")
+        data = self.client.get(url, {"offset": 16}).json()
+        self.assertEqual((data["finished"], data["output"], data["error"]), (True, "línea 3\n", "Boom"))
+
+    def test_live_output_is_saved_while_running(self):
+        from .scheduler import LiveOutput, sync_jobs
+        sync_jobs()
+        run = JobRun.objects.create(job=ScheduledJob.objects.get(name="ok_job"), started_at=timezone.now())
+        out = LiveOutput(run, every=0)
+        out.write("paso 1\n")
+        run.refresh_from_db()
+        self.assertEqual(run.output, "paso 1\n")
 
     def test_actions_need_post_and_staff(self):
         self.client.login(username="staff", password="pass-12345")
@@ -555,3 +594,54 @@ class ImportTests(TestCase):
         body = self.client.get(reverse("backoffice:import_template", args=["players"])).content.decode("utf-8-sig")
         self.assertTrue(body.startswith("ID;Nombre;Apellidos"))
         self.assertEqual(self.client.get(reverse("backoffice:import_template", args=["nope"])).status_code, 404)
+
+
+class SqlRelationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("ana", password="pass-12345")
+        self.club = create_club("Los Gladiadores", "Sevilla", self.user)
+        self.rival = Team.objects.create(club=self.club, name="Pádel Norte", location="X")
+        self.match = Match.objects.create(club=self.club, local=self.club.own_team, visiting=self.rival,
+                                          start_date=datetime.date(2026, 10, 25))
+        Player.objects.create(club=self.club, name="Pepe", last_name="Uno")
+
+    def test_follow_foreign_keys_like_soql(self):
+        from . import sql
+        result = sql.run("SELECT local_id, visiting_id, local_id.name, visiting.name AS rival FROM match_match")
+        self.assertEqual(result.columns, ["local_id", "visiting_id", "local_id.name", "rival"])
+        self.assertEqual(result.rows, [(self.club.own_team.id, self.rival.id, "Los Gladiadores", "Pádel Norte")])
+        self.assertIn("LEFT JOIN team_team", result.expanded_sql)
+
+    def test_several_hops_alias_and_where(self):
+        from . import sql
+        result = sql.run("SELECT m.id, m.local_id.club_id.name FROM match_match m WHERE m.visiting_id.name = 'Pádel Norte'")
+        self.assertEqual(result.columns, ["id", "local_id.club_id.name"])
+        self.assertEqual(result.rows, [(self.match.id, "Los Gladiadores")])
+
+    def test_bare_columns_are_not_ambiguous(self):
+        from . import sql
+        result = sql.run("SELECT name, club.name AS club FROM players_player ORDER BY name")
+        self.assertEqual(result.rows, [("Pepe", "Los Gladiadores")])
+
+    def test_queries_without_paths_are_unchanged(self):
+        from . import sql
+        query = "SELECT c.name FROM core_club c WHERE c.name = 'a.b'"
+        self.assertEqual(sql.expand_relations(query), query)
+        self.assertEqual(sql.run(query).expanded_sql, "")
+
+    def test_errors(self):
+        from . import sql
+        with self.assertRaisesMessage(sql.QueryError, "no tiene la columna nope"):
+            sql.run("SELECT local_id.nope FROM match_match")
+        with self.assertRaisesMessage(sql.QueryError, "no es una relación"):
+            sql.run("SELECT local_id.location.name FROM match_match")
+        with self.assertRaises(sql.QueryError):
+            sql.run("SELECT user_id.password FROM core_membership")
+        with self.assertRaisesMessage(sql.QueryError, "subconsultas"):
+            sql.run("SELECT local_id.name FROM match_match WHERE id IN (SELECT id FROM match_match)")
+
+    def test_schema_shows_foreign_keys(self):
+        from . import sql
+        match = next(t for t in sql.schema() if t["name"] == "match_match")
+        local = next(c for c in match["columns"] if c["name"] == "local_id")
+        self.assertEqual(local["target"], "team_team")

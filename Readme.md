@@ -140,8 +140,8 @@ El logo va incrustado en el propio correo (`static/zyra/email-logo.png`).
 Panel para el dueño de la plataforma en `/backoffice/`: dashboard con KPIs de todos los
 clubes, listado y ficha de clubes y de usuarios. Solo entra el personal de Zyra
 (usuarios con `is_staff`); al resto se le responde 404. Los usuarios staff ven el
-enlace *Back-office* en el menú de usuario. El plan completo está en
-`/mnt/project-files/crm/plan-crm.md` (consola SQL, importación, procesos programados…).
+enlace *Back-office* en el menú de usuario. Próximas fases: carga y
+usuarios conectados, procesos programados con log, consola SQL e importación de datos.
 
 Para darte acceso a ti mismo:
 

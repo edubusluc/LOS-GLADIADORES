@@ -2,6 +2,7 @@ gunicorn
 Django==5.1.2
 python-decouple==3.8
 playwright==1.48.0
+cryptography>=43
 django-flatpickr==2.0.3
 django-allauth[socialaccount]==65.19.5
 pillow==11.0.0

@@ -65,6 +65,7 @@
                     {% endif %}
                     {% if is_club_admin %}
                     <li><a class="dropdown-item" href="{% url 'club_members' %}"><i class="fa-solid fa-user-gear"></i> Miembros del club</a></li>
+                    <li><a class="dropdown-item" href="{% url 'snp_account' %}"><i class="fa-solid fa-trophy"></i> Cuenta SNP</a></li>
                     {% endif %}
                     {% if user.is_staff %}
                     <li><a class="dropdown-item" href="{% url 'backoffice:dashboard' %}"><i class="fa-solid fa-gauge-high"></i> Back-office</a></li>

@@ -43,6 +43,13 @@ JOBS = [
         command="clearsessions",
         schedule="30 3 * * *",
     ),
+    JobSpec(
+        name="update_snp_scores",
+        description="Descarga de SNP los puntos de los jugadores de cada club con cuenta SNP configurada.",
+        command="update_snp_scores",
+        # Lunes a las 23:00.
+        schedule="0 23 * * 1",
+    ),
 ]
 
 

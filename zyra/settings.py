@@ -30,6 +30,10 @@ ADMIN_URL = config('ADMIN_URL', default='admin/')
 
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='clave_por_defecto_no_segura')
 
+# Clave Fernet para cifrar datos sensibles guardados en la base de datos (credenciales
+# de SNP de cada club). Ver core/crypto.py.
+FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')
+
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'login'

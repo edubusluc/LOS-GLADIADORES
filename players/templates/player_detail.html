@@ -22,9 +22,6 @@
             </p>
         </div>
         <div class="z-profile-stats">
-            <div class="z-ring" style="--pct: {% if score > 0 %}{% widthratio score 10 100 %}{% else %}0{% endif %};" role="img" aria-label="Rendimiento {{ score }} sobre 10">
-                <span>{% if score >= 0 %}{{ score }}{% else %}–{% endif %}</span>
-            </div>
             <div class="z-stat"><b>{{ player.snp_score|default:"–" }}</b><span>Puntos SNP</span></div>
         </div>
     </div>

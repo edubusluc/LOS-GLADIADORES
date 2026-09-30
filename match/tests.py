@@ -8,18 +8,17 @@ from call.models import Call
 from core.services import create_club
 from match.models import Game, Match, Result
 from players.models import Player
-from players.views import calculate_score as player_performance
 from team.models import Team
 
 User = get_user_model()
 
 
-class CloseMatchUpdatesPerformanceTests(TestCase):
+class CloseMatchTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("admin", password="pass-12345")
         self.club = create_club("Club A", "Sevilla", self.user)
         rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
-        self.players = [Player.objects.create(club=self.club, name=f"P{i}", last_name="X", score=5) for i in range(10)]
+        self.players = [Player.objects.create(club=self.club, name=f"P{i}", last_name="X") for i in range(10)]
         self.match = Match.objects.create(club=self.club, local=self.club.own_team, visiting=rival,
                                           start_date=datetime.date(2025, 10, 1))
         call = Call.objects.create(match=self.match, draft_mode=False)
@@ -33,14 +32,12 @@ class CloseMatchUpdatesPerformanceTests(TestCase):
                                   set2_visiting="3", set3_local="0", set3_visiting="0")
         self.client.login(username="admin", password="pass-12345")
 
-    def test_closing_match_recalculates_performance_of_its_players(self):
+    def test_closing_match_confirms_match_and_games(self):
         self.client.post(reverse("close_match", args=[self.match.id]))
         self.match.refresh_from_db()
         self.assertFalse(self.match.draft_mode)
-        for p in self.players:
-            p.refresh_from_db()
-            self.assertEqual(p.score, player_performance(p))
-            self.assertEqual(p.score, 10)  # una victoria de una: rendimiento máximo
+        self.assertEqual(self.match.result_points, "12/0")
+        self.assertFalse(self.match.games.filter(draft_mode=True).exists())
 
 
 class MatchesAndCallsTests(TestCase):

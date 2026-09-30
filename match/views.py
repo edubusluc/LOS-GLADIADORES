@@ -17,7 +17,6 @@ from team.models import Team
 from datetime import datetime
 from callLog.models import CallLog
 from penalty.models import Penalty
-from players.views import calculate_score as calculate_player_score
 import json
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.exceptions import ValidationError
@@ -527,27 +526,8 @@ def close_match(request, match_id):
     match.draft_mode = False
     match.save()
 
-    # Actualizar el rendimiento de los jugadores
-    if match.own_is_local:
-        update_player_scores(games, is_local=True)
-    elif match.own_is_visiting:
-        update_player_scores(games, is_local=False)
-
     return redirect('list_match')
 
-
-def update_player_scores(games, is_local):
-    for game in games:
-        if is_local:
-            players = [game.player_1_local, game.player_2_local]
-        else:
-            players = [game.player_1_visiting, game.player_2_visiting]
-
-        for player in players:
-            if player is None:
-                continue
-            player.score = calculate_player_score(player)
-            player.save(update_fields=['score'])
 
 @club_admin_required
 def edit_game_match(request, match_id):

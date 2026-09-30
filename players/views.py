@@ -35,7 +35,7 @@ def create_player(request):
     return render(request, "create_player.html", {"form": form})
 
 
-ORDER_FIELDS = {'name', '-name', 'last_name', '-last_name', 'position', '-position', 'score', '-score', 'snp_score', '-snp_score'}
+ORDER_FIELDS = {'name', '-name', 'last_name', '-last_name', 'position', '-position', 'snp_score', '-snp_score'}
 
 
 @club_required
@@ -110,11 +110,7 @@ def show_player(request, player_id):
         'match__local', 'match__visiting',
         'player_1_local', 'player_2_local', 'player_1_visiting', 'player_2_visiting',
     ).order_by('-match__start_date')[:5]
-    # Calcula la puntuación, si es necesario
-    normalized_score = calculate_score(player)  # Llama a la función y guarda el resultado
-    return render(request, "player_detail.html", {"player": player,
-                                                   "score": normalized_score,
-                                                   "games":games})
+    return render(request, "player_detail.html", {"player": player, "games": games})
 
 
 @club_admin_required
@@ -137,82 +133,6 @@ def manage_roster(request):
         'in_team_count': sum(p.in_team for p in players),
     })
 
-
-@club_admin_required
-def force_update_score(request):
-    players = Player.objects.filter(club=request.club)
-    for player in players:
-        score = calculate_score(player)
-        player.score = score
-        player.save()
-    return redirect("list_players")
-
-
-def calculate_score(player):
-    games = get_recent_games(player)
-    
-    if not games:
-        return -1
-
-    games_win, games_lost, consecutive_wins, max_consecutive_wins, three_point_wins = calculate_game_statistics(games, player)
-
-    score = calculate_basic_score(games_win, games_lost)
-    score += calculate_streak_bonus(max_consecutive_wins)
-    score += calculate_three_point_bonus(three_point_wins)
-
-    normalized_score = normalize_score(score, games_win, games_lost, max_consecutive_wins, three_point_wins)
-
-    return round(normalized_score)
-
-def normalize_score(score, games_win, games_lost, max_consecutive_wins, three_point_wins):
-    total_games_played = games_win + games_lost
-    max_possible_score = total_games_played * 3 + (max_consecutive_wins - 1) * 2 + three_point_wins * 2
-
-    if max_possible_score > 0:
-        return max(0, min(10, (score / max_possible_score) * 10))
-    return 0
-
-def get_recent_games(player):
-    return Game.objects.filter(
-        (Q(player_1_local=player) | Q(player_2_local=player) |
-         Q(player_1_visiting=player) | Q(player_2_visiting=player)) &
-        Q(draft_mode=False)
-    ).order_by('-match__start_date')[:3]
-
-
-def calculate_game_statistics(games, player):
-    games_win = games_lost = consecutive_wins = max_consecutive_wins = three_point_wins = 0
-
-    for game in games:
-        # Se comparan ids: no hace falta cargar los jugadores de cada partido
-        is_local = player.id in (game.player_1_local_id, game.player_2_local_id)
-        is_visiting = player.id in (game.player_1_visiting_id, game.player_2_visiting_id)
-        
-        if (is_local and game.winner == "Local") or (is_visiting and game.winner == "Visitante"):
-            games_win += 1
-            consecutive_wins += 1
-            if game.score == 3:
-                three_point_wins += 1
-        elif is_local or is_visiting:
-            games_lost += 1
-            consecutive_wins = 0  # Rompe la racha
-
-        # Actualiza la máxima racha de victorias
-        max_consecutive_wins = max(max_consecutive_wins, consecutive_wins)
-
-    return games_win, games_lost, consecutive_wins, max_consecutive_wins, three_point_wins
-
-
-def calculate_basic_score(games_win, games_lost):
-    return games_win * 4 - games_lost
-
-
-def calculate_streak_bonus(max_consecutive_wins):
-    return (max_consecutive_wins - 1) * 3
-
-
-def calculate_three_point_bonus(three_point_wins):
-    return three_point_wins * 2  # 2 puntos extra por cada victoria en un partido de 3 puntos
 
 def find_player_score(player_name, scores_list):
     # Filtrar la lista para encontrar al jugador por nombre

@@ -2,8 +2,6 @@
 {% load static %}
 
 {% block content %}
-<div class="loader"></div>
-
 <div class="z-page-head">
     <div>
         <span class="z-eyebrow">{{ current_club.name }}</span>
@@ -11,7 +9,6 @@
     </div>
     {% if is_club_admin %}
     <div class="z-actions">
-        <a href="{% url 'force_update_score' %}" class="btn btn-secondary" onclick="return confirmAndShowLoading();"><i class="fa-solid fa-rotate me-1"></i> Actualizar rendimiento</a>
         <a href="{% url 'manage_roster' %}" class="btn btn-secondary"><i class="fa-solid fa-user-check me-1"></i> Gestionar plantilla</a>
         <a href="{% url 'create_player' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Nuevo jugador</a>
     </div>
@@ -38,7 +35,6 @@
     <div class="z-toolbar-group">
         <div class="z-segmented" role="group" aria-label="Ordenar por">
             <a href="?order_by=name&search={{ search }}" class="btn btn-sm {% if order_by == 'name' %}active{% endif %}">Nombre</a>
-            <a href="?order_by=-score&search={{ search }}" class="btn btn-sm {% if order_by == '-score' %}active{% endif %}">Rendimiento</a>
             <a href="?order_by=-snp_score&search={{ search }}" class="btn btn-sm {% if order_by == '-snp_score' %}active{% endif %}">SNP</a>
         </div>
         <div class="z-segmented" role="group" aria-label="Cambiar vista">
@@ -68,11 +64,6 @@
                 <span><i class="fa-solid fa-trophy"></i>SNP {{ player.snp_score|default:"-" }}</span>
             </p>
             <div class="z-player-tags">
-                {% if player.score == -1 or player.score is None %}
-                <span class="z-badge">Sin partidos</span>
-                {% else %}
-                <span class="z-score {% if player.score <= 4 %}score-red{% elif player.score <= 6 %}score-yellow{% elif player.score <= 8 %}score-light-green{% else %}score-dark-green{% endif %}">Rendimiento <b>{{ player.score }}</b></span>
-                {% endif %}
                 {% if is_club_admin and not player.in_team %}
                 <span class="z-badge z-badge--danger">Fuera del equipo</span>
                 {% endif %}
@@ -97,7 +88,6 @@
                 <th>Posición</th>
                 <th>Mano</th>
                 <th>SNP</th>
-                <th>Rendimiento</th>
                 <th>Temporada</th>
                 {% if is_club_admin %}<th>Equipo</th><th></th>{% endif %}
             </tr>
@@ -116,13 +106,6 @@
                 <td>{{ player.position }}</td>
                 <td>{{ player.skillfull_hand }}</td>
                 <td>{{ player.snp_score|default:"-" }}</td>
-                <td>
-                    {% if player.score == -1 or player.score is None %}
-                    <span class="text-muted">Sin partidos</span>
-                    {% else %}
-                    <span class="z-score {% if player.score <= 4 %}score-red{% elif player.score <= 6 %}score-yellow{% elif player.score <= 8 %}score-light-green{% else %}score-dark-green{% endif %}"><b>{{ player.score }}</b></span>
-                    {% endif %}
-                </td>
                 <td>{{ player.joined_season }}</td>
                 {% if is_club_admin %}
                 <td>
@@ -149,14 +132,6 @@
 {% endwith %}
 
 <script>
-    function confirmAndShowLoading() {
-        if (confirm('¿Seguro que quieres actualizar las puntuaciones?\nEsta operación puede tardar.')) {
-            document.querySelector('.loader').style.display = 'block';
-            return true;
-        }
-        return false;
-    }
-
     // Buscador con recarga automática (debounce): busca en todas las páginas
     const searchInput = document.getElementById('player-search');
     const searchForm = document.getElementById('search-form');

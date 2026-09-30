@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -25,7 +25,8 @@ from .metrics import (
 )
 from .middleware import SLOW_MS, flush_metrics
 from .models import ImportJob, JobRun, QueryLog, SavedQuery, ScheduledJob
-from .scheduler import SCHEDULER_TIME_ZONE, scheduler_is_late, sync_jobs
+from .scheduler import SCHEDULER_TIME_ZONE, scheduler_is_late, start_manual_run, sync_jobs
+from .templatetags.backoffice_tags import duration as duration_filter
 
 User = get_user_model()
 
@@ -241,11 +242,31 @@ def job_toggle(request, name):
 @require_POST
 def job_run_now(request, name):
     job = get_object_or_404(ScheduledJob, name=name)
-    job.run_requested_at = timezone.now()
-    job.run_requested_by = request.user
-    job.save(update_fields=["run_requested_at", "run_requested_by"])
-    messages.success(request, f"{job.name} se ejecutará en la próxima pasada del lanzador (como mucho en un minuto).")
-    return _back(request)
+    run = start_manual_run(job, request.user)
+    if run is None:
+        messages.error(request, f"{job.name} ya se está ejecutando.")
+        return _back(request)
+    return redirect("backoffice:run_detail", run_id=run.pk)
+
+
+@staff_required
+def run_live(request, run_id):
+    """Salida de una ejecución a partir de `offset`, para la consola en directo."""
+    run = get_object_or_404(JobRun, pk=run_id)
+    try:
+        offset = max(int(request.GET.get("offset", 0)), 0)
+    except ValueError:
+        offset = 0
+    output = run.output or ""
+    return JsonResponse({
+        "status": run.status,
+        "status_label": run.get_status_display(),
+        "finished": run.status != JobRun.RUNNING,
+        "output": output[offset:],
+        "offset": len(output),
+        "error": run.error if run.status == JobRun.ERROR else "",
+        "duration": duration_filter(run.duration) if run.finished_at else "",
+    })
 
 
 # ---------- Consola SQL ----------

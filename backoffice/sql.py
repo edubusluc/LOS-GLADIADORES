@@ -49,6 +49,8 @@ class QueryResult:
     truncated: bool
     duration_ms: int
     masked: list = field(default_factory=list)
+    # SQL que se ha ejecutado de verdad, si es distinto del escrito (relaciones con punto).
+    expanded_sql: str = ""
 
     @property
     def row_count(self):
@@ -87,6 +89,8 @@ def validate(sql):
 def run(sql, limit=DISPLAY_LIMIT, timeout=TIMEOUT_SECONDS):
     """Ejecuta una consulta de solo lectura y devuelve como mucho `limit` filas."""
     sql = validate(sql)
+    written = sql
+    sql = expand_relations(sql)
     start = time.monotonic()
     try:
         if connection.vendor == "sqlite":
@@ -104,7 +108,8 @@ def run(sql, limit=DISPLAY_LIMIT, timeout=TIMEOUT_SECONDS):
     masked = [i for i, name in enumerate(columns) if MASKED_COLUMN.search(name or "")]
     if masked:
         rows = [tuple(MASK if i in masked else v for i, v in enumerate(row)) for row in rows]
-    return QueryResult(columns, rows, truncated, duration_ms, [columns[i] for i in masked])
+    return QueryResult(columns, rows, truncated, duration_ms, [columns[i] for i in masked],
+                       expanded_sql=sql if sql != written else "")
 
 
 def _fetch(cursor, limit):
@@ -149,15 +154,173 @@ def _explain(exc, timeout):
 
 
 def schema():
-    """Tablas y columnas visibles, para la ayuda lateral de la consola."""
+    """
+    Tablas y columnas visibles, para la ayuda lateral de la consola. Las claves ajenas
+    llevan la tabla a la que apuntan (para usar local_id.name).
+    """
+    models = _models_by_table()
     tables = []
     with connection.cursor() as cursor:
         for name in sorted(connection.introspection.table_names(cursor)):
             if name in HIDDEN_TABLES:
                 continue
-            columns = [
-                col.name for col in connection.introspection.get_table_description(cursor, name)
-                if not MASKED_COLUMN.search(col.name)
-            ]
+            model = models.get(name)
+            columns = []
+            for col in connection.introspection.get_table_description(cursor, name):
+                if MASKED_COLUMN.search(col.name):
+                    continue
+                rel = _relation(model, col.name) if model else None
+                target = rel.related_model._meta.db_table if rel and rel.column == col.name else ""
+                columns.append({"name": col.name, "target": target})
             tables.append({"name": name, "columns": columns})
     return tables
+
+
+# ---------- Relaciones con punto, como en SOQL ----------
+#
+#   SELECT local_id.name, visiting.location FROM match_match
+#
+# se convierte en
+#
+#   SELECT _r1.name AS "local_id.name", _r2.location AS "visiting.location"
+#   FROM match_match
+#   LEFT JOIN team_team _r1 ON _r1.id = match_match.local_id
+#   LEFT JOIN team_team _r2 ON _r2.id = match_match.visiting_id
+#
+# El primer tramo puede ser la columna (local_id) o el nombre del campo (local), y se
+# pueden encadenar varios saltos: local_id.club_id.name.
+
+MAX_HOPS = 4
+_PATH = re.compile(r"(?<![\w.\"])([A-Za-z_]\w*(?:\.[A-Za-z_]\w*){1,%d})(?![\w(])" % (MAX_HOPS + 1))
+_SOURCE = re.compile(
+    r"\b(?:from|join)\s+([A-Za-z_]\w*)(?:\s+(?:as\s+)?(?!(?:where|join|left|right|inner|outer|cross|full|natural|on|"
+    r"using|group|order|limit|offset|having|union|window)\b)([A-Za-z_]\w*))?",
+    re.IGNORECASE,
+)
+_CLAUSE_END = re.compile(r"\b(where|group\s+by|having|order\s+by|limit|offset|window)\b", re.IGNORECASE)
+
+
+def _models_by_table():
+    from django.apps import apps
+    return {m._meta.db_table: m for m in apps.get_models(include_auto_created=True)}
+
+
+def _relation(model, name):
+    """Campo ForeignKey/OneToOne de `model` que se llama `name` (por campo o por columna)."""
+    for f in model._meta.concrete_fields:
+        if f.is_relation and (f.many_to_one or f.one_to_one):
+            if name.lower() in (f.name.lower(), f.column.lower()):
+                return f
+    return None
+
+
+def _column(model, name):
+    for f in model._meta.concrete_fields:
+        if name.lower() in (f.name.lower(), f.column.lower()):
+            return f.column
+    return None
+
+
+def expand_relations(sql):
+    """Convierte las rutas con punto sobre claves ajenas en LEFT JOIN. Si no hay ninguna, no cambia nada."""
+    strings = []
+
+    def stash(m):
+        strings.append(m.group(0))
+        return f"\x00{len(strings) - 1}\x00"
+
+    code = _STRINGS.sub(stash, sql)
+    models = _models_by_table()
+    sources = {}  # alias o nombre de tabla -> (referencia en el SQL, modelo)
+    for m in _SOURCE.finditer(code):
+        table, alias = m.group(1), m.group(2)
+        model = models.get(table) or models.get(table.lower())
+        if model is None:
+            continue
+        ref = alias or table
+        sources[ref.lower()] = (ref, model)
+        sources.setdefault(table.lower(), (ref, model))
+
+    joins, join_alias = [], {}
+    replacements = []  # (inicio, fin, texto)
+
+    for m in _PATH.finditer(code):
+        parts = m.group(1).split(".")
+        head = parts[0].lower()
+        label = m.group(1)
+        if head in sources:
+            ref, model = sources[head]
+            chain = parts[1:]
+            label = ".".join(chain)
+        else:
+            owners = {(r, mod) for r, mod in sources.values() if _relation(mod, parts[0])}
+            if not owners:
+                continue  # no es una relación conocida: se deja tal cual
+            if len(owners) > 1:
+                raise QueryError(f"«{m.group(1)}»: {parts[0]} existe en varias tablas; pon delante la tabla o su alias.")
+            ref, model = owners.pop()
+            chain = parts
+        if len(chain) < 2:
+            continue  # tabla.columna normal
+        for name in chain[:-1]:
+            rel = _relation(model, name)
+            if rel is None:
+                raise QueryError(f"«{m.group(1)}»: {name} no es una relación de {model._meta.db_table}.")
+            target = rel.related_model
+            if target._meta.db_table in HIDDEN_TABLES:
+                raise QueryError(f"«{m.group(1)}»: {target._meta.db_table} tiene datos protegidos.")
+            key = (ref.lower(), rel.column.lower())
+            if key not in join_alias:
+                alias = f"_r{len(joins) + 1}"
+                join_alias[key] = alias
+                joins.append(
+                    f"LEFT JOIN {target._meta.db_table} {alias} "
+                    f"ON {alias}.{rel.target_field.column} = {ref}.{rel.column}"
+                )
+            ref, model = join_alias[key], target
+        column = _column(model, chain[-1])
+        if column is None:
+            raise QueryError(f"«{m.group(1)}»: {model._meta.db_table} no tiene la columna {chain[-1]}.")
+        replacements.append((m.start(1), m.end(1), f"{ref}.{column}", label))
+
+    if not joins:
+        return sql
+    if len(re.findall(r"\bselect\b", code, re.IGNORECASE)) > 1:
+        raise QueryError("Las relaciones con punto (local_id.name) solo funcionan en consultas sin subconsultas.")
+
+    # Con una sola tabla en el FROM, sus columnas sin tabla delante se cualifican para que
+    # no choquen con las de las tablas añadidas (SELECT name, club.name FROM players_player).
+    refs = {ref for ref, _ in sources.values()}
+    if len(refs) == 1:
+        (base_ref, base_model), = {v for v in sources.values()}
+        columns = {f.column.lower() for f in base_model._meta.concrete_fields}
+        taken = [(a, b) for a, b, _, _ in replacements]
+        bare = re.compile(r"(?<![\w.\"])([A-Za-z_]\w*)(?![\w.(\"])")
+        for m in bare.finditer(code):
+            if m.group(1).lower() not in columns or any(a <= m.start() < b for a, b in taken):
+                continue
+            before = code[:m.start()].rstrip().lower()
+            if before.endswith(" as") or before.endswith(("from", "join")):
+                continue
+            replacements.append((m.start(1), m.end(1), f"{base_ref}.{m.group(1)}", None))
+        replacements.sort(key=lambda r: r[0])
+
+    select_end = re.search(r"\bfrom\b", code, re.IGNORECASE).start()
+    out, last = [], 0
+    for start, end, text, original in replacements:
+        out.append(code[last:start])
+        # En la lista del SELECT, la columna del resultado se llama como se escribió.
+        rest = code[end:select_end] if end <= select_end else ""
+        if original and end <= select_end and not re.match(r"\s*as\b", rest, re.IGNORECASE):
+            text += f' AS "{original}"'
+        out.append(text)
+        last = end
+    out.append(code[last:])
+    code = "".join(out)
+
+    from_pos = re.search(r"\bfrom\b", code, re.IGNORECASE).end()
+    end_match = _CLAUSE_END.search(code, from_pos)
+    at = end_match.start() if end_match else len(code)
+    code = code[:at].rstrip() + "\n" + "\n".join(joins) + "\n" + code[at:]
+
+    return re.sub("\x00(\\d+)\x00", lambda m: strings[int(m.group(1))], code).strip()

@@ -186,3 +186,11 @@ a.bo-kpi:hover { color: inherit; border-color: var(--z-lime); }
 .bo-form label { display: grid; gap: 6px; font-weight: 600; font-size: .9rem; }
 .bo-steps { padding-left: 1.2em; margin-bottom: 14px; }
 .bo-steps li { margin-bottom: 6px; }
+
+/* Traza en directo */
+.bo-console { min-height: 220px; }
+.bo-live { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 700; color: var(--z-lime); text-transform: uppercase; letter-spacing: .06em; }
+.bo-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--z-lime); animation: bo-pulse 1.2s ease-in-out infinite; }
+@keyframes bo-pulse { 50% { opacity: .25; } }
+.is-hidden { display: none !important; }
+.bo-fk { color: var(--z-muted); font-size: .75rem; }

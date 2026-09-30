@@ -293,6 +293,58 @@ def build_game_log(player):
     return log
 
 
+def season_games(player, season):
+    """
+    Partidos (Game) cerrados del jugador en una temporada, del más reciente al más antiguo.
+    Solo partidos de enfrentamientos de su club: los enlaces llevan a call_for_match,
+    que también exige que el enfrentamiento sea del club activo.
+    Cada elemento: {'match_id', 'n_game', 'date', 'rival', 'local', 'partner', 'sets', 'won', 'points'}
+    """
+    games = (
+        Game.objects
+        .filter(
+            Q(player_1_local=player) | Q(player_2_local=player) |
+            Q(player_1_visiting=player) | Q(player_2_visiting=player),
+            draft_mode=False,
+            winner__in=('Local', 'Visitante'),
+            match__club=player.club,
+            match__season=season,
+        )
+        .select_related('match__local', 'match__visiting',
+                        'player_1_local', 'player_2_local', 'player_1_visiting', 'player_2_visiting')
+        .prefetch_related('results')
+        .order_by('-match__start_date', '-match_id', 'n_game')
+    )
+
+    rows = []
+    for g in games:
+        is_local = player.id in (g.player_1_local_id, g.player_2_local_id)
+        pair = (g.player_1_local, g.player_2_local) if is_local else (g.player_1_visiting, g.player_2_visiting)
+        partner = next((p for p in pair if p and p.id != player.id), None)
+        won = (g.winner == 'Local') == is_local
+
+        # Sets desde el punto de vista del jugador ("6-3 4-6 10-8")
+        sets = []
+        result = next(iter(g.results.all()), None)
+        if result:
+            for loc, vis in result.sets():
+                if loc is not None and vis is not None:
+                    sets.append(f"{loc}-{vis}" if is_local else f"{vis}-{loc}")
+
+        rows.append({
+            'match_id': g.match_id,
+            'n_game': g.n_game,
+            'date': g.match.start_date,
+            'rival': g.match.visiting if is_local else g.match.local,
+            'local': is_local,
+            'partner': partner,
+            'sets': " ".join(sets),
+            'won': won,
+            'points': g.score if won else 0,
+        })
+    return rows
+
+
 def calls_by_season(player):
     """Convocatorias por temporada: ({temporada: a las que se apuntó}, {temporada: total})."""
     base = Call.objects.filter(match__club=player.club, draft_mode=False)
@@ -439,6 +491,7 @@ def statistics_per_player(request):
             'calls_present': present,
             'calls_total': total,
             'calls_absent': total - present,
+            'games': season_games(player, selected_season),
         })
 
     context = {

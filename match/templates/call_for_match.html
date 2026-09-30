@@ -97,7 +97,7 @@
 <div class="mt-3">
 {% for g in game_for_match %}
     {% with r=g.result %}
-    <div class="z-card z-game">
+    <div class="z-card z-game" id="partido-{{ g.n_game }}">
         <div class="z-game-head">
             <h3>Partido {{ g.n_game }} <span class="text-muted fw-semibold">· {{ g.score }} pts</span></h3>
             <div class="d-flex align-items-center gap-3">

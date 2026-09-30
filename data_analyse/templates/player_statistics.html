@@ -190,6 +190,46 @@
                 </article>
               {% endif %}
             </div>
+
+            <article class="st-card">
+              <h4 class="st-card-title">Partidos jugados</h4>
+              {% if d.games %}
+                <p class="st-card-note">Pulsa un partido para verlo en la sección de partidos.</p>
+                <div class="st-table-wrap">
+                  <table class="st-table st-table--links">
+                    <thead>
+                      <tr>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Rival</th>
+                        <th scope="col">Partido</th>
+                        <th scope="col">Compañero</th>
+                        <th scope="col">Resultado</th>
+                        <th scope="col">Puntos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for g in d.games %}
+                        <tr>
+                          <th scope="row">
+                            <a href="{% url 'call_for_match' g.match_id %}#partido-{{ g.n_game }}">{{ g.date|date:"d/m/Y" }}</a>
+                          </th>
+                          <td>{{ g.rival }} <span class="st-muted">({% if g.local %}local{% else %}visitante{% endif %})</span></td>
+                          <td>{{ g.n_game }}</td>
+                          <td>{{ g.partner|default:"—" }}</td>
+                          <td>
+                            <span class="{% if g.won %}st-up{% else %}st-down{% endif %}">{% if g.won %}V{% else %}D{% endif %}</span>
+                            {% if g.sets %}<span class="st-muted">{{ g.sets }}</span>{% endif %}
+                          </td>
+                          <td>{{ g.points }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="st-card-note">No jugó ningún partido esta temporada.</p>
+              {% endif %}
+            </article>
           </div>
         {% endif %}
 

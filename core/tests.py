@@ -79,6 +79,59 @@ class ClubIsolationTests(TestCase):
         response = self.client.get(reverse("player_statistics"), {"player": self.player_b.id})
         self.assertEqual(response.status_code, 404)
 
+    def test_foreign_match_urls_return_404(self):
+        """Ninguna URL de partido, convocatoria o resultado de otro club es accesible cambiando el id."""
+        call_b = Call.objects.create(match=self.match_b)
+        game_b = Game.objects.create(match=self.match_b, n_game=1)
+        urls = [
+            reverse("call_for_match", args=[self.match_b.id]),
+            reverse("create_call", args=[self.match_b.id]),
+            reverse("existing_call", args=[self.match_b.id]),
+            reverse("close_call", args=[self.match_b.id]),
+            reverse("delete_call", args=[self.match_b.id]),
+            reverse("create_game", args=[self.match_b.id]),
+            reverse("edit_games_match", args=[self.match_b.id]),
+            reverse("close_match", args=[self.match_b.id]),
+            reverse("delete_match", args=[self.match_b.id]),
+            reverse("call_report", args=[self.match_b.id]),
+            reverse("edit_call", args=[call_b.id]),
+            reverse("closed_call", args=[call_b.id]),
+            reverse("create_penalty", args=[call_b.id]),
+            reverse("create_result", args=[game_b.id]),
+            reverse("edit_result", args=[game_b.id]),
+        ]
+        for url in urls:
+            for method in ("get", "post"):
+                with self.subTest(url=url, method=method):
+                    self.assertEqual(getattr(self.client, method)(url).status_code, 404)
+
+        # Nada del otro club ha cambiado
+        self.assertTrue(Match.objects.filter(pk=self.match_b.pk, draft_mode=True).exists())
+        self.assertTrue(Call.objects.filter(pk=call_b.pk).exists())
+
+    def test_member_of_both_clubs_only_sees_active_club_matches(self):
+        """Aunque el usuario pertenezca a los dos clubes, solo accede a los partidos del club activo."""
+        Membership.objects.create(user=self.user_a, club=self.club_b, role=Membership.MEMBER)
+        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_b.id])).status_code, 404)
+
+        self.client.post(reverse("switch_club"), {"club_id": self.club_b.id})
+        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_b.id])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_a.id])).status_code, 404)
+
+    def test_player_statistics_only_link_own_club_matches(self):
+        """La tabla de partidos del jugador no incluye enfrentamientos de otro club."""
+        self.match_a.draft_mode = False
+        self.match_a.save()
+        Game.objects.create(match=self.match_a, n_game=1, score=3, winner="Local", draft_mode=False,
+                            player_1_local=self.player_a, player_2_local=self.player_a)
+        # Dato corrupto: el jugador de A aparece en un partido de B
+        Game.objects.create(match=self.match_b, n_game=1, score=3, winner="Local", draft_mode=False,
+                            player_1_local=self.player_a, player_2_local=self.player_b)
+
+        response = self.client.get(reverse("player_statistics"), {"player": self.player_a.id, "season": "2025-2026"})
+        self.assertEqual([g["match_id"] for g in response.context["d"]["games"]], [self.match_a.id])
+        self.assertNotContains(response, reverse("call_for_match", args=[self.match_b.id]))
+
     def test_player_statistics_only_lists_own_players(self):
         response = self.client.get(reverse("player_statistics"))
         self.assertEqual(list(response.context["players"]), [self.player_a])

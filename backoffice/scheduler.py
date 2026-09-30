@@ -3,6 +3,7 @@ Lanzador de procesos programados. `python manage.py run_scheduler` debe ejecutar
 cada minuto (cron, systemd timer o el programador del hosting); en cada pasada
 lanza los procesos a los que les toca y los pedidos con "Ejecutar ahora".
 """
+import asyncio
 import datetime
 import io
 import logging
@@ -108,7 +109,34 @@ class LiveOutput(io.TextIOBase):
 
     def save(self):
         self.saved_at = time.monotonic()
-        JobRun.objects.filter(pk=self.run.pk).update(output=self.getvalue())
+        if _in_event_loop():
+            # Hay procesos que escriben su salida desde código asíncrono (p. ej. Playwright
+            # en update_snp_scores), donde Django no deja usar la base de datos: se guarda
+            # desde un hilo aparte.
+            worker = threading.Thread(target=self._save_in_thread, args=(self.getvalue(),))
+            worker.start()
+            worker.join()
+        else:
+            self._save_output(self.getvalue())
+
+    def _save_output(self, output):
+        JobRun.objects.filter(pk=self.run.pk).update(output=output)
+
+    def _save_in_thread(self, output):
+        try:
+            self._save_output(output)
+        except Exception:
+            logger.exception("No se ha podido guardar la salida en directo de %s", self.run)
+        finally:
+            db_connections.close_all()
+
+
+def _in_event_loop():
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
 
 
 def claim_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):

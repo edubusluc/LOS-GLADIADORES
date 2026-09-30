@@ -10,7 +10,7 @@ import base64
 import binascii
 import re
 
-from playwright.sync_api import Error as PlaywrightError, TimeoutError as PlaywrightTimeout, sync_playwright
+from playwright.sync_api import Error as PlaywrightError, sync_playwright
 
 LOGIN_URL = "https://snpgalaxy.com/usuario/login"
 LOGIN_BUTTONS = ('input[type="submit"][value="Iniciar Sesión"]', 'button[type="submit"]:has-text("Iniciar Sesión")',
@@ -93,26 +93,51 @@ def _login(page, username, password):
         raise SnpScrapeError("SNP no ha aceptado el usuario o la contraseña.")
 
 
-def _click(page, selector, what):
-    element = page.wait_for_selector(selector, state="visible", timeout=TIMEOUT_MS) if selector else None
-    if not element:
-        raise SnpScrapeError(f"No se ha encontrado {what} en SNP.")
-    element.click()
+def _frame_label(frame, page):
+    if frame == page.main_frame:
+        return "la página principal"
+    return f"el iframe «{frame.name or '(sin nombre)'}» ({frame.url})"
 
 
-def _open_team_page(page, team_id):
-    """Series Nacionales → España → Mis equipos → el equipo, como lo haría el capitán."""
-    try:
-        _click(page, SERIES_MENU, "el menú «Series Nacionales»")
-        _click(page, SPAIN_LINK, "la opción «España»")
-        page.wait_for_load_state("load", timeout=TIMEOUT_MS)
-        _click(page, MY_TEAMS, "el botón «Mis equipos»")
-        page.wait_for_selector(TEAM_LINKS, timeout=TIMEOUT_MS)
-    except PlaywrightTimeout as exc:
-        raise SnpScrapeError("SNP no muestra el menú esperado (Series Nacionales → España → Mis equipos).") from exc
+def _find(page, selector, what, log, url_pattern=None, timeout_ms=TIMEOUT_MS):
+    """
+    Busca ``selector`` visible en la página y en todos sus iframes (SNP carga parte de
+    su contenido dentro de iframes) hasta que aparezca. Devuelve (frame, elemento).
+    ``url_pattern`` limita la búsqueda a los frames cuya dirección encaje.
+    """
+    waited = 0
+    while True:
+        for frame in page.frames:
+            if url_pattern and not re.search(url_pattern, frame.url):
+                continue
+            try:
+                element = frame.query_selector(selector)
+                if element and element.is_visible():
+                    log(f"Encontrado en {_frame_label(frame, page)}: {what}.")
+                    return frame, element
+            except PlaywrightError:
+                continue  # el frame se está recargando
+        if waited >= timeout_ms:
+            frames = "; ".join(_frame_label(f, page) for f in page.frames)
+            log(f"No se encuentra {what}. Frames en la página: {frames}")
+            raise SnpScrapeError(f"No se ha encontrado {what} en SNP (ni en la página ni en sus iframes).")
+        page.wait_for_timeout(500)
+        waited += 500
+
+
+def _open_team_page(page, team_id, log):
+    """
+    Series Nacionales → España → Mis equipos → el equipo, como lo haría el capitán.
+    Devuelve el frame donde está la tabla de jugadores.
+    """
+    _find(page, SERIES_MENU, "el menú «Series Nacionales»", log)[1].click()
+    _find(page, SPAIN_LINK, "la opción «España»", log)[1].click()
+    page.wait_for_load_state("load", timeout=TIMEOUT_MS)
+    _find(page, MY_TEAMS, "el botón «Mis equipos»", log)[1].click()
+    frame, _ = _find(page, TEAM_LINKS, "la tabla «Mis equipos»", log)
 
     teams = {}
-    for link in page.query_selector_all(TEAM_LINKS):
+    for link in frame.query_selector_all(TEAM_LINKS):
         found = re.search(r"/equipo/view/(\d+)", link.get_attribute("href") or "")
         if found:
             teams.setdefault(found.group(1), (link, link.inner_text().strip()))
@@ -129,8 +154,8 @@ def _open_team_page(page, team_id):
         raise SnpScrapeError(f"La cuenta tiene varios equipos; indica cuál en la cuenta SNP: {names}.")
 
     link.click()
-    page.wait_for_url(re.compile(r".*/equipo/view/\d+.*"), timeout=TIMEOUT_MS)
-    page.wait_for_selector(RESULTS_TABLE, timeout=TIMEOUT_MS)
+    frame, _ = _find(page, RESULTS_TABLE, "la tabla de jugadores", log, url_pattern=r"/equipo/view/\d+")
+    return frame
 
 
 def _read_rows(page):
@@ -162,19 +187,19 @@ def scrape_scores(username, password, team_id=None, headed=False, log=None):
                 log("Iniciando sesión en SNP…")
                 _login(page, username, password)
                 log("Sesión iniciada. Abriendo Series Nacionales → España → Mis equipos…")
-                _open_team_page(page, team_id)
-                log(f"Página del equipo abierta: {page.url}")
+                frame = _open_team_page(page, team_id, log)
+                log(f"Página del equipo abierta: {frame.url}")
                 for page_number in range(2, MAX_PAGES + 2):
-                    rows = _read_rows(page)
+                    rows = _read_rows(frame)
                     log(f"Página {page_number - 1} de la tabla: {len(rows)} jugadores.")
                     players.extend(rows)
-                    next_button = page.query_selector(NEXT_PAGE.format(page_number))
+                    next_button = frame.query_selector(NEXT_PAGE.format(page_number))
                     if not next_button or not next_button.is_visible():
                         break
                     next_button.click()
                     # La paginación recarga la tabla en la misma página.
                     page.wait_for_timeout(3000)
-                    page.wait_for_selector(RESULTS_TABLE, timeout=TIMEOUT_MS)
+                    frame.wait_for_selector(RESULTS_TABLE, timeout=TIMEOUT_MS)
             finally:
                 browser.close()
     except PlaywrightError as exc:

@@ -10,6 +10,15 @@
     </div>
 </div>
 
+{% if jobs_failed_24h or scheduler_late %}
+<div class="alert alert-warning d-flex flex-wrap gap-2 align-items-center">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    {% if jobs_failed_24h %}<span>{{ jobs_failed_24h }} ejecucion{{ jobs_failed_24h|pluralize:"es" }} de procesos con error en las últimas 24 h.</span>{% endif %}
+    {% if scheduler_late %}<span>El lanzador de procesos no está en marcha.</span>{% endif %}
+    <a href="{% url 'backoffice:job_list' %}" class="ms-auto">Ver procesos</a>
+</div>
+{% endif %}
+
 <section class="bo-kpis" aria-label="Indicadores principales">
     <a class="bo-kpi" href="{% url 'backoffice:load' %}">
         <span class="bo-kpi-label">Conectados ahora</span>

@@ -1,0 +1,7 @@
+{% if messages %}
+<div class="bo-messages">
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} py-2">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -140,8 +140,8 @@ El logo va incrustado en el propio correo (`static/zyra/email-logo.png`).
 Panel para el dueño de la plataforma en `/backoffice/`: dashboard con KPIs de todos los
 clubes, listado y ficha de clubes y de usuarios. Solo entra el personal de Zyra
 (usuarios con `is_staff`); al resto se le responde 404. Los usuarios staff ven el
-enlace *Back-office* en el menú de usuario. Próximas fases: procesos
-programados con log, consola SQL e importación de datos.
+enlace *Back-office* en el menú de usuario. Próximas fases: consola
+SQL e importación de datos.
 
 Para darte acceso a ti mismo:
 
@@ -168,16 +168,38 @@ dashboard salen de `backoffice.middleware.ActivityMiddleware`, que:
   errores 500. Los estáticos no cuentan. Cada proceso acumula en memoria y vuelca a la
   base de datos cada 15 segundos.
 
-Para no acumular filas, borra las métricas de más de 30 días (cuando haya procesos
-programados se hará solo):
+Las métricas de más de 30 días las borra cada noche el proceso programado
+`purge_request_metrics`.
+
+### Procesos programados
+
+Los procesos se definen en `backoffice/jobs.py`: cada uno es un comando de Django con
+su horario en formato cron (hora de Madrid). Para añadir uno, crea el comando y añade
+una entrada a `JOBS`. En *Back-office → Procesos* se ven todos, con su última y
+próxima ejecución, y se pueden pausar o ejecutar a mano. Cada ejecución queda en el
+log con su salida y, si falla, el error; además se envía un email al personal de Zyra.
+
+Un único lanzador ejecuta lo que toca. **El servidor tiene que llamarlo cada minuto**;
+si no lo hace, el back-office avisa de que el lanzador no está en marcha:
 
 ```bash
-python manage.py purge_request_metrics --days 30
+python manage.py run_scheduler
 ```
+
+Con cron, por ejemplo (ajusta las rutas):
+
+```
+* * * * * cd /ruta/a/LOS-GLADIADORES && /ruta/a/python manage.py run_scheduler >> /tmp/zyra-scheduler.log 2>&1
+```
+
+En local basta con ejecutarlo a mano cuando quieras probar un proceso ("Ejecutar
+ahora" lo deja pedido y el lanzador lo recoge en su siguiente pasada).
 
 ### Desplegar esta versión
 
 ```bash
 python manage.py makemigrations backoffice
-python manage.py migrate          # crea backoffice_useractivity y backoffice_requestmetric
+python manage.py migrate          # crea las tablas del back-office
 ```
+
+y programa `run_scheduler` cada minuto como se explica arriba.

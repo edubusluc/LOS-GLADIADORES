@@ -1,0 +1,18 @@
+{% load backoffice_tags tz %}
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr>{% if show_job %}<th>Proceso</th>{% endif %}<th>Inicio</th><th>Duración</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for run in runs %}
+        <tr>
+            {% if show_job %}<td><a href="{% url 'backoffice:job_detail' run.job.name %}">{{ run.job.name }}</a></td>{% endif %}
+            <td>{{ run.started_at|timezone:"Europe/Madrid"|date:"j M Y H:i:s" }}</td>
+            <td>{{ run.duration|duration }}</td>
+            <td>{{ run.get_trigger_display }}{% if run.triggered_by %} <span class="text-muted">({{ run.triggered_by.username }})</span>{% endif %}</td>
+            <td>{% run_status run %}</td>
+            <td class="text-end"><a href="{% url 'backoffice:run_detail' run.id %}">Ver salida</a></td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6" class="text-muted">Todavía no hay ejecuciones.</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>

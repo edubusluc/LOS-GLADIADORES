@@ -1,0 +1,26 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Log de ejecuciones{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:job_list' %}">Procesos programados</a> · {{ page.paginator.count }} ejecucion{{ page.paginator.count|pluralize:"es" }}</span>
+        <h1>Log de ejecuciones</h1>
+    </div>
+</div>
+
+<form method="get" class="bo-filters">
+    <select name="job" class="form-select" aria-label="Proceso">
+        <option value="">Todos los procesos</option>
+        {% for j in jobs %}<option value="{{ j.name }}" {% if j.name == job_name %}selected{% endif %}>{{ j.name }}</option>{% endfor %}
+    </select>
+    <select name="status" class="form-select" aria-label="Estado">
+        <option value="">Todos los estados</option>
+        {% for value, label in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrar</button>
+</form>
+
+{% include 'backoffice/includes/run_rows.html' with runs=page.object_list show_job=True %}
+<div class="mt-3">{% include 'includes/pagination.html' with page=page extra=extra %}</div>
+{% endblock %}

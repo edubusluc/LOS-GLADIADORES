@@ -140,3 +140,24 @@ a.bo-kpi:hover { color: inherit; border-color: var(--z-lime); }
 .bo-bars--dense small { position: absolute; bottom: -20px; left: 0; white-space: nowrap; }
 .bo-kpi--alert { border-color: var(--z-danger); }
 .bo-kpi--alert b { color: var(--z-danger); }
+
+/* Procesos programados */
+.bo-row-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.bo-main .z-table-wrap .table td .bo-wrap, .bo-wrap { white-space: normal; }
+.bo-log {
+    max-height: 480px;
+    margin: 0;
+    padding: 14px 16px;
+    overflow: auto;
+    font-size: .82rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--z-text);
+    background: var(--z-bg);
+    border: 1px solid var(--z-border);
+    border-radius: var(--z-radius-sm);
+}
+.bo-log--error { border-color: var(--z-danger); color: #FFB3B6; }
+.bo-messages { margin-bottom: 16px; }
+.bo-main .z-table-wrap + .z-panel { margin-top: 24px; }

@@ -1,0 +1,34 @@
+{% extends 'backoffice/base.html' %}
+{% load backoffice_tags tz %}
+{% block title %}{{ run.job.name }} · ejecución{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:job_detail' run.job.name %}">{{ run.job.name }}</a> · <a href="{% url 'backoffice:run_list' %}">Log</a></span>
+        <h1>Ejecución del {{ run.started_at|timezone:"Europe/Madrid"|date:"j M H:i" }}</h1>
+    </div>
+</div>
+
+<section class="z-panel">
+    <dl class="bo-facts">
+        <div><dt>Estado</dt><dd>{% run_status run %}</dd></div>
+        <div><dt>Inicio</dt><dd>{{ run.started_at|timezone:"Europe/Madrid"|date:"j M Y H:i:s" }}</dd></div>
+        <div><dt>Fin</dt><dd>{{ run.finished_at|timezone:"Europe/Madrid"|date:"j M Y H:i:s"|default:"—" }}</dd></div>
+        <div><dt>Duración</dt><dd>{{ run.duration|duration }}</dd></div>
+        <div><dt>Tipo</dt><dd>{{ run.get_trigger_display }}{% if run.triggered_by %} por {{ run.triggered_by.username }}{% endif %}</dd></div>
+    </dl>
+</section>
+
+{% if run.error %}
+<section class="z-panel">
+    <h2 class="h5 text-danger">Error</h2>
+    <pre class="bo-log bo-log--error">{{ run.error }}</pre>
+</section>
+{% endif %}
+
+<section class="z-panel">
+    <h2 class="h5">Salida</h2>
+    {% if run.output %}<pre class="bo-log">{{ run.output }}</pre>{% else %}<p class="text-muted mb-0">El proceso no escribió nada.</p>{% endif %}
+</section>
+{% endblock %}

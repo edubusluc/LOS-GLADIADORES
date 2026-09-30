@@ -1622,3 +1622,8 @@ a.z-location:hover span { text-decoration: underline; }
     .st-table--wrap td:nth-child(3) { grid-column: 1 / -1; color: var(--st-muted); }
 }
 .z-fixture-status .z-edit { top: auto; right: auto; }
+
+/* Separador "o" y botón de Google en las pantallas de acceso */
+.z-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--z-muted); font-size: .85rem; }
+.z-or::before, .z-or::after { content: ""; flex: 1; height: 1px; background: var(--z-border); }
+.z-google-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }

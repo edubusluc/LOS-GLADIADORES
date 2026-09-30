@@ -11,4 +11,7 @@ urlpatterns = (
     path('members/', views.club_members, name='club_members'),
     path('members/<int:membership_id>/update/', views.update_member, name='update_member'),
     path('members/<int:membership_id>/remove/', views.remove_member, name='remove_member'),
+    path('members/invitations/new/', views.create_invitation, name='create_invitation'),
+    path('members/invitations/<int:invitation_id>/revoke/', views.revoke_invitation, name='revoke_invitation'),
+    path('invite/<str:token>/', views.invitation, name='invitation'),
 )

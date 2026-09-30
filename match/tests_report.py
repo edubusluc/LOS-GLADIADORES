@@ -108,6 +108,13 @@ class ReportTests(TestCase):
         name, content, mimetype = message.attachments[0]
         self.assertEqual(mimetype, "application/pdf")
         self.assertTrue(content.startswith(b"%PDF"))
+        # Pie corporativo con el logo incrustado; el PDF sigue siendo un adjunto aparte
+        self.assertIn("join.zyra@gmail.com", html)
+        self.assertIn("cid:zyra-logo", html)
+        parts = [p.get_content_type() for p in message.message().walk()]
+        self.assertEqual(parts[:2], ["multipart/mixed", "multipart/related"])
+        self.assertIn("image/png", parts)
+        self.assertEqual(parts[-1], "application/pdf")
 
     def test_each_admin_gets_an_individual_email(self):
         second = User.objects.create_user("segundo", password="pass-12345", email="segundo@example.com")

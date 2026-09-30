@@ -15,8 +15,8 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
             <p>
-                <label for="{{ form.username.id_for_label }}">Usuario</label>
-                <input type="text" name="username" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" placeholder="Usuario" autocomplete="username" autofocus required>
+                <label for="{{ form.username.id_for_label }}">Usuario o email</label>
+                <input type="text" name="username" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" placeholder="Usuario o email" autocomplete="username" autofocus required>
             </p>
             <p>
                 <label for="{{ form.password.id_for_label }}">Contraseña</label>
@@ -24,6 +24,7 @@
             </p>
             <button type="submit" class="btn btn-primary btn-lg mt-2">Entrar</button>
         </form>
+        {% include 'includes/google_button.html' with next=next %}
         <p class="z-auth-foot">¿Tu club aún no está en Zyra? <a href="{% url 'register_club' %}">Regístralo</a></p>
     </div>
 </div>

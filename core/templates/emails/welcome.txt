@@ -1,0 +1,12 @@
+{% autoescape off %}¡Bienvenido a Zyra, {{ user.username }}!
+
+{% if created %}Tu registro se ha completado y has creado el equipo {{ club.name }}. Como administrador puedes gestionar jugadores, partidos, convocatorias y estadísticas, e invitar al resto del equipo desde "Miembros del club".{% else %}Tu registro se ha completado y ya formas parte de {{ club.name }}. Desde ahora puedes consultar los partidos, las convocatorias y las estadísticas del equipo.{% endif %}
+
+Usuario: {{ user.username }}
+{% if created %}Equipo creado{% else %}Equipo{% endif %}: {{ club.name }}
+Administradores: {% for admin in admins %}{{ admin.get_full_name|default:admin.username }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}
+{% if site_url %}
+Entra en Zyra: {{ site_url }}
+{% endif %}
+Un saludo,
+El equipo de Zyra{% endautoescape %}

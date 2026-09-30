@@ -216,6 +216,10 @@ sobre toda la base de datos, al estilo del Data Export de Salesforce:
   `local_id.club_id.name`). La consola lo convierte en `LEFT JOIN` y enseña el SQL
   ejecutado. En el esquema, las claves ajenas indican a qué tabla apuntan. No funciona
   dentro de subconsultas.
+- **Autocompletado** mientras escribes: tablas tras `FROM`/`JOIN`, columnas de las tablas
+  de la consulta (tras `SELECT`, una coma, `WHERE`…) y, al poner un punto tras una clave
+  ajena (`local_id.`), los campos de la tabla relacionada. Flechas para elegir, Tab o
+  Enter para insertar, Esc para cerrar y Ctrl + Espacio para abrir la lista a mano.
 
 ### Importar datos
 

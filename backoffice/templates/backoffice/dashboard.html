@@ -1,0 +1,106 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">Toda la plataforma</span>
+        <h1>Dashboard</h1>
+    </div>
+</div>
+
+<section class="bo-kpis" aria-label="Indicadores principales">
+    <a class="bo-kpi" href="{% url 'backoffice:club_list' %}">
+        <span class="bo-kpi-label">Clubes</span>
+        <b>{{ kpis.clubs.total }}</b>
+        <small>{{ kpis.clubs.active }} activos · +{{ kpis.clubs.new_30 }} en 30 días</small>
+    </a>
+    <a class="bo-kpi" href="{% url 'backoffice:user_list' %}">
+        <span class="bo-kpi-label">Usuarios</span>
+        <b>{{ kpis.users.total }}</b>
+        <small>+{{ kpis.users.new_7 }} esta semana · +{{ kpis.users.new_30 }} en 30 días</small>
+    </a>
+    <div class="bo-kpi">
+        <span class="bo-kpi-label">Con acceso en 24 h</span>
+        <b>{{ kpis.users.active_24h }}</b>
+        <small>{{ kpis.users.active_7 }} en 7 días · {{ kpis.users.active_30 }} en 30 días</small>
+    </div>
+    <div class="bo-kpi">
+        <span class="bo-kpi-label">Partidos últimos 30 días</span>
+        <b>{{ kpis.activity.matches_30 }}</b>
+        <small>{{ kpis.activity.matches_upcoming }} próximos · {{ kpis.activity.calls_open }} convocatorias abiertas</small>
+    </div>
+</section>
+
+<div class="bo-grid">
+    <section class="z-panel">
+        <h2 class="h5">Altas de usuarios por semana</h2>
+        <ol class="bo-bars" aria-label="Altas por semana, últimas 8 semanas">
+            {% for w in kpis.signups_by_week %}
+            <li title="Semana del {{ w.week|date:'j M' }}: {{ w.n }}">
+                <span class="bo-bar" style="--h: {{ w.pct }}%"></span>
+                <b>{{ w.n }}</b>
+                <small>{{ w.week|date:"j/n" }}</small>
+            </li>
+            {% endfor %}
+        </ol>
+    </section>
+
+    <section class="z-panel">
+        <h2 class="h5">Usuarios e invitaciones</h2>
+        <dl class="bo-facts">
+            <div><dt>Entran con Google</dt><dd>{{ kpis.users.google }}</dd></div>
+            <div><dt>Sin club</dt><dd><a href="{% url 'backoffice:user_list' %}?kind=no_club">{{ kpis.users.without_club }}</a></dd></div>
+            <div><dt>Jugadores en plantilla</dt><dd>{{ kpis.activity.players }}</dd></div>
+            <div><dt>Invitaciones vigentes</dt><dd>{{ kpis.invitations.pending }}</dd></div>
+            <div><dt>Invitaciones usadas (30 días)</dt><dd>{{ kpis.invitations.used_30 }} de {{ kpis.invitations.created_30 }}{% if kpis.invitations.conversion_30 is not None %} · {{ kpis.invitations.conversion_30 }} %{% endif %}</dd></div>
+        </dl>
+    </section>
+</div>
+
+<div class="bo-grid">
+    <section class="z-panel">
+        <div class="bo-panel-head">
+            <h2 class="h5">Últimos clubes</h2>
+            <a href="{% url 'backoffice:club_list' %}">Ver todos</a>
+        </div>
+        <ul class="bo-list">
+            {% for c in kpis.recent_clubs %}
+            <li>
+                <a href="{% url 'backoffice:club_detail' c.id %}">{{ c.name }}</a>
+                <span class="text-muted">{{ c.n_members|default:0 }} miembro{{ c.n_members|pluralize }} · {{ c.n_players|default:0 }} jugador{{ c.n_players|pluralize:"es" }}</span>
+                <small class="text-muted ms-auto">hace {{ c.created_at|timesince }}</small>
+            </li>
+            {% empty %}
+            <li class="text-muted">Todavía no hay clubes.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="z-panel">
+        <div class="bo-panel-head">
+            <h2 class="h5">Últimos usuarios</h2>
+            <a href="{% url 'backoffice:user_list' %}">Ver todos</a>
+        </div>
+        <ul class="bo-list">
+            {% for u in kpis.recent_users %}
+            <li>
+                <a href="{% url 'backoffice:user_detail' u.id %}">{{ u.username }}</a>
+                <span class="text-muted">{{ u.email|default:"sin email" }}</span>
+                <small class="text-muted ms-auto">hace {{ u.date_joined|timesince }}</small>
+            </li>
+            {% empty %}
+            <li class="text-muted">Todavía no hay usuarios.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+
+<section class="z-panel">
+    <div class="bo-panel-head">
+        <h2 class="h5">Clubes sin partidos en {{ at_risk_days }} días</h2>
+        <a href="{% url 'backoffice:club_list' %}?activity=inactive">Ver todos</a>
+    </div>
+    {% include 'backoffice/includes/club_rows.html' with clubs=kpis.inactive_clubs empty="Todos los clubes tienen actividad reciente." %}
+</section>
+{% endblock %}

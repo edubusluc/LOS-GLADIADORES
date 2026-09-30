@@ -134,3 +134,26 @@ python manage.py migrate          # crea core_invitation y las tablas de allauth
 Todos los correos salen de join.zyra@gmail.com con el mismo pie corporativo (logo de
 Zyra y contacto), montado en `core/emails.py` y `core/templates/emails/layout.html`.
 El logo va incrustado en el propio correo (`static/zyra/email-logo.png`).
+
+## Back-office
+
+Panel para el dueño de la plataforma en `/backoffice/`: dashboard con KPIs de todos los
+clubes, listado y ficha de clubes y de usuarios. Solo entra el personal de Zyra
+(usuarios con `is_staff`); al resto se le responde 404. Los usuarios staff ven el
+enlace *Back-office* en el menú de usuario. El plan completo está en
+`/mnt/project-files/crm/plan-crm.md` (consola SQL, importación, procesos programados…).
+
+Para darte acceso a ti mismo:
+
+```bash
+python manage.py createsuperuser        # si aún no tienes superusuario
+# o, con un usuario que ya existe:
+python manage.py shell -c "from django.contrib.auth.models import User; User.objects.filter(username='TU_USUARIO').update(is_staff=True)"
+```
+
+El Django admin queda como herramienta de emergencia **solo para superusuarios**. Su
+ruta es `/admin/` por defecto; en producción conviene cambiarla por una menos obvia
+con la variable de entorno `ADMIN_URL` (por ejemplo `ADMIN_URL=gestion-9f3k/`, con la
+barra final).
+
+Esta versión no cambia modelos: no hace falta `makemigrations` ni `migrate`.

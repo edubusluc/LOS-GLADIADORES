@@ -24,6 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# Ruta del Django admin (herramienta de emergencia, solo superusuarios). Se puede
+# cambiar por una menos obvia con la variable de entorno ADMIN_URL.
+ADMIN_URL = config('ADMIN_URL', default='admin/')
+
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='clave_por_defecto_no_segura')
 
 LOGIN_REDIRECT_URL = '/'
@@ -54,6 +58,7 @@ INSTALLED_APPS = [
     'team',
     'callLog',
     'penalty',
+    'backoffice',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',

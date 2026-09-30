@@ -1,0 +1,30 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Clubes{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{{ page.paginator.count }} club{{ page.paginator.count|pluralize:"es" }}</span>
+        <h1>Clubes</h1>
+    </div>
+</div>
+
+<form method="get" class="bo-filters" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre" class="form-control" aria-label="Buscar club">
+    <select name="activity" class="form-select" aria-label="Actividad">
+        <option value="">Toda la actividad</option>
+        <option value="active" {% if activity == 'active' %}selected{% endif %}>Con partidos en {{ at_risk_days }} días</option>
+        <option value="inactive" {% if activity == 'inactive' %}selected{% endif %}>Sin partidos en {{ at_risk_days }} días</option>
+    </select>
+    <select name="order" class="form-select" aria-label="Ordenar">
+        <option value="recent" {% if order == 'recent' %}selected{% endif %}>Más recientes</option>
+        <option value="name" {% if order == 'name' %}selected{% endif %}>Nombre</option>
+        <option value="members" {% if order == 'members' %}selected{% endif %}>Más miembros</option>
+        <option value="activity" {% if order == 'activity' %}selected{% endif %}>Último partido</option>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Filtrar</button>
+</form>
+
+{% include 'backoffice/includes/club_rows.html' with clubs=page.object_list empty="No hay clubes con esos filtros." %}
+<div class="mt-3">{% include 'includes/pagination.html' with page=page extra=extra %}</div>
+{% endblock %}

@@ -66,6 +66,9 @@
                     {% if is_club_admin %}
                     <li><a class="dropdown-item" href="{% url 'club_members' %}"><i class="fa-solid fa-user-gear"></i> Miembros del club</a></li>
                     {% endif %}
+                    {% if user.is_staff %}
+                    <li><a class="dropdown-item" href="{% url 'backoffice:dashboard' %}"><i class="fa-solid fa-gauge-high"></i> Back-office</a></li>
+                    {% endif %}
                     <li><a class="dropdown-item" href="{% url 'register_club' %}"><i class="fa-solid fa-plus"></i> Registrar otro club</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>

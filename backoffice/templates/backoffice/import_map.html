@@ -1,0 +1,54 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Emparejar columnas{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:import_list' %}">Importar datos</a> · paso 2 de 3</span>
+        <h1>Emparejar columnas</h1>
+    </div>
+</div>
+
+{% include 'backoffice/includes/messages.html' %}
+
+<p><strong>{{ job.filename }}</strong> → {{ entity.label }} de <strong>{{ job.club.name }}</strong> · {{ job.mode_label }}.</p>
+<p class="text-muted">{{ entity.help }} Las celdas vacías dejan el valor por defecto en las altas y no cambian nada en las actualizaciones.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="z-table-wrap"><table class="table align-middle">
+        <thead><tr><th>Campo de Zyra</th><th>Columna del fichero</th><th>Ejemplo del fichero</th></tr></thead>
+        <tbody>
+        {% for f, current in fields %}
+            <tr>
+                <td>{{ f.label }}{% if f.required %} <span class="text-danger" title="Obligatorio en altas">*</span>{% endif %}{% if f.name == 'id' %} <span class="small text-muted">(solo para actualizar)</span>{% endif %}</td>
+                <td>
+                    <select name="map_{{ f.name }}" class="form-select form-select-sm" data-field="{{ f.name }}" aria-label="Columna para {{ f.label }}">
+                        <option value="">— No importar —</option>
+                        {% for i, h in headers %}<option value="{{ i }}" {% if i == current %}selected{% endif %}>{{ h|default:"(sin nombre)" }}</option>{% endfor %}
+                    </select>
+                </td>
+                <td class="text-muted small bo-sample" data-sample-for="{{ f.name }}"></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+    <div class="bo-sql-actions">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Siguiente: previsualizar</button>
+        <a href="{% url 'backoffice:import_list' %}" class="btn btn-outline-light">Cancelar</a>
+    </div>
+</form>
+
+{{ sample|json_script:"import-sample" }}
+<script>
+(function () {
+    var sample = JSON.parse(document.getElementById('import-sample').textContent);
+    function show(select) {
+        var cell = document.querySelector('[data-sample-for="' + select.dataset.field + '"]');
+        var i = select.value === '' ? -1 : parseInt(select.value, 10);
+        cell.textContent = i < 0 ? '' : sample.map(function (r) { return r[i] || ''; }).filter(Boolean).join(' · ');
+    }
+    document.querySelectorAll('select[data-field]').forEach(function (s) { show(s); s.addEventListener('change', function () { show(s); }); });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'backoffice/base.html' %}
+{% load tz %}
+{% block title %}Registro de consultas{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:sql_console' %}">Consola SQL</a> · {{ page.paginator.count }} consulta{{ page.paginator.count|pluralize }}</span>
+        <h1>Registro de consultas</h1>
+    </div>
+</div>
+
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr><th>Cuándo</th><th>Quién</th><th>Consulta</th><th class="text-end">Filas</th><th class="text-end">Tiempo</th><th>Resultado</th></tr></thead>
+    <tbody>
+    {% for q in page %}
+        <tr>
+            <td>{{ q.created_at|timezone:"Europe/Madrid"|date:"j M Y H:i" }}</td>
+            <td>{{ q.user.username|default:"—" }}</td>
+            <td class="bo-wrap"><code class="bo-mono">{{ q.sql|truncatechars:160 }}</code></td>
+            <td class="text-end">{{ q.row_count|default_if_none:"—" }}</td>
+            <td class="text-end">{% if q.duration_ms is not None %}{{ q.duration_ms }} ms{% else %}—{% endif %}</td>
+            <td>{% if q.error %}<span class="z-badge z-badge--danger" title="{{ q.error }}">Error</span>{% elif q.exported %}<span class="z-badge z-badge--lime">Exportada</span>{% else %}Ejecutada{% endif %}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6" class="text-muted">Todavía no se ha lanzado ninguna consulta.</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+<div class="mt-3">{% include 'includes/pagination.html' with page=page extra="" %}</div>
+{% endblock %}

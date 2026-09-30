@@ -31,13 +31,12 @@
                 <li><a href="{% url 'backoffice:dashboard' %}" class="{% if section == 'dashboard' %}is-active{% endif %}"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
                 <li><a href="{% url 'backoffice:load' %}" class="{% if section == 'load' %}is-active{% endif %}"><i class="fa-solid fa-signal"></i> Carga y conectados</a></li>
                 <li><a href="{% url 'backoffice:job_list' %}" class="{% if section == 'jobs' %}is-active{% endif %}"><i class="fa-solid fa-clock-rotate-left"></i> Procesos</a></li>
+                {% if user.is_superuser %}
+                <li><a href="{% url 'backoffice:sql_console' %}" class="{% if section == 'sql' %}is-active{% endif %}"><i class="fa-solid fa-database"></i> Consola SQL</a></li>
+                <li><a href="{% url 'backoffice:import_list' %}" class="{% if section == 'import' %}is-active{% endif %}"><i class="fa-solid fa-file-import"></i> Importar datos</a></li>
+                {% endif %}
                 <li><a href="{% url 'backoffice:club_list' %}" class="{% if section == 'clubs' %}is-active{% endif %}"><i class="fa-solid fa-shield-halved"></i> Clubes</a></li>
                 <li><a href="{% url 'backoffice:user_list' %}" class="{% if section == 'users' %}is-active{% endif %}"><i class="fa-solid fa-users"></i> Usuarios</a></li>
-            </ul>
-            <p class="bo-nav-title">Próximamente</p>
-            <ul class="bo-nav bo-nav--soon" aria-label="Próximamente">
-                <li><span><i class="fa-solid fa-database"></i> Consola SQL</span></li>
-                <li><span><i class="fa-solid fa-file-import"></i> Importar datos</span></li>
             </ul>
         </nav>
         <div class="bo-side-foot">

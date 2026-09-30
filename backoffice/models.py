@@ -108,3 +108,83 @@ class JobRun(models.Model):
 
     def __str__(self):
         return f"{self.job} {self.started_at:%Y-%m-%d %H:%M} ({self.get_status_display()})"
+
+
+class SavedQuery(models.Model):
+    """Consulta SQL guardada en la consola, para repetirla o exportarla cuando haga falta."""
+    name = models.CharField("nombre", max_length=120, unique=True)
+    description = models.CharField("descripción", max_length=255, blank=True, default="")
+    sql = models.TextField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "consulta guardada"
+        verbose_name_plural = "consultas guardadas"
+
+    def __str__(self):
+        return self.name
+
+
+class QueryLog(models.Model):
+    """Auditoría: cada consulta lanzada o exportada desde la consola SQL."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+    sql = models.TextField()
+    exported = models.BooleanField("exportada", default=False)
+    row_count = models.PositiveIntegerField(null=True, blank=True)
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    error = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "consulta ejecutada"
+        verbose_name_plural = "consultas ejecutadas"
+
+    def __str__(self):
+        return f"{self.user} {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class ImportJob(models.Model):
+    """Una importación de datos: el fichero, cómo se emparejaron sus columnas y qué cambió."""
+    DRAFT = "draft"
+    DONE = "done"
+    UNDONE = "undone"
+    STATUSES = [(DRAFT, "Sin confirmar"), (DONE, "Importada"), (UNDONE, "Deshecha")]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+    club = models.ForeignKey("core.Club", on_delete=models.CASCADE, related_name="+")
+    entity = models.CharField("objeto", max_length=20)
+    mode = models.CharField("modo", max_length=10)
+    filename = models.CharField(max_length=255)
+    content = models.TextField()
+    mapping = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=10, choices=STATUSES, default=DRAFT)
+    created_count = models.PositiveIntegerField(default=0)
+    updated_count = models.PositiveIntegerField(default=0)
+    result = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    undone_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "importación"
+        verbose_name_plural = "importaciones"
+
+    @property
+    def entity_spec(self):
+        from .importer import ENTITIES
+        return ENTITIES.get(self.entity)
+
+    @property
+    def mode_label(self):
+        from .importer import MODES
+        return dict(MODES).get(self.mode, self.mode)
+
+    def __str__(self):
+        return f"{self.filename} → {self.entity} ({self.get_status_display()})"

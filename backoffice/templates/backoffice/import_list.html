@@ -1,0 +1,87 @@
+{% extends 'backoffice/base.html' %}
+{% load backoffice_tags tz %}
+{% block title %}Importar datos{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">CSV · hasta {{ max_rows }} filas · todo o nada</span>
+        <h1>Importar datos</h1>
+    </div>
+</div>
+
+{% include 'backoffice/includes/messages.html' %}
+
+<div class="bo-grid">
+    <section class="z-panel">
+        <h2 class="h5">Nueva importación</h2>
+        <form method="post" enctype="multipart/form-data" class="bo-form">
+            {% csrf_token %}
+            <label>Qué importar
+                <select name="entity" class="form-select" required>
+                    {% for e in entities %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Club
+                <select name="club" class="form-select" required>
+                    {% for c in clubs %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Modo
+                <select name="mode" class="form-select" required>
+                    {% for value, label in modes %}<option value="{{ value }}" {% if value == 'upsert' %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Fichero CSV
+                <input type="file" name="file" accept=".csv,text/csv" class="form-control" required>
+            </label>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-arrow-right"></i> Siguiente: emparejar columnas</button>
+        </form>
+    </section>
+
+    <section class="z-panel">
+        <h2 class="h5">Cómo funciona</h2>
+        <ol class="bo-steps">
+            <li>Sube un CSV (desde Excel: <em>Guardar como → CSV UTF-8</em>). Sirve con <code>;</code> o con <code>,</code>.</li>
+            <li>Empareja cada columna del fichero con un campo. Las que se llaman igual se emparejan solas.</li>
+            <li>Revisa la previsualización: cada fila pasa las mismas validaciones que en la web.</li>
+            <li>Confirma. Si alguna fila tiene errores no entra nada; puedes descargar los errores, corregirlos y volver a subir.</li>
+        </ol>
+        <p class="small text-muted mb-2">Para editar muchos registros a la vez, exporta desde la consola SQL con la columna <code>id</code>, cámbialos en Excel e impórtalos en modo actualizar.</p>
+        <p class="mb-0 small">Plantillas:
+            {% for e in entities %}<a href="{% url 'backoffice:import_template' e.key %}">{{ e.label }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}
+        </p>
+    </section>
+</div>
+
+<h2 class="h5 mt-2">Historial</h2>
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr><th>Fecha</th><th>Fichero</th><th>Qué</th><th>Club</th><th>Resultado</th><th></th></tr></thead>
+    <tbody>
+    {% for job in page %}
+        <tr>
+            <td>{{ job.created_at|timezone:"Europe/Madrid"|date:"j M Y H:i" }}<div class="small text-muted">{{ job.user.username|default:"—" }}</div></td>
+            <td class="bo-wrap">{{ job.filename }}</td>
+            <td>{{ job.entity_spec.label|default:job.entity }}<div class="small text-muted">{{ job.mode_label }}</div></td>
+            <td>{{ job.club.name }}</td>
+            <td>
+                {% if job.status == 'done' %}<span class="z-badge z-badge--lime">Importada</span><div class="small text-muted">{{ job.created_count }} creados · {{ job.updated_count }} actualizados</div>
+                {% elif job.status == 'undone' %}<span class="z-badge z-badge--outline">Deshecha</span><div class="small text-muted">{{ job.undone_at|ago }}</div>
+                {% else %}<span class="z-badge z-badge--warning">Sin confirmar</span>{% endif %}
+            </td>
+            <td class="text-end">
+                {% if job.status == 'draft' %}<a href="{% url 'backoffice:import_preview' job.pk %}">Continuar</a>
+                {% elif job.status == 'done' %}
+                <form method="post" action="{% url 'backoffice:import_undo' job.pk %}" onsubmit="return confirm('Se borrarán los registros creados y se restaurarán los valores anteriores de los actualizados. ¿Deshacer?');">
+                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-rotate-left"></i> Deshacer</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6" class="text-muted">Todavía no hay importaciones.</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+<div class="mt-3">{% include 'includes/pagination.html' with page=page extra="" %}</div>
+{% endblock %}

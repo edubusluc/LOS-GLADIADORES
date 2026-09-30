@@ -19,3 +19,14 @@ def staff_required(view_func):
         with translation.override("es"):
             return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def superuser_required(view_func):
+    """Como staff_required, pero solo para superusuarios (consola SQL: ve toda la base de datos)."""
+    @staff_required
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise Http404
+        return view_func(request, *args, **kwargs)
+    return wrapper

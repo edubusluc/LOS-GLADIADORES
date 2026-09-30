@@ -140,8 +140,8 @@ El logo va incrustado en el propio correo (`static/zyra/email-logo.png`).
 Panel para el dueño de la plataforma en `/backoffice/`: dashboard con KPIs de todos los
 clubes, listado y ficha de clubes y de usuarios. Solo entra el personal de Zyra
 (usuarios con `is_staff`); al resto se le responde 404. Los usuarios staff ven el
-enlace *Back-office* en el menú de usuario. Próximas fases: consola
-SQL e importación de datos.
+enlace *Back-office* en el menú de usuario. La consola SQL y la
+importación de datos son solo para superusuarios.
 
 Para darte acceso a ti mismo:
 
@@ -194,6 +194,32 @@ Con cron, por ejemplo (ajusta las rutas):
 
 En local basta con ejecutarlo a mano cuando quieras probar un proceso ("Ejecutar
 ahora" lo deja pedido y el lanzador lo recoge en su siguiente pasada).
+
+### Consola SQL
+
+*Back-office → Consola SQL* (solo superusuarios) ejecuta consultas **de solo lectura**
+sobre toda la base de datos, al estilo del Data Export de Salesforce:
+
+- Solo una sentencia `SELECT` o `WITH`. La lectura la garantiza la base de datos:
+  `PRAGMA query_only` en SQLite, transacción `READ ONLY` en PostgreSQL.
+- Máximo 10 segundos por consulta, 500 filas en pantalla y 50.000 al exportar.
+- Exporta a CSV (UTF-8 con `;`, se abre bien en Excel en español).
+- Las contraseñas, sesiones y tokens no se pueden consultar y se ocultan en un `SELECT *`.
+- Consultas guardadas, esquema de tablas a la vista y registro de todas las consultas
+  lanzadas (quién, cuándo y cuántas filas).
+
+### Importar datos
+
+*Back-office → Importar datos* (solo superusuarios) carga jugadores, equipos rivales o
+partidos de un club desde un CSV: subir → emparejar columnas → previsualizar → confirmar.
+
+- Modos: solo crear, solo actualizar o crear y actualizar. Los registros existentes se
+  buscan por `id` o por su clave natural (nombre y apellidos, nombre del equipo).
+- Cada fila pasa las validaciones del modelo; si alguna falla no se importa nada y se
+  pueden descargar los errores.
+- Cada importación queda en el historial y se puede **deshacer**.
+- Edición masiva: exporta desde la consola SQL con la columna `id`, edita en Excel e
+  importa en modo actualizar.
 
 ### Desplegar esta versión
 

@@ -433,6 +433,13 @@ class SqlConsoleTests(TestCase):
         log = QueryLog.objects.get()
         self.assertEqual((log.user, log.row_count, log.exported, log.error), (self.root, 1, False, ""))
 
+    def test_page_ships_schema_for_autocomplete(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="sql-schema"')
+        self.assertContains(response, "js/backoffice-sql.js")
+        self.assertContains(response, '"target": "team_team"')
+        self.assertNotContains(response, "django_session")
+
     def test_writes_are_rejected(self):
         from . import sql
         for query in [

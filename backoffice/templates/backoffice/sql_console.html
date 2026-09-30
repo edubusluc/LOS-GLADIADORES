@@ -1,5 +1,5 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags %}
+{% load static backoffice_tags %}
 {% block title %}Consola SQL{% endblock %}
 
 {% block content %}
@@ -21,11 +21,13 @@
             {% csrf_token %}
             {% if saved %}<p class="mb-2"><span class="z-badge z-badge--lime">Guardada</span> <strong>{{ saved.name }}</strong>{% if saved.description %} <span class="text-muted">· {{ saved.description }}</span>{% endif %}</p>{% endif %}
             <label for="sql-input" class="visually-hidden">Consulta SQL</label>
-            <textarea id="sql-input" name="sql" rows="8" spellcheck="false" class="form-control bo-sql-input" placeholder="SELECT name, created_at FROM core_club ORDER BY created_at DESC">{{ query }}</textarea>
+            <div class="bo-sql-editor">
+                <textarea id="sql-input" name="sql" rows="8" spellcheck="false" class="form-control bo-sql-input" placeholder="SELECT name, created_at FROM core_club ORDER BY created_at DESC">{{ query }}</textarea>
+            </div>
             <div class="bo-sql-actions">
                 <button type="submit" name="action" value="run" class="btn btn-primary"><i class="fa-solid fa-play"></i> Ejecutar</button>
                 <button type="submit" name="action" value="export" class="btn btn-outline-light"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
-                <span class="text-muted small">Ctrl + Enter ejecuta · se muestran hasta {{ display_limit }} filas y se exportan hasta {{ export_limit }} · <code>local_id.name</code> lee campos de la tabla relacionada</span>
+                <span class="text-muted small">Ctrl + Enter ejecuta · Ctrl + Espacio sugiere campos · se muestran hasta {{ display_limit }} filas y se exportan hasta {{ export_limit }} · <code>local_id.name</code> lee campos de la tabla relacionada</span>
             </div>
             <details class="bo-sql-save" {% if error and 'nombre' in error %}open{% endif %}>
                 <summary>Guardar consulta</summary>
@@ -111,6 +113,8 @@
     </aside>
 </div>
 
+{{ schema|json_script:"sql-schema" }}
+<script src="{% static 'js/backoffice-sql.js' %}"></script>
 <script>
 (function () {
     var input = document.getElementById('sql-input');
@@ -134,6 +138,7 @@
     document.querySelectorAll('[data-sql]').forEach(function (b) {
         b.addEventListener('click', function () { setSql(b.dataset.sql); });
     });
+    ZyraSql.attach(input, JSON.parse(document.getElementById('sql-schema').textContent));
     input.addEventListener('keydown', function (e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();

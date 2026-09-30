@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -6,6 +8,10 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
+
+from data_analyse import pairs as pair_stats
+from match.models import Match
+from players.models import Player, current_season
 
 from .decorators import club_admin_required
 from .forms import ClubForm, SignUpForm, AddMemberForm
@@ -17,7 +23,31 @@ from .services import create_club
 
 
 def home(request):
-    return render(request, 'home.html')
+    """Portada del club: logo, próximo partido y jugador/pareja en racha."""
+    if not request.user.is_authenticated:
+        return render(request, 'landing.html')
+    if request.club is None:
+        return redirect('no_club')
+
+    club = request.club
+    today = datetime.date.today()
+    next_match = (
+        Match.objects.filter(club=club, start_date__gte=today)
+        .select_related('local', 'visiting')
+        .order_by('start_date', 'id')
+        .first()
+    )
+    players = Player.objects.filter(club=club, in_team=True)
+    hot_player, hot_pair = pair_stats.hot_streaks(pair_stats.club_game_log(club), players)
+
+    return render(request, 'home.html', {
+        'own_team': club.own_team,
+        'season': current_season(),
+        'next_match': next_match,
+        'days_left': (next_match.start_date - today).days if next_match else None,
+        'hot_player': hot_player,
+        'hot_pair': hot_pair,
+    })
 
 def error_404_view(request, exception):
     return render(request, '404.html', status=404)

@@ -11,7 +11,6 @@ from team.models import Team
 from datetime import datetime
 from penalty.models import Penalty
 from callLog.models import CallLog
-from post.models import Post, Image
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import call_command
 from core.models import Club
@@ -30,7 +29,6 @@ def truncate_all_tables():
         Result,
         Penalty,
         CallLog,
-        Post,
         Club
     ]
     for model1 in models_to_truncate:
@@ -251,40 +249,6 @@ def create_result():
                     print(f"No se pudo determinar el juego para los criterios: {game_criteria}")
 
 
-def create_post():
-    with open('populate/post.json', 'r', encoding='utf-8') as file:
-        post_content = json.load(file)
-
-        # Procesar los posts
-        for post_data in post_content.get("posts", []):
-            fields = post_data["fields"]
-            title = fields.get("title")
-            content = fields.get("content")
-            created_at = fields.get("created_at")
-
-            # Crear el post
-            post = Post.objects.create(
-                title=title,
-                content=content,
-                created_at=created_at
-            )
-
-            # Procesar las imágenes relacionadas con este post
-            for image_data in post_content.get("images", []):
-                image_fields = image_data["fields"]
-                
-                image_path = image_fields.get("image")
-                print(image_path)
-                # Crear la instancia de Image relacionada con el post
-                Image.objects.create(
-                    post=post,
-                    image=image_path
-                )
-
-
-
-
-
 def populate_database():
     create_team()
     create_players()
@@ -292,7 +256,6 @@ def populate_database():
     create_call()
     create_games()
     create_result()
-    create_post()
     # Asigna todo lo cargado al club LOS GLADIADORES (multi-club)
     call_command('assign_default_club', name=LOS_GLADIADORES)
     

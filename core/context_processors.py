@@ -9,7 +9,6 @@ def club(request):
 
 # Sección de la navegación a la que pertenece cada app
 NAV_SECTIONS = {
-    "post": "home",
     "players": "players",
     "team": "teams",
     "match": "matches",
@@ -22,5 +21,7 @@ NAV_SECTIONS = {
 
 def navigation(request):
     match = getattr(request, "resolver_match", None)
+    if match and match.url_name == "home":
+        return {"nav_section": "home"}
     app = match.func.__module__.split(".")[0] if match else ""
     return {"nav_section": NAV_SECTIONS.get(app, "")}

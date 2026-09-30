@@ -214,3 +214,56 @@ def pair_summary(log, p1_id, p2_id):
         'form': results[-10:],
         'seasons': seasons,
     }
+
+
+# ---------------------------------------------------------------
+# Rachas destacadas (portada)
+# ---------------------------------------------------------------
+
+# Victorias seguidas mínimas para destacar a un jugador o una pareja en la portada.
+MIN_HOT_STREAK = 2
+
+
+def _hottest(history):
+    """(clave, n) con la racha de victorias activa más larga; desempata la más reciente."""
+    best, best_rank = None, None
+    for key, h in history.items():
+        kind, n = _current_run(h['results'])
+        if kind != 'V' or n < MIN_HOT_STREAK:
+            continue
+        rank = (n, h['last'])
+        if best_rank is None or rank > best_rank:
+            best, best_rank = (key, n), rank
+    return best
+
+
+def hot_streaks(log, players):
+    """
+    Jugador y pareja con la racha de victorias activa más larga entre `players`.
+    Devuelve (jugador, pareja): {'player', 'streak'} y {'p1', 'p2', 'label', 'streak'}, o None.
+    """
+    by_id = {p.id: p for p in players}
+    by_player, by_pair = {}, {}
+
+    def add(history, key, won, i):
+        h = history.setdefault(key, {'results': [], 'last': i})
+        h['results'].append(won)
+        h['last'] = i
+
+    for i, g in enumerate(log):
+        known = [pid for pid in g['pair'] if pid in by_id]
+        for pid in known:
+            add(by_player, pid, g['won'], i)
+        if len(known) == 2:
+            add(by_pair, g['pair'], g['won'], i)
+
+    player = pair = None
+    hot = _hottest(by_player)
+    if hot:
+        player = {'player': by_id[hot[0]], 'streak': hot[1]}
+    hot = _hottest(by_pair)
+    if hot:
+        (a, b), n = hot
+        p1, p2 = by_id[a], by_id[b]
+        pair = {'p1': p1, 'p2': p2, 'label': f"{pair_label(p1)} / {pair_label(p2)}", 'streak': n}
+    return player, pair

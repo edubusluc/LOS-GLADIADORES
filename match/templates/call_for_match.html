@@ -19,6 +19,10 @@
     <div class="z-versus-team"><small>Visitante</small>{{ match.visiting }}</div>
 </div>
 
+{% if match.location %}
+<p class="mb-4"><a class="z-location" href="{{ match.maps_url }}" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot"></i><span>{{ match.location }}</span></a></p>
+{% endif %}
+
 {% if messages %}
 <div>{% for message in messages %}<p class="alert">{{ message }}</p>{% endfor %}</div>
 {% endif %}

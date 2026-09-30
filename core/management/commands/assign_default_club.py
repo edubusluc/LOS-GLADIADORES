@@ -5,7 +5,6 @@ from django.db import transaction
 from core.models import Club, Membership
 from match.models import Match
 from players.models import Player
-from post.models import Post
 from team.models import Team
 
 
@@ -55,7 +54,6 @@ class Command(BaseCommand):
 
         n_players = Player.objects.filter(club__isnull=True).update(club=club)
         n_matches = Match.objects.filter(club__isnull=True).update(club=club)
-        n_posts = Post.objects.filter(club__isnull=True).update(club=club)
 
         n_members = 0
         if not no_members:
@@ -67,7 +65,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"Asignados al club: {n_teams} equipos ({n_merged} duplicados fusionados), {n_players} jugadores, "
-            f"{n_matches} partidos, {n_posts} publicaciones. Equipo propio: {own_team} (id={own_team.id}). "
+            f"{n_matches} partidos. Equipo propio: {own_team} (id={own_team.id}). "
             f"Nuevas membresías: {n_members}."
         ))
 

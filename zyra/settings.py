@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'team',
     'callLog',
     'penalty',
-    'post'
 ]
 
 MIDDLEWARE = [

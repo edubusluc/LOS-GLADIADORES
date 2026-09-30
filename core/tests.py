@@ -11,7 +11,6 @@ from core.models import Club, Membership
 from core.services import create_club
 from match.models import Match, Game
 from players.models import Player
-from post.models import Post
 from team.models import Team
 
 User = get_user_model()
@@ -40,8 +39,6 @@ class ClubIsolationTests(TestCase):
             club=self.club_b, local=self.club_b.own_team, visiting=self.rival_b,
             start_date=datetime.date(2025, 10, 1),
         )
-        Post.objects.create(club=self.club_a, title="Post A")
-        Post.objects.create(club=self.club_b, title="Post B")
 
         self.client.login(username="admin_a", password="pass-a-12345")
 
@@ -59,9 +56,6 @@ class ClubIsolationTests(TestCase):
 
         matches = self.client.get(reverse("list_match"), {"season": "all"}).context["matches"]
         self.assertEqual([m.id for m in matches], [self.match_a.id])
-
-        posts = self.client.get(reverse("home")).context["page_obj"]
-        self.assertEqual([p.title for p in posts], ["Post A"])
 
     def test_foreign_objects_return_404(self):
         urls = [
@@ -266,7 +260,6 @@ class AssignDefaultClubCommandTests(TestCase):
         rival = Team.objects.create(name="Rival", location="X", in_group=True)
         Player.objects.create(name="Old", last_name="Player", team=own)
         Match.objects.create(local=own, visiting=rival, start_date=datetime.date(2024, 10, 1))
-        Post.objects.create(title="Old post")
 
         call_command("assign_default_club", stdout=io.StringIO())
         call_command("assign_default_club", stdout=io.StringIO())  # idempotente
@@ -278,7 +271,6 @@ class AssignDefaultClubCommandTests(TestCase):
         self.assertFalse(Team.objects.filter(club__isnull=True).exists())
         self.assertFalse(Player.objects.filter(club__isnull=True).exists())
         self.assertFalse(Match.objects.filter(club__isnull=True).exists())
-        self.assertFalse(Post.objects.filter(club__isnull=True).exists())
         self.assertTrue(Membership.objects.get(user=user, club=club).is_admin)
 
 
@@ -308,3 +300,80 @@ class AssignDefaultClubMergeTests(TestCase):
         response = self.client.get(reverse("team_statistics"))
         self.assertEqual(response.context["won_matches"], 1)
         self.assertEqual(response.context["lost_matches"], 0)
+
+
+class HomeTests(TestCase):
+    """Portada: logo, próximo partido con ubicación y jugador/pareja en racha."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        self.own = self.club.own_team
+        self.rival = Team.objects.create(club=self.club, name="Rival", location="Calle Real 1, Sevilla", in_group=True)
+        self.today = datetime.date.today()
+        self.client.login(username="admin", password="pass-12345")
+
+    def test_anonymous_gets_landing(self):
+        self.client.logout()
+        self.assertTemplateUsed(self.client.get(reverse("home")), "landing.html")
+
+    def test_match_copies_local_location(self):
+        match = Match.objects.create(club=self.club, local=self.rival, visiting=self.own, start_date=self.today)
+        self.assertEqual(match.location, "Calle Real 1, Sevilla")
+        self.assertEqual(match.maps_url,
+                         "https://www.google.com/maps/search/?api=1&query=Calle%20Real%201%2C%20Sevilla")
+
+        # Es una copia: cambiar la sede del equipo no toca los partidos ya creados
+        self.rival.location = "Otra sede"
+        self.rival.save()
+        match.refresh_from_db()
+        self.assertEqual(match.location, "Calle Real 1, Sevilla")
+
+    def test_create_match_view_copies_location(self):
+        self.client.post(reverse("create_match"), {
+            "local": self.rival.id, "visiting": self.own.id, "start_date": self.today.isoformat(),
+        })
+        self.assertEqual(Match.objects.get().location, "Calle Real 1, Sevilla")
+
+    def test_fill_match_locations_command(self):
+        match = Match.objects.create(club=self.club, local=self.rival, visiting=self.own, start_date=self.today)
+        Match.objects.filter(pk=match.pk).update(location="")
+        call_command("fill_match_locations", stdout=io.StringIO())
+        match.refresh_from_db()
+        self.assertEqual(match.location, "Calle Real 1, Sevilla")
+
+    def test_next_match_is_first_from_today(self):
+        Match.objects.create(club=self.club, local=self.own, visiting=self.rival,
+                             start_date=self.today - datetime.timedelta(days=1))
+        later = Match.objects.create(club=self.club, local=self.own, visiting=self.rival,
+                                     start_date=self.today + datetime.timedelta(days=10))
+        soon = Match.objects.create(club=self.club, local=self.rival, visiting=self.own,
+                                    start_date=self.today + datetime.timedelta(days=3))
+        other = create_club("Club B", "Madrid", User.objects.create_user("b", password="x"))
+        Match.objects.create(club=other, local=other.own_team, visiting=other.own_team, start_date=self.today)
+
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.context["next_match"], soon)
+        self.assertEqual(response.context["days_left"], 3)
+        self.assertContains(response, soon.maps_url.replace("&", "&amp;"))
+        self.assertNotEqual(response.context["next_match"], later)
+
+    def test_empty_home(self):
+        response = self.client.get(reverse("home"))
+        self.assertIsNone(response.context["next_match"])
+        self.assertContains(response, "No hay partidos programados.")
+        self.assertContains(response, "Nadie encadena victorias ahora mismo.")
+
+    def test_hot_player_and_pair(self):
+        ana = Player.objects.create(club=self.club, name="Ana", last_name="Alpha")
+        bea = Player.objects.create(club=self.club, name="Bea", last_name="Beta")
+        for n, day in enumerate((1, 2), start=1):
+            m = Match.objects.create(club=self.club, local=self.own, visiting=self.rival, draft_mode=False,
+                                     start_date=self.today - datetime.timedelta(days=10 - day))
+            Game.objects.create(match=m, n_game=1, score=3, winner="Local", draft_mode=False,
+                                player_1_local=ana, player_2_local=bea)
+
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.context["hot_player"]["streak"], 2)
+        self.assertEqual(response.context["hot_pair"]["label"], "Ana Alpha / Bea Beta")
+        self.assertContains(response, "2 victorias seguidas")

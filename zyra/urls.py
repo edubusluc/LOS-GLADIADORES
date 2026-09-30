@@ -29,6 +29,7 @@ urlpatterns = [
     path('callLog/',include('callLog.urls')),
     path('penalty/',include('penalty.urls')),
     path('core/', include('core.urls')),
+    path('accounts/', include('allauth.urls')),
     
 ]
 

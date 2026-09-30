@@ -2,7 +2,7 @@ from django.contrib import admin
 from callLog.models import CallLog
 from penalty.models import Penalty
 from team.models import Team
-from .models import Club, Membership
+from .models import Club, Invitation, Membership
 
 
 class MembershipInline(admin.TabularInline):
@@ -21,6 +21,13 @@ class ClubAdmin(admin.ModelAdmin):
 class MembershipAdmin(admin.ModelAdmin):
     list_display = ("user", "club", "role")
     list_filter = ("club", "role")
+
+
+@admin.register(Invitation)
+class InvitationAdmin(admin.ModelAdmin):
+    list_display = ("club", "created_by", "created_at", "expires_at", "used_by", "used_at")
+    list_filter = ("club",)
+    readonly_fields = ("token",)
 
 
 @admin.register(Team)

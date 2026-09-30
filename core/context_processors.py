@@ -1,3 +1,6 @@
+from django.conf import settings
+
+
 def club(request):
     membership = getattr(request, "membership", None)
     return {
@@ -25,3 +28,7 @@ def navigation(request):
         return {"nav_section": "home"}
     app = match.func.__module__.split(".")[0] if match else ""
     return {"nav_section": NAV_SECTIONS.get(app, "")}
+
+
+def google_login(request):
+    return {"google_login_enabled": settings.GOOGLE_LOGIN_ENABLED}

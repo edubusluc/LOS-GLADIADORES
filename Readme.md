@@ -24,8 +24,17 @@ equipos rivales, partidos, convocatorias y estadísticas, y sus usuarios
 - **Administrador**: gestiona jugadores, equipos, partidos, convocatorias y miembros.
 - **Miembro**: solo consulta.
 
-Un club nuevo se registra desde `/core/register_club/`; los administradores añaden
-miembros desde `/core/members/`. Si un usuario pertenece a varios clubes, elige el
+Un club nuevo se registra desde `/core/register_club/`. Desde *Miembros del club*
+(`/core/members/`) los administradores pueden:
+
+- **Generar una invitación**: un enlace de un solo uso, válido 24 horas, para que un
+  jugador se registre (usuario, email y contraseña, o con Google) y entre como miembro.
+  Si ya tiene cuenta, inicia sesión y se une con un clic.
+- **Añadir miembro** directamente, creando la cuenta o eligiendo una existente y su rol.
+
+Se puede iniciar sesión con el usuario o con el email. Al registrarse (con invitación o
+creando un club) se envía un correo de bienvenida con el usuario, el equipo y sus
+administradores. Si un usuario pertenece a varios clubes, elige el
 activo con el selector de la barra superior.
 
 ### Actualizar una base de datos existente
@@ -92,3 +101,36 @@ Seguridad → Verificación en dos pasos → Contraseñas de aplicaciones.
 
 Sin `EMAIL_HOST_PASSWORD` los correos se muestran en la consola (útil en desarrollo).
 Si el envío falla, la convocatoria se cierra igualmente y se avisa en pantalla.
+
+## Inicio de sesión con Google
+
+Se usa [django-allauth](https://docs.allauth.org/). El botón de Google solo aparece
+si están definidas las variables de entorno `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`
+(o en `.env`); nunca van en el código.
+
+1. En [Google Cloud Console](https://console.cloud.google.com/) abre *Google Auth Platform*:
+   - *Información de la marca*: nombre Zyra y correo de asistencia join.zyra@gmail.com.
+   - *Público*: tipo *Externo* y **Publicar app** para que pueda entrar cualquier cuenta de Google.
+   - *Acceso a los datos*: permisos `openid`, `userinfo.email` y `userinfo.profile`.
+2. En *Clientes → Crear cliente*, tipo *Aplicación web*:
+   - Origen autorizado: `http://127.0.0.1:8000`
+   - URI de redirección autorizado: `http://127.0.0.1:8000/accounts/google/login/callback/`
+   - Al desplegar, añade también el origen `https://<tu-dominio>` y el URI
+     `https://<tu-dominio>/accounts/google/login/callback/`.
+3. Copia el ID y el secreto al `.env` (junto a `manage.py`) y reinicia el servidor.
+
+Si alguien entra con Google y ya existe una cuenta con ese email, entra en esa cuenta.
+
+### Desplegar esta versión
+
+```bash
+pip install -r requirements.txt   # instala django-allauth
+python manage.py makemigrations core
+python manage.py migrate          # crea core_invitation y las tablas de allauth
+```
+
+## Correos
+
+Todos los correos salen de join.zyra@gmail.com con el mismo pie corporativo (logo de
+Zyra y contacto), montado en `core/emails.py` y `core/templates/emails/layout.html`.
+El logo va incrustado en el propio correo (`static/zyra/email-logo.png`).

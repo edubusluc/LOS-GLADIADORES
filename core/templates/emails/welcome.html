@@ -1,0 +1,24 @@
+<h1 style="margin:0 0 16px; font-size:22px; color:#0B0B0B;">¡Bienvenido a Zyra, {{ user.username }}!</h1>
+{% if created %}
+<p style="margin:0 0 12px;">Tu registro se ha completado y has creado el equipo <strong>{{ club.name }}</strong>. Como administrador puedes gestionar jugadores, partidos, convocatorias y estadísticas, e invitar al resto del equipo desde <em>Miembros del club</em>.</p>
+{% else %}
+<p style="margin:0 0 12px;">Tu registro se ha completado y ya formas parte de <strong>{{ club.name }}</strong>. Desde ahora puedes consultar los partidos, las convocatorias y las estadísticas del equipo.</p>
+{% endif %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px; border-collapse:collapse;">
+  <tr>
+    <td style="padding:6px 16px 6px 0; color:#666666;">Usuario</td>
+    <td style="padding:6px 0;"><strong>{{ user.username }}</strong></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 16px 6px 0; color:#666666;">{% if created %}Equipo creado{% else %}Equipo{% endif %}</td>
+    <td style="padding:6px 0;"><strong>{{ club.name }}</strong></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 16px 6px 0; color:#666666; vertical-align:top;">Administradores</td>
+    <td style="padding:6px 0;">{% for admin in admins %}{{ admin.get_full_name|default:admin.username }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</td>
+  </tr>
+</table>
+{% if site_url %}
+<p style="margin:0 0 16px;"><a href="{{ site_url }}" style="display:inline-block; background-color:#B4F100; color:#0A0A0A; font-weight:bold; text-decoration:none; padding:10px 20px; border-radius:8px;">Entrar en Zyra</a></p>
+{% endif %}
+<p style="margin:0;">Un saludo,<br>El equipo de Zyra</p>

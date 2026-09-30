@@ -14,9 +14,28 @@ class ClubForm(forms.Form):
 
 
 class SignUpForm(UserCreationForm):
+    email = forms.EmailField(
+        label="Email", help_text="Te enviaremos la confirmación del registro. También puedes usarlo para iniciar sesión.",
+    )
+
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ("username", "email")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Usuario"
+        self.fields["username"].help_text = "Letras, números y @ . + - _ (máximo 150)."
+        self.fields["password1"].label = "Contraseña"
+        self.fields["password1"].help_text = "Al menos 8 caracteres; no puede ser solo números ni parecerse a tu usuario."
+        self.fields["password2"].label = "Repite la contraseña"
+        self.fields["password2"].help_text = ""
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Ya hay una cuenta con este email: inicia sesión con ella.")
+        return email
 
 
 class AddMemberForm(forms.Form):

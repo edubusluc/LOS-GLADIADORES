@@ -1,5 +1,9 @@
+import datetime
+import secrets
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -54,3 +58,50 @@ class Membership(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.club} ({self.get_role_display()})"
+
+
+INVITATION_TTL = datetime.timedelta(hours=24)
+
+
+def _invitation_token():
+    return secrets.token_urlsafe(24)
+
+
+def _invitation_expiry():
+    return timezone.now() + INVITATION_TTL
+
+
+class Invitation(models.Model):
+    """
+    Enlace de un solo uso que un administrador comparte para que un jugador se
+    registre (o, si ya tiene cuenta, se una) al club como miembro. Caduca a las 24 h.
+    """
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="invitations")
+    token = models.CharField(max_length=64, unique=True, default=_invitation_token, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="invitations_sent",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=_invitation_expiry)
+    used_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="invitations_used",
+    )
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def is_used(self):
+        return self.used_at is not None
+
+    @property
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
+
+    @property
+    def is_valid(self):
+        return not self.is_used and not self.is_expired
+
+    def __str__(self):
+        return f"Invitación a {self.club} ({self.token[:6]}…)"

@@ -54,6 +54,10 @@ INSTALLED_APPS = [
     'team',
     'callLog',
     'penalty',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -65,6 +69,7 @@ MIDDLEWARE = [
     'core.middleware.CurrentClubMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'zyra.urls'
@@ -82,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.club',
                 'core.context_processors.navigation',
+                'core.context_processors.google_login',
             ],
         },
     },
@@ -162,3 +168,35 @@ EMAIL_BACKEND = config(
     else 'django.core.mail.backends.console.EmailBackend',
 )
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'Zyra <{ZYRA_SENDER}>')
+
+
+# Inicio de sesión: con usuario o email y contraseña (formulario propio) o con
+# Google (django-allauth). El ID y el secreto de cliente de Google NUNCA van en el
+# código: se definen en las variables de entorno GOOGLE_CLIENT_ID y
+# GOOGLE_CLIENT_SECRET (o en .env). Mientras no existan, el botón de Google no aparece.
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
+GOOGLE_LOGIN_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_SIGNUP_FIELDS = ['username*', 'email*', 'password1*', 'password2*']
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_ADAPTER = 'core.adapters.AccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'core.adapters.SocialAccountAdapter'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+# Google verifica el email: si ya hay una cuenta con ese email (p. ej. creada por
+# un administrador), el jugador entra en ella en lugar de crear otra.
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'prompt': 'select_account'},
+        **({'APPS': [{'client_id': GOOGLE_CLIENT_ID, 'secret': GOOGLE_CLIENT_SECRET, 'key': ''}]}
+           if GOOGLE_LOGIN_ENABLED else {}),
+    },
+}

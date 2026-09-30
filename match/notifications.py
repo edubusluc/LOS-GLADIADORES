@@ -1,9 +1,10 @@
 """Envío del informe de convocatoria a los administradores del club."""
 import logging
 
-from django.core.mail import EmailMultiAlternatives, get_connection
+from django.core.mail import get_connection
 from django.utils.html import format_html
 
+from core.emails import build_email
 from core.models import Membership
 
 from .report import build_report
@@ -71,8 +72,7 @@ def send_call_report(call, sender=None):
 
     messages = []
     for recipient in recipients:
-        email = EmailMultiAlternatives(subject=subject, body=text, to=[recipient], reply_to=reply_to)
-        email.attach_alternative(html, "text/html")
+        email = build_email(subject, text, html, to=[recipient], reply_to=reply_to)
         email.attach(report_filename(match), pdf, "application/pdf")
         messages.append(email)
     get_connection(fail_silently=False).send_messages(messages)

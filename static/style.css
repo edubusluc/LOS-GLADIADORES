@@ -633,21 +633,6 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 .z-avatar--xl { width: 140px; height: 140px; border-width: 3px; }
 .z-avatar--sm { width: 40px; height: 40px; }
 
-/* Anillo de porcentaje */
-.z-ring {
-    --pct: 0;
-    --size: 92px;
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: var(--size);
-    height: var(--size);
-    border-radius: 50%;
-    background:
-        radial-gradient(closest-side, var(--z-surface) 80%, transparent 82%),
-        conic-gradient(var(--z-lime) calc(var(--pct) * 1%), var(--z-surface-3) 0);
-}
-.z-ring span { font-size: 1.35rem; font-weight: 800; color: #FFFFFF; font-variant-numeric: tabular-nums; }
 
 /* ---------- Tablas ---------- */
 
@@ -783,14 +768,6 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 
 .list-group-item { color: var(--z-text); background: var(--z-surface); border-color: var(--z-border); }
 
-/* Carga */
-.loader {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: none;
-    background: rgba(11, 11, 11, .85) url("/static/zyra/logo.svg") center / 64px no-repeat;
-}
 
 /* ---------- Pantallas de acceso (login, registro, portada) ---------- */
 
@@ -913,12 +890,6 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 .z-edit--danger:hover { color: #FFFFFF; background: var(--z-danger); border-color: var(--z-danger); }
 
 /* Nivel de rendimiento (0-10) */
-.z-score { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
-.z-score b { font-size: .95rem; }
-.score-red { color: #FFFFFF; background: rgba(255, 92, 99, .25); }
-.score-yellow { color: var(--z-ink); background: var(--z-warning); }
-.score-light-green { color: var(--z-ink); background: #D9FF7A; }
-.score-dark-green { color: var(--z-ink); background: var(--z-lime); }
 
 /* Tarjeta de equipo */
 .z-team { display: flex; align-items: center; gap: 16px; padding: 16px; }

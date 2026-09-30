@@ -37,7 +37,6 @@ class Player(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team")
     photo = models.ImageField(upload_to='static/profile', null=True, blank=True)
     snp_score = models.FloatField(null=True)
-    score = models.IntegerField(default=5, null=True)
     in_team = models.BooleanField(default=True)
     joined_season = models.CharField(
         "Temporada en la que se unió",

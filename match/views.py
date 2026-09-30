@@ -244,7 +244,7 @@ def close_call(request, match_id):
         # Automatización: informe PDF a los administradores. Si falla el envío,
         # la convocatoria queda cerrada igualmente.
         try:
-            recipients = send_call_report(call)
+            recipients = send_call_report(call, sender=request.user)
         except Exception:
             logger.exception("No se pudo enviar el informe de la convocatoria %s", call.pk)
             messages.warning(request, "Convocatoria cerrada, pero no se pudo enviar el informe por email. "

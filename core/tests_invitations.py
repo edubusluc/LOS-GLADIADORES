@@ -235,3 +235,59 @@ class LoginAndWelcomeTests(TestCase):
         related = next(p for p in mime.walk() if p.get_content_type() == "multipart/related")
         logo = next(p for p in related.walk() if p.get_content_type() == "image/png")
         self.assertEqual(logo["Content-ID"], f"<{LOGO_CID}>")
+
+
+@override_settings(**GOOGLE_ON)
+class GoogleSameAccountTests(TestCase):
+    """Entrar con Google usa la cuenta existente con el mismo email."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user("capitan", password="pass-12345", email="Capitan@Example.com")
+        self.club = create_club("Club A", "Sevilla", self.admin)
+
+    def google_login(self, email, verified=True, sub="google-123"):
+        from allauth.core import context
+        from allauth.socialaccount.adapter import get_adapter
+        from allauth.socialaccount.helpers import complete_social_login
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.contrib.sessions.backends.db import SessionStore
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/accounts/google/login/callback/")
+        request.session = SessionStore()
+        request.user = AnonymousUser()
+        request._messages = FallbackStorage(request)
+        provider = get_adapter(request).get_provider(request, "google")
+        sociallogin = provider.sociallogin_from_response(request, {
+            "sub": sub, "email": email, "email_verified": verified, "name": "Capitán",
+        })
+        with context.request_context(request):
+            complete_social_login(request, sociallogin)
+        return request
+
+    def test_google_login_uses_existing_account_and_keeps_password(self):
+        request = self.google_login("capitan@example.com")
+        self.assertEqual(request.user, self.admin)
+        self.assertEqual(User.objects.count(), 1)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.has_usable_password())
+        self.assertTrue(self.admin.socialaccount_set.filter(provider="google").exists())
+        # Sigue pudiendo entrar con usuario y contraseña
+        self.assertTrue(self.client.login(username="capitan", password="pass-12345"))
+
+    def test_second_google_login_goes_to_same_account(self):
+        self.google_login("capitan@example.com")
+        request = self.google_login("capitan@example.com")
+        self.assertEqual(request.user, self.admin)
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_unverified_google_email_does_not_take_over_account(self):
+        request = self.google_login("capitan@example.com", verified=False, sub="otro")
+        self.assertNotEqual(request.user, self.admin)
+
+    def test_new_email_creates_new_account_without_club(self):
+        request = self.google_login("nuevo@example.com", sub="nuevo")
+        self.assertNotEqual(request.user, self.admin)
+        self.assertEqual(request.user.email, "nuevo@example.com")
+        self.assertFalse(Membership.objects.filter(user=request.user).exists())

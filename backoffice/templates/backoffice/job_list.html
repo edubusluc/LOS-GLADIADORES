@@ -1,0 +1,73 @@
+{% extends 'backoffice/base.html' %}
+{% load backoffice_tags tz %}
+{% block title %}Procesos programados{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{{ jobs|length }} proceso{{ jobs|pluralize }} · horas de {{ time_zone }}</span>
+        <h1>Procesos programados</h1>
+    </div>
+    <div class="z-actions">
+        <a href="{% url 'backoffice:run_list' %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-list"></i> Log de ejecuciones</a>
+    </div>
+</div>
+
+{% include 'backoffice/includes/messages.html' %}
+
+{% if late %}
+<div class="alert alert-warning">
+    <strong>El lanzador no está en marcha.</strong> Hay procesos que deberían haberse ejecutado hace más de 10 minutos.
+    El servidor tiene que ejecutar <code>python manage.py run_scheduler</code> cada minuto (ver el Readme).
+</div>
+{% endif %}
+
+<section class="bo-kpis" aria-label="Resumen de procesos">
+    <div class="bo-kpi"><span class="bo-kpi-label">Procesos</span><b>{{ jobs|length }}</b><small>definidos en backoffice/jobs.py</small></div>
+    <div class="bo-kpi{% if failed_24h %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">Fallos en 24 h</span><b>{{ failed_24h }}</b><small><a href="{% url 'backoffice:run_list' %}?status=error">ver ejecuciones con error</a></small></div>
+</section>
+
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr><th>Proceso</th><th>Cuándo</th><th>Última ejecución</th><th>Próxima</th><th></th></tr></thead>
+    <tbody>
+    {% for job in jobs %}
+        <tr>
+            <td>
+                <a href="{% url 'backoffice:job_detail' job.name %}"><strong>{{ job.name }}</strong></a>
+                {% if not job.enabled %}<span class="z-badge z-badge--outline ms-1">En pausa</span>{% endif %}
+                {% if job.running_since %}<span class="z-badge z-badge--warning ms-1">En curso</span>{% endif %}
+                <div class="text-muted small bo-wrap">{{ job.spec.description }}</div>
+            </td>
+            <td>{{ job|cron_text }}</td>
+            <td>
+                {% run_status job.last_run %}
+                {% if job.last_run %}<div class="text-muted small">{{ job.last_run.started_at|ago }} · {{ job.last_run.duration|duration }}</div>{% endif %}
+            </td>
+            <td>
+                {% if job.run_requested_at %}<span class="z-badge z-badge--warning">Pedida a mano</span>
+                {% elif job.enabled %}{{ job.next_run_at|timezone:time_zone|date:"j M H:i" }}
+                {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td class="text-end">
+                <div class="bo-row-actions">
+                    <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-primary" {% if job.run_requested_at or job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
+                    </form>
+                    <form method="post" action="{% url 'backoffice:job_toggle' job.name %}">{% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-light">{% if job.enabled %}<i class="fa-solid fa-pause"></i> Pausar{% else %}<i class="fa-solid fa-play"></i> Reanudar{% endif %}</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+
+<section class="z-panel mt-4">
+    <div class="bo-panel-head">
+        <h2 class="h5">Últimas ejecuciones</h2>
+        <a href="{% url 'backoffice:run_list' %}">Ver todo el log</a>
+    </div>
+    {% include 'backoffice/includes/run_rows.html' with runs=recent_runs show_job=True %}
+</section>
+{% endblock %}

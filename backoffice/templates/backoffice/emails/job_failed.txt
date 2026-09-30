@@ -1,0 +1,10 @@
+Ha fallado el proceso programado "{{ job.name }}".
+{% if spec %}{{ spec.description }}{% endif %}
+
+Empezó: {{ run.started_at|date:"j/n/Y H:i" }} (UTC)
+Tipo: {{ run.get_trigger_display }}
+
+Error:
+{{ run.error|truncatechars:3000 }}
+
+Tienes la salida completa en el back-office, en Procesos programados.

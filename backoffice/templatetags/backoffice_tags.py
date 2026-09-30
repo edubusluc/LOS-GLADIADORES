@@ -19,3 +19,30 @@ def ago(value):
     if (timezone.now() - value).total_seconds() < 60:
         return "ahora mismo"
     return f"hace {timesince(value)}"
+
+
+@register.filter
+def duration(value):
+    """Duración legible de un timedelta: '0,4 s', '12 s', '3 min 5 s'."""
+    if value is None:
+        return "—"
+    seconds = value.total_seconds()
+    if seconds < 10:
+        return f"{seconds:.1f} s".replace(".", ",")
+    if seconds < 60:
+        return f"{int(seconds)} s"
+    minutes, rest = divmod(int(seconds), 60)
+    return f"{minutes} min {rest} s" if rest else f"{minutes} min"
+
+
+@register.filter
+def cron_text(job):
+    """Horario de un proceso en palabras ('Cada día a las 03:00')."""
+    from backoffice.cron import Cron
+    spec = getattr(job, "spec", None)
+    return Cron(spec.schedule).describe() if spec else "—"
+
+
+@register.inclusion_tag("backoffice/includes/run_status.html")
+def run_status(run):
+    return {"run": run}

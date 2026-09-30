@@ -2,11 +2,14 @@ import datetime
 from urllib.parse import urlencode
 
 from allauth.socialaccount.models import SocialAccount
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from core.models import Club, Invitation, Membership
 from match.models import Match
@@ -17,6 +20,8 @@ from .metrics import (
     AT_RISK_DAYS, ONLINE_MINUTES, annotate_clubs, dashboard_kpis, google_user_ids, load_metrics, online_users,
 )
 from .middleware import SLOW_MS, flush_metrics
+from .models import JobRun, ScheduledJob
+from .scheduler import SCHEDULER_TIME_ZONE, scheduler_is_late, sync_jobs
 
 User = get_user_model()
 
@@ -36,8 +41,11 @@ def _extra(request, *keys):
 @staff_required
 def dashboard(request):
     flush_metrics()
+    day_ago = timezone.now() - datetime.timedelta(hours=24)
     return render(request, "backoffice/dashboard.html", {
         "section": "dashboard", "kpis": dashboard_kpis(), "at_risk_days": AT_RISK_DAYS,
+        "jobs_failed_24h": JobRun.objects.filter(status=JobRun.ERROR, started_at__gte=day_ago).count(),
+        "scheduler_late": scheduler_is_late(),
     })
 
 
@@ -150,3 +158,87 @@ def user_detail(request, user_id):
         "invitation_used": Invitation.objects.filter(used_by=member).select_related("club", "created_by").first(),
         "invitations_sent": Invitation.objects.filter(created_by=member).count(),
     })
+
+
+# ---------- Procesos programados ----------
+
+def _last_runs(jobs):
+    last = {}
+    for run in JobRun.objects.filter(job__in=jobs).order_by("job_id", "-started_at").select_related("job"):
+        last.setdefault(run.job_id, run)
+    return last
+
+
+def _back(request):
+    """Vuelve a la página desde la que se pulsó el botón (solo rutas de este sitio)."""
+    target = request.POST.get("next", "")
+    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return redirect(target)
+    return redirect("backoffice:job_list")
+
+
+@staff_required
+def job_list(request):
+    jobs = list(sync_jobs())
+    last = _last_runs(jobs)
+    day_ago = timezone.now() - datetime.timedelta(hours=24)
+    for job in jobs:
+        job.last_run = last.get(job.pk)
+    return render(request, "backoffice/job_list.html", {
+        "section": "jobs", "jobs": jobs, "late": scheduler_is_late(), "time_zone": SCHEDULER_TIME_ZONE,
+        "failed_24h": JobRun.objects.filter(status=JobRun.ERROR, started_at__gte=day_ago).count(),
+        "recent_runs": JobRun.objects.select_related("job")[:10],
+    })
+
+
+@staff_required
+def job_detail(request, name):
+    sync_jobs()
+    job = get_object_or_404(ScheduledJob, name=name)
+    runs = job.runs.select_related("triggered_by")
+    return render(request, "backoffice/job_detail.html", {
+        "section": "jobs", "job": job, "page": _page(request, runs), "time_zone": SCHEDULER_TIME_ZONE,
+        "ok_count": runs.filter(status=JobRun.OK).count(), "error_count": runs.filter(status=JobRun.ERROR).count(),
+    })
+
+
+@staff_required
+def run_list(request):
+    status = request.GET.get("status", "")
+    job_name = request.GET.get("job", "")
+    runs = JobRun.objects.select_related("job", "triggered_by")
+    if status in dict(JobRun.STATUSES):
+        runs = runs.filter(status=status)
+    if job_name:
+        runs = runs.filter(job__name=job_name)
+    return render(request, "backoffice/run_list.html", {
+        "section": "jobs", "page": _page(request, runs), "status": status, "job_name": job_name,
+        "statuses": JobRun.STATUSES, "jobs": sync_jobs(), "extra": _extra(request, "status", "job"),
+    })
+
+
+@staff_required
+def run_detail(request, run_id):
+    run = get_object_or_404(JobRun.objects.select_related("job", "triggered_by"), pk=run_id)
+    return render(request, "backoffice/run_detail.html", {"section": "jobs", "run": run})
+
+
+@staff_required
+@require_POST
+def job_toggle(request, name):
+    job = get_object_or_404(ScheduledJob, name=name)
+    job.enabled = not job.enabled
+    job.save(update_fields=["enabled"])
+    messages.success(request, f"{job.name}: {'activado' if job.enabled else 'en pausa'}.")
+    return _back(request)
+
+
+@staff_required
+@require_POST
+def job_run_now(request, name):
+    job = get_object_or_404(ScheduledJob, name=name)
+    job.run_requested_at = timezone.now()
+    job.run_requested_by = request.user
+    job.save(update_fields=["run_requested_at", "run_requested_by"])
+    messages.success(request, f"{job.name} se ejecutará en la próxima pasada del lanzador (como mucho en un minuto).")
+    return _back(request)

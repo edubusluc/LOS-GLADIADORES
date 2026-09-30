@@ -1,13 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from core.decorators import club_required, club_admin_required
-from .forms import PlayerForm
+from .forms import PlayerForm, SnpAccountForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from match.models import Game
-from players.models import Player
+from players.models import Player, SnpAccount
+from players.scraper import team_id
+from players.snp import sync_club
+from core.crypto import DecryptionError
+from django.views.decorators.http import require_POST
 from django.db.models import Q
-import os
-from dotenv import load_dotenv
 
 
 # Create your views here.
@@ -134,60 +136,48 @@ def manage_roster(request):
     })
 
 
-def find_player_score(player_name, scores_list):
-    # Filtrar la lista para encontrar al jugador por nombre
-    player_scores = [player for player in scores_list if player['name'].lower() == player_name.lower()]
-    
-    if player_scores:
-        return player_scores[0]  # Retornar el primer resultado encontrado
+@club_admin_required
+def snp_account(request):
+    """Cuenta SNP del capitán: con ella se descargan cada día los puntos SNP de los jugadores."""
+    account = SnpAccount.objects.filter(club=request.club).first()
+    if request.method == "POST":
+        form = SnpAccountForm(request.POST, has_password=account is not None)
+        if form.is_valid():
+            account = account or SnpAccount(club=request.club)
+            account.username = form.cleaned_data["username"]
+            if form.cleaned_data["password"]:
+                account.password = form.cleaned_data["password"]
+            account.team_url = form.cleaned_data["team_url"]
+            account.updated_by = request.user
+            account.save()
+            messages.success(request, "Cuenta SNP guardada. Los puntos se actualizarán cada mañana.")
+            return redirect("snp_account")
     else:
-        return None  # Retornar None si no se encuentra el jugador
-    
+        initial = {}
+        if account:
+            initial["team_url"] = account.team_url
+            try:
+                initial["username"] = account.username
+            except DecryptionError:
+                messages.error(request, "No se ha podido leer la cuenta guardada (¿ha cambiado la clave de cifrado?). Vuelve a introducirla.")
+        form = SnpAccountForm(initial=initial, has_password=account is not None)
+    return render(request, "snp_account.html", {
+        "form": form, "account": account, "team_id": team_id(account.team_url) if account else None,
+    })
 
 
-#SNP SCORE
-# load_dotenv()
-# def get_snp_score(request):
-#     dicc = scrape_scores("https://intranet.seriesnacionalesdepadel.com/equipo/view/4380", "jedu937", os.getenv('SCRAPPER_KEY'))
-
-#     if dicc:
-#         for p in dicc:
-#             name = p["name"]
-#             score = p["score"]
-#             name_parts = name.split()
-
-#             if not name_parts:
-#                 continue  # Salta si el nombre está vacío
-
-#             name, last_name = extract_name_last_name(name_parts)
-
-#             try:
-#                 player = Player.objects.get(name__iexact=name, last_name__icontains=last_name)
-#                 player.snp_score = score
-#                 player.save()
-#             except Player.DoesNotExist:  # Manejo específico de la excepción
-#                 messages.error(request, f"NO se encontró al jugador {name} {last_name}")
-#                 return redirect("list_players")
-
-#         return redirect("list_players")
-#     else:
-#         messages.error(request, "No se ha podido actualizar la puntuación")
-#         return redirect("list_players")
-
-# def extract_name_last_name(name_parts):
-#     """Extrae el nombre y el apellido(s) de la lista de partes del nombre."""
-#     if len(name_parts) == 2:
-#         return name_parts[0], name_parts[1]
-#     elif len(name_parts) == 3:
-#         return name_parts[0], ' '.join(name_parts[1:])
-#     else:
-#         return ' '.join(name_parts[:2]), ' '.join(name_parts[2:])
+@club_admin_required
+@require_POST
+def snp_sync(request):
+    account = get_object_or_404(SnpAccount, club=request.club)
+    result = sync_club(account)
+    (messages.success if result.ok else messages.error)(request, result.message)
+    return redirect("snp_account")
 
 
-
-
-
-
-
-    
-
+@club_admin_required
+@require_POST
+def snp_account_delete(request):
+    SnpAccount.objects.filter(club=request.club).delete()
+    messages.success(request, "Cuenta SNP borrada.")
+    return redirect("snp_account")

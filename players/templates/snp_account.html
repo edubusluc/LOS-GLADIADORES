@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block content %}
+<div class="table-container my-4">
+    {% if messages %}
+    <div class="alert">
+        {% for message in messages %}
+        <p class="{{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <h1>Cuenta SNP</h1>
+    <p class="text-muted">
+        Con la cuenta de SNP del capitán, Zyra entra cada mañana en snpgalaxy.com, lee los puntos de los
+        jugadores del equipo y actualiza los «Puntos SNP» de la plantilla. Los nombres se comparan sin tener
+        en cuenta mayúsculas ni tildes. El usuario y la contraseña se guardan cifrados y nadie puede verlos
+        desde la aplicación.
+    </p>
+
+    {% if account %}
+    <div class="mb-4">
+        <p class="mb-1"><strong>Equipo SNP:</strong> {{ team_id|default:"–" }}</p>
+        <p class="mb-1"><strong>Última actualización:</strong>
+            {% if account.last_sync_at %}
+                {{ account.last_sync_at|timezone:"Europe/Madrid"|date:"d/m/Y H:i" }}
+                {% if account.last_sync_ok %}<span class="badge bg-success">correcta</span>{% else %}<span class="badge bg-danger">con error</span>{% endif %}
+            {% else %}todavía no se ha ejecutado{% endif %}
+        </p>
+        {% if account.last_sync_message %}
+        <pre class="small bg-light p-2 mt-2" style="white-space: pre-wrap;">{{ account.last_sync_message }}</pre>
+        {% endif %}
+        <form method="post" action="{% url 'snp_sync' %}" class="d-inline" onsubmit="this.querySelector('button').disabled = true;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary"><i class="fa-solid fa-rotate"></i> Actualizar ahora</button>
+        </form>
+        <form method="post" action="{% url 'snp_account_delete' %}" class="d-inline" onsubmit="return confirm('¿Borrar la cuenta SNP del club?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger">Borrar cuenta</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <h4>{% if account %}Cambiar la cuenta{% else %}Configurar la cuenta{% endif %}</h4>
+    <form method="post" autocomplete="off">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </form>
+</div>
+{% endblock %}

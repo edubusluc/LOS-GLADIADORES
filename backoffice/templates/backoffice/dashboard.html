@@ -1,4 +1,5 @@
 {% extends 'backoffice/base.html' %}
+{% load backoffice_tags %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -10,6 +11,11 @@
 </div>
 
 <section class="bo-kpis" aria-label="Indicadores principales">
+    <a class="bo-kpi" href="{% url 'backoffice:load' %}">
+        <span class="bo-kpi-label">Conectados ahora</span>
+        <b>{{ kpis.users.online }}</b>
+        <small>con actividad en los últimos 5 minutos</small>
+    </a>
     <a class="bo-kpi" href="{% url 'backoffice:club_list' %}">
         <span class="bo-kpi-label">Clubes</span>
         <b>{{ kpis.clubs.total }}</b>
@@ -69,7 +75,7 @@
             <li>
                 <a href="{% url 'backoffice:club_detail' c.id %}">{{ c.name }}</a>
                 <span class="text-muted">{{ c.n_members|default:0 }} miembro{{ c.n_members|pluralize }} · {{ c.n_players|default:0 }} jugador{{ c.n_players|pluralize:"es" }}</span>
-                <small class="text-muted ms-auto">hace {{ c.created_at|timesince }}</small>
+                <small class="text-muted ms-auto">{{ c.created_at|ago }}</small>
             </li>
             {% empty %}
             <li class="text-muted">Todavía no hay clubes.</li>
@@ -87,7 +93,7 @@
             <li>
                 <a href="{% url 'backoffice:user_detail' u.id %}">{{ u.username }}</a>
                 <span class="text-muted">{{ u.email|default:"sin email" }}</span>
-                <small class="text-muted ms-auto">hace {{ u.date_joined|timesince }}</small>
+                <small class="text-muted ms-auto">{{ u.date_joined|ago }}</small>
             </li>
             {% empty %}
             <li class="text-muted">Todavía no hay usuarios.</li>

@@ -6,14 +6,16 @@ import datetime
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import get_user_model
-from django.db.models import Count, OuterRef, Subquery
-from django.db.models.functions import TruncWeek
+from django.db.models import Count, Max, OuterRef, Subquery, Sum
+from django.db.models.functions import TruncHour, TruncWeek
 from django.utils import timezone
 
 from call.models import Call
 from core.models import Club, Invitation, Membership
 from match.models import Match
 from players.models import Player
+
+from .models import RequestMetric, UserActivity
 
 User = get_user_model()
 
@@ -77,6 +79,7 @@ def dashboard_kpis():
             "total": users.count(),
             "new_7": users.filter(date_joined__gte=now - datetime.timedelta(days=7)).count(),
             "new_30": users.filter(date_joined__gte=now - datetime.timedelta(days=30)).count(),
+            "online": online_users().count(),
             "active_24h": users.filter(last_login__gte=now - datetime.timedelta(hours=24)).count(),
             "active_7": users.filter(last_login__gte=now - datetime.timedelta(days=7)).count(),
             "active_30": users.filter(last_login__gte=now - datetime.timedelta(days=30)).count(),
@@ -127,3 +130,78 @@ def signups_by_week(weeks=8):
         {"week": monday, "n": counts.get(monday, 0), "pct": round(100 * counts.get(monday, 0) / peak)}
         for monday in mondays
     ]
+
+
+# ---------- Carga y usuarios conectados ----------
+
+# Un usuario cuenta como "conectado" si ha hecho alguna petición en estos minutos.
+ONLINE_MINUTES = 5
+
+
+def online_users():
+    since = timezone.now() - datetime.timedelta(minutes=ONLINE_MINUTES)
+    return UserActivity.objects.filter(last_seen__gte=since).select_related("user", "club").order_by("-last_seen")
+
+
+def _bars(rows, peak_key="requests"):
+    peak = max((r[peak_key] for r in rows), default=0) or 1
+    for r in rows:
+        r["pct"] = round(100 * r[peak_key] / peak)
+        # Parte de la barra que son errores 500 (se pinta en rojo).
+        r["err_pct"] = round(100 * r.get("errors", 0) / r[peak_key]) if r[peak_key] else 0
+    return rows
+
+
+def _summary(qs):
+    agg = qs.aggregate(requests=Sum("requests"), errors=Sum("errors"), slow=Sum("slow"),
+                       total_ms=Sum("total_ms"), max_ms=Max("max_ms"))
+    requests = agg["requests"] or 0
+    return {
+        "requests": requests,
+        "errors": agg["errors"] or 0,
+        "slow": agg["slow"] or 0,
+        "avg_ms": round(agg["total_ms"] / requests) if requests else 0,
+        "max_ms": agg["max_ms"] or 0,
+    }
+
+
+def load_metrics():
+    """Peticiones de la última hora (por minuto) y de las últimas 24 h (por hora)."""
+    now = timezone.now()
+    this_minute = now.replace(second=0, microsecond=0)
+    this_hour = now.replace(minute=0, second=0, microsecond=0)
+
+    first_minute = this_minute - datetime.timedelta(minutes=59)
+    by_minute = {m.minute: m for m in RequestMetric.objects.filter(minute__gte=first_minute)}
+    minutes = []
+    for i in range(60):
+        minute = first_minute + datetime.timedelta(minutes=i)
+        m = by_minute.get(minute)
+        minutes.append({"at": minute, "requests": m.requests if m else 0, "errors": m.errors if m else 0,
+                        "avg_ms": m.avg_ms if m else 0})
+
+    first_hour = this_hour - datetime.timedelta(hours=23)
+    hourly = (
+        RequestMetric.objects.filter(minute__gte=first_hour)
+        .annotate(hour=TruncHour("minute")).values("hour")
+        .annotate(requests=Sum("requests"), errors=Sum("errors"), total_ms=Sum("total_ms"))
+    )
+    by_hour = {row["hour"]: row for row in hourly}
+    hours = []
+    for i in range(24):
+        hour = first_hour + datetime.timedelta(hours=i)
+        row = by_hour.get(hour, {})
+        requests = row.get("requests") or 0
+        hours.append({"at": hour, "requests": requests, "errors": row.get("errors") or 0,
+                      "avg_ms": round(row["total_ms"] / requests) if requests else 0})
+
+    last_hour = RequestMetric.objects.filter(minute__gte=now - datetime.timedelta(hours=1))
+    last_day = RequestMetric.objects.filter(minute__gte=now - datetime.timedelta(hours=24))
+    peak = max(minutes, key=lambda m: m["requests"])
+    return {
+        "minutes": _bars(minutes),
+        "hours": _bars(hours),
+        "last_hour": _summary(last_hour),
+        "last_day": _summary(last_day),
+        "peak_minute": peak if peak["requests"] else None,
+    }

@@ -1,0 +1,53 @@
+{% extends 'backoffice/base.html' %}
+{% load backoffice_tags %}
+{% block title %}Carga y conectados{% endblock %}
+
+{% block extra_head %}<meta http-equiv="refresh" content="60">{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">Se actualiza cada minuto · {% now "H:i" %} UTC</span>
+        <h1>Carga y conectados</h1>
+    </div>
+</div>
+
+<section class="bo-kpis" aria-label="Carga actual">
+    <div class="bo-kpi"><span class="bo-kpi-label">Conectados ahora</span><b>{{ online|length }}</b><small>actividad en los últimos {{ online_minutes }} minutos</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">Peticiones última hora</span><b>{{ load.last_hour.requests }}</b><small>{% if load.peak_minute %}pico de {{ load.peak_minute.requests }}/min a las {{ load.peak_minute.at|date:"H:i" }}{% else %}sin tráfico{% endif %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">Tiempo de respuesta</span><b>{{ load.last_hour.avg_ms }} ms</b><small>media de la última hora · máximo {{ load.last_hour.max_ms }} ms</small></div>
+    <div class="bo-kpi{% if load.last_hour.errors %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">Errores 500 última hora</span><b>{{ load.last_hour.errors }}</b><small>{{ load.last_hour.slow }} lenta{{ load.last_hour.slow|pluralize }} (más de {{ slow_ms }} ms)</small></div>
+</section>
+
+<section class="z-panel">
+    <h2 class="h5">Peticiones por minuto, última hora</h2>
+    {% include 'backoffice/includes/bars.html' with rows=load.minutes fmt="H:i" every=10 label="Peticiones por minuto en la última hora" %}
+</section>
+
+<section class="z-panel">
+    <div class="bo-panel-head">
+        <h2 class="h5">Peticiones por hora, últimas 24 h</h2>
+        <small class="text-muted">{{ load.last_day.requests }} peticiones · {{ load.last_day.avg_ms }} ms de media · {{ load.last_day.errors }} errores 500</small>
+    </div>
+    {% include 'backoffice/includes/bars.html' with rows=load.hours fmt="H\h" every=3 label="Peticiones por hora en las últimas 24 horas" %}
+</section>
+
+<section class="z-panel">
+    <h2 class="h5">Usuarios conectados</h2>
+    <div class="z-table-wrap"><table class="table align-middle">
+        <thead><tr><th>Usuario</th><th>Club</th><th>Última página</th><th>Última actividad</th></tr></thead>
+        <tbody>
+        {% for a in online %}
+            <tr>
+                <td><a href="{% url 'backoffice:user_detail' a.user_id %}">{{ a.user.username }}</a>{% if a.user.is_staff %} <span class="z-badge z-badge--lime">Staff</span>{% endif %}</td>
+                <td>{% if a.club %}<a href="{% url 'backoffice:club_detail' a.club_id %}">{{ a.club.name }}</a>{% else %}—{% endif %}</td>
+                <td><code>{{ a.last_path }}</code></td>
+                <td>{{ a.last_seen|ago }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4" class="text-muted">Nadie conectado ahora mismo.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% endblock %}

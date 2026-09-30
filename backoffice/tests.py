@@ -12,7 +12,9 @@ from match.models import Match
 from players.models import Player
 from team.models import Team
 
-from .metrics import dashboard_kpis, signups_by_week
+from .metrics import dashboard_kpis, load_metrics, online_users, signups_by_week
+from .middleware import flush_metrics
+from .models import RequestMetric, UserActivity
 
 User = get_user_model()
 
@@ -20,6 +22,7 @@ PAGES = [
     ("backoffice:dashboard", []),
     ("backoffice:club_list", []),
     ("backoffice:user_list", []),
+    ("backoffice:load", []),
 ]
 
 
@@ -131,3 +134,88 @@ class BackofficeDataTests(TestCase):
         self.assertContains(response, "Club Beta")
         self.assertContains(response, "Google")
         self.assertFalse(Membership.objects.filter(user=self.staff).exists())
+
+
+class ActivityAndLoadTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        flush_metrics()
+        RequestMetric.objects.all().delete()
+        self.staff = User.objects.create_user("staff", password="pass-12345", is_staff=True)
+        self.member = User.objects.create_user("member", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.member)
+
+    def test_requests_mark_user_online_with_club_and_path(self):
+        self.client.login(username="member", password="pass-12345")
+        self.client.get(reverse("list_players"))
+        activity = UserActivity.objects.get(user=self.member)
+        self.assertEqual(activity.club, self.club)
+        self.assertEqual(activity.last_path, reverse("list_players"))
+        self.assertEqual([a.user for a in online_users()], [self.member])
+
+    def test_activity_is_written_at_most_once_a_minute(self):
+        self.client.login(username="member", password="pass-12345")
+        self.client.get(reverse("home"))
+        self.client.get(reverse("list_players"))
+        self.assertEqual(UserActivity.objects.get(user=self.member).last_path, reverse("home"))
+
+    def test_old_activity_is_not_online(self):
+        UserActivity.objects.create(user=self.member, last_seen=timezone.now() - datetime.timedelta(minutes=10))
+        self.assertEqual(online_users().count(), 0)
+
+    def test_logout_removes_user_from_online(self):
+        self.client.login(username="member", password="pass-12345")
+        self.client.get(reverse("home"))
+        self.client.post(reverse("logout"))
+        self.assertFalse(UserActivity.objects.filter(user=self.member).exists())
+
+    def test_requests_are_counted_per_minute(self):
+        self.client.get(reverse("login"))
+        self.client.get(reverse("login"))
+        self.client.get("/static/style.css")  # los estáticos no cuentan
+        flush_metrics()
+        metric = RequestMetric.objects.get()
+        self.assertEqual(metric.requests, 2)
+        self.assertEqual(metric.errors, 0)
+
+        self.client.get(reverse("login"))
+        flush_metrics()
+        self.assertEqual(RequestMetric.objects.get().requests, 3)
+
+    def test_load_page_and_series(self):
+        now = timezone.now().replace(second=0, microsecond=0)
+        RequestMetric.objects.create(minute=now - datetime.timedelta(minutes=2), requests=10, errors=1, total_ms=1000, max_ms=400)
+        RequestMetric.objects.create(minute=now - datetime.timedelta(hours=3), requests=5, total_ms=500, max_ms=100)
+        data = load_metrics()
+        self.assertEqual(len(data["minutes"]), 60)
+        self.assertEqual(len(data["hours"]), 24)
+        self.assertEqual(data["last_hour"]["requests"], 10)
+        self.assertEqual(data["last_hour"]["avg_ms"], 100)
+        self.assertEqual(data["last_hour"]["errors"], 1)
+        self.assertEqual(data["last_day"]["requests"], 15)
+        self.assertEqual(data["peak_minute"]["requests"], 10)
+        self.assertEqual(sum(h["requests"] for h in data["hours"]), 15)
+
+        self.client.login(username="staff", password="pass-12345")
+        response = self.client.get(reverse("backoffice:load"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "staff")  # el propio staff aparece conectado
+
+    def test_purge_command(self):
+        from django.core.management import call_command
+        RequestMetric.objects.create(minute=timezone.now() - datetime.timedelta(days=40), requests=1)
+        RequestMetric.objects.create(minute=timezone.now().replace(second=0, microsecond=0), requests=1)
+        call_command("purge_request_metrics", stdout=open("/dev/null", "w"))
+        self.assertEqual(RequestMetric.objects.count(), 1)
+
+
+class AgoFilterTests(TestCase):
+    def test_ago(self):
+        from .templatetags.backoffice_tags import ago
+        now = timezone.now()
+        self.assertEqual(ago(None), "nunca")
+        self.assertEqual(ago(now), "ahora mismo")
+        self.assertTrue(ago(now - datetime.timedelta(minutes=5)).startswith("hace 5"))
+        self.assertEqual(ago(timezone.localdate()), "hoy")
+        self.assertTrue(ago(timezone.localdate() - datetime.timedelta(days=3)).startswith("hace 3"))

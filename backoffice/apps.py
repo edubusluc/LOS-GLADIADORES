@@ -5,3 +5,6 @@ class BackofficeConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "backoffice"
     verbose_name = "Back-office"
+
+    def ready(self):
+        from . import signals  # noqa: F401

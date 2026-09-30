@@ -1,0 +1,9 @@
+{# Uso: {% include 'backoffice/includes/bars.html' with rows=... fmt="H:i" every=10 label="..." %} #}
+<ol class="bo-bars bo-bars--dense" style="--n: {{ rows|length }}" aria-label="{{ label }}">
+    {% for r in rows %}
+    <li title="{{ r.at|date:fmt }}: {{ r.requests }} {% if r.requests == 1 %}petición{% else %}peticiones{% endif %}{% if r.errors %}, {{ r.errors }} error{{ r.errors|pluralize:'es' }}{% endif %}{% if r.requests %}, {{ r.avg_ms }} ms de media{% endif %}">
+        <span class="bo-bar" style="--h: {{ r.pct }}%; --e: {{ r.err_pct }}%{% if r.errors %}; --emin: 3px{% endif %}"></span>
+        <small>{% if forloop.counter0|divisibleby:every %}{{ r.at|date:fmt }}{% endif %}</small>
+    </li>
+    {% endfor %}
+</ol>

@@ -1,4 +1,5 @@
 {% extends 'backoffice/base.html' %}
+{% load backoffice_tags %}
 {% block title %}{{ club.name }}{% endblock %}
 
 {% block content %}
@@ -18,7 +19,7 @@
     <div class="bo-kpi"><span class="bo-kpi-label">Miembros</span><b>{{ club.n_members|default:0 }}</b><small>{{ club.n_admins|default:0 }} administrador{{ club.n_admins|pluralize:"es" }}</small></div>
     <div class="bo-kpi"><span class="bo-kpi-label">Jugadores</span><b>{{ players_active }}</b><small>{{ players_total }} en total, contando bajas</small></div>
     <div class="bo-kpi"><span class="bo-kpi-label">Partidos</span><b>{{ club.n_matches|default:0 }}</b><small>{{ rivals }} equipo{{ rivals|pluralize }} rival{{ rivals|pluralize:"es" }}</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Último partido</span><b class="bo-kpi-date">{{ club.last_match|date:"j M Y"|default:"—" }}</b><small>{% if club.last_match %}hace {{ club.last_match|timesince }}{% else %}sin partidos jugados{% endif %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">Último partido</span><b class="bo-kpi-date">{{ club.last_match|date:"j M Y"|default:"—" }}</b><small>{% if club.last_match %}{{ club.last_match|ago }}{% else %}sin partidos jugados{% endif %}</small></div>
 </section>
 
 <section class="z-panel">
@@ -31,7 +32,7 @@
                 <td><a href="{% url 'backoffice:user_detail' m.user.id %}">{{ m.user.username }}</a></td>
                 <td>{{ m.user.email|default:"—" }}</td>
                 <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">Administrador</span>{% else %}Miembro{% endif %}</td>
-                <td>{% if m.user.last_login %}hace {{ m.user.last_login|timesince }}{% else %}nunca{% endif %}</td>
+                <td>{{ m.user.last_login|ago }}</td>
             </tr>
         {% empty %}
             <tr><td colspan="4" class="text-muted">Sin miembros.</td></tr>

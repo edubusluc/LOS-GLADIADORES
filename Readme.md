@@ -140,8 +140,8 @@ El logo va incrustado en el propio correo (`static/zyra/email-logo.png`).
 Panel para el dueño de la plataforma en `/backoffice/`: dashboard con KPIs de todos los
 clubes, listado y ficha de clubes y de usuarios. Solo entra el personal de Zyra
 (usuarios con `is_staff`); al resto se le responde 404. Los usuarios staff ven el
-enlace *Back-office* en el menú de usuario. Próximas fases: carga y
-usuarios conectados, procesos programados con log, consola SQL e importación de datos.
+enlace *Back-office* en el menú de usuario. Próximas fases: procesos
+programados con log, consola SQL e importación de datos.
 
 Para darte acceso a ti mismo:
 
@@ -156,4 +156,28 @@ ruta es `/admin/` por defecto; en producción conviene cambiarla por una menos o
 con la variable de entorno `ADMIN_URL` (por ejemplo `ADMIN_URL=gestion-9f3k/`, con la
 barra final).
 
-Esta versión no cambia modelos: no hace falta `makemigrations` ni `migrate`.
+### Carga y usuarios conectados
+
+La página *Carga y conectados* (`/backoffice/load/`) y el KPI *Conectados ahora* del
+dashboard salen de `backoffice.middleware.ActivityMiddleware`, que:
+
+- apunta la última actividad de cada usuario con sesión (como mucho una vez por minuto;
+  cuenta como conectado si ha hecho algo en los últimos 5 minutos y se borra al cerrar
+  sesión);
+- suma por minuto las peticiones, el tiempo de respuesta, las lentas (más de 1 s) y los
+  errores 500. Los estáticos no cuentan. Cada proceso acumula en memoria y vuelca a la
+  base de datos cada 15 segundos.
+
+Para no acumular filas, borra las métricas de más de 30 días (cuando haya procesos
+programados se hará solo):
+
+```bash
+python manage.py purge_request_metrics --days 30
+```
+
+### Desplegar esta versión
+
+```bash
+python manage.py makemigrations backoffice
+python manage.py migrate          # crea backoffice_useractivity y backoffice_requestmetric
+```

@@ -108,19 +108,16 @@ Se usa [django-allauth](https://docs.allauth.org/). El botón de Google solo apa
 si están definidas las variables de entorno `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`
 (o en `.env`); nunca van en el código.
 
-1. En [Google Cloud Console](https://console.cloud.google.com/) crea un proyecto y, en
-   *APIs y servicios → Pantalla de consentimiento de OAuth*, configúrala como *Externa*
-   con el nombre Zyra y el email de soporte join.zyra@gmail.com. Publícala para que
-   pueda entrar cualquier cuenta de Google.
-2. En *Credenciales → Crear credenciales → ID de cliente de OAuth*, tipo *Aplicación web*:
-   - Orígenes autorizados: `http://127.0.0.1:8000`, `http://localhost:8000` y
-     `https://snpgladiadoresitalica.pythonanywhere.com`
-   - URIs de redirección autorizados:
-     `http://127.0.0.1:8000/accounts/google/login/callback/`,
-     `http://localhost:8000/accounts/google/login/callback/` y
-     `https://snpgladiadoresitalica.pythonanywhere.com/accounts/google/login/callback/`
-3. Copia el ID y el secreto a `.env` (o a las variables de entorno del WSGI en
-   PythonAnywhere) y recarga la web.
+1. En [Google Cloud Console](https://console.cloud.google.com/) abre *Google Auth Platform*:
+   - *Información de la marca*: nombre Zyra y correo de asistencia join.zyra@gmail.com.
+   - *Público*: tipo *Externo* y **Publicar app** para que pueda entrar cualquier cuenta de Google.
+   - *Acceso a los datos*: permisos `openid`, `userinfo.email` y `userinfo.profile`.
+2. En *Clientes → Crear cliente*, tipo *Aplicación web*:
+   - Origen autorizado: `http://127.0.0.1:8000`
+   - URI de redirección autorizado: `http://127.0.0.1:8000/accounts/google/login/callback/`
+   - Al desplegar, añade también el origen `https://<tu-dominio>` y el URI
+     `https://<tu-dominio>/accounts/google/login/callback/`.
+3. Copia el ID y el secreto al `.env` (junto a `manage.py`) y reinicia el servidor.
 
 Si alguien entra con Google y ya existe una cuenta con ese email, entra en esa cuenta.
 

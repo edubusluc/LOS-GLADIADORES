@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from core.models import Invitation, Membership
+from core.models import Club, Invitation, Membership
 from core.services import create_club
 from match.models import Match
 from players.models import Player
@@ -378,3 +378,180 @@ class SchedulerTests(TestCase):
         JobRun.objects.create(job=job, status=JobRun.OK, started_at=timezone.now())
         call_command("purge_job_runs", stdout=open("/dev/null", "w"))
         self.assertEqual(JobRun.objects.count(), 1)
+
+
+class SqlConsoleTests(TestCase):
+    def setUp(self):
+        self.root = User.objects.create_superuser("root", email="root@example.com", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.root)
+        self.client.login(username="root", password="pass-12345")
+        self.url = reverse("backoffice:sql_console")
+
+    def test_select_runs_and_is_logged(self):
+        from .models import QueryLog
+        response = self.client.post(self.url, {"sql": "SELECT name FROM core_club", "action": "run"})
+        self.assertEqual(response.context["result"].rows, [("Club A",)])
+        log = QueryLog.objects.get()
+        self.assertEqual((log.user, log.row_count, log.exported, log.error), (self.root, 1, False, ""))
+
+    def test_writes_are_rejected(self):
+        from . import sql
+        for query in [
+            "DELETE FROM core_club",
+            "UPDATE core_club SET name = 'x'",
+            "SELECT 1; DELETE FROM core_club",
+            "WITH x AS (SELECT 1) DELETE FROM core_club",
+            "PRAGMA query_only = OFF",
+            "ATTACH DATABASE 'x.db' AS x",
+        ]:
+            with self.assertRaises(sql.QueryError, msg=query):
+                sql.run(query)
+        self.assertTrue(Club.objects.filter(name="Club A").exists())
+        # La conexión vuelve a admitir escrituras después de una consulta.
+        Club.objects.create(name="Club B")
+
+    def test_sensitive_data_is_hidden(self):
+        from . import sql
+        with self.assertRaises(sql.QueryError):
+            sql.run("SELECT password FROM auth_user")
+        with self.assertRaises(sql.QueryError):
+            sql.run("SELECT * FROM django_session")
+        result = sql.run("SELECT * FROM auth_user")
+        index = result.columns.index("password")
+        self.assertEqual(result.rows[0][index], sql.MASK)
+        self.assertEqual(result.masked, ["password"])
+        tables = [t["name"] for t in sql.schema()]
+        self.assertIn("core_club", tables)
+        self.assertNotIn("django_session", tables)
+        self.assertNotIn("password", next(t for t in sql.schema() if t["name"] == "auth_user")["columns"])
+
+    def test_row_limit_and_timeout(self):
+        from . import sql
+        result = sql.run("WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < 50) SELECT x FROM c", limit=10)
+        self.assertEqual((result.row_count, result.truncated), (10, True))
+        with self.assertRaisesMessage(sql.QueryError, "tardó más de"):
+            sql.run("WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c) SELECT count(*) FROM c", timeout=0.5)
+
+    def test_export_csv(self):
+        response = self.client.post(self.url, {"sql": "SELECT name, slug FROM core_club", "action": "export"})
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        body = response.content.decode("utf-8-sig")
+        self.assertEqual(body.splitlines(), ["name;slug", "Club A;club-a"])
+
+    def test_save_and_delete_query(self):
+        from .models import SavedQuery
+        response = self.client.post(self.url, {"sql": "SELECT name FROM core_club;", "action": "save", "name": "Clubes"})
+        saved = SavedQuery.objects.get()
+        self.assertRedirects(response, f"{self.url}?saved={saved.pk}")
+        self.assertEqual(saved.sql, "SELECT name FROM core_club")
+        self.assertContains(self.client.get(self.url, {"saved": saved.pk}), "SELECT name FROM core_club")
+        # No se guarda una consulta que no se podría ejecutar.
+        self.client.post(self.url, {"sql": "DELETE FROM core_club", "action": "save", "name": "Mal"})
+        self.assertEqual(SavedQuery.objects.count(), 1)
+        self.client.post(reverse("backoffice:sql_delete_saved", args=[saved.pk]))
+        self.assertFalse(SavedQuery.objects.exists())
+
+    def test_only_superusers(self):
+        User.objects.create_user("staff", password="pass-12345", is_staff=True)
+        self.client.login(username="staff", password="pass-12345")
+        for name in ["backoffice:sql_console", "backoffice:sql_log", "backoffice:import_list"]:
+            self.assertEqual(self.client.get(reverse(name)).status_code, 404, name)
+        self.assertNotContains(self.client.get(reverse("backoffice:dashboard")), reverse("backoffice:sql_console"))
+
+
+class ImportTests(TestCase):
+    def setUp(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.upload = SimpleUploadedFile
+        self.root = User.objects.create_superuser("root", password="pass-12345")
+        self.club = create_club("Los Gladiadores", "Sevilla", self.root)
+        self.other = create_club("Otro", "Madrid", self.root)
+        self.client.login(username="root", password="pass-12345")
+
+    def start(self, content, entity="players", mode="upsert", club=None):
+        from .models import ImportJob
+        f = self.upload("datos.csv", content.encode("utf-8-sig"), content_type="text/csv")
+        response = self.client.post(reverse("backoffice:import_list"), {
+            "entity": entity, "mode": mode, "club": (club or self.club).pk, "file": f,
+        })
+        job = ImportJob.objects.latest("created_at")
+        self.assertRedirects(response, reverse("backoffice:import_map", args=[job.pk]))
+        return job
+
+    def test_players_full_flow_with_auto_mapping_and_undo(self):
+        existing = Player.objects.create(club=self.club, name="Ana", last_name="García", position="Derecha")
+        Player.objects.create(club=self.other, name="Luis", last_name="Pérez")
+        job = self.start("Nombre;Apellidos;Posición;En plantilla\nAna;García;Revés;sí\nLuis;Pérez;Derecha;no\n")
+        self.assertEqual(set(job.mapping), {"name", "last_name", "position", "in_team"})
+
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        self.assertEqual((preview.context["creates"], preview.context["updates"], preview.context["errors"]), (1, 1, 0))
+
+        self.client.post(reverse("backoffice:import_confirm", args=[job.pk]))
+        job.refresh_from_db()
+        self.assertEqual((job.status, job.created_count, job.updated_count), ("done", 1, 1))
+        existing.refresh_from_db()
+        self.assertEqual(existing.position, "Revés")
+        luis = Player.objects.get(club=self.club, name="Luis")
+        self.assertEqual((luis.in_team, luis.team), (False, self.club.own_team))
+        # El jugador del otro club no se ha tocado.
+        self.assertEqual(Player.objects.filter(club=self.other).count(), 1)
+
+        self.client.post(reverse("backoffice:import_undo", args=[job.pk]))
+        existing.refresh_from_db()
+        self.assertEqual(existing.position, "Derecha")
+        self.assertFalse(Player.objects.filter(club=self.club, name="Luis").exists())
+
+    def test_errors_block_the_whole_import(self):
+        job = self.start("name,last_name,position\nAna,García,Derecha\n,Sin nombre,Revés\nEva,López,Portero\nAna,García,Revés\n")
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        self.assertEqual(preview.context["errors"], 3)
+        errors = self.client.get(reverse("backoffice:import_preview", args=[job.pk]), {"errors": "csv"}).content.decode("utf-8-sig")
+        self.assertIn("Nombre: obligatorio", errors)
+        self.assertIn("Portero", errors)
+        self.assertIn("Repetido en el fichero", errors)
+
+        self.client.post(reverse("backoffice:import_confirm", args=[job.pk]))
+        self.assertFalse(Player.objects.exists())
+        job.refresh_from_db()
+        self.assertEqual(job.status, "draft")
+
+    def test_modes(self):
+        Player.objects.create(club=self.club, name="Ana", last_name="García")
+        job = self.start("name;last_name\nAna;García\nEva;López\n", mode="create")
+        self.assertEqual(self.client.get(reverse("backoffice:import_preview", args=[job.pk])).context["errors"], 1)
+        job = self.start("name;last_name\nAna;García\nEva;López\n", mode="update")
+        self.assertEqual(self.client.get(reverse("backoffice:import_preview", args=[job.pk])).context["errors"], 1)
+
+    def test_update_by_id_only_inside_the_club(self):
+        mine = Player.objects.create(club=self.club, name="Ana", last_name="García")
+        theirs = Player.objects.create(club=self.other, name="Eva", last_name="López")
+        job = self.start(f"id;name\n{mine.pk};Anabel\n{theirs.pk};Hack\n", mode="update")
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        self.assertEqual((preview.context["updates"], preview.context["errors"]), (1, 1))
+
+    def test_manual_mapping(self):
+        job = self.start("Col A;Col B\nPádel Norte;Sevilla\n", entity="teams", mode="create")
+        self.assertEqual(job.mapping, {})
+        self.client.post(reverse("backoffice:import_map", args=[job.pk]), {"map_name": "0", "map_location": "1"})
+        self.client.post(reverse("backoffice:import_confirm", args=[job.pk]))
+        team = Team.objects.get(club=self.club, name="Pádel Norte")
+        self.assertEqual((team.location, team.is_own), ("Sevilla", False))
+
+    def test_matches_need_existing_teams(self):
+        Team.objects.create(club=self.club, name="Rival", location="X")
+        job = self.start("Fecha;Local;Visitante\n25/10/2026;Los Gladiadores;Rival\n2026-11-01;Rival;Nadie\n", entity="matches", mode="create")
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        self.assertEqual((preview.context["creates"], preview.context["errors"]), (1, 1))
+
+    def test_bad_files(self):
+        from .models import ImportJob
+        for content in ["", "name;last_name\n"]:
+            f = self.upload("x.csv", content.encode(), content_type="text/csv")
+            self.client.post(reverse("backoffice:import_list"), {"entity": "players", "mode": "create", "club": self.club.pk, "file": f})
+        self.assertFalse(ImportJob.objects.exists())
+
+    def test_template(self):
+        body = self.client.get(reverse("backoffice:import_template", args=["players"])).content.decode("utf-8-sig")
+        self.assertTrue(body.startswith("ID;Nombre;Apellidos"))
+        self.assertEqual(self.client.get(reverse("backoffice:import_template", args=["nope"])).status_code, 404)

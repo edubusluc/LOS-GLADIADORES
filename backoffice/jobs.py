@@ -47,7 +47,8 @@ JOBS = [
         name="update_snp_scores",
         description="Descarga de SNP los puntos de los jugadores de cada club con cuenta SNP configurada.",
         command="update_snp_scores",
-        schedule="0 5 * * *",
+        # Lunes a las 23:00.
+        schedule="0 23 * * 1",
     ),
 ]
 

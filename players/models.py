@@ -64,13 +64,14 @@ class Player(models.Model):
 class SnpAccount(models.Model):
     """
     Cuenta de SNP (snpgalaxy.com) del capitán de un club, con la que el proceso
-    ``update_snp_scores`` descarga cada día los puntos SNP de sus jugadores.
+    ``update_snp_scores`` descarga cada semana los puntos SNP de sus jugadores.
     Usuario y contraseña se guardan cifrados (core/crypto.py).
     """
     club = models.OneToOneField(Club, on_delete=models.CASCADE, related_name="snp_account")
     username_encrypted = models.TextField()
     password_encrypted = models.TextField()
-    team_url = models.URLField("Página del equipo en SNP", max_length=1000)
+    # Número del equipo en SNP (4380 en .../equipo/view/4380). Vacío: el único equipo de la cuenta.
+    team_id = models.CharField("Equipo en SNP", max_length=20, blank=True)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
     last_sync_at = models.DateTimeField(null=True, blank=True)

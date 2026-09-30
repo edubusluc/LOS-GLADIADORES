@@ -132,14 +132,15 @@ python manage.py migrate          # crea core_invitation y las tablas de allauth
 ## Puntos SNP automáticos
 
 Cada administrador guarda en *Menú → Cuenta SNP* el usuario y la contraseña de SNP
-(snpgalaxy.com) de su capitán y la dirección de la página de su equipo. Usuario y
-contraseña se guardan cifrados (`core/crypto.py`). El proceso programado
-`update_snp_scores` (cada día a las 5:00, o `python manage.py update_snp_scores
-[--club <slug>]`) recorre los clubes uno a uno, entra en SNP con su cuenta, lee los
-puntos de los jugadores (`players/scraper.py`) y actualiza los «Puntos SNP». Los
+(snpgalaxy.com) de su capitán y, solo si la cuenta tiene varios equipos, el número del
+equipo. Usuario y contraseña se guardan cifrados (`core/crypto.py`). El proceso
+programado `update_snp_scores` (lunes a las 23:00) recorre los clubes uno a uno, entra
+en SNP con su cuenta, navega Series Nacionales → España → Mis equipos → el equipo, lee
+los puntos de los jugadores (`players/scraper.py`) y actualiza los «Puntos SNP». Los
 nombres se cruzan sin tener en cuenta mayúsculas, tildes, la categoría final (500,
-Future) ni el segundo apellido si falta en un lado. Lo que no encaja se muestra en la
-página de la cuenta SNP. También hay un botón «Actualizar ahora».
+Future) ni el segundo apellido si falta en un lado; lo que no encaja se muestra en la
+página de la cuenta SNP. Solo el staff puede lanzarlo a mano, desde el back-office
+(*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club <slug>]`.
 
 Define una clave de cifrado propia en `.env` (si falta se deriva de
 `DJANGO_SECRET_KEY`, y cambiar esa clave dejaría ilegibles las cuentas guardadas):

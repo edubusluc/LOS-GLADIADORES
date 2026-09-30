@@ -12,9 +12,9 @@ class SnpAccountForm(forms.Form):
         label="Contraseña de SNP", required=False, widget=forms.PasswordInput(render_value=False),
         help_text="Se guarda cifrada. Déjala vacía para mantener la actual.",
     )
-    team_url = forms.URLField(
-        label="Página del equipo en SNP", max_length=1000, assume_scheme="https",
-        help_text="Entra en snpgalaxy.com, abre la página de tu equipo y copia aquí la dirección del navegador.",
+    team = forms.CharField(
+        label="Equipo en SNP (opcional)", max_length=1000, required=False,
+        help_text="Solo si la cuenta tiene varios equipos: el número del equipo (p. ej. 4380) o la dirección de su página en SNP.",
     )
 
     def __init__(self, *args, has_password=False, **kwargs):
@@ -31,9 +31,12 @@ class SnpAccountForm(forms.Form):
             raise forms.ValidationError("Escribe la contraseña de SNP.")
         return password
 
-    def clean_team_url(self):
-        from .scraper import team_id
-        url = self.cleaned_data["team_url"]
-        if not team_id(url):
-            raise forms.ValidationError("No parece la página de un equipo de SNP (debería llevar a /equipo/view/<número>).")
-        return url
+    def clean_team(self):
+        from .scraper import parse_team_id
+        value = self.cleaned_data["team"].strip()
+        if not value:
+            return ""
+        number = parse_team_id(value)
+        if not number:
+            raise forms.ValidationError("Escribe el número del equipo (p. ej. 4380) o la dirección de su página en SNP.")
+        return number

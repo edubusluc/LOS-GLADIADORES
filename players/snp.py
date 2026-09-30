@@ -107,7 +107,7 @@ class SyncResult:
 def sync_club(account, scraper=None):
     """Descarga los puntos SNP del club de ``account`` y los guarda. Nunca lanza: devuelve un SyncResult."""
     try:
-        scores = (scraper or scrape_scores)(account.username, account.password, account.team_url)
+        scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None)
     except (SnpScrapeError, DecryptionError) as exc:
         result = SyncResult(ok=False, message=str(exc))
     else:

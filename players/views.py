@@ -5,8 +5,6 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from match.models import Game
 from players.models import Player, SnpAccount
-from players.scraper import team_id
-from players.snp import sync_club
 from core.crypto import DecryptionError
 from django.views.decorators.http import require_POST
 from django.db.models import Q
@@ -138,7 +136,7 @@ def manage_roster(request):
 
 @club_admin_required
 def snp_account(request):
-    """Cuenta SNP del capitán: con ella se descargan cada día los puntos SNP de los jugadores."""
+    """Cuenta SNP del capitán: con ella se descargan cada semana los puntos SNP de los jugadores."""
     account = SnpAccount.objects.filter(club=request.club).first()
     if request.method == "POST":
         form = SnpAccountForm(request.POST, has_password=account is not None)
@@ -147,32 +145,23 @@ def snp_account(request):
             account.username = form.cleaned_data["username"]
             if form.cleaned_data["password"]:
                 account.password = form.cleaned_data["password"]
-            account.team_url = form.cleaned_data["team_url"]
+            account.team_id = form.cleaned_data["team"]
             account.updated_by = request.user
             account.save()
-            messages.success(request, "Cuenta SNP guardada. Los puntos se actualizarán cada mañana.")
+            messages.success(request, "Cuenta SNP guardada. Los puntos se actualizarán cada lunes por la noche.")
             return redirect("snp_account")
     else:
         initial = {}
         if account:
-            initial["team_url"] = account.team_url
+            initial["team"] = account.team_id
             try:
                 initial["username"] = account.username
             except DecryptionError:
                 messages.error(request, "No se ha podido leer la cuenta guardada (¿ha cambiado la clave de cifrado?). Vuelve a introducirla.")
         form = SnpAccountForm(initial=initial, has_password=account is not None)
     return render(request, "snp_account.html", {
-        "form": form, "account": account, "team_id": team_id(account.team_url) if account else None,
+        "form": form, "account": account,
     })
-
-
-@club_admin_required
-@require_POST
-def snp_sync(request):
-    account = get_object_or_404(SnpAccount, club=request.club)
-    result = sync_club(account)
-    (messages.success if result.ok else messages.error)(request, result.message)
-    return redirect("snp_account")
 
 
 @club_admin_required

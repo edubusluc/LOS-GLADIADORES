@@ -10,7 +10,7 @@ from core.models import Membership
 from core.services import create_club
 
 from .models import Player, SnpAccount
-from .scraper import SnpScrapeError, parse_score, team_id, team_page_urls
+from .scraper import SnpScrapeError, parse_score, parse_team_id
 from .snp import match_scores, normalize, sync_club
 
 User = get_user_model()
@@ -23,11 +23,11 @@ DIRECT_URL = "https://seriesnacionalesdepadel.snpgalaxy.com/equipo/view/4380"
 
 
 class ScraperHelpersTests(TestCase):
-    def test_team_page_urls_decodes_galaxy_link(self):
-        self.assertEqual(team_page_urls(GALAXY_URL), [DIRECT_URL, GALAXY_URL])
-        self.assertEqual(team_page_urls(DIRECT_URL), [DIRECT_URL])
-        self.assertEqual(team_id(GALAXY_URL), "4380")
-        self.assertIsNone(team_id("https://snpgalaxy.com/main"))
+    def test_parse_team_id(self):
+        self.assertEqual(parse_team_id(" 4380 "), "4380")
+        self.assertEqual(parse_team_id(DIRECT_URL), "4380")
+        self.assertEqual(parse_team_id(GALAXY_URL), "4380")
+        self.assertIsNone(parse_team_id("https://snpgalaxy.com/main"))
 
     def test_parse_score(self):
         self.assertEqual(parse_score("1.234,5"), 1234.5)
@@ -82,7 +82,7 @@ class SnpAccountTests(TestCase):
         self.player = Player.objects.create(club=self.club, name="Ana", last_name="Álvarez")
 
     def make_account(self, club=None):
-        account = SnpAccount(club=club or self.club, team_url=GALAXY_URL)
+        account = SnpAccount(club=club or self.club, team_id="4380")
         account.username = "capitan"
         account.password = "secreto"
         account.save()
@@ -100,7 +100,7 @@ class SnpAccountTests(TestCase):
         account = self.make_account()
         scraper = mock.Mock(return_value=[{"name": "ANA ALVAREZ 500", "score": 42.5}])
         result = sync_club(account, scraper=scraper)
-        scraper.assert_called_once_with("capitan", "secreto", GALAXY_URL)
+        scraper.assert_called_once_with("capitan", "secreto", "4380")
         self.assertTrue(result.ok)
         self.player.refresh_from_db()
         self.assertEqual(self.player.snp_score, 42.5)
@@ -128,7 +128,7 @@ class SnpAccountTests(TestCase):
 
         calls = []
 
-        def fake_scrape(username, password, team_url):
+        def fake_scrape(username, password, team_id):
             calls.append(username)
             return [{"name": "Ana Alvarez", "score": 1.0}, {"name": "Bea Beta", "score": 2.0}]
 
@@ -143,21 +143,21 @@ class SnpAccountTests(TestCase):
     def test_admin_can_save_account_and_password_is_kept_when_blank(self):
         self.client.login(username="admin", password="pass-12345")
         response = self.client.post(reverse("snp_account"), {
-            "username": "capitan", "password": "secreto", "team_url": GALAXY_URL,
+            "username": "capitan", "password": "secreto", "team": GALAXY_URL,
         })
         self.assertRedirects(response, reverse("snp_account"))
         page = self.client.get(reverse("snp_account")).content.decode()
         self.assertNotIn("secreto", page)
         self.assertIn("4380", page)
 
-        self.client.post(reverse("snp_account"), {"username": "capitan2", "password": "", "team_url": DIRECT_URL})
+        self.client.post(reverse("snp_account"), {"username": "capitan2", "password": "", "team": ""})
         account = SnpAccount.objects.get(club=self.club)
-        self.assertEqual((account.username, account.password, account.team_url), ("capitan2", "secreto", DIRECT_URL))
+        self.assertEqual((account.username, account.password, account.team_id), ("capitan2", "secreto", ""))
 
     def test_rejects_url_without_team(self):
         self.client.login(username="admin", password="pass-12345")
         response = self.client.post(reverse("snp_account"), {
-            "username": "capitan", "password": "secreto", "team_url": "https://snpgalaxy.com/main",
+            "username": "capitan", "password": "secreto", "team": "https://snpgalaxy.com/main",
         })
         self.assertEqual(response.status_code, 200)
         self.assertFalse(SnpAccount.objects.exists())
@@ -168,4 +168,9 @@ class SnpAccountTests(TestCase):
         self.make_account()
         self.client.login(username="viewer", password="pass-12345")
         self.assertEqual(self.client.get(reverse("snp_account")).status_code, 302)
-        self.assertEqual(self.client.post(reverse("snp_sync")).status_code, 302)
+        self.assertEqual(self.client.post(reverse("snp_account_delete")).status_code, 302)
+        self.assertTrue(SnpAccount.objects.exists())
+
+    def test_snp_job_runs_weekly_on_monday_night(self):
+        from backoffice.jobs import get_spec
+        self.assertEqual(get_spec("update_snp_scores").schedule, "0 23 * * 1")

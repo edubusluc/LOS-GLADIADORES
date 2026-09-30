@@ -101,9 +101,20 @@ class ReportTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         message = mail.outbox[0]
         self.assertEqual(message.to, ["capitan@example.com"])
+        self.assertEqual(message.reply_to, ["capitan@example.com"])  # responde a quien cerró
+        html, html_type = message.alternatives[0]
+        self.assertEqual(html_type, "text/html")
+        self.assertIn("Club A", html)
         name, content, mimetype = message.attachments[0]
         self.assertEqual(mimetype, "application/pdf")
         self.assertTrue(content.startswith(b"%PDF"))
+
+    def test_each_admin_gets_an_individual_email(self):
+        second = User.objects.create_user("segundo", password="pass-12345", email="segundo@example.com")
+        Membership.objects.create(user=second, club=self.club, role=Membership.ADMIN)
+        self.client.post(reverse("close_call", args=[self.match.id]))
+        self.assertEqual(sorted(m.to[0] for m in mail.outbox), ["capitan@example.com", "segundo@example.com"])
+        self.assertTrue(all(len(m.to) == 1 and not m.cc and not m.bcc for m in mail.outbox))
 
     def test_email_failure_does_not_block_closing(self):
         with mock.patch("match.views.send_call_report", side_effect=OSError("SMTP caído")):

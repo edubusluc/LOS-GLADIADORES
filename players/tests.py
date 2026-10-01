@@ -223,12 +223,12 @@ class SnpAccountTests(TestCase):
         viewer = User.objects.create_user("viewer", password="pass-12345")
         Membership.objects.create(user=viewer, club=self.club, role=Membership.MEMBER)
         self.client.login(username="admin", password="pass-12345")
-        self.assertContains(self.client.get(reverse("home")), "Registra la cuenta SNP")
+        self.assertContains(self.client.get(reverse("home")), "Registra tu cuenta de SNP")
         self.client.login(username="viewer", password="pass-12345")
-        self.assertNotContains(self.client.get(reverse("home")), "Registra la cuenta SNP")
+        self.assertNotContains(self.client.get(reverse("home")), "Registra tu cuenta de SNP")
         self.make_account()
         self.client.login(username="admin", password="pass-12345")
-        self.assertNotContains(self.client.get(reverse("home")), "Registra la cuenta SNP")
+        self.assertNotContains(self.client.get(reverse("home")), "Registra tu cuenta de SNP")
 
     def test_snp_job_runs_weekly_on_monday_night(self):
         from backoffice.jobs import get_spec

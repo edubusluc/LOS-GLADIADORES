@@ -779,13 +779,15 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 .modal .btn-close { filter: invert(1); }
 
 /* «Completar equipo» */
-.z-import-list { max-height: 420px; overflow-y: auto; margin: 0 0 20px; padding: 0; list-style: none; }
-/* Nombre, categoría y dato final en columnas fijas para que todo quede alineado. */
-.z-import-list li { display: grid; grid-template-columns: minmax(0, 1fr) 120px minmax(90px, auto); align-items: center; gap: 16px; padding: 10px 4px; border-bottom: 1px solid var(--z-border); }
-.z-import-list li > small { text-align: right; }
-.z-import-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.z-import-list li:last-child { border-bottom: 0; }
-.z-import-list small { color: var(--z-muted); }
+.z-import-wrap { max-height: 420px; overflow-y: auto; margin: 0 0 20px; }
+/* Tabla con columnas de ancho fijo: nombres, etiquetas y última columna alineados en todas las filas. */
+.z-import-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.z-import-table col.z-import-cat { width: 130px; }
+.z-import-table col.z-import-last { width: 34%; }
+.z-import-table th { position: sticky; top: 0; z-index: 1; padding: 8px; font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--z-muted); text-align: left; background: var(--z-surface); border-bottom: 1px solid var(--z-border-strong, var(--z-border)); }
+.z-import-table td { padding: 10px 8px; vertical-align: middle; border-bottom: 1px solid var(--z-border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-import-table tbody tr:last-child td { border-bottom: 0; }
+.z-import-table .text-end { text-align: right; }
 
 /* Categoría SNP del jugador: un color por tipo. */
 .z-cat { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }

@@ -1,13 +1,16 @@
 import datetime
 import re
+from io import StringIO
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.management import CommandError, call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from call.models import Call
+from call.models import Call, ReportDelivery
 from core.models import Membership
 from core.services import create_club
 from data_analyse.pairs import club_game_log
@@ -129,6 +132,89 @@ class ReportTests(TestCase):
         self.call.refresh_from_db()
         self.assertFalse(self.call.draft_mode)
         self.assertContains(response, "no se pudo enviar el informe")
+
+    def failing_smtp(self, *bad):
+        """Backend de correo de pruebas que falla para las direcciones indicadas (todas si no se indica)."""
+        from django.core.mail.backends.locmem import EmailBackend
+        original = EmailBackend.send_messages
+
+        def send(backend, messages):
+            if any(not bad or m.to[0] in bad for m in messages):
+                raise OSError("SMTP caído")
+            return original(backend, messages)
+        return mock.patch.object(EmailBackend, "send_messages", send)
+
+    def make_due(self):
+        ReportDelivery.objects.filter(status=ReportDelivery.PENDING).update(
+            next_attempt_at=timezone.now() - datetime.timedelta(seconds=1))
+
+    def test_failed_email_is_retried_until_it_is_sent(self):
+        with self.failing_smtp():
+            response = self.client.post(reverse("close_call", args=[self.match.public_id]), follow=True)
+        self.assertContains(response, "se reintentará automáticamente")
+        delivery = ReportDelivery.objects.get(call=self.call)
+        self.assertEqual((delivery.status, delivery.attempts), (ReportDelivery.PENDING, 1))
+        self.assertIn("SMTP caído", delivery.last_error)
+        self.assertGreater(delivery.next_attempt_at, timezone.now())
+
+        out = StringIO()
+        call_command("send_call_reports", stdout=out)  # aún no le toca
+        self.assertIn("No hay informes pendientes", out.getvalue())
+        self.assertEqual(len(mail.outbox), 0)
+
+        self.make_due()
+        call_command("send_call_reports", stdout=StringIO())
+        delivery.refresh_from_db()
+        self.assertEqual((delivery.status, delivery.attempts), (ReportDelivery.SENT, 2))
+        self.assertEqual(mail.outbox[0].to, ["capitan@example.com"])
+        self.assertEqual(mail.outbox[0].reply_to, ["capitan@example.com"])
+        self.assertEqual(mail.outbox[0].attachments[0][2], "application/pdf")
+
+    def test_gives_up_after_max_attempts_and_alerts(self):
+        from match.notifications import MAX_ATTEMPTS
+        with self.failing_smtp():
+            self.client.post(reverse("close_call", args=[self.match.public_id]))
+            for _ in range(MAX_ATTEMPTS - 2):
+                self.make_due()
+                call_command("send_call_reports", stdout=StringIO())
+            self.make_due()
+            with self.assertRaises(CommandError):
+                call_command("send_call_reports", stdout=StringIO())
+        delivery = ReportDelivery.objects.get(call=self.call)
+        self.assertEqual((delivery.status, delivery.attempts), (ReportDelivery.FAILED, MAX_ATTEMPTS))
+        page = self.client.get(reverse("call_for_match", args=[self.match.public_id]))
+        self.assertContains(page, "no enviado")
+
+    def test_one_bad_recipient_does_not_block_the_others(self):
+        second = User.objects.create_user("segundo", password="pass-12345", email="segundo@example.com")
+        Membership.objects.create(user=second, club=self.club, role=Membership.ADMIN)
+        with self.failing_smtp("capitan@example.com"):
+            response = self.client.post(reverse("close_call", args=[self.match.public_id]), follow=True)
+        self.assertContains(response, "Informe enviado a segundo@example.com")
+        self.assertContains(response, "No se pudo enviar el informe a capitan@example.com")
+        self.assertEqual([m.to for m in mail.outbox], [["segundo@example.com"]])
+        statuses = dict(ReportDelivery.objects.values_list("email", "status"))
+        self.assertEqual(statuses, {"capitan@example.com": "pending", "segundo@example.com": "sent"})
+
+    def test_a_delivery_is_sent_only_once(self):
+        from match.notifications import deliver, queue_call_report
+        deliveries = queue_call_report(self.call)
+        stale = [ReportDelivery.objects.get(pk=d.pk) for d in deliveries]  # otra pasada con las mismas filas
+        deliver(deliveries)
+        self.assertEqual(deliver(stale), [])
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_admin_can_resend_report(self):
+        self.client.post(reverse("close_call", args=[self.match.public_id]))
+        self.assertEqual(len(mail.outbox), 1)
+        page = self.client.get(reverse("call_for_match", args=[self.match.public_id]))
+        self.assertContains(page, "Reenviar informe")
+        self.assertContains(page, "enviado")
+        self.client.post(reverse("resend_call_report", args=[self.match.public_id]))
+        self.assertEqual(len(mail.outbox), 2)
+        self.client.login(username="viewer", password="pass-12345")
+        self.client.post(reverse("resend_call_report", args=[self.match.public_id]))
+        self.assertEqual(len(mail.outbox), 2)
 
     def test_manual_download_is_admin_only(self):
         response = self.client.get(reverse("call_report", args=[self.match.public_id]))

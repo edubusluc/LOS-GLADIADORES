@@ -5,13 +5,21 @@ Entra con la cuenta de SNP del capitán, navega como él (Series Nacionales → 
 Mis equipos → el equipo) y lee la tabla de jugadores (todas las páginas). Devuelve una lista de ``{"name": ..., "score": ...}``
 con el nombre tal y como aparece en SNP; el cruce con nuestros jugadores está en
 players/snp.py.
+
+Para no cargar a SNP (y que no nos bloquee) cada club se lee como lo haría una persona:
+un navegador en español y con la hora de Madrid, sin descargar imágenes, vídeos ni
+tipos de letra (son la mayoría de las peticiones y no hacen falta para leer la tabla).
+Si SNP responde que hay demasiadas peticiones o niega el acceso (429, 403, 503) se lanza
+SnpBlockedError para que el proceso por lotes pare en vez de insistir.
 """
 import base64
 import binascii
 import re
+from urllib.parse import urlsplit
 
 from playwright.sync_api import Error as PlaywrightError, sync_playwright
 
+SNP_HOST = "snpgalaxy.com"
 LOGIN_URL = "https://snpgalaxy.com/usuario/login"
 LOGIN_BUTTONS = ('input[type="submit"][value="Iniciar Sesión"]', 'button[type="submit"]:has-text("Iniciar Sesión")',
                  'input[type="submit"]', 'button[type="submit"]')
@@ -25,10 +33,30 @@ MY_TEAMS = '.card-equipos'
 TEAM_LINKS = '#form_equipos table.results tbody td:first-child a[href*="/equipo/view/"]'
 MAX_PAGES = 30
 TIMEOUT_MS = 30_000
+# Respuestas con las que SNP indica que limita o rechaza nuestras peticiones.
+BLOCKED_STATUSES = {403, 429, 503}
+# Lo que no hace falta descargar para leer la tabla.
+SKIPPED_RESOURCES = {"image", "media", "font"}
+CONTEXT_OPTIONS = {"locale": "es-ES", "timezone_id": "Europe/Madrid", "viewport": {"width": 1366, "height": 900}}
 
 
 class SnpScrapeError(Exception):
-    """Error que se puede enseñar tal cual al administrador del club."""
+    """
+    Error que se puede enseñar tal cual al administrador del club. ``retryable`` dice si
+    tiene sentido volver a intentarlo más tarde (un fallo de red o de carga) o no (la
+    contraseña no vale, la cuenta no tiene ese equipo…): reintentar un inicio de sesión
+    rechazado una y otra vez puede acabar bloqueando la cuenta del capitán.
+    """
+    retryable = False
+
+
+class SnpTemporaryError(SnpScrapeError):
+    """Fallo pasajero (red, SNP lento o caído): se reintenta en la siguiente pasada."""
+    retryable = True
+
+
+class SnpBlockedError(SnpTemporaryError):
+    """SNP limita o rechaza nuestras peticiones: hay que parar y dejarle descansar."""
 
 
 def parse_team_id(value):
@@ -75,16 +103,19 @@ def _first_visible(page, selectors):
 
 
 def _login(page, username, password):
-    page.goto(LOGIN_URL, timeout=TIMEOUT_MS)
+    response = page.goto(LOGIN_URL, timeout=TIMEOUT_MS)
+    if response is not None and response.status in BLOCKED_STATUSES:
+        raise SnpBlockedError(f"SNP ha respondido {response.status} al abrir la página de inicio de sesión: "
+                              "está limitando o rechazando nuestras peticiones.")
     user_field = _first_visible(page, USERNAME_FIELDS)
     password_field = page.query_selector('input[type="password"]')
     if not user_field or not password_field:
-        raise SnpScrapeError("No se ha encontrado el formulario de inicio de sesión de SNP.")
+        raise SnpTemporaryError("No se ha encontrado el formulario de inicio de sesión de SNP.")
     user_field.fill(username)
     password_field.fill(password)
     button = _first_visible(page, LOGIN_BUTTONS)
     if not button:
-        raise SnpScrapeError("No se ha encontrado el botón «Iniciar Sesión» de SNP.")
+        raise SnpTemporaryError("No se ha encontrado el botón «Iniciar Sesión» de SNP.")
     button.click()
     page.wait_for_load_state("load", timeout=TIMEOUT_MS)
     page.wait_for_timeout(2000)
@@ -120,7 +151,7 @@ def _find(page, selector, what, log, url_pattern=None, timeout_ms=TIMEOUT_MS):
         if waited >= timeout_ms:
             frames = "; ".join(_frame_label(f, page) for f in page.frames)
             log(f"No se encuentra {what}. Frames en la página: {frames}")
-            raise SnpScrapeError(f"No se ha encontrado {what} en SNP (ni en la página ni en sus iframes).")
+            raise SnpTemporaryError(f"No se ha encontrado {what} en SNP (ni en la página ni en sus iframes).")
         page.wait_for_timeout(500)
         waited += 500
 
@@ -181,7 +212,7 @@ def _wait_for_next_page(page, frame, previous_names, log):
         if names and names != previous_names and names == last:
             return frame
         last = names
-    raise SnpScrapeError("La página siguiente de la tabla de jugadores de SNP no ha terminado de cargar.")
+    raise SnpTemporaryError("La página siguiente de la tabla de jugadores de SNP no ha terminado de cargar.")
 
 
 def _read_rows(page):
@@ -195,40 +226,118 @@ def _read_rows(page):
     return rows
 
 
-def scrape_scores(username, password, team_id=None, headed=False, log=None):
+class SnpBrowser:
+    """
+    Navegador que se reutiliza para leer varios clubes seguidos (un lote): arrancar
+    Chromium para cada club es lo más lento. Cada club se lee en un contexto propio
+    (como una ventana de incógnito), así las sesiones de los capitanes nunca se mezclan.
+    Chromium se arranca la primera vez que hace falta.
+    """
+
+    def __init__(self, headed=False):
+        self.headed = headed
+        self._playwright = None
+        self.browser = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def close(self):
+        for closer in (self.browser and self.browser.close, self._playwright and self._playwright.stop):
+            if closer:
+                try:
+                    closer()
+                except Exception:
+                    pass
+        self.browser = self._playwright = None
+
+    def _launch(self):
+        try:
+            self._playwright = sync_playwright().start()
+            self.browser = self._playwright.chromium.launch(headless=not self.headed, slow_mo=500 if self.headed else 0)
+        except PlaywrightError as exc:
+            self.close()
+            raise SnpTemporaryError(f"No se ha podido abrir el navegador: {str(exc).splitlines()[0]}") from exc
+
+    def new_context(self):
+        if self.browser is None or not self.browser.is_connected():
+            self.close()
+            self._launch()
+        options = dict(CONTEXT_OPTIONS)
+        # Chromium sin ventana se presenta como «HeadlessChrome»; nos presentamos como
+        # el mismo Chrome con ventana.
+        options["user_agent"] = (f"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                                 f"Chrome/{self.browser.version} Safari/537.36")
+        context = self.browser.new_context(**options)
+        context.route("**/*", _skip_heavy_resources)
+        return context
+
+
+def _is_blocked(response):
+    """Una página (o iframe) del propio SNP que responde que nos limita o rechaza."""
+    return (response.status in BLOCKED_STATUSES and response.request.resource_type == "document"
+            and SNP_HOST in (urlsplit(response.url).hostname or ""))
+
+
+def _skip_heavy_resources(route):
+    if route.request.resource_type in SKIPPED_RESOURCES:
+        route.abort()
+    else:
+        route.continue_()
+
+
+def scrape_scores(username, password, team_id=None, headed=False, log=None, browser=None):
     """
     Puntos SNP de los jugadores del equipo ``team_id`` (o del único equipo de la cuenta
     si no se indica). Lanza SnpScrapeError si algo falla.
 
     ``headed`` abre el navegador a la vista (y más despacio) para seguir la ejecución;
-    ``log`` recibe una línea por cada paso.
+    ``log`` recibe una línea por cada paso. ``browser`` es un SnpBrowser ya abierto que
+    se reutiliza (el proceso por lotes); si no se indica, se abre y se cierra uno.
     """
+    if browser is None:
+        with SnpBrowser(headed=headed) as own:
+            return scrape_scores(username, password, team_id, log=log, browser=own)
+
     log = log or (lambda message: None)
     players = []
+    blocked = []  # respuestas de SNP que indican que nos está limitando
+    context = None
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=not headed, slow_mo=500 if headed else 0)
+        context = browser.new_context()
+        page = context.new_page()
+        page.on("response", lambda r: blocked.append(r.status) if _is_blocked(r) else None)
+        log("Iniciando sesión en SNP…")
+        _login(page, username, password)
+        log("Sesión iniciada. Abriendo Series Nacionales → España → Mis equipos…")
+        frame = _open_team_page(page, team_id, log)
+        log(f"Página del equipo abierta: {frame.url}")
+        for page_number in range(2, MAX_PAGES + 2):
+            rows = _read_rows(frame)
+            log(f"Página {page_number - 1} de la tabla: {len(rows)} jugadores ({', '.join(r['name'] for r in rows)}).")
+            players.extend(rows)
+            next_button = frame.query_selector(NEXT_PAGE.format(page_number))
+            if not next_button or not next_button.is_visible():
+                break
+            before = [r["name"] for r in rows]
+            next_button.click()
+            frame = _wait_for_next_page(page, frame, before, log)
+    except (SnpScrapeError, PlaywrightError) as exc:
+        if blocked and not isinstance(exc, SnpBlockedError):
+            raise SnpBlockedError(f"SNP ha respondido {blocked[-1]} mientras se leía el equipo: "
+                                  "está limitando o rechazando nuestras peticiones.") from exc
+        if isinstance(exc, PlaywrightError):
+            raise SnpTemporaryError(f"Error del navegador al leer SNP: {str(exc).splitlines()[0]}") from exc
+        raise
+    finally:
+        if context is not None:
             try:
-                page = browser.new_page()
-                log("Iniciando sesión en SNP…")
-                _login(page, username, password)
-                log("Sesión iniciada. Abriendo Series Nacionales → España → Mis equipos…")
-                frame = _open_team_page(page, team_id, log)
-                log(f"Página del equipo abierta: {frame.url}")
-                for page_number in range(2, MAX_PAGES + 2):
-                    rows = _read_rows(frame)
-                    log(f"Página {page_number - 1} de la tabla: {len(rows)} jugadores ({', '.join(r['name'] for r in rows)}).")
-                    players.extend(rows)
-                    next_button = frame.query_selector(NEXT_PAGE.format(page_number))
-                    if not next_button or not next_button.is_visible():
-                        break
-                    before = [r["name"] for r in rows]
-                    next_button.click()
-                    frame = _wait_for_next_page(page, frame, before, log)
-            finally:
-                browser.close()
-    except PlaywrightError as exc:
-        raise SnpScrapeError(f"Error del navegador al leer SNP: {str(exc).splitlines()[0]}") from exc
+                context.close()
+            except PlaywrightError:
+                pass
     if not players:
         raise SnpScrapeError("La tabla de jugadores de SNP está vacía.")
     # Algunas páginas pueden repetir filas: nos quedamos con la primera aparición.

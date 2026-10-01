@@ -232,7 +232,17 @@ La contraseña de aplicación se crea en la cuenta de Google de join.zyra@gmail.
 Seguridad → Verificación en dos pasos → Contraseñas de aplicaciones.
 
 Sin `EMAIL_HOST_PASSWORD` los correos se muestran en la consola (útil en desarrollo).
-Si el envío falla, la convocatoria se cierra igualmente y se avisa en pantalla.
+
+Cada envío queda registrado (`call.ReportDelivery`, uno por destinatario) y hace de
+cola: se intenta enviar al cerrar la convocatoria y, si falla, el proceso programado
+`send_call_reports` (cada 5 minutos) lo reintenta a los 2, 10, 30 y 120 minutos. Tras
+5 intentos se da por fallido y el personal recibe el aviso de fallo del back-office.
+Cada correo sale por separado: si falla un destinatario, los demás lo reciben igual.
+La convocatoria se cierra siempre, el detalle del partido muestra el estado del envío
+y el botón *Reenviar informe* lo vuelve a mandar. `EMAIL_MAX_PER_RUN` (100) limita los
+correos de cada pasada. Gmail admite unos 500 correos al día: con muchos clubes conviene
+un proveedor de correo transaccional (Brevo, Amazon SES, Postmark…), que se configura
+solo con `EMAIL_HOST`, `EMAIL_HOST_USER` y `EMAIL_HOST_PASSWORD`.
 
 ## Inicio de sesión con Google
 
@@ -276,7 +286,7 @@ python manage.py migrate          # crea core_invitation y las tablas de allauth
 Cada administrador guarda en *Menú → Cuenta SNP* el usuario y la contraseña de SNP
 (snpgalaxy.com) de su capitán y, solo si la cuenta tiene varios equipos, el número del
 equipo. Usuario y contraseña se guardan cifrados (`core/crypto.py`). El proceso
-programado `update_snp_scores` (lunes a las 23:00) recorre los clubes uno a uno, entra
+programado `update_snp_scores` recorre los clubes, entra
 en SNP con su cuenta, navega Series Nacionales → España → Mis equipos → el equipo, lee
 los puntos de los jugadores (`players/scraper.py`) y actualiza los «Puntos SNP». Los
 nombres se cruzan sin tener en cuenta mayúsculas, tildes, la categoría final (500,
@@ -285,8 +295,28 @@ página de la cuenta SNP. Cada actualización guarda además un punto en el hist
 jugador (`SnpScoreHistory`), que se ve como gráfico en sus estadísticas. Mientras el club
 no tenga cuenta SNP, la portada muestra a los administradores un aviso que lleva a
 registrarla. Solo el staff puede lanzarlo a mano, desde el back-office
-(*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club "<nombre o slug>"] [--headed]`
+(*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club "<nombre o slug>"] [--all] [--batch-size 50] [--headed]`
 (`--headed` abre el navegador a la vista para seguir cada paso).
+
+Cómo se reparte el trabajo y cómo se evita que SNP nos bloquee:
+
+- **Ciclo semanal.** El ciclo empieza los lunes a las 23:00 y el proceso se lanza cada
+  día a esa hora, pero solo hace los clubes pendientes del ciclo: los que aún no se han
+  intentado y los que fallaron por algo pasajero (red, SNP lento o limitándonos). Los
+  fallos de usuario o contraseña no se reintentan solos: repetir un inicio de sesión
+  rechazado puede bloquear la cuenta del capitán. `--all` repite todos.
+- **Lotes.** Los clubes van en lotes de `SNP_BATCH_SIZE` (50). Cada club se guarda en su
+  propia transacción (todos sus jugadores o ninguno) y un error en uno no afecta a los
+  demás. Cada lote usa un navegador nuevo y cada club una sesión aislada.
+- **Ritmo.** Entre club y club hay una pausa aleatoria de `SNP_PAUSE_MIN_SECONDS` a
+  `SNP_PAUSE_MAX_SECONDS` (5–15 s) y entre lotes `SNP_BATCH_PAUSE_SECONDS` (60 s). No se
+  descargan imágenes, vídeos ni tipos de letra.
+- **Freno.** Si SNP responde 429, 403 o 503, o fallan `SNP_MAX_CONSECUTIVE_FAILURES` (5)
+  clubes seguidos por la red, el proceso para y avisa al personal. Los que faltan van
+  primero en la pasada siguiente.
+
+A ese ritmo cada club tarda de media unos 30–40 s. 1.000 clubes son unas 10 horas y
+10.000, unos 4 o 5 días, dentro de la semana del ciclo.
 
 Define una clave de cifrado propia en `.env` (obligatoria en producción; si la cambias,
 las cuentas guardadas dejan de poder leerse y hay que volver a introducirlas):

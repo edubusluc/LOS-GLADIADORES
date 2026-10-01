@@ -242,6 +242,20 @@ EMAIL_BACKEND = config(
     else 'django.core.mail.backends.console.EmailBackend',
 )
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'Zyra <{ZYRA_SENDER}>')
+# Los informes de convocatoria se guardan en una cola (match.ReportDelivery): se intenta
+# enviarlos al cerrar la convocatoria y, si falla, el proceso send_call_reports los
+# reintenta con esperas crecientes. Como mucho EMAIL_MAX_PER_RUN correos por pasada,
+# para no pasar del límite del proveedor (Gmail: unos 500 al día).
+EMAIL_MAX_PER_RUN = config('EMAIL_MAX_PER_RUN', default=100, cast=int)
+
+# Actualización de los puntos SNP (update_snp_scores): clubes por lote, pausa aleatoria
+# entre club y club, pausa entre lotes (en segundos) y cuántos fallos de red seguidos
+# hacen parar el proceso.
+SNP_BATCH_SIZE = config('SNP_BATCH_SIZE', default=50, cast=int)
+SNP_PAUSE_MIN_SECONDS = config('SNP_PAUSE_MIN_SECONDS', default=5, cast=float)
+SNP_PAUSE_MAX_SECONDS = config('SNP_PAUSE_MAX_SECONDS', default=15, cast=float)
+SNP_BATCH_PAUSE_SECONDS = config('SNP_BATCH_PAUSE_SECONDS', default=60, cast=float)
+SNP_MAX_CONSECUTIVE_FAILURES = config('SNP_MAX_CONSECUTIVE_FAILURES', default=5, cast=int)
 
 
 # Inicio de sesión: con usuario o email y contraseña (formulario propio) o con

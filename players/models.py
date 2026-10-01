@@ -79,6 +79,9 @@ class SnpAccount(PublicIdModel):
     updated_at = models.DateTimeField(auto_now=True)
     last_sync_at = models.DateTimeField(null=True, blank=True)
     last_sync_ok = models.BooleanField(null=True)
+    # El último fallo fue pasajero (red, SNP lento o limitándonos): se reintenta en la
+    # siguiente pasada del proceso. Los fallos de usuario o contraseña no se reintentan.
+    last_sync_retryable = models.BooleanField(default=False)
     last_sync_message = models.TextField(blank=True)
 
     @property

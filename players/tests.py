@@ -76,7 +76,10 @@ class MatchScoresTests(TestCase):
         self.assertEqual(ambiguous, ["Juan García"])
 
 
-@override_settings(FIELD_ENCRYPTION_KEY="")
+NO_PAUSES = {"SNP_PAUSE_MIN_SECONDS": 0, "SNP_PAUSE_MAX_SECONDS": 0, "SNP_BATCH_PAUSE_SECONDS": 0}
+
+
+@override_settings(FIELD_ENCRYPTION_KEY="", **NO_PAUSES)
 class SnpAccountTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user("admin", password="pass-12345")
@@ -153,6 +156,14 @@ class SnpAccountTests(TestCase):
             call_command("update_snp_scores", "--club", "club b", stdout=StringIO())
         self.assertEqual(len(calls), 1)
 
+        # Ya están actualizados en este ciclo: la pasada diaria no repite nada.
+        calls.clear()
+        out = StringIO()
+        with mock.patch("players.snp.scrape_scores", fake_scrape):
+            call_command("update_snp_scores", stdout=out)
+        self.assertEqual(calls, [])
+        self.assertIn("No hay equipos pendientes", out.getvalue())
+
     def test_admin_can_save_account_and_password_is_kept_when_blank(self):
         self.client.login(username="admin", password="pass-12345")
         response = self.client.post(reverse("snp_account"), {
@@ -197,7 +208,7 @@ class SnpAccountTests(TestCase):
         out = StringIO()
         with mock.patch("players.snp.scrape_scores", lambda *a, **k: [{"name": "Ana Alvarez", "score": 3.0},
                                                                      {"name": "Luis Gomes 500", "score": 4.0}]):
-            call_command("update_snp_scores", stdout=out)
+            call_command("update_snp_scores", "--all", stdout=out)
         self.assertIn("Nombres de SNP sin jugador en Zyra: Luis Gomes 500\n", out.getvalue())
 
     def test_sync_keeps_one_history_point_per_player_and_day(self):
@@ -230,9 +241,131 @@ class SnpAccountTests(TestCase):
         self.client.login(username="admin", password="pass-12345")
         self.assertNotContains(self.client.get(reverse("home")), "Registra tu cuenta de SNP")
 
-    def test_snp_job_runs_weekly_on_monday_night(self):
+    def test_snp_job_runs_every_night_and_cycle_starts_on_monday(self):
         from backoffice.jobs import get_spec
-        self.assertEqual(get_spec("update_snp_scores").schedule, "0 23 * * 1")
+        from players.management.commands.update_snp_scores import SNP_SYNC_CYCLE
+        self.assertEqual(get_spec("update_snp_scores").schedule, "0 23 * * *")
+        self.assertEqual(SNP_SYNC_CYCLE, "0 23 * * 1")
+
+
+def madrid(*args):
+    import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.datetime(*args, tzinfo=ZoneInfo("Europe/Madrid"))
+
+
+@override_settings(FIELD_ENCRYPTION_KEY="", **NO_PAUSES)
+class SnpBatchTests(TestCase):
+    """update_snp_scores por lotes: fallos aislados, parada si SNP limita y reanudación."""
+
+    def setUp(self):
+        self.accounts = []
+        for letter in "ABCD":
+            admin = User.objects.create_user(f"admin{letter}", password="x")
+            club = create_club(f"Club {letter}", "Sevilla", admin)
+            Player.objects.create(club=club, name="Ana", last_name=letter)
+            account = SnpAccount(club=club)
+            account.username = f"capitan{letter}"
+            account.password = "secreto"
+            account.save()
+            self.accounts.append(account)
+        self.calls = []
+
+    def scraper(self, failures=None):
+        failures = failures or {}
+
+        def fake(username, password, team_id, **options):
+            self.calls.append(username)
+            if username in failures:
+                raise failures[username]
+            return [{"name": f"Ana {username[-1]}", "score": 10.0}]
+        return fake
+
+    def run_command(self, *args, failures=None):
+        out = StringIO()
+        error = None
+        with mock.patch("players.snp.scrape_scores", self.scraper(failures)):
+            try:
+                call_command("update_snp_scores", *args, stdout=out)
+            except CommandError as exc:
+                error = exc
+        return out.getvalue(), error
+
+    def test_runs_in_batches_and_one_failure_does_not_stop_the_rest(self):
+        output, error = self.run_command("--batch-size", "2", failures={"capitanB": RuntimeError("fallo raro")})
+        self.assertIsNone(error)
+        self.assertEqual(self.calls, ["capitanA", "capitanB", "capitanC", "capitanD"])
+        self.assertIn("=== Lote 1 de 2 (2 equipos) ===", output)
+        self.assertIn("=== Lote 2 de 2 (2 equipos) ===", output)
+        self.assertIn("Lote 1: 1 correctos, 1 con error.", output)
+        self.assertIn("Resumen: 3 equipos actualizados, 1 con error, 0 sin procesar.", output)
+        self.assertEqual(Player.objects.filter(snp_score=10.0).count(), 3)
+        failed = SnpAccount.objects.get(club__name="Club B")
+        self.assertEqual((failed.last_sync_ok, failed.last_sync_retryable), (False, True))
+
+    def test_club_scores_are_saved_all_or_nothing(self):
+        from .models import SnpScoreHistory
+        club = self.accounts[0].club
+        Player.objects.create(club=club, name="Bea", last_name="A")
+        original = SnpScoreHistory.objects.update_or_create
+        calls = []
+
+        def flaky(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 2:
+                raise RuntimeError("se cae la base de datos")
+            return original(*args, **kwargs)
+
+        scores = [{"name": "Ana A", "score": 7.0}, {"name": "Bea A", "score": 8.0}]
+        with mock.patch.object(SnpScoreHistory.objects, "update_or_create", flaky):
+            result = sync_club(self.accounts[0], scraper=lambda *a, **k: scores)
+        self.assertFalse(result.ok)
+        self.assertFalse(Player.objects.filter(club=club, snp_score__isnull=False).exists())
+        self.assertFalse(SnpScoreHistory.objects.exists())
+
+    def test_stops_when_snp_blocks_and_resumes_on_next_run(self):
+        from .scraper import SnpBlockedError
+        output, error = self.run_command(failures={"capitanB": SnpBlockedError("SNP ha respondido 429")})
+        self.assertIsNotNone(error)
+        self.assertIn("limitando", str(error))
+        self.assertEqual(self.calls, ["capitanA", "capitanB"])
+        self.assertIn("Resumen: 1 equipos actualizados, 1 con error, 2 sin procesar.", output)
+
+        # La siguiente pasada retoma: el bloqueado y los que faltaban, no el que ya estaba hecho.
+        self.calls.clear()
+        output, error = self.run_command()
+        self.assertIsNone(error)
+        self.assertEqual(sorted(self.calls), ["capitanB", "capitanC", "capitanD"])
+        self.assertEqual(self.calls[-1], "capitanB")  # los nunca intentados van primero
+
+    def test_stops_after_several_network_failures_in_a_row(self):
+        from .scraper import SnpTemporaryError
+        down = SnpTemporaryError("Error del navegador al leer SNP: timeout")
+        with override_settings(SNP_MAX_CONSECUTIVE_FAILURES=2):
+            output, error = self.run_command(failures={u: down for u in ("capitanA", "capitanB", "capitanC")})
+        self.assertIn("2 equipos seguidos", str(error))
+        self.assertEqual(self.calls, ["capitanA", "capitanB"])
+
+    def test_rejected_password_is_not_retried_in_the_same_cycle(self):
+        output, error = self.run_command(failures={"capitanA": SnpScrapeError("SNP no ha aceptado el usuario o la contraseña.")})
+        self.assertIsNone(error)
+        self.calls.clear()
+        output, error = self.run_command()
+        self.assertEqual(self.calls, [])
+        self.assertIn("No hay equipos pendientes", output)
+
+    def test_a_new_cycle_makes_every_club_pending_again(self):
+        from players.management.commands.update_snp_scores import pending_accounts
+        self.run_command()
+        self.assertEqual(pending_accounts().count(), 0)
+        SnpAccount.objects.update(last_sync_at=madrid(2026, 9, 28, 22, 0))  # antes del lunes 28 a las 23:00
+        self.assertEqual(pending_accounts(madrid(2026, 9, 30, 12, 0)).count(), 4)
+
+    def test_cycle_start_is_the_last_monday_at_23(self):
+        from players.management.commands.update_snp_scores import cycle_start
+        self.assertEqual(cycle_start(madrid(2026, 9, 30, 12, 0)), madrid(2026, 9, 28, 23, 0))
+        self.assertEqual(cycle_start(madrid(2026, 9, 28, 23, 0)), madrid(2026, 9, 28, 23, 0))
+        self.assertEqual(cycle_start(madrid(2026, 9, 28, 22, 59)), madrid(2026, 9, 21, 23, 0))
 
 
 SNP_TEAM = [

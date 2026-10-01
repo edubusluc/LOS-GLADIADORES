@@ -112,7 +112,7 @@ def create_match(request):
         # Intenta convertir la fecha
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        except ValueError:
+        except (TypeError, ValueError):
             return render(request, CREATE_MATCH_HTML, {
                 "form": MatchForm(request.POST, club=club),
                 "error": "Fecha no válida. Usa el formato AAAA-MM-DD."

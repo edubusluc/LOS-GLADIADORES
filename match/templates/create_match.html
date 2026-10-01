@@ -26,18 +26,6 @@
     </form>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/datepicker/0.6.5/datepicker.min.js"></script>
-
-<script>
-    $(function () {
-        $("#{{ form.start_date.id_for_label }}").datepicker({
-            format: 'yyyy-mm-dd',
-            autoclose: true
-        });
-    });
-</script>
-
+<script src="{% static 'js/date-picker.js' %}" defer></script>
 
 {% endblock %}

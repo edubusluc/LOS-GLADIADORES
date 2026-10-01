@@ -1500,6 +1500,133 @@ a.z-location:hover span { text-decoration: underline; }
 .z-picker-empty { padding: 9px 12px; color: var(--z-muted); }
 @media (max-width: 760px) { .z-picker { min-width: 0; width: 100%; } }
 
+/* ---------- Calendario (static/js/date-picker.js) ---------- */
+.z-datepicker { position: relative; }
+.z-datepicker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: .7rem 1rem;
+    font: inherit;
+    font-size: .95rem;
+    font-weight: 600;
+    text-align: left;
+    color: var(--z-text);
+    background: var(--z-surface-2);
+    border: 1px solid var(--z-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+}
+.z-datepicker-trigger i { color: var(--z-lime); }
+.z-datepicker-trigger.is-empty span { font-weight: 500; color: #707070; }
+.z-datepicker-trigger:hover { border-color: var(--z-border-strong); }
+.z-datepicker.is-open .z-datepicker-trigger,
+.z-datepicker-trigger:focus-visible {
+    border-color: var(--z-lime);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--z-lime-rgb), .18);
+}
+.z-datepicker.is-invalid .z-datepicker-trigger { border-color: var(--z-danger); box-shadow: 0 0 0 3px rgba(255, 92, 99, .18); }
+
+.z-datepicker-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 1040;
+    display: none;
+    width: 320px;
+    max-width: 100%;
+    padding: 14px;
+    background: var(--z-surface-2);
+    border: 1px solid var(--z-border-strong);
+    border-radius: var(--z-radius);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
+}
+.z-datepicker.is-open .z-datepicker-pop { display: block; }
+
+.z-datepicker-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.z-datepicker-title {
+    font-family: var(--z-display);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #FFFFFF;
+}
+.z-datepicker-nav {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    font-size: .8rem;
+    color: var(--z-lime);
+    background: var(--z-surface-3);
+    border: 1px solid var(--z-border);
+    border-radius: 50%;
+    cursor: pointer;
+}
+.z-datepicker-nav:hover { border-color: var(--z-lime); }
+
+.z-datepicker-weekdays,
+.z-datepicker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.z-datepicker-weekdays span {
+    padding: 4px 0;
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-align: center;
+    color: var(--z-muted);
+}
+.z-datepicker-day {
+    aspect-ratio: 1;
+    padding: 0;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--z-text);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color .12s, border-color .12s;
+}
+.z-datepicker-day:hover { background: var(--z-surface-3); }
+.z-datepicker-day:focus-visible { outline: none; border-color: var(--z-lime); }
+.z-datepicker-day.is-outside { color: #5C5C5C; }
+.z-datepicker-day.is-today { color: var(--z-lime); border-color: rgba(var(--z-lime-rgb), .45); }
+.z-datepicker-day.is-selected { font-weight: 800; color: var(--z-ink); background: var(--z-lime); border-color: var(--z-lime); }
+.z-datepicker-day.is-selected:hover { background: var(--z-lime-hover); }
+
+.z-datepicker-foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--z-border);
+}
+.z-datepicker-foot button {
+    padding: 4px 10px;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--z-lime);
+    background: none;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.z-datepicker-foot button:hover { background: var(--z-surface-3); }
+.z-datepicker-foot .z-datepicker-clear { color: var(--z-muted); }
+@media (max-width: 760px) {
+    /* En móvil se abre dentro del formulario para poder hacer scroll por encima de la barra inferior */
+    .z-datepicker-pop { position: static; width: 100%; margin-top: 8px; }
+}
+
 /* ---------- Selector de jugadores (convocatorias) ---------- */
 .z-selector-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
 .z-selector-tools .z-search { flex: 1 1 240px; }

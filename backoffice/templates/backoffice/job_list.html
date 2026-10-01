@@ -56,6 +56,9 @@
                     <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
                     </form>
+                    {% if job.spec.options %}
+                    <a href="{% url 'backoffice:job_detail' job.name %}" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-sliders"></i> Con opciones…</a>
+                    {% endif %}
                     {% endif %}
                     {% if job.spec.schedule %}
                     <form method="post" action="{% url 'backoffice:job_toggle' job.name %}">{% csrf_token %}

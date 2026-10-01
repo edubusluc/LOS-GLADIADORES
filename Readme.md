@@ -304,7 +304,9 @@ Cómo se reparte el trabajo y cómo se evita que SNP nos bloquee:
   día a esa hora, pero solo hace los clubes pendientes del ciclo: los que aún no se han
   intentado y los que fallaron por algo pasajero (red, SNP lento o limitándonos). Los
   fallos de usuario o contraseña no se reintentan solos: repetir un inicio de sesión
-  rechazado puede bloquear la cuenta del capitán. `--all` repite todos.
+  rechazado puede bloquear la cuenta del capitán. `--all` repite todos. Desde el
+  back-office, *Con opciones…* permite lanzarlo con «Repetir todos los equipos»
+  (`--all`), «Solo este club» (`--club`) y «Traza detallada» (`--verbosity=2`).
 - **Lotes.** Los clubes van en lotes de `SNP_BATCH_SIZE` (50). Cada club se guarda en su
   propia transacción (todos sus jugadores o ninguno) y un error en uno no afecta a los
   demás. Cada lote usa un navegador nuevo y cada club una sesión aislada.

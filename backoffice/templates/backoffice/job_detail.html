@@ -9,7 +9,7 @@
         <h1>{{ job.name }}</h1>
     </div>
     <div class="z-actions">
-        {% if not job.spec.params %}
+        {% if not job.spec.params and not job.spec.options %}
         <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
             <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
@@ -26,7 +26,7 @@
 
 {% include 'backoffice/includes/messages.html' %}
 
-{% if job.spec.params %}
+{% if job.spec.params or job.spec.options %}
 <section class="z-panel">
     <h2 class="h5">Ejecutar ahora</h2>
     <form method="post" action="{% url 'backoffice:job_run_now' job.name %}" class="row g-2 align-items-end">{% csrf_token %}
@@ -35,6 +35,20 @@
             <label for="param-{{ param.name }}" class="form-label">{{ param.label }}</label>
             <input type="text" id="param-{{ param.name }}" name="{{ param.name }}" class="form-control" required inputmode="numeric">
             {% if param.help %}<div class="form-text">{{ param.help }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% for option in job.spec.options %}
+        <div class="col-sm-6 col-lg-4">
+            {% if option.pattern %}
+            <label for="option-{{ option.name }}" class="form-label">{{ option.label }} <span class="text-muted">(opcional)</span></label>
+            <input type="text" id="option-{{ option.name }}" name="{{ option.name }}" class="form-control">
+            {% else %}
+            <div class="form-check">
+                <input type="checkbox" id="option-{{ option.name }}" name="{{ option.name }}" value="1" class="form-check-input">
+                <label for="option-{{ option.name }}" class="form-check-label">{{ option.label }}</label>
+            </div>
+            {% endif %}
+            <div class="form-text">{{ option.help }} <code>{{ option.flag }}</code></div>
         </div>
         {% endfor %}
         <div class="col-auto">

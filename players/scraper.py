@@ -34,6 +34,8 @@ MY_TEAMS = '.card-equipos'
 TEAM_LINKS = '#form_equipos table.results tbody td:first-child a[href*="/equipo/view/"]'
 MAX_PAGES = 30
 TIMEOUT_MS = 30_000
+# SNP rellena la tabla de jugadores después de mostrarla (y a veces tarda bastante).
+TABLE_TIMEOUT_MS = 60_000
 # Respuestas con las que SNP indica que limita o rechaza nuestras peticiones.
 BLOCKED_STATUSES = {403, 429, 503}
 # Lo que no hace falta descargar para leer la tabla.
@@ -187,7 +189,28 @@ def _open_team_page(page, team_id, log):
 
     link.click()
     frame, _ = _find(page, RESULTS_TABLE, "la tabla de jugadores", log, url_pattern=r"/equipo/view/\d+")
-    return frame
+    return _wait_for_rows(page, frame, log)
+
+
+def _wait_for_rows(page, frame, log):
+    """
+    La tabla aparece vacía y SNP la rellena después: espera a que tenga jugadores y a
+    que dos lecturas seguidas coincidan (ha terminado de cargar). Leerla nada más
+    aparecer daba «la tabla de jugadores está vacía».
+    """
+    waited, last = 0, None
+    while waited < TABLE_TIMEOUT_MS:
+        if frame.is_detached():
+            frame, _ = _find(page, RESULTS_TABLE, "la tabla de jugadores", log, url_pattern=r"/equipo/view/\d+")
+        names = _table_names(frame)
+        if names and names == last:
+            log(f"Tabla de jugadores cargada tras {waited / 1000:g} s.")
+            return frame
+        last = names
+        page.wait_for_timeout(500)
+        waited += 500
+    raise SnpTemporaryError(f"La tabla de jugadores de SNP sigue vacía tras {TABLE_TIMEOUT_MS // 1000} s: "
+                            "SNP no ha terminado de cargarla.")
 
 
 def _table_names(frame):
@@ -204,7 +227,7 @@ def _wait_for_next_page(page, frame, previous_names, log):
     esperaban 3 segundos fijos y, si SNP tardaba más, se leía una página a medio cargar.
     """
     waited, last = 0, None
-    while waited < TIMEOUT_MS:
+    while waited < TABLE_TIMEOUT_MS:
         page.wait_for_timeout(500)
         waited += 500
         if frame.is_detached():
@@ -358,7 +381,7 @@ def _scrape(username, password, team_id, log, browser):
             except PlaywrightError:
                 pass
     if not players:
-        raise SnpScrapeError("La tabla de jugadores de SNP está vacía.")
+        raise SnpTemporaryError("La tabla de jugadores de SNP está vacía.")
     # Algunas páginas pueden repetir filas: nos quedamos con la primera aparición.
     unique = {}
     for player in players:

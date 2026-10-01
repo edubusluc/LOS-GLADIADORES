@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from data_analyse import pairs as pair_stats
 from match.models import Match
-from players.models import Player, current_season
+from players.models import Player, SnpAccount, current_season
 
 from .decorators import club_admin_required
 from .emails import send_welcome_email
@@ -56,6 +56,8 @@ def home(request):
         'days_left': (next_match.start_date - today).days if next_match else None,
         'hot_player': hot_player,
         'hot_pair': hot_pair,
+        # Aviso al administrador (capitán) mientras no haya registrado la cuenta SNP del club.
+        'snp_missing': request.membership.is_admin and not SnpAccount.objects.filter(club=club).exists(),
     })
 
 def error_404_view(request, exception):

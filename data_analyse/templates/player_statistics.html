@@ -249,6 +249,16 @@
         </div>
 
         <article class="st-card">
+          <h3 class="st-card-title">Evolución de los puntos SNP</h3>
+          <p class="st-card-note">Puntos SNP en cada actualización semanal de la temporada {{ snp_season }}.</p>
+          {% if chart_snp.scores %}
+            <div class="st-chart"><canvas id="chartSnp"></canvas></div>
+          {% else %}
+            <p class="st-muted">Todavía no hay puntos SNP guardados en esta temporada.</p>
+          {% endif %}
+        </article>
+
+        <article class="st-card">
           <h3 class="st-card-title">Detalle por temporada</h3>
           <div class="st-table-wrap">
             <table class="st-table">
@@ -302,6 +312,7 @@
 
       {{ chart_seasons|json_script:"data-seasons" }}
       {{ chart_affinity|json_script:"data-affinity" }}
+      {{ chart_snp|json_script:"data-snp" }}
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <script src="{% static 'js/player_statistics.js' %}"></script>
 

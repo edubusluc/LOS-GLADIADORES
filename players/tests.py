@@ -138,7 +138,13 @@ class SnpAccountTests(TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(Player.objects.get(name="Ana").snp_score, 1.0)
         self.assertEqual(Player.objects.get(name="Bea").snp_score, 2.0)
-        self.assertIn("Clubes procesados: 2; con error: 0.", out.getvalue())
+        output = out.getvalue()
+        self.assertIn("Equipos a actualizar: 2\n", output)
+        self.assertIn("Equipo que se actualiza: Club A\n", output)
+        self.assertIn("Equipo que se actualiza: Club B\n", output)
+        self.assertIn("Jugadores a actualizar: 1\n", output)
+        self.assertIn("Jugadores actualizados correctamente: 1\n", output)
+        self.assertIn("Jugadores no actualizados: 0\n", output)
 
         calls.clear()
         with mock.patch("players.snp.scrape_scores", fake_scrape):
@@ -175,6 +181,46 @@ class SnpAccountTests(TestCase):
         self.assertEqual(self.client.get(reverse("snp_account")).status_code, 302)
         self.assertEqual(self.client.post(reverse("snp_account_delete")).status_code, 302)
         self.assertTrue(SnpAccount.objects.exists())
+
+    def test_log_lists_players_not_updated(self):
+        self.make_account()
+        Player.objects.create(club=self.club, name="Luis", last_name="Gómez")
+        out = StringIO()
+        with mock.patch("players.snp.scrape_scores", lambda *a, **k: [{"name": "Ana Alvarez", "score": 3.0}]):
+            call_command("update_snp_scores", stdout=out)
+        self.assertIn("Jugadores a actualizar: 2\n", out.getvalue())
+        self.assertIn("Jugadores actualizados correctamente: 1\n", out.getvalue())
+        self.assertIn("Jugadores no actualizados: 1 (Luis Gómez)\n", out.getvalue())
+
+    def test_sync_keeps_one_history_point_per_player_and_day(self):
+        from .models import SnpScoreHistory, current_season
+        account = self.make_account()
+        sync_club(account, scraper=lambda *a, **k: [{"name": "Ana Alvarez", "score": 10.0}])
+        sync_club(account, scraper=lambda *a, **k: [{"name": "Ana Alvarez", "score": 12.0}])
+        history = SnpScoreHistory.objects.get(player=self.player)
+        self.assertEqual((history.score, history.season), (12.0, current_season()))
+
+    def test_player_statistics_include_snp_chart(self):
+        import datetime
+        from .models import SnpScoreHistory, current_season
+        SnpScoreHistory.objects.create(player=self.player, date=datetime.date(2026, 9, 28), score=100.0, season=current_season())
+        SnpScoreHistory.objects.create(player=self.player, date=datetime.date(2026, 10, 5), score=120.5, season=current_season())
+        SnpScoreHistory.objects.create(player=self.player, date=datetime.date(2020, 1, 1), score=1.0, season="2019-2020")
+        self.client.login(username="admin", password="pass-12345")
+        response = self.client.get(reverse("player_statistics"), {"player": self.player.id})
+        self.assertEqual(response.context["chart_snp"], {"labels": ["28/09", "05/10"], "scores": [100.0, 120.5]})
+        self.assertContains(response, 'id="chartSnp"')
+
+    def test_home_shows_snp_notice_to_admin_until_account_exists(self):
+        viewer = User.objects.create_user("viewer", password="pass-12345")
+        Membership.objects.create(user=viewer, club=self.club, role=Membership.MEMBER)
+        self.client.login(username="admin", password="pass-12345")
+        self.assertContains(self.client.get(reverse("home")), "Registra la cuenta SNP")
+        self.client.login(username="viewer", password="pass-12345")
+        self.assertNotContains(self.client.get(reverse("home")), "Registra la cuenta SNP")
+        self.make_account()
+        self.client.login(username="admin", password="pass-12345")
+        self.assertNotContains(self.client.get(reverse("home")), "Registra la cuenta SNP")
 
     def test_snp_job_runs_weekly_on_monday_night(self):
         from backoffice.jobs import get_spec

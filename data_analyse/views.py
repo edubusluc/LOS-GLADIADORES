@@ -497,6 +497,10 @@ def statistics_per_player(request):
             'games': season_games(player, selected_season),
         })
 
+    # Puntos SNP de la temporada elegida (o de la actual), uno por actualización semanal
+    snp_season = selected_season or current_season()
+    snp_history = list(player.snp_history.filter(season=snp_season))
+
     context = {
         'players': players,
         'selected_player': player.id,
@@ -519,6 +523,11 @@ def statistics_per_player(request):
             'pct': [r['pct'] for r in rows],
         },
         'chart_affinity': degree_of_affinity(player),
+        'snp_season': snp_season,
+        'chart_snp': {
+            'labels': [h.date.strftime('%d/%m') for h in snp_history],
+            'scores': [h.score for h in snp_history],
+        },
     }
     return render(request, 'player_statistics.html', context)
 

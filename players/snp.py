@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from core.crypto import DecryptionError
 
-from .models import Player
+from .models import Player, SnpScoreHistory, current_season
 from .scraper import SnpScrapeError, scrape_scores
 
 # Coincidencia exacta > nombre completo al principio (sobra o falta el 2º apellido o la
@@ -88,6 +88,7 @@ def match_scores(players, scores):
 class SyncResult:
     ok: bool
     message: str
+    total: int = 0
     updated: list = field(default_factory=list)
     unmatched: list = field(default_factory=list)
     ambiguous: list = field(default_factory=list)
@@ -113,14 +114,20 @@ def sync_club(account, scraper=None, **scrape_options):
     else:
         players = list(Player.objects.filter(club=account.club, in_team=True))
         matched, unmatched, ambiguous = match_scores(players, scores)
+        today, season = timezone.localdate(), current_season()
         for player, score, _ in matched:
             if player.snp_score != score:
                 player.snp_score = score
                 player.save(update_fields=["snp_score"])
+            # Histórico para el gráfico de la temporada: un punto por jugador y día.
+            SnpScoreHistory.objects.update_or_create(
+                player=player, date=today, defaults={"score": score, "season": season},
+            )
         matched_ids = {p.pk for p, _, _ in matched}
         result = SyncResult(
             ok=True,
-            message=f"{len(matched)} jugadores actualizados con los puntos de SNP.",
+            message=f"{len(matched)} de {len(players)} jugadores actualizados con los puntos de SNP.",
+            total=len(players),
             updated=[(str(p), score) for p, score, _ in matched],
             unmatched=unmatched, ambiguous=ambiguous,
             missing=[str(p) for p in players if p.pk not in matched_ids],

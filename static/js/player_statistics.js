@@ -70,6 +70,38 @@
     },
   });
 
+  // Evolución de los puntos SNP en la temporada (mismo estilo que el % de victorias)
+  const snp = read('data-snp');
+  const snpCanvas = document.getElementById('chartSnp');
+  if (snpCanvas) {
+    new Chart(snpCanvas, {
+      type: 'line',
+      data: {
+        labels: snp.labels,
+        datasets: [{
+          label: 'Puntos SNP',
+          data: snp.scores,
+          borderColor: C.navy,
+          backgroundColor: 'rgba(180, 241, 0, 0.15)',
+          pointBackgroundColor: C.gold,
+          pointBorderColor: '#0B0B0B',
+          pointRadius: 5,
+          tension: 0.3,
+          fill: true,
+        }],
+      },
+      options: {
+        ...base,
+        plugins: { ...base.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: (c) => ` ${c.parsed.y.toLocaleString('es-ES')} puntos` } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { ticks: { callback: (v) => v.toLocaleString('es-ES') }, grid: { color: C.line } },
+        },
+      },
+    });
+  }
+
   // Afinidad con compañeros (barras horizontales)
   const entries = Object.entries(affinity).filter(([, v]) => v > 0);
     new Chart(document.getElementById('chartAffinity'), {

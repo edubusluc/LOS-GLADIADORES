@@ -139,7 +139,10 @@ en SNP con su cuenta, navega Series Nacionales → España → Mis equipos → e
 los puntos de los jugadores (`players/scraper.py`) y actualiza los «Puntos SNP». Los
 nombres se cruzan sin tener en cuenta mayúsculas, tildes, la categoría final (500,
 Future) ni el segundo apellido si falta en un lado; lo que no encaja se muestra en la
-página de la cuenta SNP. Solo el staff puede lanzarlo a mano, desde el back-office
+página de la cuenta SNP. Cada actualización guarda además un punto en el histórico del
+jugador (`SnpScoreHistory`), que se ve como gráfico en sus estadísticas. Mientras el club
+no tenga cuenta SNP, la portada muestra a los administradores un aviso que lleva a
+registrarla. Solo el staff puede lanzarlo a mano, desde el back-office
 (*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club "<nombre o slug>"] [--headed]`
 (`--headed` abre el navegador a la vista para seguir cada paso).
 
@@ -157,7 +160,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 pip install -r requirements.txt   # añade cryptography
 playwright install chromium       # navegador que usa el scraper
 python manage.py makemigrations players
-python manage.py migrate          # crea players_snpaccount
+python manage.py migrate          # crea players_snpaccount y players_snpscorehistory
 ```
 
 ## Correos

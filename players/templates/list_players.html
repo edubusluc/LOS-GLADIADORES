@@ -144,7 +144,7 @@
 
 {% if snp_import %}
 <div class="modal fade" id="completeTeamModal" tabindex="-1" aria-labelledby="completeTeamTitle" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title h5" id="completeTeamTitle">Completar equipo</h2>
@@ -160,7 +160,7 @@
                 <p>Se van a añadir <strong>{{ snp_import.to_add|length }}</strong> jugador{{ snp_import.to_add|length|pluralize:"es" }}:</p>
                 <ul class="z-import-list">
                     {% for p in snp_import.to_add %}
-                    <li><span>{{ p.name }} {{ p.last_name }}</span><small>SNP {{ p.score|floatformat:"-1" }}</small></li>
+                    <li><span class="z-import-name">{{ p.name }} {{ p.last_name }}</span><span>{% include 'includes/snp_category.html' with category=p.category %}</span><small>SNP {{ p.score|floatformat:"-1" }}</small></li>
                     {% endfor %}
                 </ul>
                 {% else %}
@@ -170,7 +170,7 @@
                 <p>No se añaden porque ya están registrados en el equipo ({{ snp_import.existing|length }}):</p>
                 <ul class="z-import-list">
                     {% for p in snp_import.existing %}
-                    <li><span>{{ p.snp_name }}</span><small>{{ p.player }}</small></li>
+                    <li><span class="z-import-name">{{ p.snp_name }}</span><span>{% include 'includes/snp_category.html' with category=p.category %}</span><small>{{ p.player }}</small></li>
                     {% endfor %}
                 </ul>
                 {% endif %}

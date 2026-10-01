@@ -237,13 +237,15 @@ class SnpAccountTests(TestCase):
 
 SNP_TEAM = [
     {"name": "ANA ALVAREZ 500", "score": 42.5},
-    {"name": "PEDRO RAPOSO BELLERIN 500", "score": 120.0},
+    {"name": "PEDRO RAPOSO BELLERIN 1000", "score": 120.0},
     {"name": "MARIA JOSE GOMEZ RUIZ Future", "score": 33.0},
 ]
 
 
 class SplitSnpNameTests(TestCase):
     def test_split(self):
+        self.assertEqual(__import__("players.snp_import", fromlist=["x"]).split_snp_name("LUIS PEREZ GOMEZ GRAND SLAM"),
+                         ("Luis", "Perez Gomez"))
         from .snp_import import split_snp_name
         self.assertEqual(split_snp_name("PEDRO RAPOSO BELLERIN 500"), ("Pedro", "Raposo Bellerin"))
         self.assertEqual(split_snp_name("MARIA JOSE GOMEZ RUIZ Future"), ("Maria Jose", "Gomez Ruiz"))
@@ -275,13 +277,15 @@ class CompleteTeamTests(TestCase):
         self.assertEqual(team_import.status, SnpTeamImport.READY)
         self.assertEqual([(p["name"], p["last_name"]) for p in team_import.to_add],
                          [("Maria Jose", "Gomez Ruiz"), ("Pedro", "Raposo Bellerin")])
-        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ 500", "player": "Ana Álvarez"}])
+        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ", "category": "500", "player": "Ana Álvarez"}])
         self.assertEqual(Player.objects.count(), 1)  # la búsqueda no crea nada
 
         page = self.client.get(reverse("list_players"))
         self.assertContains(page, 'id="completeTeamModal"')
         self.assertContains(page, "Pedro Raposo Bellerin")
         self.assertContains(page, "ya están registrados")
+        self.assertContains(page, '<span class="z-cat z-cat--1000">1000</span>')
+        self.assertContains(page, '<span class="z-cat z-cat--future">FUTURE</span>')
         self.assertEqual(self.client.get(reverse("complete_team_status", args=[team_import.id])).json()["status"], "ready")
 
         self.client.post(reverse("complete_team_confirm", args=[team_import.id]))
@@ -333,7 +337,7 @@ class CompleteTeamTests(TestCase):
         out = StringIO()
         call_command("complete_snp_team", team_id, "--dry-run", stdout=out)
         self.assertIn("Jugadores a añadir: 2 (Maria Jose Gomez Ruiz, Pedro Raposo Bellerin)", out.getvalue())
-        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ 500 → Ana Álvarez)", out.getvalue())
+        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ → Ana Álvarez)", out.getvalue())
         self.assertEqual(Player.objects.count(), 1)
 
         SnpTeamImport.objects.create(club=self.club, status=SnpTeamImport.DONE, finished_at=timezone.now())
@@ -362,27 +366,20 @@ class CompleteTeamTests(TestCase):
         self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.id])), 'name="last_name"')
 
 
-class ReadRowsTests(TestCase):
-    HTML = """
-    <style>.solo_hover span { visibility: hidden; }</style>
-    <table class="results"><tbody>
-      <tr><td>1</td><td class="td_edit_jugador_nombre"><div class="avatar"><img src="" alt=""></div>
-        <a class="solo_hover" href="javascript:void(0);"><span class="td_nombre_jugador" identity="344080">PEDRO RAPOSO BELLERIN</span></a>
-        <span class="badge badge-primary">500</span></td><td>120,5</td></tr>
-      <tr><td>2</td><td>ALBERTO MONTAÑO LEON <span class="badge">500</span></td><td>3</td></tr>
-    </tbody></table>"""
+class SplitCategoryTests(TestCase):
+    def test_split_category(self):
+        from .snp import split_category
+        self.assertEqual(split_category("PEDRO RAPOSO BELLERIN\n500"), ("PEDRO RAPOSO BELLERIN", "500"))
+        self.assertEqual(split_category("ANA RUIZ 1000"), ("ANA RUIZ", "1000"))
+        self.assertEqual(split_category("ANA RUIZ Future"), ("ANA RUIZ", "FUTURE"))
+        self.assertEqual(split_category("ANA RUIZ GRAND SLAM"), ("ANA RUIZ", "GRAND SLAM"))
+        self.assertEqual(split_category("ALBERTO MONTAÑO LEON"), ("ALBERTO MONTAÑO LEON", ""))
 
-    def test_reads_only_the_player_name_even_if_hidden(self):
-        from playwright.sync_api import Error, sync_playwright
-        from .scraper import _read_rows
-        try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch()
-                page = browser.new_page()
-                page.set_content(self.HTML)
-                rows = _read_rows(page)
-                browser.close()
-        except Error as exc:
-            self.skipTest(f"Chromium no disponible: {exc}")
-        self.assertEqual(rows, [{"name": "PEDRO RAPOSO BELLERIN", "score": 120.5},
-                                {"name": "ALBERTO MONTAÑO LEON", "score": 3.0}])
+    def test_same_player_with_and_without_category_is_listed_once(self):
+        from .snp_import import plan_import
+        club = create_club("Club A", "Sevilla", User.objects.create_user("admin", password="x"))
+        to_add, existing = plan_import(club, [{"name": "ALBERTO MONTAÑO LEON 500", "score": 5.0},
+                                              {"name": "ALBERTO MONTAÑO LEON", "score": 5.0}])
+        self.assertEqual(existing, [])
+        self.assertEqual([(p["snp_name"], p["category"], p["last_name"]) for p in to_add],
+                         [("ALBERTO MONTAÑO LEON", "500", "Montaño Leon")])

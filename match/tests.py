@@ -222,3 +222,29 @@ class FixDuplicateGamesCommandTests(TestCase):
         call_command("fix_duplicate_games", "--dry-run", stdout=out)
         self.assertIn("0 partidos", out.getvalue())
         self.assertTrue(Game.objects.filter(pk=g.pk).exists())
+
+
+class CreateMatchTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        self.rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.client.force_login(self.user)
+        self.url = reverse("create_match")
+
+    def test_form_uses_custom_date_picker(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "data-datepicker")
+        self.assertContains(response, "js/date-picker.js")
+
+    def test_creates_match_with_iso_date(self):
+        response = self.client.post(self.url, {"local": self.club.own_team.id, "visiting": self.rival.id,
+                                               "start_date": "2026-11-15"})
+        self.assertRedirects(response, reverse("list_match"), fetch_redirect_response=False)
+        self.assertTrue(Match.objects.filter(club=self.club, start_date=datetime.date(2026, 11, 15)).exists())
+
+    def test_missing_date_shows_error_instead_of_crashing(self):
+        response = self.client.post(self.url, {"local": self.club.own_team.id, "visiting": self.rival.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Fecha no válida")
+        self.assertFalse(Match.objects.exists())

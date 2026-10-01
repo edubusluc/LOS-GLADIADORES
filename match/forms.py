@@ -6,10 +6,14 @@ class MatchForm(forms.ModelForm):
     class Meta:
         model = Match
         fields = ['local', 'visiting', 'start_date']
+        labels = {'local': 'Local', 'visiting': 'Visitante', 'start_date': 'Fecha'}
         widgets = {
             'local': forms.Select(),
             'visiting': forms.Select(),
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_date': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={'type': 'date', 'data-datepicker': '', 'data-placeholder': 'Elige el día del partido'},
+            ),
         }
 
     def __init__(self, *args, club=None, **kwargs):

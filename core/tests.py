@@ -3,7 +3,7 @@ import io
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from call.models import Call
@@ -417,3 +417,73 @@ class AdoptRepoMigrationsTests(TestCase):
         self.assertIn(("backoffice", "0001_initial"), history)
         # Las posteriores las aplica migrate.
         self.assertNotIn(("backoffice", "0002_scheduledjob_heartbeat"), history)
+
+
+
+class CopySqliteToDbTests(SimpleTestCase):
+    """
+    copy_sqlite_to_db de un SQLite a otro (en producción el destino es PostgreSQL). Se
+    ejecuta en procesos aparte, cada uno con su DATABASE_URL, como se usa de verdad.
+    """
+    SOURCE_DATA = (
+        "import datetime\n"
+        "from django.contrib.auth import get_user_model\n"
+        "from call.models import Call\n"
+        "from core.models import Club, Membership\n"
+        "from match.models import Match\n"
+        "from players.models import Player\n"
+        "from team.models import Team\n"
+        "user = get_user_model().objects.create_user('capitan', 'c@example.com', 'pass-12345')\n"
+        "club = Club.objects.create(name='Club Origen')\n"
+        "Membership.objects.create(user=user, club=club, role='admin')\n"
+        "own = Team.objects.create(club=club, name='Club Origen', is_own=True, location='Sevilla')\n"
+        "rival = Team.objects.create(club=club, name='Rival', location='Sevilla')\n"
+        "players = [Player.objects.create(club=club, team=own, name=f'J{i}', last_name='X') for i in range(4)]\n"
+        "match = Match.objects.create(club=club, local=own, visiting=rival, start_date=datetime.date(2026, 10, 1))\n"
+        "Call.objects.create(match=match).players.set(players)\n"
+    )
+    TARGET_CHECK = (
+        "from django.contrib.auth import get_user_model\n"
+        "from call.models import Call\n"
+        "from players.models import Player\n"
+        "club_players = Player.objects.filter(club__name='Club Origen')\n"
+        "new = Player.objects.create(club=club_players[0].club, name='Nuevo', last_name='Y')\n"
+        "print(club_players.count() - 1, Call.objects.get().players.count(),\n"
+        "      get_user_model().objects.get(username='capitan').check_password('pass-12345'))\n"
+    )
+
+    def _manage(self, url, *args, check=True):
+        import os
+        import subprocess
+        import sys
+        from django.conf import settings
+        env = {**os.environ, "DJANGO_DEBUG": "True", "DATABASE_URL": url}
+        return subprocess.run([sys.executable, "manage.py", *args], cwd=settings.BASE_DIR, env=env,
+                              capture_output=True, text=True, check=check)
+
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.source = Path(folder.name) / "origen.sqlite3"
+        self.target_url = f"sqlite:///{Path(folder.name) / 'destino.sqlite3'}"
+        self._manage(f"sqlite:///{self.source}", "migrate", "-v0")
+        self._manage(f"sqlite:///{self.source}", "shell", "-c", self.SOURCE_DATA)
+        self._manage(self.target_url, "migrate", "-v0")
+
+    def test_copies_everything_and_counts_match(self):
+        result = self._manage(self.target_url, "copy_sqlite_to_db", str(self.source), "--any-target")
+        self.assertIn("todas las tablas coinciden", result.stdout)
+        # Jugadores y convocados copiados, contraseña intacta y los ids nuevos no chocan.
+        check = self._manage(self.target_url, "shell", "-c", self.TARGET_CHECK)
+        self.assertEqual(check.stdout.split(), ["4", "4", "True"])
+
+        again = self._manage(self.target_url, "copy_sqlite_to_db", str(self.source), "--any-target", check=False)
+        self.assertNotEqual(again.returncode, 0)
+        self.assertIn("ya tiene datos", again.stderr)
+
+    def test_needs_postgresql_unless_forced(self):
+        result = self._manage(self.target_url, "copy_sqlite_to_db", str(self.source), check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("no es PostgreSQL", result.stderr)

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 from cryptography.fernet import Fernet
 from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
@@ -158,12 +159,26 @@ WSGI_APPLICATION = 'zyra.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Con DATABASE_URL se usa esa base de datos (PostgreSQL en producción), por ejemplo
+#   DATABASE_URL=postgres://usuario:contraseña@localhost:5432/zyra
+# Sin ella, el fichero SQLite db.sqlite3 junto a manage.py (cómodo para desarrollar).
+DATABASE_URL = config('DATABASE_URL', default='')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            # Reutiliza la conexión entre peticiones (segundos) y comprueba que sigue viva.
+            conn_max_age=config('DATABASE_CONN_MAX_AGE', default=60, cast=int),
+            conn_health_checks=True,
+        ),
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

@@ -3,6 +3,7 @@ import datetime
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
+from django.utils.translation import gettext, gettext_lazy as _
 
 from core import crypto
 from core.models import Club
@@ -24,14 +25,14 @@ def current_season():
 class Player(PublicIdModel):
     PUBLIC_ID_PREFIX = "PLY"
     POSITIONS = [
-        ("Derecha", "Derecha"),
-        ("Revés", "Revés"),
-        ("Mixto", " Mixto"),
+        ("Derecha", _("Derecha")),
+        ("Revés", _("Revés")),
+        ("Mixto", _(" Mixto")),
         ("NONE", "NONE"),
     ]
     HAND = [
-        ("Diestro", "Diestro"),
-        ("Zurdo", "Zurdo"),
+        ("Diestro", _("Diestro")),
+        ("Zurdo", _("Zurdo")),
         ("NONE", "NONE")
     ]
     name = models.CharField(max_length=100)
@@ -44,11 +45,11 @@ class Player(PublicIdModel):
     snp_score = models.FloatField(null=True)
     in_team = models.BooleanField(default=True)
     joined_season = models.CharField(
-        "Temporada en la que se unió",
+        _("Temporada en la que se unió"),
         max_length=9,
         default=current_season,
-        validators=[RegexValidator(r'^\d{4}-\d{4}$', 'Usa el formato 2024-2025.')],
-        help_text="Formato 2024-2025. Se usa para contar a cuántas convocatorias no se ha apuntado.",
+        validators=[RegexValidator(r'^\d{4}-\d{4}$', _('Usa el formato 2024-2025.'))],
+        help_text=_("Formato 2024-2025. Se usa para contar a cuántas convocatorias no se ha apuntado."),
     )
 
     def save(self, *args, **kwargs):
@@ -74,7 +75,7 @@ class SnpAccount(PublicIdModel):
     username_encrypted = models.TextField()
     password_encrypted = models.TextField()
     # Número del equipo en SNP (4380 en .../equipo/view/4380). Vacío: el único equipo de la cuenta.
-    team_id = models.CharField("Equipo en SNP", max_length=20, blank=True)
+    team_id = models.CharField(_("Equipo en SNP"), max_length=20, blank=True)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
     last_sync_at = models.DateTimeField(null=True, blank=True)
@@ -101,7 +102,7 @@ class SnpAccount(PublicIdModel):
         self.password_encrypted = crypto.encrypt(value)
 
     def __str__(self):
-        return f"Cuenta SNP de {self.club}"
+        return gettext("Cuenta SNP de %(club)s") % {"club": self.club}
 
 
 class SnpScoreHistory(PublicIdModel):
@@ -136,12 +137,12 @@ class SnpTeamImport(PublicIdModel):
     ERROR = "error"
     DONE = "done"
     CANCELLED = "cancelled"
-    STATUSES = [(RUNNING, "Buscando en SNP"), (READY, "Pendiente de confirmar"), (ERROR, "Con error"),
-                (DONE, "Hecha"), (CANCELLED, "Cancelada")]
+    STATUSES = [(RUNNING, _("Buscando en SNP")), (READY, _("Pendiente de confirmar")), (ERROR, _("Con error")),
+                (DONE, _("Hecha")), (CANCELLED, _("Cancelada"))]
 
     WEB = "web"
     BACKOFFICE = "backoffice"
-    SOURCES = [(WEB, "Web del club"), (BACKOFFICE, "Back-office")]
+    SOURCES = [(WEB, _("Web del club")), (BACKOFFICE, _("Back-office"))]
 
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="snp_imports")
     source = models.CharField(max_length=12, choices=SOURCES, default=WEB)
@@ -160,4 +161,4 @@ class SnpTeamImport(PublicIdModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Completar equipo de {self.club} ({self.get_status_display()})"
+        return gettext("Completar equipo de %(club)s (%(status)s)") % {"club": self.club, "status": self.get_status_display()}

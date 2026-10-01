@@ -6,6 +6,7 @@ como visitante, el rendimiento "en la sede" es el de sus partidos fuera (y
 viceversa).
 """
 from django.db.models import Q
+from django.utils.translation import gettext as _, pgettext
 
 from data_analyse.pairs import club_game_log
 
@@ -42,7 +43,7 @@ def build_report(call):
     match = call.match
     club = match.club
     own_local = match.own_is_local
-    venue_label = "local" if own_local else "visitante"
+    venue_label = pgettext("sede, en minúscula", "local") if own_local else pgettext("sede, en minúscula", "visitante")
     rival = match.visiting if own_local else match.local
 
     called = list(call.players.order_by("name", "last_name"))
@@ -81,7 +82,7 @@ def build_report(call):
         {
             "date": m.start_date,
             "season": m.season,
-            "venue": "Local" if m.own_is_local else "Visitante",
+            "venue": _("Local") if m.own_is_local else _("Visitante"),
             "score": _own_score(m),
             "outcome": _outcome(m),
         }
@@ -120,7 +121,7 @@ def build_report(call):
     for letter, lineup, compare_to in (("A", lineup_a, None), ("B", lineup_b, lineup_a)):
         if lineup:
             lineups.append({
-                "title": f"Alineación {letter} · {lineup.title}",
+                "title": _("Alineación %(letter)s · %(title)s") % {"letter": letter, "title": lineup.title},
                 "lineup": lineup,
                 "explanation": advisor.explain(lineup, venue_label, compare_to=compare_to),
             })

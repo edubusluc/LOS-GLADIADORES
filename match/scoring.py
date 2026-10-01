@@ -8,6 +8,7 @@ Reglas de puntuación de un partido de pádel (al mejor de 3 sets).
   puntos con 2 de diferencia (10-8, 11-9, 12-10...).
 """
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _, gettext_lazy
 
 ALLOW_SUPER_TIEBREAK = True
 SUPER_TIEBREAK_POINTS = 10
@@ -15,7 +16,7 @@ SUPER_TIEBREAK_POINTS = 10
 VALID_SET_SCORES = sorted(
     {(6, n) for n in range(5)} | {(7, 5), (7, 6)}
 )
-SET_RULE = "Un set se gana 6-0, 6-1, 6-2, 6-3, 6-4, 7-5 o 7-6."
+SET_RULE = gettext_lazy("Un set se gana 6-0, 6-1, 6-2, 6-3, 6-4, 7-5 o 7-6.")
 
 
 def to_int(value):
@@ -25,9 +26,9 @@ def to_int(value):
     try:
         n = int(value)
     except (TypeError, ValueError):
-        raise ValidationError(f"'{value}' no es un número.")
+        raise ValidationError(_("'%(value)s' no es un número.") % {"value": value})
     if n < 0:
-        raise ValidationError("Los juegos no pueden ser negativos.")
+        raise ValidationError(_("Los juegos no pueden ser negativos."))
     return n
 
 
@@ -58,9 +59,10 @@ def validate_padel_result(set1, set2, set3):
 
     for n, (a, b) in enumerate(sets[:2], start=1):
         if a is None or b is None:
-            errors.append(f"Set {n}: falta el resultado.")
+            errors.append(_("Set %(n)s: falta el resultado.") % {"n": n})
         elif not is_valid_set(a, b):
-            errors.append(f"Set {n}: {a}-{b} no es un resultado válido. {SET_RULE}")
+            errors.append(_("Set %(n)s: %(score)s no es un resultado válido. %(rule)s")
+                          % {"n": n, "score": f"{a}-{b}", "rule": SET_RULE})
     if errors:
         raise ValidationError(errors)
 
@@ -71,18 +73,20 @@ def validate_padel_result(set1, set2, set3):
     if w1 == w2:
         if third_played:
             raise ValidationError(
-                "Set 3: no se juega si la misma pareja ha ganado los dos primeros sets. Déjalo vacío."
+                _("Set 3: no se juega si la misma pareja ha ganado los dos primeros sets. Déjalo vacío.")
             )
         return [set1, set2, (None, None)], w1
 
     if not third_played or a3 is None or b3 is None:
-        raise ValidationError("Set 3: con un set para cada pareja, el tercero es obligatorio.")
+        raise ValidationError(_("Set 3: con un set para cada pareja, el tercero es obligatorio."))
     if is_valid_set(a3, b3):
         return sets, set_winner(a3, b3)
     if ALLOW_SUPER_TIEBREAK and is_valid_super_tiebreak(a3, b3):
         return sets, set_winner(a3, b3)
 
-    rule = SET_RULE
+    rule = str(SET_RULE)
     if ALLOW_SUPER_TIEBREAK:
-        rule += f" También vale un super tie-break a {SUPER_TIEBREAK_POINTS} puntos con 2 de diferencia (10-8, 11-9...)."
-    raise ValidationError(f"Set 3: {a3}-{b3} no es un resultado válido. {rule}")
+        rule += " " + _("También vale un super tie-break a %(points)s puntos con 2 de diferencia (10-8, 11-9...).") % {
+            "points": SUPER_TIEBREAK_POINTS}
+    raise ValidationError(_("Set %(n)s: %(score)s no es un resultado válido. %(rule)s")
+                          % {"n": 3, "score": f"{a3}-{b3}", "rule": rule})

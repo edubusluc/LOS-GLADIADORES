@@ -1,5 +1,5 @@
-<h1 style="margin:0 0 12px;font-size:20px;">Ha fallado el proceso «{{ job.name }}»</h1>
+{% load i18n %}<h1 style="margin:0 0 12px;font-size:20px;">{% blocktranslate with name=job.name %}Ha fallado el proceso «{{ name }}»{% endblocktranslate %}</h1>
 {% if spec %}<p style="margin:0 0 12px;">{{ spec.description }}</p>{% endif %}
-<p style="margin:0 0 12px;">Empezó el {{ run.started_at|date:"j/n/Y" }} a las {{ run.started_at|date:"H:i" }} (UTC). Ejecución {{ run.get_trigger_display|lower }}.</p>
+{% with day=run.started_at|date:"j/n/Y" time=run.started_at|date:"H:i" trigger=run.get_trigger_display|lower %}<p style="margin:0 0 12px;">{% blocktranslate trimmed %}Empezó el {{ day }} a las {{ time }} (UTC). Ejecución {{ trigger }}.{% endblocktranslate %}</p>{% endwith %}
 <pre style="margin:0 0 12px;padding:12px;background:#f4f4f4;border-radius:8px;font-size:12px;white-space:pre-wrap;">{{ run.error|truncatechars:3000 }}</pre>
-<p style="margin:0;">Tienes la salida completa en el back-office, en <strong>Procesos programados</strong>.</p>
+<p style="margin:0;">{% blocktranslate trimmed %}Tienes la salida completa en el back-office, en <strong>Procesos programados</strong>.{% endblocktranslate %}</p>

@@ -1,3 +1,7 @@
+from django.conf import settings
+from django.utils import translation
+from django.utils.cache import patch_vary_headers
+
 from .models import Membership
 
 SESSION_KEY = "club_id"
@@ -38,3 +42,29 @@ class CurrentClubMiddleware:
             request.user_memberships = []
 
         return self.get_response(request)
+
+
+class LanguageMiddleware:
+    """
+    Activa el idioma de la interfaz: el que el usuario eligió en el selector (cookie que
+    guarda la vista set_language) o, si no eligió ninguno, el español (LANGUAGE_CODE).
+
+    A diferencia de LocaleMiddleware de Django, no mira el idioma del navegador: la web
+    sale siempre en español hasta que alguien elige otro idioma.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        language = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+        if language not in dict(settings.LANGUAGES):
+            language = settings.LANGUAGE_CODE
+        translation.activate(language)
+        request.LANGUAGE_CODE = translation.get_language()
+
+        response = self.get_response(request)
+
+        response.headers.setdefault("Content-Language", request.LANGUAGE_CODE)
+        patch_vary_headers(response, ("Cookie",))
+        return response

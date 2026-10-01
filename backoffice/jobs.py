@@ -13,6 +13,8 @@ marcar (casillas) o rellenar, y se añaden al comando como sus opciones (--all, 
 """
 from dataclasses import dataclass, field
 
+from django.utils.translation import gettext_lazy as _
+
 SCHEDULER_TIME_ZONE = "Europe/Madrid"
 
 
@@ -51,55 +53,55 @@ class JobSpec:
 JOBS = [
     JobSpec(
         name="purge_request_metrics",
-        description="Borra las métricas de carga por minuto de más de 30 días.",
+        description=_("Borra las métricas de carga por minuto de más de 30 días."),
         command="purge_request_metrics",
         args=("--days", "30"),
         schedule="0 3 * * *",
     ),
     JobSpec(
         name="purge_job_runs",
-        description="Borra el log de ejecuciones de procesos de más de 90 días.",
+        description=_("Borra el log de ejecuciones de procesos de más de 90 días."),
         command="purge_job_runs",
         args=("--days", "90"),
         schedule="10 3 * * *",
     ),
     JobSpec(
         name="clear_sessions",
-        description="Borra de la base de datos las sesiones de usuario caducadas.",
+        description=_("Borra de la base de datos las sesiones de usuario caducadas."),
         command="clearsessions",
         schedule="30 3 * * *",
     ),
     JobSpec(
         name="update_snp_scores",
-        description=("Descarga de SNP los puntos de los jugadores de los clubes con cuenta SNP, por lotes de 50 y con "
-                     "pausas. El ciclo empieza los lunes a las 23:00; el resto de días solo hace lo que quedó pendiente "
-                     "(clubes sin procesar o con un fallo pasajero)."),
+        description=_("Descarga de SNP los puntos de los jugadores de los clubes con cuenta SNP, por lotes de 50 y con "
+                      "pausas. El ciclo empieza los lunes a las 23:00; el resto de días solo hace lo que quedó pendiente "
+                      "(clubes sin procesar o con un fallo pasajero)."),
         command="update_snp_scores",
         # Cada día a las 23:00: el lunes empieza el ciclo semanal y los demás días se
         # completa lo que haya quedado pendiente (si no queda nada, termina al momento).
         schedule="0 23 * * *",
         options=(
-            JobOption("all", "Repetir todos los equipos", "--all",
-                      "Aunque ya se hayan actualizado en este ciclo o su último error no se reintente solo."),
-            JobOption("club", "Solo este club", "--club", "Nombre o slug del club (se actualiza aunque ya esté al día).",
+            JobOption("all", _("Repetir todos los equipos"), "--all",
+                      _("Aunque ya se hayan actualizado en este ciclo o su último error no se reintente solo.")),
+            JobOption("club", _("Solo este club"), "--club", _("Nombre o slug del club (se actualiza aunque ya esté al día)."),
                       pattern=r"[\w .,'()&-]{1,100}"),
-            JobOption("verbose", "Traza detallada", "--verbosity=2",
-                      "Muestra cada paso en SNP y los puntos de cada jugador."),
+            JobOption("verbose", _("Traza detallada"), "--verbosity=2",
+                      _("Muestra cada paso en SNP y los puntos de cada jugador.")),
         ),
     ),
     JobSpec(
         name="send_call_reports",
-        description=("Envía los informes de convocatoria pendientes y reintenta los que fallaron "
-                     "(esperas crecientes; tras 5 intentos se dan por fallidos y se avisa al personal)."),
+        description=_("Envía los informes de convocatoria pendientes y reintenta los que fallaron "
+                      "(esperas crecientes; tras 5 intentos se dan por fallidos y se avisa al personal)."),
         command="send_call_reports",
         schedule="*/5 * * * *",
     ),
     JobSpec(
         name="complete_snp_team",
-        description=("«Completar equipo»: da de alta los jugadores del equipo de SNP de un club que todavía "
-                     "no están en Zyra, sin tocar los que ya existen. Solo a mano y sin el límite mensual de la web."),
+        description=_("«Completar equipo»: da de alta los jugadores del equipo de SNP de un club que todavía "
+                      "no están en Zyra, sin tocar los que ya existen. Solo a mano y sin el límite mensual de la web."),
         command="complete_snp_team",
-        params=(JobParam("team_id", "Id del equipo", "Id del equipo propio del club en Zyra, TEA... (aparece en la ficha del club)."),),
+        params=(JobParam("team_id", _("Id del equipo"), _("Id del equipo propio del club en Zyra, TEA... (aparece en la ficha del club).")),),
     ),
 ]
 

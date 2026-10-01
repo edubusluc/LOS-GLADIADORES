@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
-{% include 'includes/result_form.html' with title="Editar resultado" submit="Actualizar resultado" %}
+{% include 'includes/result_form.html' with title=_("Editar resultado") submit=_("Actualizar resultado") %}
 {% endblock %}

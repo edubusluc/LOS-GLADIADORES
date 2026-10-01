@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n l10n %}
 
 {% block content %}
   <script>
     const teamData = {
-      wonMatches: {{ won_matches|default:0 }},
-      lostMatches: {{ lost_matches|default:0 }},
-      localGamesWon: {{ local_games_won|default:0 }},
-      localGamesLost: {{ local_games_lost|default:0 }},
-      visitingGamesWon: {{ visiting_games_won|default:0 }},
-      visitingGamesLost: {{ visiting_games_lost|default:0 }},
+      wonMatches: {{ won_matches|default:0|unlocalize }},
+      lostMatches: {{ lost_matches|default:0|unlocalize }},
+      localGamesWon: {{ local_games_won|default:0|unlocalize }},
+      localGamesLost: {{ local_games_lost|default:0|unlocalize }},
+      visitingGamesWon: {{ visiting_games_won|default:0|unlocalize }},
+      visitingGamesLost: {{ visiting_games_lost|default:0|unlocalize }},
       matchesWonPerYear: {% if dicc_line_chart %}{{ dicc_line_chart|safe }}{% else %}{}{% endif %},
       column_chart_data: {% if column_chart_data %}{{ column_chart_data|safe }}{% else %}[]{% endif %}
     };
@@ -20,17 +20,17 @@
     {% include 'includes/stats_tabs.html' %}
     <header class="st-head">
       <div>
-        <h1 class="st-title">{{ team.name|default:"Estadísticas del equipo" }}</h1>
+        <h1 class="st-title">{% if team.name %}{{ team.name }}{% else %}{% translate "Estadísticas del equipo" %}{% endif %}</h1>
         <p class="st-subtitle">
-          {% if selected_season %}Estadísticas de la temporada {{ selected_season }}{% else %}Estadísticas de todas las temporadas{% endif %}
+          {% if selected_season %}{% blocktranslate with season=selected_season %}Estadísticas de la temporada {{ season }}{% endblocktranslate %}{% else %}{% translate "Estadísticas de todas las temporadas" %}{% endif %}
         </p>
       </div>
     </header>
 
-    <nav aria-label="Temporadas">
+    <nav aria-label="{% translate 'Temporadas' %}">
       <ul class="st-seasons">
         <li>
-          <a class="st-chip" href="{% url 'team_statistics' %}" {% if not selected_season %}aria-current="page"{% endif %}>Todas</a>
+          <a class="st-chip" href="{% url 'team_statistics' %}" {% if not selected_season %}aria-current="page"{% endif %}>{% translate "Todas" %}</a>
         </li>
         {% for season in seasons %}
           <li>
@@ -42,107 +42,111 @@
 
     {% if not total_matches %}
       <div class="st-empty">
-        <strong>Todavía no hay partidos cerrados</strong>
-        Las estadísticas aparecerán cuando se cierre el primero{% if selected_season %} de la temporada {{ selected_season }}{% endif %}.
+        <strong>{% translate "Todavía no hay partidos cerrados" %}</strong>
+        {% if selected_season %}{% blocktranslate with season=selected_season %}Las estadísticas aparecerán cuando se cierre el primero de la temporada {{ season }}.{% endblocktranslate %}{% else %}{% translate "Las estadísticas aparecerán cuando se cierre el primero." %}{% endif %}
       </div>
     {% else %}
 
-      <section class="st-board" aria-label="Resumen de partidos">
+      <section class="st-board" aria-label="{% translate 'Resumen de partidos' %}">
         <div>
-          <p class="st-board-label">Balance de partidos</p>
+          <p class="st-board-label">{% translate "Balance de partidos" %}</p>
           <div class="st-record">
             <div class="st-score">
               <span class="st-record-num">{{ won_matches }}</span>
-              <span class="st-score-cap">Victorias</span>
+              <span class="st-score-cap">{% translate "Victorias" %}</span>
             </div>
             <span class="st-record-sep" aria-hidden="true">–</span>
             <div class="st-score">
               <span class="st-record-num">{{ lost_matches }}</span>
-              <span class="st-score-cap">Derrotas</span>
+              <span class="st-score-cap">{% translate "Derrotas" %}</span>
             </div>
           </div>
-          <div class="st-bar" role="img" aria-label="{{ percentage_won }} % de partidos ganados">
+          <div class="st-bar" role="img" aria-label="{% blocktranslate with pct=percentage_won %}{{ pct }} % de partidos ganados{% endblocktranslate %}">
             <span class="st-bar-win" style="width: {% widthratio won_matches total_matches 100 %}%"></span>
           </div>
         </div>
 
         <dl class="st-facts">
           <div class="st-fact st-fact--gold">
-            <dt>Partidos ganados</dt>
+            <dt>{% translate "Partidos ganados" %}</dt>
             <dd>{{ percentage_won }} %</dd>
           </div>
           <div class="st-fact">
-            <dt>Partidos jugados</dt>
+            <dt>{% translate "Partidos jugados" %}</dt>
             <dd>{{ total_matches }}</dd>
           </div>
           <div class="st-fact">
-            <dt>Juegos como local</dt>
+            <dt>{% translate "Juegos como local" %}</dt>
             <dd>{{ local_games_won }}–{{ local_games_lost }}</dd>
           </div>
           <div class="st-fact">
-            <dt>Juegos como visitante</dt>
+            <dt>{% translate "Juegos como visitante" %}</dt>
             <dd>{{ visiting_games_won }}–{{ visiting_games_lost }}</dd>
           </div>
         </dl>
       </section>
 
       <section aria-labelledby="top-title" class="st-section mt-4">
-        <h2 class="st-section-title" id="top-title">Top 5{% if selected_season %} · {{ selected_season }}{% endif %}</h2>
-        <p class="st-card-note mt-0 mb-3">Solo jugadores que siguen en el equipo.</p>
+        <h2 class="st-section-title" id="top-title">{% translate "Top 5" %}{% if selected_season %} · {{ selected_season }}{% endif %}</h2>
+        <p class="st-card-note mt-0 mb-3">{% translate "Solo jugadores que siguen en el equipo." %}</p>
         <div class="st-top-grid">
-          {% include 'includes/top_table.html' with title="Mejores jugadores como local" note="% de victorias jugando en casa." rows=top_local_players min_games=min_games_player empty="Ningún jugador llega al mínimo de partidos como local." %}
-          {% include 'includes/top_table.html' with title="Mejores jugadores como visitante" note="% de victorias jugando fuera." rows=top_visiting_players min_games=min_games_player empty="Ningún jugador llega al mínimo de partidos como visitante." %}
-          {% include 'includes/top_table.html' with title="Mejores parejas como local" note="% de victorias de la pareja en casa." rows=top_local_pairs min_games=min_games_pair empty="Ninguna pareja llega al mínimo de partidos como local." %}
-          {% include 'includes/top_table.html' with title="Mejores parejas como visitante" note="% de victorias de la pareja fuera." rows=top_visiting_pairs min_games=min_games_pair empty="Ninguna pareja llega al mínimo de partidos como visitante." %}
+          {% translate "Mejores jugadores como local" as t_title %}{% translate "% de victorias jugando en casa." as t_note %}{% translate "Ningún jugador llega al mínimo de partidos como local." as t_empty %}
+          {% include 'includes/top_table.html' with title=t_title note=t_note rows=top_local_players min_games=min_games_player empty=t_empty %}
+          {% translate "Mejores jugadores como visitante" as t_title %}{% translate "% de victorias jugando fuera." as t_note %}{% translate "Ningún jugador llega al mínimo de partidos como visitante." as t_empty %}
+          {% include 'includes/top_table.html' with title=t_title note=t_note rows=top_visiting_players min_games=min_games_player empty=t_empty %}
+          {% translate "Mejores parejas como local" as t_title %}{% translate "% de victorias de la pareja en casa." as t_note %}{% translate "Ninguna pareja llega al mínimo de partidos como local." as t_empty %}
+          {% include 'includes/top_table.html' with title=t_title note=t_note rows=top_local_pairs min_games=min_games_pair empty=t_empty %}
+          {% translate "Mejores parejas como visitante" as t_title %}{% translate "% de victorias de la pareja fuera." as t_note %}{% translate "Ninguna pareja llega al mínimo de partidos como visitante." as t_empty %}
+          {% include 'includes/top_table.html' with title=t_title note=t_note rows=top_visiting_pairs min_games=min_games_pair empty=t_empty %}
         </div>
       </section>
 
-      <h2 class="st-section-title mt-4">Gráficos</h2>
+      <h2 class="st-section-title mt-4">{% translate "Gráficos" %}</h2>
       <div class="st-grid">
         <section class="st-card">
-          <h2 class="st-card-title">Partidos ganados y perdidos</h2>
+          <h2 class="st-card-title">{% translate "Partidos ganados y perdidos" %}</h2>
           <div class="st-chart">
             <canvas id="myPieChart"></canvas>
           </div>
           <div class="st-tally">
-            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_won }} %</b> ganados</span>
-            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_lost }} %</b> perdidos</span>
+            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_won }} %</b> {% translate "ganados" %}</span>
+            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_lost }} %</b> {% translate "perdidos" %}</span>
           </div>
         </section>
 
         <section class="st-card">
-          <h2 class="st-card-title">Juegos como local</h2>
+          <h2 class="st-card-title">{% translate "Juegos como local" %}</h2>
           <div class="st-chart">
             <canvas id="myBarChart"></canvas>
           </div>
           <div class="st-tally">
-            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_local_games_won }} %</b> ganados</span>
-            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_local_games_lost }} %</b> perdidos</span>
+            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_local_games_won }} %</b> {% translate "ganados" %}</span>
+            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_local_games_lost }} %</b> {% translate "perdidos" %}</span>
           </div>
         </section>
 
         <section class="st-card">
-          <h2 class="st-card-title">Juegos como visitante</h2>
+          <h2 class="st-card-title">{% translate "Juegos como visitante" %}</h2>
           <div class="st-chart">
             <canvas id="myVisitingBarChart"></canvas>
           </div>
           <div class="st-tally">
-            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_visiting_games_won }} %</b> ganados</span>
-            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_visiting_games_lost }} %</b> perdidos</span>
+            <span class="st-tally-item st-tally-item--win"><b>{{ percentage_visiting_games_won }} %</b> {% translate "ganados" %}</span>
+            <span class="st-tally-item st-tally-item--loss"><b>{{ percentage_visiting_games_lost }} %</b> {% translate "perdidos" %}</span>
           </div>
         </section>
 
         <section class="st-card st-card--wide">
-          <h2 class="st-card-title">Partidos ganados por año</h2>
-          <p class="st-card-note">Evolución de victorias y derrotas del equipo en cada temporada.</p>
+          <h2 class="st-card-title">{% translate "Partidos ganados por año" %}</h2>
+          <p class="st-card-note">{% translate "Evolución de victorias y derrotas del equipo en cada temporada." %}</p>
           <div class="st-chart">
             <canvas id="myLineChart"></canvas>
           </div>
         </section>
 
         <section class="st-card st-card--wide">
-          <h2 class="st-card-title">Balance de partidos por jugador</h2>
-          <p class="st-card-note">Partidos de 2 y de 3 puntos, ganados y perdidos, de cada jugador actual del equipo.</p>
+          <h2 class="st-card-title">{% translate "Balance de partidos por jugador" %}</h2>
+          <p class="st-card-note">{% translate "Partidos de 2 y de 3 puntos, ganados y perdidos, de cada jugador actual del equipo." %}</p>
           <div class="st-chart st-chart--tall">
             <div class="chart-scroll st-scroll">
               <canvas id="myColumnChart"></canvas>

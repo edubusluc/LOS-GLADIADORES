@@ -24,7 +24,7 @@ const scales = (extra = {}) => ({
 new Chart(document.getElementById('myPieChart'), {
   type: 'doughnut',
   data: {
-    labels: ['Ganados', 'Perdidos'],
+    labels: [gettext('Ganados'), gettext('Perdidos')],
     datasets: [{
       data: [teamData.wonMatches, teamData.lostMatches],
       backgroundColor: [Z.lime, Z.coral],
@@ -39,7 +39,7 @@ new Chart(document.getElementById('myPieChart'), {
 const gamesBar = (id, won, lost) => new Chart(document.getElementById(id), {
   type: 'bar',
   data: {
-    labels: ['Ganados', 'Perdidos'],
+    labels: [gettext('Ganados'), gettext('Perdidos')],
     datasets: [{ data: [won, lost], backgroundColor: [Z.lime, Z.coral], borderRadius: 8, maxBarThickness: 64 }],
   },
   options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: scales() },
@@ -55,7 +55,7 @@ new Chart(document.getElementById('myLineChart'), {
     labels: years,
     datasets: [
       {
-        label: 'Ganados',
+        label: gettext('Ganados'),
         data: years.map((y) => teamData.matchesWonPerYear[y].won),
         borderColor: Z.lime,
         backgroundColor: 'rgba(180, 241, 0, 0.18)',
@@ -64,7 +64,7 @@ new Chart(document.getElementById('myLineChart'), {
         fill: true,
       },
       {
-        label: 'Perdidos',
+        label: gettext('Perdidos'),
         data: years.map((y) => teamData.matchesWonPerYear[y].lost),
         borderColor: Z.coral,
         backgroundColor: 'rgba(255, 92, 99, 0.10)',
@@ -78,7 +78,7 @@ new Chart(document.getElementById('myLineChart'), {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { position: 'bottom' } },
-    scales: scales({ y: { title: { display: true, text: 'Partidos' } } }),
+    scales: scales({ y: { title: { display: true, text: gettext('Partidos') } } }),
   },
 });
 
@@ -89,16 +89,16 @@ new Chart(document.getElementById('myColumnChart'), {
   data: {
     labels: rows.map((r) => r.player),
     datasets: [
-      { label: '2 puntos ganados', data: rows.map((r) => r.data[0]), backgroundColor: Z.lime },
-      { label: '3 puntos ganados', data: rows.map((r) => r.data[2]), backgroundColor: Z.limeDark },
-      { label: '2 puntos perdidos', data: rows.map((r) => r.data[1]), backgroundColor: Z.coral },
-      { label: '3 puntos perdidos', data: rows.map((r) => r.data[3]), backgroundColor: Z.coralDark },
+      { label: gettext('2 puntos ganados'), data: rows.map((r) => r.data[0]), backgroundColor: Z.lime },
+      { label: gettext('3 puntos ganados'), data: rows.map((r) => r.data[2]), backgroundColor: Z.limeDark },
+      { label: gettext('2 puntos perdidos'), data: rows.map((r) => r.data[1]), backgroundColor: Z.coral },
+      { label: gettext('3 puntos perdidos'), data: rows.map((r) => r.data[3]), backgroundColor: Z.coralDark },
     ],
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { position: 'bottom' } },
-    scales: scales({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Partidos' } } }),
+    scales: scales({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: gettext('Partidos') } } }),
   },
 });

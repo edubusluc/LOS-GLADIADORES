@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <a href="{% url 'list_players' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> Jugadores</a>
-        <h1>Gestionar plantilla</h1>
+        <a href="{% url 'list_players' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {% translate "Jugadores" %}</a>
+        <h1>{% translate "Gestionar plantilla" %}</h1>
     </div>
 </div>
 
@@ -13,23 +13,23 @@
 <div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
 {% endif %}
 
-<p class="text-muted">Activa o desactiva a los jugadores que están en el equipo y guarda todos los cambios de una vez. Los jugadores fuera del equipo no aparecen en convocatorias, sanciones ni en los rankings.</p>
+<p class="text-muted">{% translate "Activa o desactiva a los jugadores que están en el equipo y guarda todos los cambios de una vez. Los jugadores fuera del equipo no aparecen en convocatorias, sanciones ni en los rankings." %}</p>
 
 <form method="post" data-roster>
     {% csrf_token %}
     <div class="z-selector-tools">
         <div class="z-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="search" placeholder="Buscar jugador..." data-roster-search aria-label="Buscar jugador">
+            <input type="search" placeholder="{% translate 'Buscar jugador...' %}" data-roster-search aria-label="{% translate 'Buscar jugador' %}">
         </div>
-        <div class="z-segmented" role="group" aria-label="Filtrar">
-            <button type="button" class="btn btn-sm active" data-roster-filter="">Todos</button>
-            <button type="button" class="btn btn-sm" data-roster-filter="in">En el equipo</button>
-            <button type="button" class="btn btn-sm" data-roster-filter="out">Fuera</button>
+        <div class="z-segmented" role="group" aria-label="{% translate 'Filtrar' %}">
+            <button type="button" class="btn btn-sm active" data-roster-filter="">{% translate "Todos" %}</button>
+            <button type="button" class="btn btn-sm" data-roster-filter="in">{% translate "En el equipo" %}</button>
+            <button type="button" class="btn btn-sm" data-roster-filter="out">{% translate "Fuera" %}</button>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-roster-set="1">Activar visibles</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-roster-set="0">Desactivar visibles</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-roster-set="1">{% translate "Activar visibles" %}</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-roster-set="0">{% translate "Desactivar visibles" %}</button>
         </div>
     </div>
 
@@ -42,26 +42,33 @@
                 <span class="z-pick-meta" data-roster-state></span>
             </span>
             <span class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" name="in_team" value="{{ p.id }}" {% if p.in_team %}checked{% endif %} data-initial="{% if p.in_team %}1{% else %}0{% endif %}" aria-label="{{ p.name }} {{ p.last_name }} en el equipo">
+                <input class="form-check-input" type="checkbox" role="switch" name="in_team" value="{{ p.id }}" {% if p.in_team %}checked{% endif %} data-initial="{% if p.in_team %}1{% else %}0{% endif %}" aria-label="{% blocktranslate with name=p.name last_name=p.last_name %}{{ name }} {{ last_name }} en el equipo{% endblocktranslate %}">
             </span>
         </label>
         {% empty %}
-        <div class="z-empty" style="grid-column: 1 / -1;">Todavía no hay jugadores.</div>
+        <div class="z-empty" style="grid-column: 1 / -1;">{% translate "Todavía no hay jugadores." %}</div>
         {% endfor %}
-        <p class="z-empty" data-roster-empty hidden style="grid-column: 1 / -1;">Ningún jugador coincide con la búsqueda.</p>
+        <p class="z-empty" data-roster-empty hidden style="grid-column: 1 / -1;">{% translate "Ningún jugador coincide con la búsqueda." %}</p>
     </div>
 
     <div class="z-selector-bar">
         <div>
-            <b data-roster-count>{{ in_team_count }}</b> en el equipo
-            <small data-roster-changes>Sin cambios</small>
+            {% blocktranslate trimmed with count=in_team_count %}<b data-roster-count>{{ count }}</b> en el equipo{% endblocktranslate %}
+            <small data-roster-changes>{% translate "Sin cambios" %}</small>
         </div>
-        <button type="submit" class="btn btn-primary" data-roster-save disabled>Guardar cambios</button>
+        <button type="submit" class="btn btn-primary" data-roster-save disabled>{% translate "Guardar cambios" %}</button>
     </div>
 </form>
 
+{% translate "En el equipo" as t_in %}{% translate "Fuera del equipo" as t_out %}{% translate "cambio pendiente" as t_pending %}{% translate "Sin cambios" as t_none %}
+{% blocktranslate with n="{n}" asvar t_change_one %}{{ n }} cambio sin guardar{% endblocktranslate %}
+{% blocktranslate with n="{n}" asvar t_change_many %}{{ n }} cambios sin guardar{% endblocktranslate %}
 <script>
 (function () {
+  const T = {
+    inTeam: '{{ t_in|escapejs }}', outTeam: '{{ t_out|escapejs }}', pending: '{{ t_pending|escapejs }}',
+    none: '{{ t_none|escapejs }}', changeOne: '{{ t_change_one|escapejs }}', changeMany: '{{ t_change_many|escapejs }}',
+  };
   const root = document.querySelector('[data-roster]');
   if (!root) return;
   const norm = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -80,13 +87,13 @@
       changes += changed;
       r.classList.toggle('is-on', on);
       r.classList.toggle('is-changed', changed);
-      r.querySelector('[data-roster-state]').textContent = (on ? 'En el equipo' : 'Fuera del equipo') + (changed ? ' · cambio pendiente' : '');
+      r.querySelector('[data-roster-state]').textContent = (on ? T.inTeam : T.outTeam) + (changed ? ' · ' + T.pending : '');
       r.hidden = !((!q || norm(r.dataset.name).includes(q)) && (!filter || (filter === 'in') === on));
       if (!r.hidden) visible++;
     });
     root.querySelector('[data-roster-empty]').hidden = visible > 0 || !rows.length;
     root.querySelector('[data-roster-count]').textContent = count;
-    root.querySelector('[data-roster-changes]').textContent = changes ? `${changes} cambio${changes === 1 ? '' : 's'} sin guardar` : 'Sin cambios';
+    root.querySelector('[data-roster-changes]').textContent = changes ? (changes === 1 ? T.changeOne : T.changeMany).replace('{n}', changes) : T.none;
     root.querySelector('[data-roster-save]').disabled = !changes;
   }
 

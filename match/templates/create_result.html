@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
-{% include 'includes/result_form.html' with title="Resultado" submit="Guardar resultado" %}
+{% include 'includes/result_form.html' with title=_("Resultado") submit=_("Guardar resultado") %}
 {% endblock %}

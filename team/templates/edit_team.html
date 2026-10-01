@@ -1,35 +1,35 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
     <div class="table-container mt-4">
-        <h1>Editar Equipo</h1>
+        <h1>{% translate "Editar Equipo" %}</h1>
         
         <form method="POST" action="{% url 'edit_team' team.public_id %}" enctype="multipart/form-data">
             {% csrf_token %}
             
             <div class="mb-3">
-                <label for="name" class="form-label">Nombre:</label>
+                <label for="name" class="form-label">{% translate "Nombre:" %}</label>
                 <input type="text" id="name" name="name" class="form-control" value="{{ team.name }}" required>
             </div>
 
             <div class="mb-3">
-                <label for="location" class="form-label">Ubicación:</label>
+                <label for="location" class="form-label">{% translate "Ubicación:" %}</label>
                 <input type="text" id="location" name="location" class="form-control" value="{{ team.location }}" required>
             </div>
 
             <div class="mb-3">
-                <label for="photo" class="form-label">Foto:</label>
+                <label for="photo" class="form-label">{% translate "Foto:" %}</label>
                 <input type="file" id="photo" name="photo" class="form-control">
-                <small class="form-text text-muted">Dejar vacío si no deseas cambiar la foto.</small>
+                <small class="form-text text-muted">{% translate "Dejar vacío si no deseas cambiar la foto." %}</small>
             </div>
 
             <div class="mb-3 form-check">
                 <input type="checkbox" id="in_group" name="in_group" class="form-check-input" {% if team.in_group %}checked{% endif %}>
-                <label for="in_group" class="form-check-label">¿Se encuentra en tu grupo?</label>
+                <label for="in_group" class="form-check-label">{% translate "¿Se encuentra en tu grupo?" %}</label>
             </div>
         
-            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="submit" class="btn btn-primary">{% translate "Guardar" %}</button>
         </form>
     </div>
 {% endblock %}

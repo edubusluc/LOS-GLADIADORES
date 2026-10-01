@@ -18,8 +18,8 @@
     data: {
       labels: seasons.labels,
       datasets: [
-        { label: 'Ganados', data: seasons.wins, backgroundColor: C.win, borderRadius: 4 },
-        { label: 'Perdidos', data: seasons.losses, backgroundColor: C.loss, borderRadius: 4 },
+        { label: gettext('Ganados'), data: seasons.wins, backgroundColor: C.win, borderRadius: 4 },
+        { label: gettext('Perdidos'), data: seasons.losses, backgroundColor: C.loss, borderRadius: 4 },
       ],
     },
     options: {
@@ -37,7 +37,7 @@
     data: {
       labels: seasons.labels,
       datasets: [{
-        label: '% victorias',
+        label: gettext('% victorias'),
         data: seasons.pct,
         borderColor: C.win,
         backgroundColor: 'rgba(180, 241, 0, 0.15)',

@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="z-auth">
     <div class="z-auth-card text-center">
-        <h1>Eliminar jugador</h1>
-        <p class="text-muted">¿Seguro que quieres eliminar a "{{ player.name }}"?</p>
+        <h1>{% translate "Eliminar jugador" %}</h1>
+        <p class="text-muted">{% blocktranslate with name=player.name %}¿Seguro que quieres eliminar a "{{ name }}"?{% endblocktranslate %}</p>
         <form method="POST" class="d-grid gap-2">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Eliminar</button>
-            <a href="{% url 'list_players' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-danger">{% translate "Eliminar" %}</button>
+            <a href="{% url 'list_players' %}" class="btn btn-secondary">{% translate "Cancelar" %}</a>
         </form>
     </div>
 </div>

@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Iniciar sesión · Zyra{% endblock %}
+{% block title %}{% translate "Iniciar sesión" %} · Zyra{% endblock %}
 
 {% block content %}
 <div class="z-auth">
     <div class="z-auth-card">
         <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
-        <h1>Iniciar sesión</h1>
+        <h1>{% translate "Iniciar sesión" %}</h1>
         {% if form.non_field_errors %}
         <div class="alert">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
         {% endif %}
@@ -15,17 +15,17 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
             <p>
-                <label for="{{ form.username.id_for_label }}">Usuario o email</label>
-                <input type="text" name="username" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" placeholder="Usuario o email" autocomplete="username" autofocus required>
+                <label for="{{ form.username.id_for_label }}">{% translate "Usuario o email" %}</label>
+                <input type="text" name="username" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" placeholder="{% translate 'Usuario o email' %}" autocomplete="username" autofocus required>
             </p>
             <p>
-                <label for="{{ form.password.id_for_label }}">Contraseña</label>
-                <input type="password" name="password" id="{{ form.password.id_for_label }}" placeholder="Contraseña" autocomplete="current-password" required>
+                <label for="{{ form.password.id_for_label }}">{% translate "Contraseña" %}</label>
+                <input type="password" name="password" id="{{ form.password.id_for_label }}" placeholder="{% translate 'Contraseña' %}" autocomplete="current-password" required>
             </p>
-            <button type="submit" class="btn btn-primary btn-lg mt-2">Entrar</button>
+            <button type="submit" class="btn btn-primary btn-lg mt-2">{% translate "Entrar" %}</button>
         </form>
         {% include 'includes/google_button.html' with next=next %}
-        <p class="z-auth-foot">¿Tu club aún no está en Zyra? <a href="{% url 'register_club' %}">Regístralo</a></p>
+        <p class="z-auth-foot">{% url 'register_club' as register_url %}{% blocktranslate trimmed %}¿Tu club aún no está en Zyra? <a href="{{ register_url }}">Regístralo</a>{% endblocktranslate %}</p>
     </div>
 </div>
 {% endblock %}

@@ -18,6 +18,8 @@ maximizan la probabilidad de ganar la eliminatoria.
 from dataclasses import dataclass, field
 from itertools import combinations
 
+from django.utils.translation import gettext as _, gettext_lazy
+
 GAME_VALUES = (3, 3, 2, 2, 2)
 POINTS_TO_WIN = 7
 PLAYERS_PER_LINEUP = 10
@@ -225,10 +227,10 @@ STRATEGY_CHEMISTRY = "chemistry"
 STRATEGY_TOP = "top"
 STRATEGY_ALTERNATIVE = "alternative"
 STRATEGY_TITLES = {
-    STRATEGY_ALTERNATIVE: "Alternativa",
-    STRATEGY_BEST: "Máximas opciones",
-    STRATEGY_CHEMISTRY: "Parejas consolidadas",
-    STRATEGY_TOP: "Refuerzo de los partidos de 3 puntos",
+    STRATEGY_ALTERNATIVE: gettext_lazy("Alternativa"),
+    STRATEGY_BEST: gettext_lazy("Máximas opciones"),
+    STRATEGY_CHEMISTRY: gettext_lazy("Parejas consolidadas"),
+    STRATEGY_TOP: gettext_lazy("Refuerzo de los partidos de 3 puntos"),
 }
 
 
@@ -242,7 +244,7 @@ class Lineup:
 
     @property
     def title(self):
-        return STRATEGY_TITLES[self.strategy]
+        return str(STRATEGY_TITLES[self.strategy])
 
     @property
     def keys(self):
@@ -340,41 +342,47 @@ def explain(lineup, venue_label, compare_to=None):
             with_history = sorted((p for p in new_pairs if p.played and p.wins * 2 >= p.played),
                                   key=lambda p: (p.wins, p.played), reverse=True)
             detail = (
-                " (" + ", ".join(f"{p.name}: {p.wins}V-{p.losses}D juntos" for p in with_history[:2]) + ")"
+                " (" + ", ".join(_("%(pair)s: %(wins)sV-%(losses)sD juntos") % {"pair": p.name, "wins": p.wins, "losses": p.losses}
+                                 for p in with_history[:2]) + ")"
                 if with_history else ""
             )
             sentences.append(
-                f"Alternativa que cambia {len(new_pairs)} parejas respecto a la A para apostar por parejas "
-                f"que ya se conocen{detail}."
+                _("Alternativa que cambia %(n)s parejas respecto a la A para apostar por parejas "
+                  "que ya se conocen%(detail)s.") % {"n": len(new_pairs), "detail": detail}
             )
         elif lineup.strategy == STRATEGY_ALTERNATIVE:
             sentences.append(
-                f"Segunda mejor opción, con {len(new_pairs)} parejas distintas a la A: "
-                f"sirve de plan B si hay bajas o si se prefieren esas combinaciones."
+                _("Segunda mejor opción, con %(n)s parejas distintas a la A: "
+                  "sirve de plan B si hay bajas o si se prefieren esas combinaciones.") % {"n": len(new_pairs)}
             )
         else:
             both = p1.strength * p2.strength
             sentences.append(
-                f"Alternativa que cambia {len(new_pairs)} parejas para asegurar los dos partidos de 3 puntos, "
-                f"que valen la mitad de la eliminatoria: {round(both * 100)} % de ganar ambos."
+                _("Alternativa que cambia %(n)s parejas para asegurar los dos partidos de 3 puntos, "
+                  "que valen la mitad de la eliminatoria: %(pct)s %% de ganar ambos.")
+                % {"n": len(new_pairs), "pct": round(both * 100)}
             )
     sentences.append(
-        f"{p1.name} y {p2.name} tienen la mayor suma de puntos SNP, así que disputarán "
-        f"los dos partidos de 3 puntos (victoria estimada {round(p1.strength * 100)} % y "
-        f"{round(p2.strength * 100)} %)."
+        _("%(pair1)s y %(pair2)s tienen la mayor suma de puntos SNP, así que disputarán "
+          "los dos partidos de 3 puntos (victoria estimada %(pct1)s %% y %(pct2)s %%).")
+        % {"pair1": p1.name, "pair2": p2.name,
+           "pct1": round(p1.strength * 100), "pct2": round(p2.strength * 100)}
     )
 
     with_history = sorted((p for p in lineup.pairs if p.played), key=lambda p: (p.wins / p.played, p.played), reverse=True)
     if with_history:
         best = with_history[0]
-        extra = f", {best.venue_wins}V-{best.venue_played - best.venue_wins}D como {venue_label}" if best.venue_played else ""
-        sentences.append(f"{best.name} llega con {best.wins}V-{best.losses}D juntos{extra}.")
+        extra = (_(", %(wins)sV-%(losses)sD como %(venue)s") % {
+            "wins": best.venue_wins, "losses": best.venue_played - best.venue_wins, "venue": venue_label,
+        }) if best.venue_played else ""
+        sentences.append(_("%(pair)s llega con %(wins)sV-%(losses)sD juntos%(extra)s.") % {
+            "pair": best.name, "wins": best.wins, "losses": best.losses, "extra": extra})
     else:
         complementary = [p for p in lineup.pairs if p.complementary > 0]
         if complementary:
             sentences.append(
-                f"Ninguna pareja tiene historial, así que se combinan perfiles de derecha y revés "
-                f"en {len(complementary)} de las 5 parejas."
+                _("Ninguna pareja tiene historial, así que se combinan perfiles de derecha y revés "
+                  "en %(n)s de las 5 parejas.") % {"n": len(complementary)}
             )
 
     hot = sorted(
@@ -382,14 +390,15 @@ def explain(lineup, venue_label, compare_to=None):
         key=lambda f: f.streak[1], reverse=True,
     )
     if hot:
-        names = ", ".join(f"{f.name} ({f.streak[1]}V seguidas)" for f in hot[:2])
-        sentences.append(f"Apuesta por jugadores en racha como {names}.")
+        names = ", ".join(_("%(name)s (%(n)sV seguidas)") % {"name": f.name, "n": f.streak[1]} for f in hot[:2])
+        sentences.append(_("Apuesta por jugadores en racha como %(names)s.") % {"names": names})
     elif lineup.bench:
-        sentences.append("Descansan " + ", ".join(f.name for f in lineup.bench[:3]) + " por su momento de forma.")
+        sentences.append(_("Descansan %(names)s por su momento de forma.") % {
+            "names": ", ".join(f.name for f in lineup.bench[:3])})
 
-    closing = (
-        f"Probabilidad estimada de ganar la eliminatoria: {_pct(lineup.win)} "
-        f"({lineup.expected:.1f} de 12 puntos esperados)."
-    )
+    closing = _(
+        "Probabilidad estimada de ganar la eliminatoria: %(pct)s "
+        "(%(expected)s de 12 puntos esperados)."
+    ) % {"pct": _pct(lineup.win), "expected": f"{lineup.expected:.1f}"}
     # Máximo 4 frases: la última siempre es la probabilidad
     return " ".join(sentences[:3] + [closing])

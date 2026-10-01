@@ -1,17 +1,17 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags tz %}
-{% block title %}{{ run.job.name }} · ejecución{% endblock %}
+{% load i18n backoffice_tags tz %}
+{% block title %}{{ run.job.name }} · {% translate "ejecución" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:job_detail' run.job.name %}">{{ run.job.name }}</a> · <a href="{% url 'backoffice:run_list' %}">Log</a></span>
-        <h1>Ejecución del {{ run.started_at|timezone:"Europe/Madrid"|date:"j M H:i" }}</h1>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:job_detail' run.job.name %}">{{ run.job.name }}</a> · <a href="{% url 'backoffice:run_list' %}">{% translate "Log" %}</a></span>
+        <h1>{% with started=run.started_at|timezone:"Europe/Madrid"|date:"j M H:i" %}{% blocktranslate %}Ejecución del {{ started }}{% endblocktranslate %}{% endwith %}</h1>
     </div>
     <div class="z-actions">
         <form method="post" action="{% url 'backoffice:job_run_now' run.job.name %}">{% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="btn btn-sm btn-outline-light" id="run-again" {% if run.status == 'running' %}disabled{% endif %}><i class="fa-solid fa-rotate-right"></i> Ejecutar de nuevo</button>
+            <button type="submit" class="btn btn-sm btn-outline-light" id="run-again" {% if run.status == 'running' %}disabled{% endif %}><i class="fa-solid fa-rotate-right"></i> {% translate "Ejecutar de nuevo" %}</button>
         </form>
     </div>
 </div>
@@ -20,23 +20,23 @@
 
 <section class="z-panel">
     <dl class="bo-facts">
-        <div><dt>Estado</dt><dd id="run-status">{% run_status run %}</dd></div>
-        <div><dt>Inicio</dt><dd>{{ run.started_at|timezone:"Europe/Madrid"|date:"j M Y H:i:s" }}</dd></div>
-        <div><dt>Duración</dt><dd id="run-duration">{% if run.finished_at %}{{ run.duration|duration }}{% else %}en curso…{% endif %}</dd></div>
-        <div><dt>Tipo</dt><dd>{{ run.get_trigger_display }}{% if run.triggered_by %} por {{ run.triggered_by.username }}{% endif %}</dd></div>
+        <div><dt>{% translate "Estado" %}</dt><dd id="run-status">{% run_status run %}</dd></div>
+        <div><dt>{% translate "Inicio" context "hora de inicio" %}</dt><dd>{{ run.started_at|timezone:"Europe/Madrid"|date:"j M Y H:i:s" }}</dd></div>
+        <div><dt>{% translate "Duración" %}</dt><dd id="run-duration">{% if run.finished_at %}{{ run.duration|duration }}{% else %}{% translate "en curso…" %}{% endif %}</dd></div>
+        <div><dt>{% translate "Tipo" %}</dt><dd>{{ run.get_trigger_display }}{% if run.triggered_by %} {% blocktranslate with username=run.triggered_by.username %}por {{ username }}{% endblocktranslate %}{% endif %}</dd></div>
     </dl>
 </section>
 
 <section class="z-panel">
     <div class="bo-panel-head">
-        <h2 class="h5">Traza</h2>
-        <span class="bo-live {% if run.status != 'running' %}is-hidden{% endif %}" id="run-live"><span class="bo-live-dot"></span> En directo</span>
+        <h2 class="h5">{% translate "Traza" %}</h2>
+        <span class="bo-live {% if run.status != 'running' %}is-hidden{% endif %}" id="run-live"><span class="bo-live-dot"></span> {% translate "En directo" %}</span>
     </div>
     <pre class="bo-log bo-console" id="run-output" aria-live="polite">{{ run.output }}</pre>
 </section>
 
 <section class="z-panel {% if not run.error %}is-hidden{% endif %}" id="run-error-panel">
-    <h2 class="h5 text-danger">Error</h2>
+    <h2 class="h5 text-danger">{% translate "Error" %}</h2>
     <pre class="bo-log bo-log--error" id="run-error">{{ run.error }}</pre>
 </section>
 
@@ -46,7 +46,7 @@
     var url = "{% url 'backoffice:run_live' run.public_id %}";
     var out = document.getElementById('run-output');
     var offset = out.textContent.length;
-    var badges = {ok: '<span class="z-badge z-badge--lime">Correcta</span>', error: '<span class="z-badge z-badge--danger">Con error</span>'};
+    var badges = {ok: '<span class="z-badge z-badge--lime">{% translate "Correcta" as t_ok %}{{ t_ok|escapejs }}</span>', error: '<span class="z-badge z-badge--danger">{% translate "Con error" as t_error %}{{ t_error|escapejs }}</span>'};
 
     function atBottom() { return out.scrollHeight - out.scrollTop - out.clientHeight < 40; }
 

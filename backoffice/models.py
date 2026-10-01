@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from core.public_id import PublicIdModel
 
@@ -15,8 +16,8 @@ class UserActivity(models.Model):
     last_path = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
-        verbose_name = "actividad de usuario"
-        verbose_name_plural = "actividad de usuarios"
+        verbose_name = _("actividad de usuario")
+        verbose_name_plural = _("actividad de usuarios")
 
     def __str__(self):
         return f"{self.user} ({self.last_seen:%Y-%m-%d %H:%M})"
@@ -26,15 +27,15 @@ class RequestMetric(models.Model):
     """Peticiones atendidas por la web, agregadas por minuto."""
     minute = models.DateTimeField(unique=True)
     requests = models.PositiveIntegerField(default=0)
-    errors = models.PositiveIntegerField("errores 5xx", default=0)
-    slow = models.PositiveIntegerField("lentas (más de 1 s)", default=0)
+    errors = models.PositiveIntegerField(_("errores 5xx"), default=0)
+    slow = models.PositiveIntegerField(_("lentas (más de 1 s)"), default=0)
     total_ms = models.PositiveBigIntegerField(default=0)
     max_ms = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-minute"]
-        verbose_name = "métrica de peticiones"
-        verbose_name_plural = "métricas de peticiones"
+        verbose_name = _("métrica de peticiones")
+        verbose_name_plural = _("métricas de peticiones")
 
     @property
     def avg_ms(self):
@@ -50,7 +51,7 @@ class ScheduledJob(models.Model):
     backoffice/jobs.py; esta fila se crea sola la primera vez que se ve el proceso.
     """
     name = models.CharField(max_length=100, unique=True)
-    enabled = models.BooleanField("activo", default=True)
+    enabled = models.BooleanField(_("activo"), default=True)
     next_run_at = models.DateTimeField(null=True, blank=True)
     last_run_at = models.DateTimeField(null=True, blank=True)
     # Marca de "en ejecución", para que el mismo proceso no se lance dos veces a la vez.
@@ -66,8 +67,8 @@ class ScheduledJob(models.Model):
 
     class Meta:
         ordering = ["name"]
-        verbose_name = "proceso programado"
-        verbose_name_plural = "procesos programados"
+        verbose_name = _("proceso programado")
+        verbose_name_plural = _("procesos programados")
 
     @property
     def spec(self):
@@ -84,11 +85,11 @@ class JobRun(PublicIdModel):
     RUNNING = "running"
     OK = "ok"
     ERROR = "error"
-    STATUSES = [(RUNNING, "En curso"), (OK, "Correcta"), (ERROR, "Con error")]
+    STATUSES = [(RUNNING, _("En curso")), (OK, _("Correcta")), (ERROR, _("Con error"))]
 
     SCHEDULE = "schedule"
     MANUAL = "manual"
-    TRIGGERS = [(SCHEDULE, "Programada"), (MANUAL, "Manual")]
+    TRIGGERS = [(SCHEDULE, _("Programada")), (MANUAL, _("Manual"))]
 
     job = models.ForeignKey(ScheduledJob, on_delete=models.CASCADE, related_name="runs")
     trigger = models.CharField(max_length=10, choices=TRIGGERS, default=SCHEDULE)
@@ -105,8 +106,8 @@ class JobRun(PublicIdModel):
 
     class Meta:
         ordering = ["-started_at"]
-        verbose_name = "ejecución de proceso"
-        verbose_name_plural = "ejecuciones de procesos"
+        verbose_name = _("ejecución de proceso")
+        verbose_name_plural = _("ejecuciones de procesos")
 
     @property
     def duration(self):
@@ -121,8 +122,8 @@ class JobRun(PublicIdModel):
 class SavedQuery(PublicIdModel):
     """Consulta SQL guardada en la consola, para repetirla o exportarla cuando haga falta."""
     PUBLIC_ID_PREFIX = "QRY"
-    name = models.CharField("nombre", max_length=120, unique=True)
-    description = models.CharField("descripción", max_length=255, blank=True, default="")
+    name = models.CharField(_("nombre"), max_length=120, unique=True)
+    description = models.CharField(_("descripción"), max_length=255, blank=True, default="")
     sql = models.TextField()
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
@@ -132,8 +133,8 @@ class SavedQuery(PublicIdModel):
 
     class Meta:
         ordering = ["name"]
-        verbose_name = "consulta guardada"
-        verbose_name_plural = "consultas guardadas"
+        verbose_name = _("consulta guardada")
+        verbose_name_plural = _("consultas guardadas")
 
     def __str__(self):
         return self.name
@@ -143,7 +144,7 @@ class QueryLog(models.Model):
     """Auditoría: cada consulta lanzada o exportada desde la consola SQL."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
     sql = models.TextField()
-    exported = models.BooleanField("exportada", default=False)
+    exported = models.BooleanField(_("exportada"), default=False)
     row_count = models.PositiveIntegerField(null=True, blank=True)
     duration_ms = models.PositiveIntegerField(null=True, blank=True)
     error = models.TextField(blank=True, default="")
@@ -151,8 +152,8 @@ class QueryLog(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "consulta ejecutada"
-        verbose_name_plural = "consultas ejecutadas"
+        verbose_name = _("consulta ejecutada")
+        verbose_name_plural = _("consultas ejecutadas")
 
     def __str__(self):
         return f"{self.user} {self.created_at:%Y-%m-%d %H:%M}"
@@ -164,12 +165,12 @@ class ImportJob(PublicIdModel):
     DRAFT = "draft"
     DONE = "done"
     UNDONE = "undone"
-    STATUSES = [(DRAFT, "Sin confirmar"), (DONE, "Importada"), (UNDONE, "Deshecha")]
+    STATUSES = [(DRAFT, _("Sin confirmar")), (DONE, _("Importada")), (UNDONE, _("Deshecha"))]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
     club = models.ForeignKey("core.Club", on_delete=models.CASCADE, related_name="+")
-    entity = models.CharField("objeto", max_length=20)
-    mode = models.CharField("modo", max_length=10)
+    entity = models.CharField(_("objeto"), max_length=20)
+    mode = models.CharField(_("modo"), max_length=10)
     filename = models.CharField(max_length=255)
     content = models.TextField()
     mapping = models.JSONField(default=dict, blank=True)
@@ -183,8 +184,8 @@ class ImportJob(PublicIdModel):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "importación"
-        verbose_name_plural = "importaciones"
+        verbose_name = _("importación")
+        verbose_name_plural = _("importaciones")
 
     @property
     def entity_spec(self):

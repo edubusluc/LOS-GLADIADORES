@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from core.public_id import PublicIdModel
 from players.models import Player
 from match.models import Match
@@ -26,7 +27,7 @@ class ReportDelivery(PublicIdModel):
     """
     PUBLIC_ID_PREFIX = "RPD"
     PENDING, SENT, FAILED = "pending", "sent", "failed"
-    STATUS_CHOICES = [(PENDING, "Pendiente"), (SENT, "Enviado"), (FAILED, "Fallido")]
+    STATUS_CHOICES = [(PENDING, _("Pendiente")), (SENT, _("Enviado")), (FAILED, _("Fallido"))]
 
     call = models.ForeignKey(Call, on_delete=models.CASCADE, related_name="report_deliveries")
     email = models.EmailField()

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 from .public_id import PublicIdModel
 
@@ -43,8 +44,8 @@ class Membership(PublicIdModel):
     ADMIN = "admin"
     MEMBER = "member"
     ROLES = [
-        (ADMIN, "Administrador"),
-        (MEMBER, "Miembro (solo lectura)"),
+        (ADMIN, _("Administrador")),
+        (MEMBER, _("Miembro (solo lectura)")),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memberships")

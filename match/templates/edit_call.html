@@ -1,20 +1,21 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
         <a href="{% url 'call_for_match' call.match.public_id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ call.match.local }} vs {{ call.match.visiting }}</a>
-        <h1>Editar convocatoria</h1>
+        <h1>{% translate "Editar convocatoria" %}</h1>
     </div>
 </div>
 
 {% if not call.draft_mode %}
-<p class="warning">La convocatoria está cerrada: cualquier cambio quedará registrado.</p>
+<p class="warning">{% translate "La convocatoria está cerrada: cualquier cambio quedará registrado." %}</p>
 {% endif %}
 
 <form method="POST">
     {% csrf_token %}
     <input type="hidden" name="update_call" value="1">
-    {% include 'includes/player_selector.html' with players=all_players selected=selected_players submit_label="Guardar convocatoria" min_players=10 %}
+    {% include 'includes/player_selector.html' with players=all_players selected=selected_players submit_label=_("Guardar convocatoria") min_players=10 %}
 </form>
 {% endblock %}

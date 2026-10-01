@@ -1,29 +1,30 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Registrar club · Zyra{% endblock %}
+{% block title %}{% translate "Registrar club" %} · Zyra{% endblock %}
 
 {% block content %}
 <div class="z-auth">
     <div class="z-auth-card z-auth-card--wide">
         <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
-        <h1>Registrar un club</h1>
-        <p class="text-muted text-center">Cada club gestiona sus propios jugadores, equipos rivales, partidos y estadísticas. Nadie de fuera del club puede ver sus datos.</p>
+        <h1>{% translate "Registrar un club" %}</h1>
+        <p class="text-muted text-center">{% translate "Cada club gestiona sus propios jugadores, equipos rivales, partidos y estadísticas. Nadie de fuera del club puede ver sus datos." %}</p>
         <form method="post" novalidate>
             {% csrf_token %}
-            <h2 class="z-section-title">Club</h2>
+            <h2 class="z-section-title">{% translate "Club" %}</h2>
             {{ club_form.as_p }}
             {% if user_form %}
-            <h2 class="z-section-title">Tu cuenta (administrador)</h2>
+            <h2 class="z-section-title">{% translate "Tu cuenta (administrador)" %}</h2>
             {{ user_form.as_p }}
             {% endif %}
-            <button type="submit" class="btn btn-primary btn-lg mt-2">Crear club</button>
+            <button type="submit" class="btn btn-primary btn-lg mt-2">{% translate "Crear club" %}</button>
         </form>
         {% if user_form %}
-        {% include 'includes/google_button.html' with next=request.path label="Crear mi cuenta con Google" %}
+        {% translate "Crear mi cuenta con Google" as google_label %}
+        {% include 'includes/google_button.html' with next=request.path label=google_label %}
         {% endif %}
         {% if not user.is_authenticated %}
-        <p class="z-auth-foot">¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a></p>
+        <p class="z-auth-foot">{% url 'login' as login_url %}{% blocktranslate trimmed %}¿Ya tienes cuenta? <a href="{{ login_url }}">Inicia sesión</a>{% endblocktranslate %}</p>
         {% endif %}
     </div>
 </div>

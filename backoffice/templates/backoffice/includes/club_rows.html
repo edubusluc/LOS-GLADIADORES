@@ -1,7 +1,8 @@
 {# Uso: {% include 'backoffice/includes/club_rows.html' with clubs=... empty="..." %} (clubes anotados con annotate_clubs) #}
+{% load i18n %}
 {% if clubs %}
 <div class="z-table-wrap"><table class="table align-middle">
-    <thead><tr><th>Club</th><th class="text-end">Miembros</th><th class="text-end">Jugadores</th><th class="text-end">Partidos</th><th>Último partido</th><th>Alta</th></tr></thead>
+    <thead><tr><th>{% translate "Club" %}</th><th class="text-end">{% translate "Miembros" %}</th><th class="text-end">{% translate "Jugadores" %}</th><th class="text-end">{% translate "Partidos" %}</th><th>{% translate "Último partido" %}</th><th>{% translate "Alta" %}</th></tr></thead>
     <tbody>
     {% for c in clubs %}
         <tr>

@@ -123,6 +123,8 @@ MIDDLEWARE = [
     # Mide todas las peticiones y la última actividad de cada usuario (back-office).
     'backoffice.middleware.ActivityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # Idioma de la interfaz: el elegido en el selector (cookie) o español (core/middleware.py).
+    'core.middleware.LanguageMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -143,6 +145,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.club',
@@ -203,7 +206,19 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# La web está en español y se puede ver en inglés con el selector de idioma de la
+# cabecera. Los textos se escriben en español en el código ({% translate %}, gettext) y
+# las traducciones al inglés están en locale/en/LC_MESSAGES/django.po. Tras cambiar
+# textos: python manage.py makemessages -l en -d django && makemessages -l en -d djangojs
+# (ignora venv y staticfiles), traduce los nuevos en el .po y python manage.py compilemessages.
+LANGUAGE_CODE = 'es'
+
+LANGUAGES = [
+    ('es', 'Español'),
+    ('en', 'English'),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 TIME_ZONE = 'UTC'
 

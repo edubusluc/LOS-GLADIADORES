@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext, gettext as _
 
 from core.crypto import DecryptionError
 
@@ -115,11 +116,11 @@ class SyncResult:
     def report(self):
         lines = [self.message]
         if self.unmatched:
-            lines.append("En SNP pero sin jugador en Zyra: " + ", ".join(self.unmatched))
+            lines.append(_("En SNP pero sin jugador en Zyra: %(names)s") % {"names": ", ".join(self.unmatched)})
         if self.ambiguous:
-            lines.append("Nombres que encajan con varios jugadores (no se han tocado): " + ", ".join(self.ambiguous))
+            lines.append(_("Nombres que encajan con varios jugadores (no se han tocado): %(names)s") % {"names": ", ".join(self.ambiguous)})
         if self.missing:
-            lines.append("Jugadores de Zyra que no aparecen en SNP: " + ", ".join(self.missing))
+            lines.append(_("Jugadores de Zyra que no aparecen en SNP: %(names)s") % {"names": ", ".join(self.missing)})
         return "\n".join(lines)
 
 
@@ -139,7 +140,7 @@ def sync_club(account, scraper=None, **scrape_options):
                             blocked=isinstance(exc, SnpBlockedError))
     except Exception as exc:  # un fallo inesperado en un club no debe parar a los demás
         logger.exception("Error inesperado al actualizar los puntos SNP de %s", account.club)
-        result = SyncResult(ok=False, message=f"Error inesperado: {exc}", retryable=True)
+        result = SyncResult(ok=False, message=_("Error inesperado: %(error)s") % {"error": exc}, retryable=True)
     account.last_sync_at = timezone.now()
     account.last_sync_ok = result.ok
     account.last_sync_retryable = result.retryable
@@ -163,7 +164,8 @@ def _save_scores(account, scores):
     matched_ids = {p.pk for p, _, _ in matched}
     return SyncResult(
         ok=True,
-        message=f"{len(matched)} de {len(players)} jugadores actualizados con los puntos de SNP.",
+        message=gettext("%(matched)s de %(total)s jugadores actualizados con los puntos de SNP.") % {
+            "matched": len(matched), "total": len(players)},
         total=len(players),
         updated=[(str(p), score) for p, score, _ in matched],
         unmatched=unmatched, ambiguous=ambiguous,

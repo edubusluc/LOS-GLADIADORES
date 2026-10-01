@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Invitación no válida · Zyra{% endblock %}
+{% block title %}{% translate "Invitación no válida" %} · Zyra{% endblock %}
 
 {% block content %}
 <div class="z-auth">
     <div class="z-auth-card text-center">
         <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
-        <h1>Invitación no válida</h1>
+        <h1>{% translate "Invitación no válida" %}</h1>
         <p class="text-muted">
-            {% if invitation and invitation.is_used %}Este enlace ya se ha usado: cada invitación sirve para una sola persona.
-            {% elif invitation %}Este enlace ha caducado: las invitaciones son válidas durante 24 horas.
-            {% else %}No encontramos esta invitación.{% endif %}
-            Pide al administrador de tu equipo que te envíe una nueva.
+            {% if invitation and invitation.is_used %}{% translate "Este enlace ya se ha usado: cada invitación sirve para una sola persona." %}
+            {% elif invitation %}{% translate "Este enlace ha caducado: las invitaciones son válidas durante 24 horas." %}
+            {% else %}{% translate "No encontramos esta invitación." %}{% endif %}
+            {% translate "Pide al administrador de tu equipo que te envíe una nueva." %}
         </p>
-        <a class="btn btn-primary btn-lg" href="{% url 'home' %}">Ir a Zyra</a>
+        <a class="btn btn-primary btn-lg" href="{% url 'home' %}">{% translate "Ir a Zyra" %}</a>
     </div>
 </div>
 {% endblock %}

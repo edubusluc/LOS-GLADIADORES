@@ -9,6 +9,7 @@ from core.crypto import DecryptionError
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+from django.utils.translation import gettext as _, ngettext
 from . import snp_import
 
 
@@ -26,7 +27,7 @@ def create_player(request):
             player.save()
             return redirect("list_players")
         else: 
-            messages.error(request, "Error al crear el jugador. Por favor, verifica los datos.")
+            messages.error(request, _("Error al crear el jugador. Por favor, verifica los datos."))
     else:
         form = PlayerForm()
 
@@ -145,9 +146,11 @@ def manage_roster(request):
         joined = players.filter(id__in=in_team_ids, in_team=False).update(in_team=True)
         left = players.exclude(id__in=in_team_ids).filter(in_team=True).update(in_team=False)
         if joined or left:
-            messages.success(request, f"Plantilla actualizada: {joined} alta{'s' if joined != 1 else ''} y {left} baja{'s' if left != 1 else ''}.")
+            joined_text = ngettext("%(n)s alta", "%(n)s altas", joined) % {"n": joined}
+            left_text = ngettext("%(n)s baja", "%(n)s bajas", left) % {"n": left}
+            messages.success(request, _("Plantilla actualizada: %(joined)s y %(left)s.") % {"joined": joined_text, "left": left_text})
         else:
-            messages.info(request, "No había cambios que guardar.")
+            messages.info(request, _("No había cambios que guardar."))
         return redirect('manage_roster')
 
     return render(request, 'manage_roster.html', {
@@ -170,7 +173,7 @@ def snp_account(request):
             account.team_id = form.cleaned_data["team"]
             account.updated_by = request.user
             account.save()
-            messages.success(request, "Cuenta SNP guardada. Los puntos se actualizarán cada lunes por la noche.")
+            messages.success(request, _("Cuenta SNP guardada. Los puntos se actualizarán cada lunes por la noche."))
             return redirect("snp_account")
     else:
         initial = {}
@@ -179,7 +182,7 @@ def snp_account(request):
             try:
                 initial["username"] = account.username
             except DecryptionError:
-                messages.error(request, "No se ha podido leer la cuenta guardada (¿ha cambiado la clave de cifrado?). Vuelve a introducirla.")
+                messages.error(request, _("No se ha podido leer la cuenta guardada (¿ha cambiado la clave de cifrado?). Vuelve a introducirla."))
         form = SnpAccountForm(initial=initial, has_password=account is not None)
     return render(request, "snp_account.html", {
         "form": form, "account": account,
@@ -190,7 +193,7 @@ def snp_account(request):
 @require_POST
 def snp_account_delete(request):
     SnpAccount.objects.filter(club=request.club).delete()
-    messages.success(request, "Cuenta SNP borrada.")
+    messages.success(request, _("Cuenta SNP borrada."))
     return redirect("snp_account")
 
 
@@ -199,8 +202,8 @@ def snp_account_delete(request):
 def _blocked_this_month(request):
     last = snp_import.last_import_this_month(request.club)
     if last:
-        messages.error(request, "El equipo ya se ha completado este mes. Podrás volver a hacerlo a partir del "
-                                f"{snp_import.next_month_start():%d/%m/%Y}.")
+        messages.error(request, _("El equipo ya se ha completado este mes. Podrás volver a hacerlo a partir del %(date)s.")
+                       % {"date": f"{snp_import.next_month_start():%d/%m/%Y}"})
     return last is not None
 
 
@@ -208,7 +211,7 @@ def _blocked_this_month(request):
 @require_POST
 def complete_team_start(request):
     if not SnpAccount.objects.filter(club=request.club).exists():
-        messages.error(request, "Primero registra la cuenta SNP del capitán.")
+        messages.error(request, _("Primero registra la cuenta SNP del capitán."))
         return redirect("snp_account")
     if not _blocked_this_month(request) and not snp_import.active_import(request.club):
         snp_import.start_search(request.club, request.user)
@@ -228,7 +231,7 @@ def complete_team_confirm(request, import_id):
     if team_import.status != SnpTeamImport.READY or not team_import.to_add or _blocked_this_month(request):
         return redirect("list_players")
     team_import = snp_import.confirm(team_import)
-    messages.success(request, f"Equipo completado: {team_import.message}")
+    messages.success(request, _("Equipo completado: %(message)s") % {"message": team_import.message})
     return redirect("list_players")
 
 

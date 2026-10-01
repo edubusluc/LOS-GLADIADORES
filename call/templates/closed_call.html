@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="z-empty">
     <i class="fa-solid fa-lock"></i>
-    Esta convocatoria ya está cerrada.
+    {% translate "Esta convocatoria ya está cerrada." %}
 </div>
 {% endblock %}

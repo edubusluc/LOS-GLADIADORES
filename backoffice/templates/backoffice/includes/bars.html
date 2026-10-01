@@ -1,8 +1,9 @@
 {# Uso: {% include 'backoffice/includes/bars.html' with rows=... fmt="H:i" every=10 label="..." %} #}
+{% load i18n l10n %}
 <ol class="bo-bars bo-bars--dense" style="--n: {{ rows|length }}" aria-label="{{ label }}">
     {% for r in rows %}
-    <li title="{{ r.at|date:fmt }}: {{ r.requests }} {% if r.requests == 1 %}petición{% else %}peticiones{% endif %}{% if r.errors %}, {{ r.errors }} error{{ r.errors|pluralize:'es' }}{% endif %}{% if r.requests %}, {{ r.avg_ms }} ms de media{% endif %}">
-        <span class="bo-bar" style="--h: {{ r.pct }}%; --e: {{ r.err_pct }}%{% if r.errors %}; --emin: 3px{% endif %}"></span>
+    <li title="{{ r.at|date:fmt }}: {% blocktranslate count n=r.requests %}{{ n }} petición{% plural %}{{ n }} peticiones{% endblocktranslate %}{% if r.errors %}, {% blocktranslate count n=r.errors %}{{ n }} error{% plural %}{{ n }} errores{% endblocktranslate %}{% endif %}{% if r.requests %}, {% blocktranslate with avg=r.avg_ms %}{{ avg }} ms de media{% endblocktranslate %}{% endif %}">
+        <span class="bo-bar" style="--h: {{ r.pct|unlocalize }}%; --e: {{ r.err_pct|unlocalize }}%{% if r.errors %}; --emin: 3px{% endif %}"></span>
         <small>{% if forloop.counter0|divisibleby:every %}{{ r.at|date:fmt }}{% endif %}</small>
     </li>
     {% endfor %}

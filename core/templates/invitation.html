@@ -1,26 +1,25 @@
 {% extends 'base.html' %}
-{% load static tz %}
+{% load static tz i18n %}
 
-{% block title %}Únete a {{ club.name }} · Zyra{% endblock %}
+{% block title %}{% blocktranslate with club=club.name %}Únete a {{ club }}{% endblocktranslate %} · Zyra{% endblock %}
 
 {% block content %}
 <div class="z-auth">
     <div class="z-auth-card">
         <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
-        <h1>Únete a {{ club.name }}</h1>
+        <h1>{% blocktranslate with club=club.name %}Únete a {{ club }}{% endblocktranslate %}</h1>
         {% if messages %}
         <div class="alert">{% for message in messages %}<p class="{{ message.tags }}">{{ message }}</p>{% endfor %}</div>
         {% endif %}
         <p class="text-muted text-center">
-            {% if invitation.created_by %}{{ invitation.created_by.get_full_name|default:invitation.created_by.username }} te invita{% else %}Te han invitado{% endif %}
-            a entrar en el equipo para consultar partidos, convocatorias y estadísticas.
-            La invitación caduca el {{ invitation.expires_at|timezone:"Europe/Madrid"|date:"d/m/Y \a \l\a\s H:i" }}.
+            {% if invitation.created_by %}{% blocktranslate trimmed with name=invitation.created_by.get_full_name|default:invitation.created_by.username %}{{ name }} te invita a entrar en el equipo para consultar partidos, convocatorias y estadísticas.{% endblocktranslate %}{% else %}{% translate "Te han invitado a entrar en el equipo para consultar partidos, convocatorias y estadísticas." %}{% endif %}
+            {% blocktranslate trimmed with date=invitation.expires_at|timezone:"Europe/Madrid"|date:"d/m/Y" time=invitation.expires_at|timezone:"Europe/Madrid"|date:"H:i" %}La invitación caduca el {{ date }} a las {{ time }}.{% endblocktranslate %}
         </p>
 
         {% if user.is_authenticated %}
         <form method="post">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary btn-lg mt-2">Unirme como {{ user.username }}</button>
+            <button type="submit" class="btn btn-primary btn-lg mt-2">{% blocktranslate with username=user.username %}Unirme como {{ username }}{% endblocktranslate %}</button>
         </form>
         {% else %}
         {% if form.non_field_errors %}
@@ -36,10 +35,11 @@
                 {% for error in field.errors %}<span class="text-danger d-block small">{{ error }}</span>{% endfor %}
             </p>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-lg mt-2">Crear cuenta y unirme</button>
+            <button type="submit" class="btn btn-primary btn-lg mt-2">{% translate "Crear cuenta y unirme" %}</button>
         </form>
-        {% include 'includes/google_button.html' with next=request.path label="Registrarme con Google" %}
-        <p class="z-auth-foot">¿Ya tienes cuenta? <a href="{% url 'login' %}?next={{ request.path|urlencode }}">Inicia sesión</a> para unirte.</p>
+        {% translate "Registrarme con Google" as google_label %}
+        {% include 'includes/google_button.html' with next=request.path label=google_label %}
+        {% url 'login' as login_url %}<p class="z-auth-foot">{% blocktranslate trimmed with next=request.path|urlencode %}¿Ya tienes cuenta? <a href="{{ login_url }}?next={{ next }}">Inicia sesión</a> para unirte.{% endblocktranslate %}</p>
         {% endif %}
     </div>
 </div>

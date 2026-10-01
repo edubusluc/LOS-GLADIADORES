@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.text import slugify
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from core.models import Club, Invitation, Membership
@@ -155,7 +156,7 @@ def user_list(request):
 def user_detail(request, user_id):
     member = get_object_or_404(User, pk=user_id)
     providers = SocialAccount.objects.filter(user=member).values_list("provider", flat=True)
-    login_methods = (["Contraseña"] if member.has_usable_password() else []) + [p.capitalize() for p in providers]
+    login_methods = ([_("Contraseña")] if member.has_usable_password() else []) + [p.capitalize() for p in providers]
     return render(request, "backoffice/user_detail.html", {
         "section": "users",
         "member": member,
@@ -235,7 +236,10 @@ def job_toggle(request, name):
     job = get_object_or_404(ScheduledJob, name=name)
     job.enabled = not job.enabled
     job.save(update_fields=["enabled"])
-    messages.success(request, f"{job.name}: {'activado' if job.enabled else 'en pausa'}.")
+    if job.enabled:
+        messages.success(request, _("%(job)s: activado.") % {"job": job.name})
+    else:
+        messages.success(request, _("%(job)s: en pausa.") % {"job": job.name})
     return _back(request)
 
 
@@ -247,7 +251,7 @@ def job_run_now(request, name):
     for param in job.spec.params if job.spec else ():
         value = request.POST.get(param.name, "").strip()
         if not re.fullmatch(param.pattern, value):
-            messages.error(request, f"Indica un valor válido para «{param.label}».")
+            messages.error(request, _("Indica un valor válido para «%(field)s».") % {"field": param.label})
             return redirect("backoffice:job_detail", name=job.name)
         args.append(value)
     for option in job.spec.options if job.spec else ():
@@ -257,12 +261,12 @@ def job_run_now(request, name):
                 args.append(option.flag)
         elif value:
             if not re.fullmatch(option.pattern, value):
-                messages.error(request, f"Indica un valor válido para «{option.label}».")
+                messages.error(request, _("Indica un valor válido para «%(field)s».") % {"field": option.label})
                 return redirect("backoffice:job_detail", name=job.name)
             args += [option.flag, value]
     run = start_manual_run(job, request.user, args)
     if run is None:
-        messages.error(request, f"{job.name} ya se está ejecutando.")
+        messages.error(request, _("%(job)s ya se está ejecutando.") % {"job": job.name})
         return _back(request)
     return redirect("backoffice:run_detail", run_id=run.public_id)
 
@@ -335,13 +339,16 @@ def sql_console(request):
             error = str(exc)
         else:
             if not name:
-                error = "Ponle un nombre a la consulta para guardarla."
+                error = _("Ponle un nombre a la consulta para guardarla.")
             else:
                 saved, created = SavedQuery.objects.update_or_create(
                     name=name, defaults={"sql": sql.clean(query), "description": request.POST.get("description", "").strip()[:255],
                                          "created_by": request.user},
                 )
-                messages.success(request, f"Consulta «{saved.name}» {'guardada' if created else 'actualizada'}.")
+                if created:
+                    messages.success(request, _("Consulta «%(name)s» guardada.") % {"name": saved.name})
+                else:
+                    messages.success(request, _("Consulta «%(name)s» actualizada.") % {"name": saved.name})
                 return redirect(f"{request.path}?saved={saved.public_id}")
 
     return render(request, "backoffice/sql_console.html", {
@@ -357,7 +364,7 @@ def sql_console(request):
 def sql_delete_saved(request, query_id):
     saved = get_object_or_404(SavedQuery, public_id=query_id)
     saved.delete()
-    messages.success(request, f"Consulta «{saved.name}» borrada.")
+    messages.success(request, _("Consulta «%(name)s» borrada.") % {"name": saved.name})
     return redirect("backoffice:sql_console")
 
 
@@ -381,13 +388,13 @@ def import_list(request):
         upload = request.FILES.get("file")
         error = None
         if entity_key not in importer.ENTITIES or mode not in dict(importer.MODES) or club is None:
-            error = "Elige qué importar, a qué club y cómo."
+            error = _("Elige qué importar, a qué club y cómo.")
         elif upload is None:
-            error = "Sube un fichero CSV."
+            error = _("Sube un fichero CSV.")
         else:
             try:
                 text = importer.decode(upload.read())
-                headers, _ = importer.read_csv(text)
+                headers, _rows = importer.read_csv(text)
             except importer.ImportFileError as exc:
                 error = str(exc)
         if error:
@@ -432,7 +439,7 @@ def import_map(request, job_id):
 
 def _show(value):
     if isinstance(value, bool):
-        return "sí" if value else "no"
+        return _("sí") if value else _("no")
     return value
 
 
@@ -455,7 +462,7 @@ def import_preview(request, job_id):
         response["Content-Disposition"] = f'attachment; filename="errores-{slugify(job.filename)}.csv"'
         response.write("﻿")
         writer = csv.writer(response, delimiter=";")
-        writer.writerow(["Línea", "Errores"])
+        writer.writerow([_("Línea"), _("Errores")])
         for r in results:
             if not r.ok:
                 writer.writerow([r.line, " | ".join(r.errors)])
@@ -484,13 +491,15 @@ def import_confirm(request, job_id):
         messages.error(request, str(exc))
         return redirect("backoffice:import_map", job_id=job.public_id)
     if any(not r.ok for r in results):
-        messages.error(request, "Hay filas con errores: no se ha importado nada.")
+        messages.error(request, _("Hay filas con errores: no se ha importado nada."))
         return redirect("backoffice:import_preview", job_id=job.public_id)
     job.status, job.finished_at = ImportJob.DONE, timezone.now()
     job.created_count = len(job.result["created"])
     job.updated_count = len(job.result["updated"])
     job.save()
-    messages.success(request, f"Importación hecha: {job.created_count} creados y {job.updated_count} actualizados.")
+    messages.success(request, _("Importación hecha: %(created)s creados y %(updated)s actualizados.") % {
+        "created": job.created_count, "updated": job.updated_count,
+    })
     return redirect("backoffice:import_list")
 
 
@@ -501,7 +510,9 @@ def import_undo(request, job_id):
     deleted, restored = importer.undo_import(job)
     job.status, job.undone_at = ImportJob.UNDONE, timezone.now()
     job.save(update_fields=["status", "undone_at"])
-    messages.success(request, f"Importación deshecha: {deleted} borrados y {restored} restaurados.")
+    messages.success(request, _("Importación deshecha: %(deleted)s borrados y %(restored)s restaurados.") % {
+        "deleted": deleted, "restored": restored,
+    })
     return redirect("backoffice:import_list")
 
 

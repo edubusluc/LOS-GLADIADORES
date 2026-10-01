@@ -1,41 +1,41 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags %}
+{% load i18n backoffice_tags %}
 {% block title %}{{ club.name }}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">Clubes</a> · alta el {{ club.created_at|date:"j M Y" }}{% with team=club.own_team %}{% if team %} · id del equipo: {{ team.public_id }}{% endif %}{% endwith %}</span>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">{% translate "Clubes" %}</a> · {% with created=club.created_at|date:"j M Y" %}{% blocktranslate %}alta el {{ created }}{% endblocktranslate %}{% endwith %}{% with team=club.own_team %}{% if team %} · {% blocktranslate with team_id=team.public_id %}id del equipo: {{ team_id }}{% endblocktranslate %}{% endif %}{% endwith %}</span>
         <h1>{{ club.name }}</h1>
     </div>
     {% if user.is_superuser %}
     <div class="z-actions">
-        <a href="{% url 'admin:core_club_change' club.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> Abrir en Django admin</a>
+        <a href="{% url 'admin:core_club_change' club.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> {% translate "Abrir en Django admin" %}</a>
     </div>
     {% endif %}
 </div>
 
-<section class="bo-kpis" aria-label="Resumen del club">
-    <div class="bo-kpi"><span class="bo-kpi-label">Miembros</span><b>{{ club.n_members|default:0 }}</b><small>{{ club.n_admins|default:0 }} administrador{{ club.n_admins|pluralize:"es" }}</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Jugadores</span><b>{{ players_active }}</b><small>{{ players_total }} en total, contando bajas</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Partidos</span><b>{{ club.n_matches|default:0 }}</b><small>{{ rivals }} equipo{{ rivals|pluralize }} rival{{ rivals|pluralize:"es" }}</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Último partido</span><b class="bo-kpi-date">{{ club.last_match|date:"j M Y"|default:"—" }}</b><small>{% if club.last_match %}{{ club.last_match|ago }}{% else %}sin partidos jugados{% endif %}</small></div>
+<section class="bo-kpis" aria-label="{% translate 'Resumen del club' %}">
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Miembros" %}</span><b>{{ club.n_members|default:0 }}</b><small>{% with admins=club.n_admins|default:0 %}{% blocktranslate trimmed count n=admins %}{{ n }} administrador{% plural %}{{ n }} administradores{% endblocktranslate %}{% endwith %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Jugadores" %}</span><b>{{ players_active }}</b><small>{% blocktranslate with total=players_total %}{{ total }} en total, contando bajas{% endblocktranslate %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Partidos" %}</span><b>{{ club.n_matches|default:0 }}</b><small>{% blocktranslate trimmed count n=rivals %}{{ n }} equipo rival{% plural %}{{ n }} equipos rivales{% endblocktranslate %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Último partido" %}</span><b class="bo-kpi-date">{{ club.last_match|date:"j M Y"|default:"—" }}</b><small>{% if club.last_match %}{{ club.last_match|ago }}{% else %}{% translate "sin partidos jugados" %}{% endif %}</small></div>
 </section>
 
 <section class="z-panel">
-    <h2 class="h5">Miembros</h2>
+    <h2 class="h5">{% translate "Miembros" %}</h2>
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Último acceso</th></tr></thead>
+        <thead><tr><th>{% translate "Usuario" %}</th><th>{% translate "Email" %}</th><th>{% translate "Rol" %}</th><th>{% translate "Último acceso" %}</th></tr></thead>
         <tbody>
         {% for m in memberships %}
             <tr>
                 <td><a href="{% url 'backoffice:user_detail' m.user.id %}">{{ m.user.username }}</a></td>
                 <td>{{ m.user.email|default:"—" }}</td>
-                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">Administrador</span>{% else %}Miembro{% endif %}</td>
+                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Administrador" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
                 <td>{{ m.user.last_login|ago }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="4" class="text-muted">Sin miembros.</td></tr>
+            <tr><td colspan="4" class="text-muted">{% translate "Sin miembros." %}</td></tr>
         {% endfor %}
         </tbody>
     </table></div>
@@ -43,44 +43,44 @@
 
 <div class="bo-grid">
     <section class="z-panel">
-        <h2 class="h5">Últimos partidos</h2>
+        <h2 class="h5">{% translate "Últimos partidos" %}</h2>
         <ul class="bo-list">
             {% for m in past_matches %}
             <li><span>{{ m.local }} – {{ m.visiting }}</span><small class="text-muted ms-auto">{{ m.start_date|date:"j M Y" }}{% if m.result_points != "NONE" %} · {{ m.result_points }}{% endif %}</small></li>
             {% empty %}
-            <li class="text-muted">Sin partidos jugados.</li>
+            <li class="text-muted">{% translate "Sin partidos jugados." %}</li>
             {% endfor %}
         </ul>
     </section>
     <section class="z-panel">
-        <h2 class="h5">Próximos partidos</h2>
+        <h2 class="h5">{% translate "Próximos partidos" %}</h2>
         <ul class="bo-list">
             {% for m in upcoming_matches %}
             <li><span>{{ m.local }} – {{ m.visiting }}</span><small class="text-muted ms-auto">{{ m.start_date|date:"j M Y" }}</small></li>
             {% empty %}
-            <li class="text-muted">Nada programado.</li>
+            <li class="text-muted">{% translate "Nada programado." %}</li>
             {% endfor %}
         </ul>
     </section>
 </div>
 
 <section class="z-panel">
-    <h2 class="h5">Últimas invitaciones</h2>
+    <h2 class="h5">{% translate "Últimas invitaciones" %}</h2>
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>Creada</th><th>Por</th><th>Estado</th></tr></thead>
+        <thead><tr><th>{% translate "Creada" %}</th><th>{% translate "Por" %}</th><th>{% translate "Estado" %}</th></tr></thead>
         <tbody>
         {% for inv in invitations %}
             <tr>
                 <td>{{ inv.created_at|date:"j M Y H:i" }}</td>
                 <td>{{ inv.created_by.username|default:"—" }}</td>
                 <td>
-                    {% if inv.is_used %}<span class="z-badge z-badge--lime">Usada por {{ inv.used_by.username|default:"—" }}</span>
-                    {% elif inv.is_expired %}<span class="z-badge z-badge--outline">Caducada</span>
-                    {% else %}<span class="z-badge z-badge--warning">Vigente</span>{% endif %}
+                    {% if inv.is_used %}<span class="z-badge z-badge--lime">{% with username=inv.used_by.username|default:"—" %}{% blocktranslate %}Usada por {{ username }}{% endblocktranslate %}{% endwith %}</span>
+                    {% elif inv.is_expired %}<span class="z-badge z-badge--outline">{% translate "Caducada" %}</span>
+                    {% else %}<span class="z-badge z-badge--warning">{% translate "Vigente" %}</span>{% endif %}
                 </td>
             </tr>
         {% empty %}
-            <tr><td colspan="3" class="text-muted">Este club no ha creado invitaciones.</td></tr>
+            <tr><td colspan="3" class="text-muted">{% translate "Este club no ha creado invitaciones." %}</td></tr>
         {% endfor %}
         </tbody>
     </table></div>

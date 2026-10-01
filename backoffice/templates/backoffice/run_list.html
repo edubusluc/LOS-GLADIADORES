@@ -1,24 +1,25 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Log de ejecuciones{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Log de ejecuciones" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:job_list' %}">Procesos programados</a> · {{ page.paginator.count }} ejecucion{{ page.paginator.count|pluralize:"es" }}</span>
-        <h1>Log de ejecuciones</h1>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:job_list' %}">{% translate "Procesos programados" %}</a> · {% blocktranslate trimmed count n=page.paginator.count %}{{ n }} ejecución{% plural %}{{ n }} ejecuciones{% endblocktranslate %}</span>
+        <h1>{% translate "Log de ejecuciones" %}</h1>
     </div>
 </div>
 
 <form method="get" class="bo-filters">
-    <select name="job" class="form-select" aria-label="Proceso">
-        <option value="">Todos los procesos</option>
+    <select name="job" class="form-select" aria-label="{% translate 'Proceso' %}">
+        <option value="">{% translate "Todos los procesos" %}</option>
         {% for j in jobs %}<option value="{{ j.name }}" {% if j.name == job_name %}selected{% endif %}>{{ j.name }}</option>{% endfor %}
     </select>
-    <select name="status" class="form-select" aria-label="Estado">
-        <option value="">Todos los estados</option>
+    <select name="status" class="form-select" aria-label="{% translate 'Estado' %}">
+        <option value="">{% translate "Todos los estados" %}</option>
         {% for value, label in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
-    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrar</button>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> {% translate "Filtrar" %}</button>
 </form>
 
 {% include 'backoffice/includes/run_rows.html' with runs=page.object_list show_job=True %}

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
   <div class="st-page">
@@ -7,53 +7,53 @@
 
     <header class="st-head">
       <div>
-        <h1 class="st-title">Advertencias</h1>
+        <h1 class="st-title">{% translate "Advertencias" %}</h1>
         <p class="st-subtitle">
-          {% if selected_season == all_seasons %}Todas las temporadas{% else %}Temporada {{ selected_season }}{% endif %}
-          · solo visible para administradores
+          {% if selected_season == all_seasons %}{% translate "Todas las temporadas" %}{% else %}{% blocktranslate with season=selected_season %}Temporada {{ season }}{% endblocktranslate %}{% endif %}
+          · {% translate "solo visible para administradores" %}
         </p>
       </div>
     </header>
 
-    <nav aria-label="Temporadas">
+    <nav aria-label="{% translate 'Temporadas' %}">
       <ul class="st-seasons">
         {% for season in seasons %}
           <li><a class="st-chip" href="?season={{ season|urlencode:'' }}" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a></li>
         {% endfor %}
-        <li><a class="st-chip" href="?season={{ all_seasons }}" {% if selected_season == all_seasons %}aria-current="page"{% endif %}>Todas</a></li>
+        <li><a class="st-chip" href="?season={{ all_seasons }}" {% if selected_season == all_seasons %}aria-current="page"{% endif %}>{% translate "Todas" %}</a></li>
       </ul>
     </nav>
 
     {% if not total %}
       <div class="st-empty">
-        <strong>Sin advertencias</strong>
-        No se ha añadido ninguna advertencia{% if selected_season != all_seasons %} en la temporada {{ selected_season }}{% endif %}.
+        <strong>{% translate "Sin advertencias" %}</strong>
+        {% if selected_season != all_seasons %}{% blocktranslate with season=selected_season %}No se ha añadido ninguna advertencia en la temporada {{ season }}.{% endblocktranslate %}{% else %}{% translate "No se ha añadido ninguna advertencia." %}{% endif %}
       </div>
     {% else %}
       <div class="st-kpis">
         <article class="st-kpi st-kpi--accent">
-          <h2 class="st-kpi-label">Advertencias</h2>
+          <h2 class="st-kpi-label">{% translate "Advertencias" %}</h2>
           <p class="st-kpi-value">{{ total }}</p>
         </article>
         <article class="st-kpi">
-          <h2 class="st-kpi-label">Jugadores advertidos</h2>
+          <h2 class="st-kpi-label">{% translate "Jugadores advertidos" %}</h2>
           <p class="st-kpi-value">{{ players_warned }}</p>
         </article>
         <article class="st-kpi">
-          <h2 class="st-kpi-label">Partidos con advertencias</h2>
+          <h2 class="st-kpi-label">{% translate "Partidos con advertencias" %}</h2>
           <p class="st-kpi-value">{{ matches_warned }}</p>
         </article>
       </div>
 
       <div class="st-warn-layout">
         <article class="st-card">
-          <h2 class="st-card-title">Por jugador</h2>
-          <p class="st-card-note">De más a menos advertencias.</p>
+          <h2 class="st-card-title">{% translate "Por jugador" %}</h2>
+          <p class="st-card-note">{% translate "De más a menos advertencias." %}</p>
           <ol class="st-top">
             {% for r in ranking %}
               <li class="st-top-row">
                 <span class="st-top-pos">{{ forloop.counter }}</span>
-                <span class="st-top-name">{{ r.player.name }} {{ r.player.last_name }}{% if not r.player.in_team %} <small class="d-inline">(fuera del equipo)</small>{% endif %}
+                <span class="st-top-name">{{ r.player.name }} {{ r.player.last_name }}{% if not r.player.in_team %} <small class="d-inline">{% translate "(fuera del equipo)" %}</small>{% endif %}
                   <small>{% for p in r.items %}{{ p.call.match.start_date|date:"d/m" }}{% if not forloop.last %} · {% endif %}{% endfor %}</small>
                 </span>
                 <b class="st-top-pct st-warn-count">{{ r.count }}</b>
@@ -63,15 +63,15 @@
         </article>
 
         <article class="st-card">
-          <h2 class="st-card-title">Historial</h2>
-          <p class="st-card-note">Todas las advertencias, la más reciente primero.</p>
+          <h2 class="st-card-title">{% translate "Historial" %}</h2>
+          <p class="st-card-note">{% translate "Todas las advertencias, la más reciente primero." %}</p>
           <div class="st-table-wrap">
             <table class="st-table st-table--wrap">
               <thead>
                 <tr>
-                  <th scope="col">Fecha</th>
-                  <th scope="col">Jugador</th>
-                  <th scope="col">Partido</th>
+                  <th scope="col">{% translate "Fecha" %}</th>
+                  <th scope="col">{% translate "Jugador" %}</th>
+                  <th scope="col">{% translate "Partido" %}</th>
                 </tr>
               </thead>
               <tbody>

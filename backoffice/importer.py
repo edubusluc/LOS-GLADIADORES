@@ -15,6 +15,9 @@ from dataclasses import dataclass, field
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import translation
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from match.models import Match
 from players.models import Player
@@ -25,9 +28,9 @@ MAX_ROWS = 5000
 
 CREATE, UPDATE, UPSERT = "create", "update", "upsert"
 MODES = [
-    (CREATE, "Solo crear registros nuevos"),
-    (UPDATE, "Solo actualizar registros existentes"),
-    (UPSERT, "Crear o actualizar (según exista o no)"),
+    (CREATE, gettext_lazy("Solo crear registros nuevos")),
+    (UPDATE, gettext_lazy("Solo actualizar registros existentes")),
+    (UPSERT, gettext_lazy("Crear o actualizar (según exista o no)")),
 ]
 
 
@@ -52,7 +55,7 @@ def parse_bool(value):
         return True
     if v in FALSE:
         return False
-    raise ValidationError(f"«{value}» no es sí/no.")
+    raise ValidationError(_("«%(value)s» no es sí/no.") % {"value": value})
 
 
 def parse_date(value):
@@ -62,7 +65,7 @@ def parse_date(value):
             return datetime.datetime.strptime(value, fmt).date()
         except ValueError:
             pass
-    raise ValidationError(f"«{value}» no es una fecha (usa 2026-10-25 o 25/10/2026).")
+    raise ValidationError(_("«%(value)s» no es una fecha (usa 2026-10-25 o 25/10/2026).") % {"value": value})
 
 
 def choice_parser(choices):
@@ -75,7 +78,9 @@ def choice_parser(choices):
         key = normalize(text)
         if key in options:
             return options[key]
-        raise ValidationError(f"«{text}» no es válido; usa {', '.join(v for v, _ in choices)}.")
+        raise ValidationError(_("«%(value)s» no es válido; usa %(options)s.") % {
+            "value": text, "options": ", ".join(v for v, _label in choices),
+        })
     return parse
 
 
@@ -83,7 +88,7 @@ def parse_int(value):
     try:
         return int(str(value).strip())
     except ValueError:
-        raise ValidationError(f"«{value}» no es un número.")
+        raise ValidationError(_("«%(value)s» no es un número.") % {"value": value})
 
 
 @dataclass
@@ -97,7 +102,10 @@ class Field:
 
     def matches(self, header):
         h = normalize(header)
-        return h in {normalize(self.name), normalize(self.label), *(normalize(a) for a in self.aliases)}
+        # La etiqueta cuenta en el idioma activo y en español (las plantillas pueden venir de cualquiera de los dos).
+        with translation.override("es"):
+            label_es = normalize(self.label)
+        return h in {normalize(self.name), normalize(self.label), label_es, *(normalize(a) for a in self.aliases)}
 
 
 ID_FIELD = Field("id", "ID", parse_int, aliases=("pk", "identificador"), example="")
@@ -134,7 +142,7 @@ class Entity:
         if values.get("id") is not None:
             obj = self.queryset(club).filter(pk=values["id"]).first()
             if obj is None:
-                raise ValidationError(f"No existe un registro con ID {values['id']} en este club.")
+                raise ValidationError(_("No existe un registro con ID %(id)s en este club.") % {"id": values["id"]})
             return obj
         return self.find_natural(club, values)
 
@@ -188,50 +196,50 @@ class MatchEntity(Entity):
             if name in ("local", "visiting"):
                 team = Team.objects.filter(club=club, name__iexact=value).first()
                 if team is None:
-                    raise ValidationError({name: f"No hay ningún equipo «{value}» en este club."})
+                    raise ValidationError({name: _("No hay ningún equipo «%(team)s» en este club.") % {"team": value}})
                 setattr(obj, name, team)
             elif name != "id":
                 setattr(obj, name, value)
         if obj.local_id and obj.local_id == obj.visiting_id:
-            raise ValidationError("El equipo local y el visitante no pueden ser el mismo.")
+            raise ValidationError(_("El equipo local y el visitante no pueden ser el mismo."))
         if obj.local_id and obj.visiting_id and not (obj.local.is_own or obj.visiting.is_own):
-            raise ValidationError(f"Uno de los dos equipos tiene que ser {club.own_team}.")
+            raise ValidationError(_("Uno de los dos equipos tiene que ser %(team)s.") % {"team": club.own_team})
 
 
 ENTITIES = {
     e.key: e for e in [
         PlayerEntity(
-            "players", "Jugadores", Player,
+            "players", gettext_lazy("Jugadores"), Player,
             [
-                Field("name", "Nombre", required=True, aliases=("nombre", "first_name"), example="Ana"),
-                Field("last_name", "Apellidos", required=True, aliases=("apellido", "apellidos"), example="García López"),
-                Field("position", "Posición", choice_parser(Player.POSITIONS), aliases=("lado",), example="Derecha"),
-                Field("skillfull_hand", "Mano", choice_parser(Player.HAND), aliases=("mano_habil",), example="Diestro"),
-                Field("in_team", "En plantilla", parse_bool, aliases=("activo", "en_equipo"), example="sí"),
-                Field("joined_season", "Temporada de alta", aliases=("temporada",), example="2026-2027"),
+                Field("name", gettext_lazy("Nombre"), required=True, aliases=("nombre", "first_name"), example="Ana"),
+                Field("last_name", gettext_lazy("Apellidos"), required=True, aliases=("apellido", "apellidos"), example="García López"),
+                Field("position", gettext_lazy("Posición"), choice_parser(Player.POSITIONS), aliases=("lado",), example="Derecha"),
+                Field("skillfull_hand", gettext_lazy("Mano"), choice_parser(Player.HAND), aliases=("mano_habil",), example="Diestro"),
+                Field("in_team", gettext_lazy("En plantilla"), parse_bool, aliases=("activo", "en_equipo"), example="sí"),
+                Field("joined_season", gettext_lazy("Temporada de alta"), aliases=("temporada",), example="2026-2027"),
             ],
-            help="Se buscan por ID o, si no hay ID, por nombre y apellidos dentro del club.",
+            help=gettext_lazy("Se buscan por ID o, si no hay ID, por nombre y apellidos dentro del club."),
             preview=("name", "last_name", "position", "in_team"),
         ),
         TeamEntity(
-            "teams", "Equipos rivales", Team,
+            "teams", gettext_lazy("Equipos rivales"), Team,
             [
-                Field("name", "Nombre", required=True, aliases=("equipo", "nombre_equipo"), example="Pádel Norte"),
-                Field("location", "Sede", required=True, aliases=("ubicacion", "direccion", "localizacion"), example="Club Norte, Sevilla"),
-                Field("in_group", "En el grupo", parse_bool, aliases=("grupo",), example="sí"),
+                Field("name", gettext_lazy("Nombre"), required=True, aliases=("equipo", "nombre_equipo"), example="Pádel Norte"),
+                Field("location", gettext_lazy("Sede"), required=True, aliases=("ubicacion", "direccion", "localizacion"), example="Club Norte, Sevilla"),
+                Field("in_group", gettext_lazy("En el grupo"), parse_bool, aliases=("grupo",), example="sí"),
             ],
-            help="Se buscan por ID o, si no hay ID, por nombre dentro del club. El equipo propio no se importa.",
+            help=gettext_lazy("Se buscan por ID o, si no hay ID, por nombre dentro del club. El equipo propio no se importa."),
             preview=("name", "location", "in_group"),
         ),
         MatchEntity(
-            "matches", "Partidos", Match,
+            "matches", gettext_lazy("Partidos"), Match,
             [
-                Field("start_date", "Fecha", parse_date, required=True, aliases=("fecha", "dia"), example="2026-10-25"),
-                Field("local", "Local", required=True, aliases=("equipo_local",), example="Los Gladiadores"),
-                Field("visiting", "Visitante", required=True, aliases=("equipo_visitante",), example="Pádel Norte"),
-                Field("location", "Ubicación", aliases=("sede", "lugar"), example=""),
+                Field("start_date", gettext_lazy("Fecha"), parse_date, required=True, aliases=("fecha", "dia"), example="2026-10-25"),
+                Field("local", gettext_lazy("Local"), required=True, aliases=("equipo_local",), example="Los Gladiadores"),
+                Field("visiting", gettext_lazy("Visitante"), required=True, aliases=("equipo_visitante",), example="Pádel Norte"),
+                Field("location", gettext_lazy("Ubicación"), aliases=("sede", "lugar"), example=""),
             ],
-            help="Los equipos se indican por su nombre y tienen que existir en el club. Para actualizar un partido hace falta su ID.",
+            help=gettext_lazy("Los equipos se indican por su nombre y tienen que existir en el club. Para actualizar un partido hace falta su ID."),
             preview=("start_date", "local", "visiting"),
         ),
     ]
@@ -242,13 +250,13 @@ ENTITIES = {
 
 def decode(data):
     if len(data) > MAX_BYTES:
-        raise ImportFileError(f"El fichero pasa de {MAX_BYTES // (1024 * 1024)} MB.")
+        raise ImportFileError(_("El fichero pasa de %(mb)s MB.") % {"mb": MAX_BYTES // (1024 * 1024)})
     for encoding in ("utf-8-sig", "cp1252"):
         try:
             return data.decode(encoding)
         except UnicodeDecodeError:
             pass
-    raise ImportFileError("No se puede leer el fichero: guárdalo como CSV UTF-8.")
+    raise ImportFileError(_("No se puede leer el fichero: guárdalo como CSV UTF-8."))
 
 
 def read_csv(text):
@@ -261,12 +269,12 @@ def read_csv(text):
             delimiter = ";" if sample.count(";") > sample.count(",") else ","
     rows = [r for r in csv.reader(io.StringIO(text), dialect) if any(c.strip() for c in r)]
     if not rows:
-        raise ImportFileError("El fichero está vacío.")
+        raise ImportFileError(_("El fichero está vacío."))
     headers = [h.strip() for h in rows[0]]
     if len(rows) - 1 > MAX_ROWS:
-        raise ImportFileError(f"El fichero tiene {len(rows) - 1} filas; el máximo son {MAX_ROWS}.")
+        raise ImportFileError(_("El fichero tiene %(rows)s filas; el máximo son %(max)s.") % {"rows": len(rows) - 1, "max": MAX_ROWS})
     if len(rows) == 1:
-        raise ImportFileError("El fichero solo tiene la fila de cabeceras.")
+        raise ImportFileError(_("El fichero solo tiene la fila de cabeceras."))
     return headers, rows[1:]
 
 
@@ -313,11 +321,11 @@ def process(entity, club, mode, headers, rows, mapping, save=False):
     Con save=True hay que llamarla dentro de una transacción.
     """
     fields = {f.name: f for f in entity.all_fields()}
-    missing = [f.label for f in entity.fields if f.required and f.name not in mapping and mode != UPDATE]
+    missing = [str(f.label) for f in entity.fields if f.required and f.name not in mapping and mode != UPDATE]
     if missing:
-        raise ImportFileError(f"Falta emparejar campos obligatorios: {', '.join(missing)}.")
+        raise ImportFileError(_("Falta emparejar campos obligatorios: %(fields)s.") % {"fields": ", ".join(missing)})
     if mode == UPDATE and "id" not in mapping and not isinstance(entity, (PlayerEntity, TeamEntity)):
-        raise ImportFileError("Para actualizar partidos hace falta la columna ID.")
+        raise ImportFileError(_("Para actualizar partidos hace falta la columna ID."))
 
     results, seen = [], {}
     for n, row in enumerate(rows, start=2):  # la línea 1 son las cabeceras
@@ -341,15 +349,15 @@ def process(entity, club, mode, headers, rows, mapping, save=False):
             result.errors += exc.messages
             continue
         if obj is None and mode == UPDATE:
-            result.errors.append("No existe ese registro y el modo es solo actualizar.")
+            result.errors.append(_("No existe ese registro y el modo es solo actualizar."))
             continue
         if obj is not None and mode == CREATE:
-            result.errors.append(f"Ya existe (ID {obj.pk}) y el modo es solo crear.")
+            result.errors.append(_("Ya existe (ID %(id)s) y el modo es solo crear.") % {"id": obj.pk})
             continue
         if obj is None:
             for f in entity.fields:
                 if f.required and f.name not in result.values:
-                    result.errors.append(f"{f.label}: obligatorio.")
+                    result.errors.append(_("%(field)s: obligatorio.") % {"field": f.label})
             if result.errors:
                 continue
             obj, result.action = entity.new(club), CREATE
@@ -366,7 +374,7 @@ def process(entity, club, mode, headers, rows, mapping, save=False):
         key = entity.natural_key(result.values, obj) or (("id", obj.pk) if obj.pk else None)
         if key is not None:
             if key in seen:
-                result.errors.append(f"Repetido en el fichero (igual que la línea {seen[key]}).")
+                result.errors.append(_("Repetido en el fichero (igual que la línea %(line)s).") % {"line": seen[key]})
                 continue
             seen[key] = n
         result.obj = obj

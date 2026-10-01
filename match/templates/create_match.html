@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="table-container">
-    <h1>Crear Partido</h1>
+    <h1>{% translate "Crear Partido" %}</h1>
 
     {# Mostrar el mensaje de error si existe #}
     {% if error %}
@@ -22,7 +22,7 @@
             {% endfor %}
         {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Crear Partido</button>
+        <button type="submit" class="btn btn-primary">{% translate "Crear Partido" %}</button>
     </form>
 </div>
 

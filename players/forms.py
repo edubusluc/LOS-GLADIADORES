@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from .models import Player
 
 class PlayerForm (forms.ModelForm):
@@ -7,14 +8,14 @@ class PlayerForm (forms.ModelForm):
         fields = ['name', 'last_name', 'position', 'skillfull_hand', 'photo']
 
 class SnpAccountForm(forms.Form):
-    username = forms.CharField(label="Usuario de SNP", max_length=150)
+    username = forms.CharField(label=_("Usuario de SNP"), max_length=150)
     password = forms.CharField(
-        label="Contraseña de SNP", required=False, widget=forms.PasswordInput(render_value=False),
-        help_text="Se guarda cifrada. Déjala vacía para mantener la actual.",
+        label=_("Contraseña de SNP"), required=False, widget=forms.PasswordInput(render_value=False),
+        help_text=_("Se guarda cifrada. Déjala vacía para mantener la actual."),
     )
     team = forms.CharField(
-        label="Equipo en SNP (opcional)", max_length=1000, required=False,
-        help_text="Solo si la cuenta tiene varios equipos: el número del equipo (p. ej. 4380) o la dirección de su página en SNP.",
+        label=_("Equipo en SNP (opcional)"), max_length=1000, required=False,
+        help_text=_("Solo si la cuenta tiene varios equipos: el número del equipo (p. ej. 4380) o la dirección de su página en SNP."),
     )
 
     def __init__(self, *args, has_password=False, **kwargs):
@@ -28,7 +29,7 @@ class SnpAccountForm(forms.Form):
     def clean_password(self):
         password = self.cleaned_data["password"]
         if not password and not self.has_password:
-            raise forms.ValidationError("Escribe la contraseña de SNP.")
+            raise forms.ValidationError(_("Escribe la contraseña de SNP."))
         return password
 
     def clean_team(self):
@@ -38,5 +39,5 @@ class SnpAccountForm(forms.Form):
             return ""
         number = parse_team_id(value)
         if not number:
-            raise forms.ValidationError("Escribe el número del equipo (p. ej. 4380) o la dirección de su página en SNP.")
+            raise forms.ValidationError(_("Escribe el número del equipo (p. ej. 4380) o la dirección de su página en SNP."))
         return number

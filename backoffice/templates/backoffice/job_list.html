@@ -1,15 +1,15 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags tz %}
-{% block title %}Procesos programados{% endblock %}
+{% load i18n backoffice_tags tz %}
+{% block title %}{% translate "Procesos programados" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow">{{ jobs|length }} proceso{{ jobs|pluralize }} · horas de {{ time_zone }}</span>
-        <h1>Procesos programados</h1>
+        <span class="z-eyebrow">{% blocktranslate trimmed count n=jobs|length with tz=time_zone %}{{ n }} proceso · horas de {{ tz }}{% plural %}{{ n }} procesos · horas de {{ tz }}{% endblocktranslate %}</span>
+        <h1>{% translate "Procesos programados" %}</h1>
     </div>
     <div class="z-actions">
-        <a href="{% url 'backoffice:run_list' %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-list"></i> Log de ejecuciones</a>
+        <a href="{% url 'backoffice:run_list' %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-list"></i> {% translate "Log de ejecuciones" %}</a>
     </div>
 </div>
 
@@ -17,25 +17,25 @@
 
 {% if late %}
 <div class="alert alert-warning">
-    <strong>El lanzador no está en marcha.</strong> Hay procesos que deberían haberse ejecutado hace más de 10 minutos.
-    El servidor tiene que ejecutar <code>python manage.py run_scheduler</code> cada minuto (ver el Readme).
+    <strong>{% translate "El lanzador no está en marcha." %}</strong> {% translate "Hay procesos que deberían haberse ejecutado hace más de 10 minutos." %}
+    {% blocktranslate trimmed %}El servidor tiene que ejecutar <code>python manage.py run_scheduler</code> cada minuto (ver el Readme).{% endblocktranslate %}
 </div>
 {% endif %}
 
-<section class="bo-kpis" aria-label="Resumen de procesos">
-    <div class="bo-kpi"><span class="bo-kpi-label">Procesos</span><b>{{ jobs|length }}</b><small>definidos en backoffice/jobs.py</small></div>
-    <div class="bo-kpi{% if failed_24h %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">Fallos en 24 h</span><b>{{ failed_24h }}</b><small><a href="{% url 'backoffice:run_list' %}?status=error">ver ejecuciones con error</a></small></div>
+<section class="bo-kpis" aria-label="{% translate 'Resumen de procesos' %}">
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Procesos" %}</span><b>{{ jobs|length }}</b><small>{% translate "definidos en backoffice/jobs.py" %}</small></div>
+    <div class="bo-kpi{% if failed_24h %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">{% translate "Fallos en 24 h" %}</span><b>{{ failed_24h }}</b><small><a href="{% url 'backoffice:run_list' %}?status=error">{% translate "ver ejecuciones con error" %}</a></small></div>
 </section>
 
 <div class="z-table-wrap"><table class="table align-middle">
-    <thead><tr><th>Proceso</th><th>Cuándo</th><th>Última ejecución</th><th>Próxima</th><th></th></tr></thead>
+    <thead><tr><th>{% translate "Proceso" %}</th><th>{% translate "Cuándo" %}</th><th>{% translate "Última ejecución" %}</th><th>{% translate "Próxima" %}</th><th></th></tr></thead>
     <tbody>
     {% for job in jobs %}
         <tr>
             <td>
                 <a href="{% url 'backoffice:job_detail' job.name %}"><strong>{{ job.name }}</strong></a>
-                {% if not job.enabled %}<span class="z-badge z-badge--outline ms-1">En pausa</span>{% endif %}
-                {% if job.running_since %}{% if job.last_run %}<a href="{% url 'backoffice:run_detail' job.last_run.public_id %}" class="z-badge z-badge--warning ms-1">En curso · ver en directo</a>{% else %}<span class="z-badge z-badge--warning ms-1">En curso</span>{% endif %}{% endif %}
+                {% if not job.enabled %}<span class="z-badge z-badge--outline ms-1">{% translate "En pausa" %}</span>{% endif %}
+                {% if job.running_since %}{% if job.last_run %}<a href="{% url 'backoffice:run_detail' job.last_run.public_id %}" class="z-badge z-badge--warning ms-1">{% translate "En curso · ver en directo" %}</a>{% else %}<span class="z-badge z-badge--warning ms-1">{% translate "En curso" %}</span>{% endif %}{% endif %}
                 <div class="text-muted small bo-wrap">{{ job.spec.description }}</div>
             </td>
             <td>{{ job|cron_text }}</td>
@@ -44,25 +44,25 @@
                 {% if job.last_run %}<div class="text-muted small">{{ job.last_run.started_at|ago }} · {{ job.last_run.duration|duration }}</div>{% endif %}
             </td>
             <td>
-                {% if job.run_requested_at %}<span class="z-badge z-badge--warning">Pedida a mano</span>
+                {% if job.run_requested_at %}<span class="z-badge z-badge--warning">{% translate "Pedida a mano" %}</span>
                 {% elif job.enabled and job.next_run_at %}{{ job.next_run_at|timezone:time_zone|date:"j M H:i" }}
                 {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="text-end">
                 <div class="bo-row-actions">
                     {% if job.spec.params %}
-                    <a href="{% url 'backoffice:job_detail' job.name %}" class="btn btn-sm btn-primary"><i class="fa-solid fa-play"></i> Ejecutar…</a>
+                    <a href="{% url 'backoffice:job_detail' job.name %}" class="btn btn-sm btn-primary"><i class="fa-solid fa-play"></i> {% translate "Ejecutar…" %}</a>
                     {% else %}
                     <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
+                        <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> {% translate "Ejecutar ahora" %}</button>
                     </form>
                     {% if job.spec.options %}
-                    <a href="{% url 'backoffice:job_detail' job.name %}" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-sliders"></i> Con opciones…</a>
+                    <a href="{% url 'backoffice:job_detail' job.name %}" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-sliders"></i> {% translate "Con opciones…" %}</a>
                     {% endif %}
                     {% endif %}
                     {% if job.spec.schedule %}
                     <form method="post" action="{% url 'backoffice:job_toggle' job.name %}">{% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-light">{% if job.enabled %}<i class="fa-solid fa-pause"></i> Pausar{% else %}<i class="fa-solid fa-play"></i> Reanudar{% endif %}</button>
+                        <button type="submit" class="btn btn-sm btn-outline-light">{% if job.enabled %}<i class="fa-solid fa-pause"></i> {% translate "Pausar" %}{% else %}<i class="fa-solid fa-play"></i> {% translate "Reanudar" %}{% endif %}</button>
                     </form>
                     {% endif %}
                 </div>
@@ -74,8 +74,8 @@
 
 <section class="z-panel mt-4">
     <div class="bo-panel-head">
-        <h2 class="h5">Últimas ejecuciones</h2>
-        <a href="{% url 'backoffice:run_list' %}">Ver todo el log</a>
+        <h2 class="h5">{% translate "Últimas ejecuciones" %}</h2>
+        <a href="{% url 'backoffice:run_list' %}">{% translate "Ver todo el log" %}</a>
     </div>
     {% include 'backoffice/includes/run_rows.html' with runs=recent_runs show_job=True %}
 </section>

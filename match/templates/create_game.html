@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
         <a href="{% url 'call_for_match' match.public_id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ match.local }} vs {{ match.visiting }}</a>
-        <h1>Crear partidos</h1>
+        <h1>{% translate "Crear partidos" %}</h1>
     </div>
 </div>
 
@@ -12,5 +13,5 @@
 <div>{% for message in messages %}<p class="alert warning">{{ message }}</p>{% endfor %}</div>
 {% endif %}
 
-{% include 'includes/lineup_form.html' with slots="12345"|make_list submit_label="Guardar partidos" %}
+{% include 'includes/lineup_form.html' with slots="12345"|make_list submit_label=_("Guardar partidos") %}
 {% endblock %}

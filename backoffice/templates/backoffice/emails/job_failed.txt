@@ -1,10 +1,10 @@
-Ha fallado el proceso programado "{{ job.name }}".
+{% load i18n %}{% blocktranslate with name=job.name %}Ha fallado el proceso programado "{{ name }}".{% endblocktranslate %}
 {% if spec %}{{ spec.description }}{% endif %}
 
-Empezó: {{ run.started_at|date:"j/n/Y H:i" }} (UTC)
-Tipo: {{ run.get_trigger_display }}
+{% translate "Empezó:" %} {{ run.started_at|date:"j/n/Y H:i" }} (UTC)
+{% translate "Tipo:" %} {{ run.get_trigger_display }}
 
-Error:
+{% translate "Error:" %}
 {{ run.error|truncatechars:3000 }}
 
-Tienes la salida completa en el back-office, en Procesos programados.
+{% translate "Tienes la salida completa en el back-office, en Procesos programados." %}

@@ -19,6 +19,7 @@ from django.db import connections as db_connections
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from core.emails import build_email
 
@@ -300,7 +301,7 @@ def notify_failure(run):
         return False
     context = {"run": run, "job": run.job, "spec": run.job.spec}
     email = build_email(
-        f"Zyra · Ha fallado el proceso {run.job.name}",
+        _("Zyra · Ha fallado el proceso %(job)s") % {"job": run.job.name},
         render_to_string("backoffice/emails/job_failed.txt", context),
         render_to_string("backoffice/emails/job_failed.html", context),
         to=recipients,

@@ -1,15 +1,15 @@
 {% extends 'backoffice/base.html' %}
-{% load static backoffice_tags %}
-{% block title %}Consola SQL{% endblock %}
+{% load static i18n backoffice_tags %}
+{% block title %}{% translate "Consola SQL" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow">Solo lectura · máximo {{ timeout }} s por consulta</span>
-        <h1>Consola SQL</h1>
+        <span class="z-eyebrow">{% blocktranslate %}Solo lectura · máximo {{ timeout }} s por consulta{% endblocktranslate %}</span>
+        <h1>{% translate "Consola SQL" %}</h1>
     </div>
     <div class="z-actions">
-        <a href="{% url 'backoffice:sql_log' %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-list"></i> Registro de consultas</a>
+        <a href="{% url 'backoffice:sql_log' %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-list"></i> {% translate "Registro de consultas" %}</a>
     </div>
 </div>
 
@@ -19,22 +19,22 @@
     <div class="bo-sql-main">
         <form method="post" class="z-panel bo-sql-form" id="sql-form">
             {% csrf_token %}
-            {% if saved %}<p class="mb-2"><span class="z-badge z-badge--lime">Guardada</span> <strong>{{ saved.name }}</strong>{% if saved.description %} <span class="text-muted">· {{ saved.description }}</span>{% endif %}</p>{% endif %}
-            <label for="sql-input" class="visually-hidden">Consulta SQL</label>
+            {% if saved %}<p class="mb-2"><span class="z-badge z-badge--lime">{% translate "Guardada" %}</span> <strong>{{ saved.name }}</strong>{% if saved.description %} <span class="text-muted">· {{ saved.description }}</span>{% endif %}</p>{% endif %}
+            <label for="sql-input" class="visually-hidden">{% translate "Consulta SQL" %}</label>
             <div class="bo-sql-editor">
                 <textarea id="sql-input" name="sql" rows="8" spellcheck="false" class="form-control bo-sql-input" placeholder="SELECT name, created_at FROM core_club ORDER BY created_at DESC">{{ query }}</textarea>
             </div>
             <div class="bo-sql-actions">
-                <button type="submit" name="action" value="run" class="btn btn-primary"><i class="fa-solid fa-play"></i> Ejecutar</button>
-                <button type="submit" name="action" value="export" class="btn btn-outline-light"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
-                <span class="text-muted small">Ctrl + Enter ejecuta · Ctrl + Espacio sugiere campos · se muestran hasta {{ display_limit }} filas y se exportan hasta {{ export_limit }} · <code>local_id.name</code> lee campos de la tabla relacionada</span>
+                <button type="submit" name="action" value="run" class="btn btn-primary"><i class="fa-solid fa-play"></i> {% translate "Ejecutar" %}</button>
+                <button type="submit" name="action" value="export" class="btn btn-outline-light"><i class="fa-solid fa-file-csv"></i> {% translate "Exportar CSV" %}</button>
+                <span class="text-muted small">{% blocktranslate trimmed %}Ctrl + Enter ejecuta · Ctrl + Espacio sugiere campos · se muestran hasta {{ display_limit }} filas y se exportan hasta {{ export_limit }} · <code>local_id.name</code> lee campos de la tabla relacionada{% endblocktranslate %}</span>
             </div>
-            <details class="bo-sql-save" {% if error and 'nombre' in error %}open{% endif %}>
-                <summary>Guardar consulta</summary>
+            <details class="bo-sql-save" {% if error and not result and request.POST.action == 'save' %}open{% endif %}>
+                <summary>{% translate "Guardar consulta" %}</summary>
                 <div class="bo-filters mt-2 mb-0">
-                    <input type="text" name="name" class="form-control" placeholder="Nombre" value="{{ saved.name|default:'' }}" aria-label="Nombre de la consulta">
-                    <input type="text" name="description" class="form-control" placeholder="Descripción (opcional)" value="{{ saved.description|default:'' }}" aria-label="Descripción">
-                    <button type="submit" name="action" value="save" class="btn btn-outline-light"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+                    <input type="text" name="name" class="form-control" placeholder="{% translate 'Nombre' %}" value="{{ saved.name|default:'' }}" aria-label="{% translate 'Nombre de la consulta' %}">
+                    <input type="text" name="description" class="form-control" placeholder="{% translate 'Descripción (opcional)' %}" value="{{ saved.description|default:'' }}" aria-label="{% translate 'Descripción' %}">
+                    <button type="submit" name="action" value="save" class="btn btn-outline-light"><i class="fa-solid fa-floppy-disk"></i> {% translate "Guardar" %}</button>
                 </div>
             </details>
         </form>
@@ -44,13 +44,13 @@
         {% if result %}
         <section class="z-panel">
             <div class="bo-panel-head">
-                <h2 class="h5">Resultado</h2>
-                <small class="text-muted">{{ result.row_count }} fila{{ result.row_count|pluralize }}{% if result.truncated %} (hay más: añade LIMIT o filtros, o exporta){% endif %} · {{ result.duration_ms }} ms</small>
+                <h2 class="h5">{% translate "Resultado" %}</h2>
+                <small class="text-muted">{% blocktranslate trimmed count n=result.row_count %}{{ n }} fila{% plural %}{{ n }} filas{% endblocktranslate %}{% if result.truncated %} {% translate "(hay más: añade LIMIT o filtros, o exporta)" %}{% endif %} · {{ result.duration_ms }} ms</small>
             </div>
             {% if result.expanded_sql %}
-            <details class="mb-2"><summary class="small text-muted">SQL ejecutado (con las relaciones resueltas)</summary><pre class="bo-log bo-mono mt-2">{{ result.expanded_sql }}</pre></details>
+            <details class="mb-2"><summary class="small text-muted">{% translate "SQL ejecutado (con las relaciones resueltas)" %}</summary><pre class="bo-log bo-mono mt-2">{{ result.expanded_sql }}</pre></details>
             {% endif %}
-            {% if result.masked %}<p class="small text-muted">Columnas ocultas por seguridad: {{ result.masked|join:", " }}.</p>{% endif %}
+            {% if result.masked %}<p class="small text-muted">{% with columns=result.masked|join:", " %}{% blocktranslate %}Columnas ocultas por seguridad: {{ columns }}.{% endblocktranslate %}{% endwith %}</p>{% endif %}
             {% if result.columns %}
             <div class="z-table-wrap bo-sql-result"><table class="table table-sm align-middle">
                 <thead><tr>{% for c in result.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
@@ -58,7 +58,7 @@
                 {% for row in result.rows %}
                     <tr>{% for v in row %}<td>{% if v is None %}<span class="text-muted">NULL</span>{% else %}{{ v|truncatechars:120 }}{% endif %}</td>{% endfor %}</tr>
                 {% empty %}
-                    <tr><td colspan="{{ result.columns|length }}" class="text-muted">Sin filas.</td></tr>
+                    <tr><td colspan="{{ result.columns|length }}" class="text-muted">{% translate "Sin filas." %}</td></tr>
                 {% endfor %}
                 </tbody>
             </table></div>
@@ -69,44 +69,44 @@
 
     <aside class="bo-sql-side">
         <section class="z-panel">
-            <h2 class="h6">Consultas guardadas</h2>
+            <h2 class="h6">{% translate "Consultas guardadas" %}</h2>
             <ul class="bo-list">
                 {% for q in saved_queries %}
                 <li>
                     <a href="?saved={{ q.public_id }}">{{ q.name }}</a>
-                    <form method="post" action="{% url 'backoffice:sql_delete_saved' q.public_id %}" class="ms-auto" onsubmit="return confirm('¿Borrar la consulta guardada?');">
-                        {% csrf_token %}<button type="submit" class="btn btn-link btn-sm p-0 text-muted" title="Borrar"><i class="fa-solid fa-trash"></i><span class="visually-hidden">Borrar {{ q.name }}</span></button>
+                    <form method="post" action="{% url 'backoffice:sql_delete_saved' q.public_id %}" class="ms-auto" onsubmit="return confirm('{% translate "¿Borrar la consulta guardada?" as t_confirm %}{{ t_confirm|escapejs }}');">
+                        {% csrf_token %}<button type="submit" class="btn btn-link btn-sm p-0 text-muted" title="{% translate 'Borrar' %}"><i class="fa-solid fa-trash"></i><span class="visually-hidden">{% blocktranslate with name=q.name %}Borrar {{ name }}{% endblocktranslate %}</span></button>
                     </form>
                 </li>
                 {% empty %}
-                <li class="text-muted small">Todavía no hay ninguna.</li>
+                <li class="text-muted small">{% translate "Todavía no hay ninguna." %}</li>
                 {% endfor %}
             </ul>
         </section>
 
         <section class="z-panel">
-            <h2 class="h6">Tablas</h2>
-            <p class="small text-muted">Pulsa una tabla para consultarla o una columna para añadirla. Las columnas con <span class="bo-fk">→</span> apuntan a otra tabla: escribe <code>local_id.name</code> para leer sus campos.</p>
+            <h2 class="h6">{% translate "Tablas" %}</h2>
+            <p class="small text-muted">{% blocktranslate trimmed %}Pulsa una tabla para consultarla o una columna para añadirla. Las columnas con <span class="bo-fk">→</span> apuntan a otra tabla: escribe <code>local_id.name</code> para leer sus campos.{% endblocktranslate %}</p>
             <div class="bo-schema">
                 {% for t in schema %}
                 <details>
                     <summary><button type="button" class="bo-link" data-table="{{ t.name }}">{{ t.name }}</button></summary>
-                    <ul>{% for c in t.columns %}<li><button type="button" class="bo-link" data-column="{{ c.name }}">{{ c.name }}</button>{% if c.target %} <span class="bo-fk" title="Clave ajena: usa {{ c.name }}.columna">→ {{ c.target }}</span>{% endif %}</li>{% endfor %}</ul>
+                    <ul>{% for c in t.columns %}<li><button type="button" class="bo-link" data-column="{{ c.name }}">{{ c.name }}</button>{% if c.target %} <span class="bo-fk" title="{% blocktranslate with name=c.name %}Clave ajena: usa {{ name }}.columna{% endblocktranslate %}">→ {{ c.target }}</span>{% endif %}</li>{% endfor %}</ul>
                 </details>
                 {% endfor %}
             </div>
         </section>
 
         <section class="z-panel">
-            <h2 class="h6">Mis últimas consultas</h2>
+            <h2 class="h6">{% translate "Mis últimas consultas" %}</h2>
             <ul class="bo-list">
                 {% for h in history %}
                 <li class="bo-history">
                     <button type="button" class="bo-link bo-mono" data-sql="{{ h.sql }}">{{ h.sql|truncatechars:70 }}</button>
-                    <small class="text-muted">{{ h.created_at|ago }}{% if h.error %} · <span class="text-danger">error</span>{% elif h.exported %} · exportada{% else %} · {{ h.row_count }} filas{% endif %}</small>
+                    <small class="text-muted">{{ h.created_at|ago }}{% if h.error %} · <span class="text-danger">{% translate "error" %}</span>{% elif h.exported %} · {% translate "exportada" %}{% else %} · {% blocktranslate with n=h.row_count %}{{ n }} filas{% endblocktranslate %}{% endif %}</small>
                 </li>
                 {% empty %}
-                <li class="text-muted small">Aún no has lanzado ninguna.</li>
+                <li class="text-muted small">{% translate "Aún no has lanzado ninguna." %}</li>
                 {% endfor %}
             </ul>
         </section>

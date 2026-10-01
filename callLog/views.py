@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.utils.translation import gettext as _
 from callLog.models import CallLog
 from players.models import Player
 from django.views.decorators.http import require_http_methods
@@ -14,7 +15,7 @@ def view_call_log(request, call_id):
         call_log = CallLog.objects.get(call__public_id=call_id, call__match__club=request.club)
     except CallLog.DoesNotExist:
         return render(request, "view_call_log.html", {
-            "error_message": "No se encontró el registro de llamada con el ID especificado.",
+            "error_message": _("No se encontró el registro de llamada con el ID especificado."),
             "log_lines": [],
             "players": players,
             "call_id": call_id,

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load tz %}
+{% load tz i18n %}
 
 {% block content %}
 <div class="table-container my-4">
@@ -11,29 +11,31 @@
     </div>
     {% endif %}
 
-    <h1>Cuenta SNP</h1>
+    <h1>{% translate "Cuenta SNP" %}</h1>
     <p class="text-muted">
+        {% blocktranslate trimmed %}
         Registra aquí el usuario y la contraseña de SNP del capitán y tendrás en Zyra los puntos SNP de todos
         tus jugadores, actualizados cada semana. Así verás el nivel de cada uno de un vistazo y te será más
         fácil montar las parejas de los partidos. Tus claves se guardan cifradas y nadie puede verlas.
+        {% endblocktranslate %}
     </p>
 
     {% if account %}
     <div class="mb-4">
-        <p class="mb-3"><strong>Última actualización:</strong>
+        <p class="mb-3"><strong>{% translate "Última actualización:" %}</strong>
             {% if account.last_sync_at %}
                 {{ account.last_sync_at|timezone:"Europe/Madrid"|date:"d/m/Y H:i" }}
-                {% if account.last_sync_ok %}<span class="badge bg-success">correcta</span>{% else %}<span class="badge bg-danger">con error</span>{% endif %}
-            {% else %}todavía no se ha ejecutado{% endif %}
+                {% if account.last_sync_ok %}<span class="badge bg-success">{% translate "correcta" %}</span>{% else %}<span class="badge bg-danger">{% translate "con error" %}</span>{% endif %}
+            {% else %}{% translate "todavía no se ha ejecutado" %}{% endif %}
         </p>
-        <form method="post" action="{% url 'snp_account_delete' %}" class="d-inline" onsubmit="return confirm('¿Borrar la cuenta SNP del club?');">
+        <form method="post" action="{% url 'snp_account_delete' %}" class="d-inline" onsubmit="return confirm('{% translate "¿Borrar la cuenta SNP del club?" as confirm_msg %}{{ confirm_msg|escapejs }}');">
             {% csrf_token %}
-            <button type="submit" class="btn btn-outline-danger">Borrar cuenta</button>
+            <button type="submit" class="btn btn-outline-danger">{% translate "Borrar cuenta" %}</button>
         </form>
     </div>
     {% endif %}
 
-    <h4>{% if account %}Cambiar la cuenta{% else %}Configurar la cuenta{% endif %}</h4>
+    <h4>{% if account %}{% translate "Cambiar la cuenta" %}{% else %}{% translate "Configurar la cuenta" %}{% endif %}</h4>
     <form method="post" autocomplete="off">
         {% csrf_token %}
         {% for field in form %}
@@ -44,7 +46,7 @@
             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="submit" class="btn btn-primary">{% translate "Guardar" %}</button>
     </form>
 </div>
 {% endblock %}

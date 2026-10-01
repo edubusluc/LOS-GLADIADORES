@@ -236,9 +236,9 @@ class SnpAccountTests(TestCase):
 
 
 SNP_TEAM = [
-    {"name": "ANA ALVAREZ", "category": "500", "score": 42.5},
-    {"name": "PEDRO RAPOSO BELLERIN", "category": "1000", "score": 120.0},
-    {"name": "MARIA JOSE GOMEZ RUIZ", "category": "FUTURE", "score": 33.0},
+    {"name": "ANA ALVAREZ 500", "score": 42.5},
+    {"name": "PEDRO RAPOSO BELLERIN 1000", "score": 120.0},
+    {"name": "MARIA JOSE GOMEZ RUIZ Future", "score": 33.0},
 ]
 
 
@@ -366,29 +366,20 @@ class CompleteTeamTests(TestCase):
         self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.id])), 'name="last_name"')
 
 
-class ReadRowsTests(TestCase):
+class SplitCategoryTests(TestCase):
     def test_split_category(self):
-        from .scraper import split_category
+        from .snp import split_category
         self.assertEqual(split_category("PEDRO RAPOSO BELLERIN\n500"), ("PEDRO RAPOSO BELLERIN", "500"))
         self.assertEqual(split_category("ANA RUIZ 1000"), ("ANA RUIZ", "1000"))
         self.assertEqual(split_category("ANA RUIZ Future"), ("ANA RUIZ", "FUTURE"))
         self.assertEqual(split_category("ANA RUIZ GRAND SLAM"), ("ANA RUIZ", "GRAND SLAM"))
         self.assertEqual(split_category("ALBERTO MONTAÑO LEON"), ("ALBERTO MONTAÑO LEON", ""))
 
-    def test_reads_the_cell_and_separates_the_category(self):
-        from .scraper import _read_rows
-
-        def element(text=None, children=None):
-            el = mock.Mock()
-            el.inner_text.return_value = text
-            el.query_selector.side_effect = lambda selector: (children or {}).get(selector)
-            return el
-
-        rows = [element(children={"td:nth-child(2)": element(name), "td:nth-child(3)": element(score)})
-                for name, score in [("PEDRO RAPOSO BELLERIN\n500", "120,5"), ("ANA RUIZ GRAND SLAM", "3")]]
-        page = mock.Mock()
-        page.query_selector_all.return_value = rows
-        self.assertEqual(_read_rows(page), [
-            {"name": "PEDRO RAPOSO BELLERIN", "category": "500", "score": 120.5},
-            {"name": "ANA RUIZ", "category": "GRAND SLAM", "score": 3.0},
-        ])
+    def test_same_player_with_and_without_category_is_listed_once(self):
+        from .snp_import import plan_import
+        club = create_club("Club A", "Sevilla", User.objects.create_user("admin", password="x"))
+        to_add, existing = plan_import(club, [{"name": "ALBERTO MONTAÑO LEON 500", "score": 5.0},
+                                              {"name": "ALBERTO MONTAÑO LEON", "score": 5.0}])
+        self.assertEqual(existing, [])
+        self.assertEqual([(p["snp_name"], p["category"], p["last_name"]) for p in to_add],
+                         [("ALBERTO MONTAÑO LEON", "500", "Montaño Leon")])

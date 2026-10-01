@@ -184,29 +184,14 @@ def _wait_for_next_page(page, frame, previous_names, log):
     raise SnpScrapeError("La página siguiente de la tabla de jugadores de SNP no ha terminado de cargar.")
 
 
-def split_category(text):
-    """
-    Separa la categoría que SNP pone tras el nombre del jugador:
-    "PEDRO RAPOSO BELLERIN 500" -> ("PEDRO RAPOSO BELLERIN", "500");
-    "ANA RUIZ GRAND SLAM" -> ("ANA RUIZ", "GRAND SLAM"); sin categoría -> (nombre, "").
-    """
-    tokens = (text or "").split()
-    if len(tokens) > 2 and [t.upper() for t in tokens[-2:]] == ["GRAND", "SLAM"]:
-        return " ".join(tokens[:-2]), "GRAND SLAM"
-    if len(tokens) > 1 and (tokens[-1].isdigit() or tokens[-1].upper() == "FUTURE"):
-        return " ".join(tokens[:-1]), tokens[-1].upper()
-    return " ".join(tokens), ""
-
-
 def _read_rows(page):
     rows = []
     for row in page.query_selector_all(f"{RESULTS_TABLE} tbody tr"):
         name_cell = row.query_selector("td:nth-child(2)")
         value_cell = row.query_selector("td:nth-child(3)")
-        name, category = split_category(name_cell.inner_text() if name_cell else "")
+        name = name_cell.inner_text().strip() if name_cell else ""
         if name:
-            rows.append({"name": name, "category": category,
-                         "score": parse_score(value_cell.inner_text() if value_cell else "")})
+            rows.append({"name": name, "score": parse_score(value_cell.inner_text() if value_cell else "")})
     return rows
 
 
@@ -246,10 +231,8 @@ def scrape_scores(username, password, team_id=None, headed=False, log=None):
         raise SnpScrapeError(f"Error del navegador al leer SNP: {str(exc).splitlines()[0]}") from exc
     if not players:
         raise SnpScrapeError("La tabla de jugadores de SNP está vacía.")
-    # Algunas páginas pueden repetir filas (a veces con y sin categoría): nos quedamos
-    # con la primera aparición de cada nombre, prefiriendo la que trae categoría.
+    # Algunas páginas pueden repetir filas: nos quedamos con la primera aparición.
     unique = {}
     for player in players:
-        if player["name"] not in unique or (player["category"] and not unique[player["name"]]["category"]):
-            unique[player["name"]] = player
+        unique.setdefault(player["name"], player)
     return list(unique.values())

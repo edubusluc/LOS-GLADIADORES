@@ -18,8 +18,8 @@ from django.utils import timezone
 from core.crypto import DecryptionError
 
 from .models import Player, SnpScoreHistory, SnpTeamImport, current_season
-from .scraper import SnpScrapeError, scrape_scores, split_category
-from .snp import match_scores
+from .scraper import SnpScrapeError, scrape_scores
+from .snp import match_scores, split_category
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +53,26 @@ def split_snp_name(snp_name):
     return " ".join(tokens[:start]), " ".join(tokens[start:])
 
 
+def _by_clean_name(scores):
+    """
+    Un jugador por nombre (sin la categoría): SNP puede devolver al mismo jugador con
+    y sin ella ("X 500" y "X"). Se queda la entrada que trae categoría.
+    """
+    unique = {}
+    for entry in scores:
+        name, category = split_category(entry["name"])
+        if name not in unique or (category and not unique[name][1]):
+            unique[name] = (entry, category)
+    return [{**entry, "name": name, "category": category} for name, (entry, category) in unique.items()]
+
+
 def plan_import(club, scores):
     """(a_añadir, ya_registrados) comparando los nombres de SNP con todos los jugadores del club."""
+    scores = _by_clean_name(scores)
     players = list(Player.objects.filter(club=club))
     matched, unmatched, ambiguous = match_scores(players, scores)
     by_name = {entry["name"]: entry for entry in scores}
-    category = {entry["name"]: entry.get("category", "") for entry in scores}
+    category = {entry["name"]: entry["category"] for entry in scores}
     existing = [{"snp_name": snp_name, "category": category[snp_name], "player": str(player)}
                 for player, _, snp_name in matched]
     existing += [{"snp_name": name, "category": category[name], "player": "varios jugadores con un nombre parecido"}
@@ -103,7 +117,7 @@ def confirm(team_import):
     if team_import.status != SnpTeamImport.READY:
         return team_import
     club = team_import.club
-    entries = [{"name": e["snp_name"], "category": e.get("category", ""), "score": e["score"]} for e in team_import.to_add]
+    entries = [{"name": e["snp_name"], "score": e["score"]} for e in team_import.to_add]
     still_missing = {e["snp_name"] for e in plan_import(club, entries)[0]}
     created, today, season = [], timezone.localdate(), current_season()
     for entry in team_import.to_add:

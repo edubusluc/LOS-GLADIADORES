@@ -12,7 +12,7 @@ from django.utils import timezone
 from core.crypto import DecryptionError
 
 from .models import Player, SnpScoreHistory, current_season
-from .scraper import SnpScrapeError, scrape_scores, split_category
+from .scraper import SnpScrapeError, scrape_scores
 
 # Coincidencia exacta > nombre completo al principio (sobra o falta el 2º apellido o la
 # categoría) > nombre y primer apellido presentes.
@@ -24,6 +24,20 @@ def normalize(text):
     text = unicodedata.normalize("NFKD", text or "")
     text = "".join(c for c in text if not unicodedata.combining(c)).lower()
     return " ".join(re.sub(r"[^a-z0-9ñ]+", " ", text).split())
+
+
+def split_category(text):
+    """
+    Separa la categoría que SNP pone tras el nombre del jugador:
+    "PEDRO RAPOSO BELLERIN 500" -> ("PEDRO RAPOSO BELLERIN", "500");
+    "ANA RUIZ GRAND SLAM" -> ("ANA RUIZ", "GRAND SLAM"); sin categoría -> (nombre, "").
+    """
+    tokens = (text or "").split()
+    if len(tokens) > 2 and [t.upper() for t in tokens[-2:]] == ["GRAND", "SLAM"]:
+        return " ".join(tokens[:-2]), "GRAND SLAM"
+    if len(tokens) > 1 and (tokens[-1].isdigit() or tokens[-1].upper() == "FUTURE"):
+        return " ".join(tokens[:-1]), tokens[-1].upper()
+    return " ".join(tokens), ""
 
 
 def _snp_tokens(name):

@@ -779,13 +779,16 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 .modal .btn-close { filter: invert(1); }
 
 /* «Completar equipo» */
-.z-import-list { max-height: 260px; overflow-y: auto; margin: 0 0 16px; padding: 0; list-style: none; }
-.z-import-list li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--z-border); }
+.z-import-list { max-height: 420px; overflow-y: auto; margin: 0 0 20px; padding: 0; list-style: none; }
+/* Nombre, categoría y dato final en columnas fijas para que todo quede alineado. */
+.z-import-list li { display: grid; grid-template-columns: minmax(0, 1fr) 120px minmax(90px, auto); align-items: center; gap: 16px; padding: 10px 4px; border-bottom: 1px solid var(--z-border); }
+.z-import-list li > small { text-align: right; }
+.z-import-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .z-import-list li:last-child { border-bottom: 0; }
 .z-import-list small { color: var(--z-muted); }
 
 /* Categoría SNP del jugador: un color por tipo. */
-.z-cat { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }
+.z-cat { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }
 .z-cat--future { color: #0B1F14; background: #4ADE80; }
 .z-cat--500 { color: #FFFFFF; background: #8B5CF6; }
 .z-cat--1000 { color: #FFFFFF; background: #3B82F6; }

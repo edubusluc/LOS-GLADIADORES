@@ -360,3 +360,25 @@ class CompleteTeamTests(TestCase):
         self.ana.refresh_from_db()
         self.assertEqual((self.ana.name, self.ana.last_name), ("Ana María", "Álvarez Ruiz"))
         self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.id])), 'name="last_name"')
+
+
+class ReadRowsTests(TestCase):
+    def test_reads_only_the_player_name_without_category(self):
+        from .scraper import _read_rows
+
+        def element(text=None, children=None):
+            el = mock.Mock()
+            el.inner_text.return_value = text
+            el.query_selector.side_effect = lambda selector: (children or {}).get(selector)
+            return el
+
+        with_span = element(children={
+            "td:nth-child(2) span.td_nombre_jugador": element("PEDRO RAPOSO BELLERIN"),
+            "td:nth-child(2)": element("PEDRO RAPOSO BELLERIN\n500"),
+            "td:nth-child(3)": element("120,5"),
+        })
+        without_span = element(children={"td:nth-child(2)": element(" ANA  ALVAREZ "), "td:nth-child(3)": element("3")})
+        page = mock.Mock()
+        page.query_selector_all.return_value = [with_span, without_span]
+        self.assertEqual(_read_rows(page), [{"name": "PEDRO RAPOSO BELLERIN", "score": 120.5},
+                                            {"name": "ANA ALVAREZ", "score": 3.0}])

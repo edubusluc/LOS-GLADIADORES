@@ -26,7 +26,7 @@
         gameId: slot.dataset.gameId || null,
         player1Id: a.value,
         player2Id: b.value,
-        label: `${oa.textContent.trim()} y ${ob.textContent.trim()}`,
+        label: interpolate(gettext('%(a)s y %(b)s'), { a: oa.textContent.trim(), b: ob.textContent.trim() }, true),
         points: (parseFloat(oa.dataset.points) || 0) + (parseFloat(ob.dataset.points) || 0),
       });
     });
@@ -35,7 +35,8 @@
     list.innerHTML = '';
     pairs.forEach(function (p, i) {
       const li = document.createElement('li');
-      li.textContent = `${p.label} · ${Math.round(p.points * 10) / 10} pts SNP · partido de ${i < 2 ? 3 : 2} puntos`;
+      li.textContent = interpolate(gettext('%(pair)s · %(points)s pts SNP · partido de %(value)s puntos'),
+        { pair: p.label, points: Math.round(p.points * 10) / 10, value: i < 2 ? 3 : 2 }, true);
       list.appendChild(li);
     });
 
@@ -44,7 +45,7 @@
       pairs.map((p) => ({ gameId: p.gameId, player1Id: p.player1Id, player2Id: p.player2Id }))
     );
     form.querySelector('[data-lineup-count]').textContent = pairs.length;
-    form.querySelector('[data-lineup-hint]').textContent = complete ? '' : 'Completa todas las parejas para guardar';
+    form.querySelector('[data-lineup-hint]').textContent = complete ? '' : gettext('Completa todas las parejas para guardar');
     form.querySelector('[data-lineup-save]').disabled = !complete;
   }
 

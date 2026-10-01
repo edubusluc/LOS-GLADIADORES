@@ -1,6 +1,7 @@
 from django.db import models
 from players.models import Player
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext, gettext_lazy as _
 from . import scoring
 from datetime import datetime
 from urllib.parse import quote
@@ -20,10 +21,10 @@ class Match(PublicIdModel):
     
     
     POSSIBLE_RESULT = [
-        ("Victoria Local", "Victoria Local"),
-        ("Victoria Visitante", "Victoria Visitante"),
-        ("EMPATE", "Empate"),
-        ("NONE", "Ninguno"),
+        ("Victoria Local", _("Victoria Local")),
+        ("Victoria Visitante", _("Victoria Visitante")),
+        ("EMPATE", _("Empate")),
+        ("NONE", _("Ninguno")),
     ]
     
     start_date = models.DateField()
@@ -129,7 +130,7 @@ def validate_set_value(value):
     # Límite amplio para admitir un super tie-break en el tercer set; las reglas
     # completas de pádel están en match/scoring.py (Result.clean).
     if value < 0 or value > 30:
-        raise ValidationError('El valor debe estar entre 0 y 30.')
+        raise ValidationError(gettext('El valor debe estar entre 0 y 30.'))
 
 
 class Result(PublicIdModel):

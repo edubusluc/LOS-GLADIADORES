@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
         <span class="z-eyebrow">{{ current_club.name }}</span>
-        <h1>Equipos</h1>
+        <h1>{% translate "Equipos" %}</h1>
     </div>
     {% if is_club_admin %}
     <div class="z-actions">
-        <a href="{% url 'create_team' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Nuevo equipo</a>
+        <a href="{% url 'create_team' %}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> {% translate "Nuevo equipo" %}</a>
     </div>
     {% endif %}
 </div>
@@ -18,16 +18,16 @@
     <div class="z-toolbar-group">
         <form method="get" class="z-search" id="search-form" role="search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="search" name="search" id="team-search" placeholder="Buscar por nombre o ubicación..." value="{{ search }}" aria-label="Buscar equipo">
+            <input type="search" name="search" id="team-search" placeholder="{% translate 'Buscar por nombre o ubicación...' %}" value="{{ search }}" aria-label="{% translate 'Buscar equipo' %}">
         </form>
         {% if search %}
-        <span class="text-muted small">{{ teams.paginator.count }} resultado{{ teams.paginator.count|pluralize }}</span>
-        <a href="{% url 'list_teams' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+        <span class="text-muted small">{% blocktranslate trimmed count n=teams.paginator.count %}{{ n }} resultado{% plural %}{{ n }} resultados{% endblocktranslate %}</span>
+        <a href="{% url 'list_teams' %}" class="btn btn-outline-secondary btn-sm">{% translate "Limpiar" %}</a>
         {% endif %}
     </div>
-    <div class="z-segmented" role="group" aria-label="Cambiar vista">
-        <button type="button" class="btn btn-sm active" id="btn-view-cards" aria-label="Vista de tarjetas"><i class="fa-solid fa-grip"></i></button>
-        <button type="button" class="btn btn-sm" id="btn-view-table" aria-label="Vista de tabla"><i class="fa-solid fa-list"></i></button>
+    <div class="z-segmented" role="group" aria-label="{% translate 'Cambiar vista' %}">
+        <button type="button" class="btn btn-sm active" id="btn-view-cards" aria-label="{% translate 'Vista de tarjetas' %}"><i class="fa-solid fa-grip"></i></button>
+        <button type="button" class="btn btn-sm" id="btn-view-table" aria-label="{% translate 'Vista de tabla' %}"><i class="fa-solid fa-list"></i></button>
     </div>
 </div>
 
@@ -36,16 +36,16 @@
     {% for team in teams %}
     <div class="z-card z-team position-relative">
         {% if is_club_admin %}
-        <a href="{% url 'edit_team' team.public_id %}" class="z-edit" aria-label="Editar {{ team.name }}"><i class="fa-solid fa-pen"></i></a>
+        <a href="{% url 'edit_team' team.public_id %}" class="z-edit" aria-label="{% blocktranslate with name=team.name %}Editar {{ name }}{% endblocktranslate %}"><i class="fa-solid fa-pen"></i></a>
         {% endif %}
         <img src="{% if team.photo %}{{ team.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
         <div class="min-w-0">
             <h3>{{ team.name }}</h3>
-            <p><i class="fa-solid fa-location-dot text-lime me-1"></i>{{ team.location|default:"Sin ubicación" }}</p>
+            <p><i class="fa-solid fa-location-dot text-lime me-1"></i>{% if team.location %}{{ team.location }}{% else %}{% translate "Sin ubicación" %}{% endif %}</p>
             <div class="d-flex flex-wrap gap-2">
-                {% if team.is_own %}<span class="z-badge z-badge--lime">Tu equipo</span>{% endif %}
+                {% if team.is_own %}<span class="z-badge z-badge--lime">{% translate "Tu equipo" %}</span>{% endif %}
                 {% if is_club_admin %}
-                {% if team.in_group %}<span class="z-badge z-badge--outline">En tu grupo</span>{% else %}<span class="z-badge">Fuera de grupo</span>{% endif %}
+                {% if team.in_group %}<span class="z-badge z-badge--outline">{% translate "En tu grupo" %}</span>{% else %}<span class="z-badge">{% translate "Fuera de grupo" %}</span>{% endif %}
                 {% endif %}
             </div>
         </div>
@@ -53,7 +53,7 @@
     {% empty %}
     <div class="z-empty" style="grid-column: 1 / -1;">
         <i class="fa-solid fa-users-slash"></i>
-        {% if search %}No hay equipos que coincidan con "{{ search }}".{% else %}Todavía no hay equipos.{% endif %}
+        {% if search %}{% blocktranslate %}No hay equipos que coincidan con "{{ search }}".{% endblocktranslate %}{% else %}{% translate "Todavía no hay equipos." %}{% endif %}
     </div>
     {% endfor %}
 </div>
@@ -64,24 +64,24 @@
         <thead>
             <tr>
                 <th></th>
-                <th>Nombre</th>
-                <th>Ubicación</th>
-                {% if is_club_admin %}<th>Grupo</th><th></th>{% endif %}
+                <th>{% translate "Nombre" %}</th>
+                <th>{% translate "Ubicación" %}</th>
+                {% if is_club_admin %}<th>{% translate "Grupo" %}</th><th></th>{% endif %}
             </tr>
         </thead>
         <tbody>
             {% for team in teams %}
             <tr>
                 <td><img src="{% if team.photo %}{{ team.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="" class="table-logo"></td>
-                <td><strong>{{ team.name }}</strong> {% if team.is_own %}<span class="z-badge z-badge--lime ms-1">Tu equipo</span>{% endif %}</td>
+                <td><strong>{{ team.name }}</strong> {% if team.is_own %}<span class="z-badge z-badge--lime ms-1">{% translate "Tu equipo" %}</span>{% endif %}</td>
                 <td>{{ team.location }}</td>
                 {% if is_club_admin %}
-                <td>{% if team.in_group %}<span class="z-badge z-badge--outline">En tu grupo</span>{% else %}<span class="z-badge">Fuera</span>{% endif %}</td>
-                <td><a href="{% url 'edit_team' team.public_id %}" class="z-edit position-static" aria-label="Editar"><i class="fa-solid fa-pen"></i></a></td>
+                <td>{% if team.in_group %}<span class="z-badge z-badge--outline">{% translate "En tu grupo" %}</span>{% else %}<span class="z-badge">{% translate "Fuera" context "fuera de grupo" %}</span>{% endif %}</td>
+                <td><a href="{% url 'edit_team' team.public_id %}" class="z-edit position-static" aria-label="{% translate 'Editar' %}"><i class="fa-solid fa-pen"></i></a></td>
                 {% endif %}
             </tr>
             {% empty %}
-            <tr><td colspan="5" class="text-center py-4 text-muted">{% if search %}No hay equipos que coincidan con "{{ search }}".{% else %}Todavía no hay equipos.{% endif %}</td></tr>
+            <tr><td colspan="5" class="text-center py-4 text-muted">{% if search %}{% blocktranslate %}No hay equipos que coincidan con "{{ search }}".{% endblocktranslate %}{% else %}{% translate "Todavía no hay equipos." %}{% endif %}</td></tr>
             {% endfor %}
         </tbody>
     </table>

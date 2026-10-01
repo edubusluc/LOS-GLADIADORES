@@ -1,24 +1,24 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
         <span class="z-eyebrow">{{ current_club.name }}</span>
-        <h1>Partidos</h1>
+        <h1>{% translate "Partidos" %}</h1>
     </div>
     <div class="z-actions">
         <form method="get" class="d-flex align-items-center gap-2">
-            <label for="season" class="z-toolbar-label mb-0">Temporada</label>
+            <label for="season" class="z-toolbar-label mb-0">{% translate "Temporada" %}</label>
             <select name="season" id="season" onchange="this.form.submit()" class="z-select-compact">
                 {% for s in seasons %}
                 <option value="{{ s }}" {% if s == selected_season %}selected{% endif %}>{{ s }}</option>
                 {% endfor %}
-                <option value="{{ all_seasons }}" {% if selected_season == all_seasons %}selected{% endif %}>Todas</option>
+                <option value="{{ all_seasons }}" {% if selected_season == all_seasons %}selected{% endif %}>{% translate "Todas" %}</option>
             </select>
         </form>
         {% if is_club_admin %}
-        <a href="{% url 'create_match' %}" class="btn btn-primary text-nowrap"><i class="fa-solid fa-plus me-1"></i> Nuevo partido</a>
+        <a href="{% url 'create_match' %}" class="btn btn-primary text-nowrap"><i class="fa-solid fa-plus me-1"></i> {% translate "Nuevo partido" %}</a>
         {% endif %}
     </div>
 </div>
@@ -27,11 +27,11 @@
 <div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
 {% endif %}
 
-<div class="z-summary" aria-label="Resumen">
-    <div><b>{{ summary.played }}</b><span>Jugados</span></div>
-    <div class="is-win"><b>{{ summary.won }}</b><span>Ganados</span></div>
-    <div class="is-loss"><b>{{ summary.lost }}</b><span>Perdidos</span></div>
-    <div><b>{{ summary.pending }}</b><span>Pendientes</span></div>
+<div class="z-summary" aria-label="{% translate 'Resumen' %}">
+    <div><b>{{ summary.played }}</b><span>{% translate "Jugados" %}</span></div>
+    <div class="is-win"><b>{{ summary.won }}</b><span>{% translate "Ganados" %}</span></div>
+    <div class="is-loss"><b>{{ summary.lost }}</b><span>{% translate "Perdidos" %}</span></div>
+    <div><b>{{ summary.pending }}</b><span>{% translate "Pendientes" %}</span></div>
 </div>
 
 {% if matches %}
@@ -48,7 +48,7 @@
                 <img src="{% if m.local.photo %}{{ m.local.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
                 <span>{{ m.local }}</span>
             </div>
-            <a href="{% url 'call_for_match' m.public_id %}" class="z-fixture-score stretched-link" aria-label="Ver {{ m.local }} contra {{ m.visiting }}">
+            <a href="{% url 'call_for_match' m.public_id %}" class="z-fixture-score stretched-link" aria-label="{% blocktranslate with local=m.local visiting=m.visiting %}Ver {{ local }} contra {{ visiting }}{% endblocktranslate %}">
                 {% if m.outcome %}{{ m.result_points }}{% else %}VS{% endif %}
             </a>
             <div class="z-fixture-team z-fixture-team--away {% if m.visiting.is_own %}is-own{% endif %}">
@@ -57,12 +57,12 @@
             </div>
         </div>
         <div class="z-fixture-status">
-            {% if m.outcome == 'V' %}<span class="z-wl z-wl--w" title="Victoria">V</span>
-            {% elif m.outcome == 'D' %}<span class="z-wl z-wl--l" title="Derrota">D</span>
-            {% elif m.outcome == 'E' %}<span class="z-wl" title="Empate">E</span>
-            {% else %}<span class="z-badge">Pendiente</span>{% endif %}
+            {% if m.outcome == 'V' %}<span class="z-wl z-wl--w" title="{% translate 'Victoria' %}">{% translate "V" context "inicial de victoria" %}</span>
+            {% elif m.outcome == 'D' %}<span class="z-wl z-wl--l" title="{% translate 'Derrota' %}">{% translate "D" context "inicial de derrota" %}</span>
+            {% elif m.outcome == 'E' %}<span class="z-wl" title="{% translate 'Empate' %}">{% translate "E" context "inicial de empate" %}</span>
+            {% else %}<span class="z-badge">{% translate "Pendiente" %}</span>{% endif %}
             {% if m.draft_mode and is_club_admin %}
-            <a href="{% url 'delete_match' m.public_id %}" class="z-edit z-edit--danger position-relative" aria-label="Eliminar partido"><i class="fa-solid fa-trash"></i></a>
+            <a href="{% url 'delete_match' m.public_id %}" class="z-edit z-edit--danger position-relative" aria-label="{% translate 'Eliminar partido' %}"><i class="fa-solid fa-trash"></i></a>
             {% endif %}
         </div>
     </li>
@@ -71,8 +71,8 @@
 {% else %}
 <div class="z-empty">
     <i class="fa-solid fa-table-tennis-paddle-ball"></i>
-    No hay partidos{% if selected_season != all_seasons %} en la temporada {{ selected_season }}{% endif %}.
-    {% if is_club_admin %}<div class="mt-3"><a class="btn btn-primary btn-sm" href="{% url 'create_match' %}">Crear partido</a></div>{% endif %}
+    {% if selected_season != all_seasons %}{% blocktranslate with season=selected_season %}No hay partidos en la temporada {{ season }}.{% endblocktranslate %}{% else %}{% translate "No hay partidos." %}{% endif %}
+    {% if is_club_admin %}<div class="mt-3"><a class="btn btn-primary btn-sm" href="{% url 'create_match' %}">{% translate "Crear partido" %}</a></div>{% endif %}
 </div>
 {% endif %}
 

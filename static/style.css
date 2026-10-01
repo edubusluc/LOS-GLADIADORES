@@ -271,6 +271,8 @@ h3 { font-size: 1rem; font-weight: 700; }
 .z-icon-btn:hover { color: var(--z-lime); border-color: var(--z-lime); }
 
 .z-user-menu .dropdown-menu { min-width: 240px; padding: 8px; }
+.z-lang-menu .dropdown-menu { min-width: 160px; padding: 8px; }
+.z-lang-menu .btn { font-size: .85rem; font-weight: 700; }
 
 /* Barra inferior (móvil), como en los mockups */
 .z-bottom-nav {

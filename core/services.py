@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from team.models import Team
 from .models import Club, Invitation, Membership
@@ -27,9 +28,9 @@ def accept_invitation(invitation, user):
     """
     invitation = Invitation.objects.select_for_update().select_related("club").get(pk=invitation.pk)
     if not invitation.is_valid:
-        raise InvitationError("Esta invitación ya se ha usado o ha caducado.")
+        raise InvitationError(_("Esta invitación ya se ha usado o ha caducado."))
     if Membership.objects.filter(user=user, club=invitation.club).exists():
-        raise InvitationError(f"Ya eres miembro de {invitation.club.name}.")
+        raise InvitationError(_("Ya eres miembro de %(club)s.") % {"club": invitation.club.name})
     membership = Membership.objects.create(user=user, club=invitation.club, role=Membership.MEMBER)
     invitation.used_by = user
     invitation.used_at = timezone.now()

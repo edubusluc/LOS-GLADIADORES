@@ -1,51 +1,51 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags %}
-{% block title %}Carga y conectados{% endblock %}
+{% load i18n backoffice_tags %}
+{% block title %}{% translate "Carga y conectados" %}{% endblock %}
 
 {% block extra_head %}<meta http-equiv="refresh" content="60">{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow">Se actualiza cada minuto · {% now "H:i" %} UTC</span>
-        <h1>Carga y conectados</h1>
+        {% now "H:i" as now_time %}<span class="z-eyebrow">{% blocktranslate with time=now_time %}Se actualiza cada minuto · {{ time }} UTC{% endblocktranslate %}</span>
+        <h1>{% translate "Carga y conectados" %}</h1>
     </div>
 </div>
 
-<section class="bo-kpis" aria-label="Carga actual">
-    <div class="bo-kpi"><span class="bo-kpi-label">Conectados ahora</span><b>{{ online|length }}</b><small>actividad en los últimos {{ online_minutes }} minutos</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Peticiones última hora</span><b>{{ load.last_hour.requests }}</b><small>{% if load.peak_minute %}pico de {{ load.peak_minute.requests }}/min a las {{ load.peak_minute.at|date:"H:i" }}{% else %}sin tráfico{% endif %}</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Tiempo de respuesta</span><b>{{ load.last_hour.avg_ms }} ms</b><small>media de la última hora · máximo {{ load.last_hour.max_ms }} ms</small></div>
-    <div class="bo-kpi{% if load.last_hour.errors %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">Errores 500 última hora</span><b>{{ load.last_hour.errors }}</b><small>{{ load.last_hour.slow }} lenta{{ load.last_hour.slow|pluralize }} (más de {{ slow_ms }} ms)</small></div>
+<section class="bo-kpis" aria-label="{% translate 'Carga actual' %}">
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Conectados ahora" %}</span><b>{{ online|length }}</b><small>{% blocktranslate with minutes=online_minutes %}actividad en los últimos {{ minutes }} minutos{% endblocktranslate %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Peticiones última hora" %}</span><b>{{ load.last_hour.requests }}</b><small>{% if load.peak_minute %}{% with peak_time=load.peak_minute.at|date:"H:i" %}{% blocktranslate trimmed with n=load.peak_minute.requests %}pico de {{ n }}/min a las {{ peak_time }}{% endblocktranslate %}{% endwith %}{% else %}{% translate "sin tráfico" %}{% endif %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Tiempo de respuesta" %}</span><b>{{ load.last_hour.avg_ms }} ms</b><small>{% blocktranslate with max=load.last_hour.max_ms %}media de la última hora · máximo {{ max }} ms{% endblocktranslate %}</small></div>
+    <div class="bo-kpi{% if load.last_hour.errors %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">{% translate "Errores 500 última hora" %}</span><b>{{ load.last_hour.errors }}</b><small>{% blocktranslate trimmed count n=load.last_hour.slow with ms=slow_ms %}{{ n }} lenta (más de {{ ms }} ms){% plural %}{{ n }} lentas (más de {{ ms }} ms){% endblocktranslate %}</small></div>
 </section>
 
 <section class="z-panel">
-    <h2 class="h5">Peticiones por minuto, última hora</h2>
-    {% include 'backoffice/includes/bars.html' with rows=load.minutes fmt="H:i" every=10 label="Peticiones por minuto en la última hora" %}
+    <h2 class="h5">{% translate "Peticiones por minuto, última hora" %}</h2>
+    {% translate "Peticiones por minuto en la última hora" as bars_label %}{% include 'backoffice/includes/bars.html' with rows=load.minutes fmt="H:i" every=10 label=bars_label %}
 </section>
 
 <section class="z-panel">
     <div class="bo-panel-head">
-        <h2 class="h5">Peticiones por hora, últimas 24 h</h2>
-        <small class="text-muted">{{ load.last_day.requests }} peticiones · {{ load.last_day.avg_ms }} ms de media · {{ load.last_day.errors }} errores 500</small>
+        <h2 class="h5">{% translate "Peticiones por hora, últimas 24 h" %}</h2>
+        <small class="text-muted">{% blocktranslate trimmed with requests=load.last_day.requests avg=load.last_day.avg_ms errors=load.last_day.errors %}{{ requests }} peticiones · {{ avg }} ms de media · {{ errors }} errores 500{% endblocktranslate %}</small>
     </div>
-    {% include 'backoffice/includes/bars.html' with rows=load.hours fmt="H\h" every=3 label="Peticiones por hora en las últimas 24 horas" %}
+    {% translate "Peticiones por hora en las últimas 24 horas" as bars_label %}{% include 'backoffice/includes/bars.html' with rows=load.hours fmt="H\h" every=3 label=bars_label %}
 </section>
 
 <section class="z-panel">
-    <h2 class="h5">Usuarios conectados</h2>
+    <h2 class="h5">{% translate "Usuarios conectados" %}</h2>
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>Usuario</th><th>Club</th><th>Última página</th><th>Última actividad</th></tr></thead>
+        <thead><tr><th>{% translate "Usuario" %}</th><th>{% translate "Club" %}</th><th>{% translate "Última página" %}</th><th>{% translate "Última actividad" %}</th></tr></thead>
         <tbody>
         {% for a in online %}
             <tr>
-                <td><a href="{% url 'backoffice:user_detail' a.user_id %}">{{ a.user.username }}</a>{% if a.user.is_staff %} <span class="z-badge z-badge--lime">Staff</span>{% endif %}</td>
+                <td><a href="{% url 'backoffice:user_detail' a.user_id %}">{{ a.user.username }}</a>{% if a.user.is_staff %} <span class="z-badge z-badge--lime">{% translate "Staff" %}</span>{% endif %}</td>
                 <td>{% if a.club %}<a href="{% url 'backoffice:club_detail' a.club.public_id %}">{{ a.club.name }}</a>{% else %}—{% endif %}</td>
                 <td><code>{{ a.last_path }}</code></td>
                 <td>{{ a.last_seen|ago }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="4" class="text-muted">Nadie conectado ahora mismo.</td></tr>
+            <tr><td colspan="4" class="text-muted">{% translate "Nadie conectado ahora mismo." %}</td></tr>
         {% endfor %}
         </tbody>
     </table></div>

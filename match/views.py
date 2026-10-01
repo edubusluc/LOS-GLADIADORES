@@ -9,6 +9,7 @@ from call.models import ReportDelivery
 from .report import build_report
 from .report_pdf import render_report
 from django.http import HttpResponse
+from django.utils.translation import gettext as _, gettext_lazy
 import logging
 
 logger = logging.getLogger(__name__)
@@ -115,7 +116,7 @@ def create_match(request):
         except (TypeError, ValueError):
             return render(request, CREATE_MATCH_HTML, {
                 "form": MatchForm(request.POST, club=club),
-                "error": "Fecha no válida. Usa el formato AAAA-MM-DD."
+                "error": _("Fecha no válida. Usa el formato AAAA-MM-DD.")
             })
 
         # Verifica que todos los campos necesarios están presentes
@@ -125,7 +126,7 @@ def create_match(request):
         except (Team.DoesNotExist, ValueError):
             return render(request, CREATE_MATCH_HTML, {
                 "form": MatchForm(request.POST, club=club),
-                "error": "Uno de los equipos no existe."
+                "error": _("Uno de los equipos no existe.")
             })
 
         # Verifica si el enfrentamiento es válido
@@ -133,7 +134,7 @@ def create_match(request):
             form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
             return render(request, CREATE_MATCH_HTML, {
                 "form": form,
-                "error": f"No es un enfrentamiento válido. {own_team} debe ser local o visitante"
+                "error": _("No es un enfrentamiento válido. %(team)s debe ser local o visitante") % {"team": own_team}
             })
 
         # Verifica si los campos están completos
@@ -149,7 +150,7 @@ def create_match(request):
             form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
             return render(request,CREATE_MATCH_HTML, {
                 "form": form,
-                "error": "Por favor, completa todos los campos."
+                "error": _("Por favor, completa todos los campos.")
             })
     else:
         form = MatchForm(club=club)
@@ -169,11 +170,11 @@ def delete_match(request, match_id):
 
             return render(request, 'delete_match.html', {'match': match})
         else:
-            messages.error(request, "No se puede eliminar un partido ya confirmado")
+            messages.error(request, _("No se puede eliminar un partido ya confirmado"))
 
             return redirect('list_match')
     except Match.DoesNotExist:
-        messages.error(request, "El partido no existe")
+        messages.error(request, _("El partido no existe"))
         return redirect('list_match')
 
 
@@ -207,7 +208,7 @@ def create_call(request, match_id):
         chosen = club_players(request, request.POST.getlist('players'))
         selected_ids = list(chosen.values_list('id', flat=True))
         if not selected_ids:
-            messages.error(request, "Debes seleccionar al menos un jugador.")
+            messages.error(request, _("Debes seleccionar al menos un jugador."))
         else:
             call = Call.objects.create(match=match)
             call.players.set(selected_ids)
@@ -223,9 +224,9 @@ def create_call(request, match_id):
 
 def validate_call(call):
     if call.players.all().count() < 10:
-        return False, "Para cerrar una convocatoria al menos debes contar con 10 jugadores"
+        return False, _("Para cerrar una convocatoria al menos debes contar con 10 jugadores")
     if call.draft_mode == False:
-        return False, "Esta convocatoria ha sido cerrada"
+        return False, _("Esta convocatoria ha sido cerrada")
     
     return True, None
 
@@ -241,7 +242,7 @@ def close_call(request, match_id):
     if request.method == "POST":
         call.draft_mode = False
         call.save()
-        _send_report(request, call, "Convocatoria cerrada")
+        _send_report(request, call, _("Convocatoria cerrada"))
         return redirect('call_for_match', call.match.public_id)
 
     return redirect('call_for_match', call.match.public_id)
@@ -256,20 +257,25 @@ def _send_report(request, call, done):
         deliveries = send_call_report(call, sender=request.user)
     except Exception:
         logger.exception("No se pudo enviar el informe de la convocatoria %s", call.pk)
-        messages.warning(request, f"{done}, pero no se pudo enviar el informe por email. "
-                                  "Puedes descargarlo desde esta página.")
+        messages.warning(request, _("%(done)s, pero no se pudo enviar el informe por email. "
+                                    "Puedes descargarlo desde esta página.") % {"done": done})
         return
     if not deliveries:
-        messages.info(request, f"{done}. Ningún administrador tiene email: añádelo en "
-                               "Miembros para recibir el informe automáticamente.")
+        messages.info(request, _("%(done)s. Ningún administrador tiene email: añádelo en "
+                                 "Miembros para recibir el informe automáticamente.") % {"done": done})
         return
     sent = [d.email for d in deliveries if d.status == ReportDelivery.SENT]
     pending = [d.email for d in deliveries if d.status != ReportDelivery.SENT]
     if sent:
-        messages.success(request, f"{done}. Informe enviado a {', '.join(sent)}.")
+        messages.success(request, _("%(done)s. Informe enviado a %(emails)s.") % {"done": done, "emails": ", ".join(sent)})
     if pending:
-        messages.warning(request, f"{'' if sent else done + '. '}No se pudo enviar el informe a {', '.join(pending)}: "
-                                  "se reintentará automáticamente. Mientras, puedes descargarlo desde esta página.")
+        if sent:
+            text = _("No se pudo enviar el informe a %(emails)s: se reintentará automáticamente. "
+                     "Mientras, puedes descargarlo desde esta página.")
+        else:
+            text = _("%(done)s. No se pudo enviar el informe a %(emails)s: se reintentará automáticamente. "
+                     "Mientras, puedes descargarlo desde esta página.")
+        messages.warning(request, text % {"done": done, "emails": ", ".join(pending)})
 
 
 @club_admin_required
@@ -277,7 +283,7 @@ def resend_call_report(request, match_id):
     """Vuelve a enviar el informe de una convocatoria cerrada a los administradores."""
     call = club_call(request, match__public_id=match_id)
     if request.method == "POST" and not call.draft_mode:
-        _send_report(request, call, "Informe reenviado")
+        _send_report(request, call, _("Informe reenviado"))
     return redirect('call_for_match', call.match.public_id)
 
 
@@ -295,7 +301,7 @@ def edit_call(request, call_id):
     call = club_call(request, public_id=call_id)
     selected_players = list(call.players.values_list('id', flat=True))
     all_players = selectable_players(request.club, include_ids=selected_players)
-    call_log, _ = CallLog.objects.get_or_create(call=call, defaults={'text': ''})
+    call_log, _created = CallLog.objects.get_or_create(call=call, defaults={'text': ''})
     
     current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     if call.match.draft_mode == False:
@@ -359,7 +365,7 @@ def existing_call_view(request, match_id):
     return render(request, 'existing_call.html', {'match': match})
 
 #VISTA PARA MOSTRAR LA CONVOCATORIA
-POSITION_GROUPS = (("Derecha", "Derecha"), ("Revés", "Revés"), ("Mixto", "Mixtos"))
+POSITION_GROUPS = (("Derecha", gettext_lazy("Derecha")), ("Revés", gettext_lazy("Revés")), ("Mixto", gettext_lazy("Mixtos")))
 
 
 @club_required
@@ -381,7 +387,7 @@ def call_for_match(request, match_id):
                                                   g.player_1_visiting_id, g.player_2_visiting_id) if pid}
         for p in players:
             p.is_playing = p.id in playing
-        known = {key for key, _ in POSITION_GROUPS}
+        known = {key for key, _label in POSITION_GROUPS}
         for key, label in POSITION_GROUPS:
             members = [p for p in players if p.position == key or (key == "Mixto" and p.position not in known)]
             groups.append({"label": label, "players": members})
@@ -400,11 +406,11 @@ def call_for_match(request, match_id):
 
 def validate_game_for_match(call):
     if not call:
-        return False, "No se pueden crear partidos, no existe ninguna convocatoria."
+        return False, _("No se pueden crear partidos, no existe ninguna convocatoria.")
     if call.players.all().count() < 10:
-        return False, "Para crear los partidos debes contar al menos con 10 jugadores"
+        return False, _("Para crear los partidos debes contar al menos con 10 jugadores")
     if call.draft_mode != False:
-        return False, "Para crear los partidos debes confirmar la convocatoria"
+        return False, _("Para crear los partidos debes confirmar la convocatoria")
 
     
     return True, None
@@ -421,7 +427,7 @@ def create_game_for_match(request, match_id):
         return redirect('call_for_match', match_id=match_id)
 
     if match.games.exists():
-        messages.info(request, "Los partidos ya están creados: puedes cambiar las parejas desde aquí.")
+        messages.info(request, _("Los partidos ya están creados: puedes cambiar las parejas desde aquí."))
         return redirect('edit_games_match', match_id=match.public_id)
 
     if request.method == "POST":
@@ -430,7 +436,7 @@ def create_game_for_match(request, match_id):
         except lineup.LineupError as e:
             messages.error(request, str(e))
             return redirect('create_game', match_id=match.public_id)
-        messages.success(request, "Partidos creados.")
+        messages.success(request, _("Partidos creados."))
         return redirect('call_for_match', match_id=match.public_id)
 
     return render(request, "create_game.html", {
@@ -465,7 +471,7 @@ def _save_result(request, game, result, template):
 def create_result(request, game_id):
     game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), public_id=game_id, match__club=request.club)
     if not game.match.draft_mode:
-        messages.error(request, "No se pueden añadir resultados a un partido ya confirmado")
+        messages.error(request, _("No se pueden añadir resultados a un partido ya confirmado"))
         return redirect('call_for_match', match_id=game.match.public_id)
     if game.results.exists():
         return redirect('edit_result', game_id=game.public_id)
@@ -482,7 +488,7 @@ def edit_result(request, game_id):
     result = get_object_or_404(Result, game=game)
 
     if not match.draft_mode:
-        messages.error(request, "No se pueden editar los resultados de un partido ya confirmado")
+        messages.error(request, _("No se pueden editar los resultados de un partido ya confirmado"))
         return redirect('call_for_match', match_id=match.public_id)
 
     if request.method == "POST":
@@ -514,13 +520,13 @@ def determine_match_result(points_local, points_visiting):
    
 def valid_close_match(games,match):
     if match.draft_mode == False:
-        return False, "No se pueden cerrar actas, el partido ya ha sido cerrado"
+        return False, _("No se pueden cerrar actas, el partido ya ha sido cerrado")
     if len(games) < 5:
-        return False, "No se pueden cerrar actas, se requieren al menos 5 partidos."
+        return False, _("No se pueden cerrar actas, se requieren al menos 5 partidos.")
     
     for g in games:
         if g.results.first() is None:
-            return False, "No se pueden cerrar actas, algunos partidos no tienen resultado."
+            return False, _("No se pueden cerrar actas, algunos partidos no tienen resultado.")
     
     return True, None     
 
@@ -557,7 +563,7 @@ def edit_game_match(request, match_id):
     match = club_match(request, match_id)
 
     if not match.draft_mode:
-        messages.error(request, "No se pueden editar los partidos que se encuentran ya confirmados")
+        messages.error(request, _("No se pueden editar los partidos que se encuentran ya confirmados"))
         return redirect('call_for_match', match_id=match_id)
 
     games = list(Game.objects.filter(match=match).order_by('n_game'))
@@ -571,7 +577,7 @@ def edit_game_match(request, match_id):
         except lineup.LineupError as e:
             messages.error(request, str(e))
             return redirect('edit_games_match', match_id=match.public_id)
-        messages.success(request, "Parejas actualizadas.")
+        messages.success(request, _("Parejas actualizadas."))
         return redirect('call_for_match', match_id=match.public_id)
 
     games_data = [

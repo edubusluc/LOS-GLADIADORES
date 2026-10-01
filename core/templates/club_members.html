@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load tz %}
+{% load tz i18n %}
 
 {% block content %}
 <div class="table-container my-4">
@@ -11,11 +11,11 @@
     </div>
     {% endif %}
 
-    <h1>Miembros de {{ current_club.name }}</h1>
+    <h1>{% blocktranslate with club=current_club.name %}Miembros de {{ club }}{% endblocktranslate %}</h1>
 
     <div class="z-table-wrap"><table class="table align-middle">
         <thead>
-            <tr><th>Usuario</th><th>Email y rol</th><th></th></tr>
+            <tr><th>{% translate "Usuario" %}</th><th>{% translate "Email y rol" %}</th><th></th></tr>
         </thead>
         <tbody>
         {% for m in memberships %}
@@ -24,19 +24,19 @@
                 <td>
                     <form method="post" action="{% url 'update_member' m.public_id %}" class="d-flex flex-wrap gap-2">
                         {% csrf_token %}
-                        <input type="email" name="email" value="{{ m.user.email }}" placeholder="email@ejemplo.com" class="form-control form-control-sm" style="max-width: 240px;" aria-label="Email de {{ m.user.username }}">
+                        <input type="email" name="email" value="{{ m.user.email }}" placeholder="{% translate 'email@ejemplo.com' %}" class="form-control form-control-sm" style="max-width: 240px;" aria-label="{% blocktranslate with username=m.user.username %}Email de {{ username }}{% endblocktranslate %}">
                         <select name="role" style="max-width: 220px;" class="form-select form-select-sm">
                             {% for value, label in roles %}
                             <option value="{{ value }}" {% if m.role == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
-                        <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">{% translate "Guardar" %}</button>
                     </form>
                 </td>
                 <td class="text-end">
-                    <form method="post" action="{% url 'remove_member' m.public_id %}" onsubmit="return confirm('¿Quitar a {{ m.user.username }} del club?');">
+                    <form method="post" action="{% url 'remove_member' m.public_id %}" {% blocktranslate asvar remove_q with username=m.user.username %}¿Quitar a {{ username }} del club?{% endblocktranslate %}onsubmit="return confirm('{{ remove_q|escapejs }}');">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-danger">Quitar</button>
+                        <button type="submit" class="btn btn-sm btn-danger">{% translate "Quitar" %}</button>
                     </form>
                 </td>
             </tr>
@@ -44,30 +44,30 @@
         </tbody>
     </table></div>
 
-    <h4 class="mt-4" id="invitaciones">Invitar jugadores</h4>
-    <p class="text-muted">Genera un enlace y compártelo con un jugador (por WhatsApp, por ejemplo). Podrá registrarse con usuario, email y contraseña o con Google, y entrará como miembro. Cada enlace sirve para una persona y caduca a las 24 horas.</p>
+    <h4 class="mt-4" id="invitaciones">{% translate "Invitar jugadores" %}</h4>
+    <p class="text-muted">{% translate "Genera un enlace y compártelo con un jugador (por WhatsApp, por ejemplo). Podrá registrarse con usuario, email y contraseña o con Google, y entrará como miembro. Cada enlace sirve para una persona y caduca a las 24 horas." %}</p>
     <form method="post" action="{% url 'create_invitation' %}" class="mb-3">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-link"></i> Generar invitación</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-link"></i> {% translate "Generar invitación" %}</button>
     </form>
     {% if invitations %}
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>Enlace</th><th>Caduca</th><th></th></tr></thead>
+        <thead><tr><th>{% translate "Enlace" %}</th><th>{% translate "Caduca" %}</th><th></th></tr></thead>
         <tbody>
         {% for inv, url in invitations %}
             <tr>
                 <td>
                     <div class="input-group input-group-sm" style="min-width: 260px;">
-                        <input type="text" class="form-control" value="{{ url }}" readonly aria-label="Enlace de invitación" id="invite-{{ inv.id }}">
-                        <button type="button" class="btn btn-outline-primary" data-copy="#invite-{{ inv.id }}"><i class="fa-regular fa-copy"></i> Copiar</button>
-                        <a class="btn btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/?text={{ 'Únete a '|add:current_club.name|add:' en Zyra: '|add:url|urlencode }}"><i class="fa-brands fa-whatsapp"></i></a>
+                        <input type="text" class="form-control" value="{{ url }}" readonly aria-label="{% translate 'Enlace de invitación' %}" id="invite-{{ inv.id }}">
+                        <button type="button" class="btn btn-outline-primary" data-copy="#invite-{{ inv.id }}"><i class="fa-regular fa-copy"></i> {% translate "Copiar" %}</button>
+                        {% autoescape off %}{% blocktranslate asvar wa_text with club=current_club.name url=url %}Únete a {{ club }} en Zyra: {{ url }}{% endblocktranslate %}{% endautoescape %}<a class="btn btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/?text={{ wa_text|urlencode }}"><i class="fa-brands fa-whatsapp"></i></a>
                     </div>
                 </td>
                 <td class="text-nowrap">{{ inv.expires_at|timezone:"Europe/Madrid"|date:"d/m H:i" }}</td>
                 <td class="text-end">
                     <form method="post" action="{% url 'revoke_invitation' inv.public_id %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Anular</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">{% translate "Anular" %}</button>
                     </form>
                 </td>
             </tr>
@@ -76,19 +76,20 @@
     </table></div>
     {% endif %}
 
-    <h4 class="mt-4">Añadir miembro</h4>
-    <p class="text-muted">Crea tú mismo la cuenta de un usuario, o añade a alguien que ya tiene cuenta, y elige su rol.</p>
+    <h4 class="mt-4">{% translate "Añadir miembro" %}</h4>
+    <p class="text-muted">{% translate "Crea tú mismo la cuenta de un usuario, o añade a alguien que ya tiene cuenta, y elige su rol." %}</p>
     <form method="post" novalidate>
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Añadir</button>
+        <button type="submit" class="btn btn-primary">{% translate "Añadir" %}</button>
     </form>
 </div>
+{% translate "Copiado" as t_copied %}
 <script>
 document.querySelectorAll('[data-copy]').forEach(function (btn) {
     btn.addEventListener('click', function () {
         var input = document.querySelector(btn.dataset.copy);
-        var done = function () { btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado'; };
+        var done = function () { btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + '{{ t_copied|escapejs }}'; };
         if (navigator.clipboard) {
             navigator.clipboard.writeText(input.value).then(done);
         } else {

@@ -24,7 +24,7 @@
     input.className = 'z-picker-input';
     input.autocomplete = 'off';
     input.spellcheck = false;
-    input.placeholder = select.dataset.placeholder || 'Buscar...';
+    input.placeholder = select.dataset.placeholder || gettext('Buscar...');
     input.setAttribute('role', 'combobox');
     input.setAttribute('aria-expanded', 'false');
     input.setAttribute('aria-autocomplete', 'list');
@@ -56,7 +56,7 @@
       if (!shown.length) {
         const li = document.createElement('li');
         li.className = 'z-picker-empty';
-        li.textContent = 'Sin resultados';
+        li.textContent = gettext('Sin resultados');
         list.appendChild(li);
       }
       shown.forEach((o, i) => {

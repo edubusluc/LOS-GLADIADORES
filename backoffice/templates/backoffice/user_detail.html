@@ -1,58 +1,58 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags %}
+{% load i18n backoffice_tags %}
 {% block title %}{{ member.username }}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:user_list' %}">Usuarios</a> · alta el {{ member.date_joined|date:"j M Y" }}</span>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:user_list' %}">{% translate "Usuarios" %}</a> · {% with created=member.date_joined|date:"j M Y" %}{% blocktranslate %}alta el {{ created }}{% endblocktranslate %}{% endwith %}</span>
         <h1>{{ member.username }}</h1>
     </div>
     {% if user.is_superuser %}
     <div class="z-actions">
-        <a href="{% url 'admin:auth_user_change' member.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> Abrir en Django admin</a>
+        <a href="{% url 'admin:auth_user_change' member.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> {% translate "Abrir en Django admin" %}</a>
     </div>
     {% endif %}
 </div>
 
 <div class="bo-grid">
     <section class="z-panel">
-        <h2 class="h5">Cuenta</h2>
+        <h2 class="h5">{% translate "Cuenta" %}</h2>
         <dl class="bo-facts">
-            <div><dt>Nombre</dt><dd>{{ member.get_full_name|default:"—" }}</dd></div>
-            <div><dt>Email</dt><dd>{{ member.email|default:"—" }}</dd></div>
-            <div><dt>Último acceso</dt><dd>{% if member.last_login %}{{ member.last_login|date:"j M Y H:i" }} ({{ member.last_login|ago }}){% else %}nunca{% endif %}</dd></div>
-            <div><dt>Acceso</dt><dd>{{ login_methods|join:" · "|default:"Sin método de acceso" }}</dd></div>
-            <div><dt>Estado</dt><dd>{% if member.is_active %}Activo{% else %}<span class="z-badge z-badge--danger">Inactivo</span>{% endif %}{% if member.is_staff %} · <span class="z-badge z-badge--lime">Staff</span>{% endif %}{% if member.is_superuser %} · Superusuario{% endif %}</dd></div>
+            <div><dt>{% translate "Nombre" %}</dt><dd>{{ member.get_full_name|default:"—" }}</dd></div>
+            <div><dt>{% translate "Email" %}</dt><dd>{{ member.email|default:"—" }}</dd></div>
+            <div><dt>{% translate "Último acceso" %}</dt><dd>{% if member.last_login %}{{ member.last_login|date:"j M Y H:i" }} ({{ member.last_login|ago }}){% else %}{% translate "nunca" %}{% endif %}</dd></div>
+            <div><dt>{% translate "Acceso" %}</dt><dd>{% if login_methods %}{{ login_methods|join:" · " }}{% else %}{% translate "Sin método de acceso" %}{% endif %}</dd></div>
+            <div><dt>{% translate "Estado" %}</dt><dd>{% if member.is_active %}{% translate "Activo" %}{% else %}<span class="z-badge z-badge--danger">{% translate "Inactivo" %}</span>{% endif %}{% if member.is_staff %} · <span class="z-badge z-badge--lime">{% translate "Staff" %}</span>{% endif %}{% if member.is_superuser %} · {% translate "Superusuario" %}{% endif %}</dd></div>
         </dl>
     </section>
 
     <section class="z-panel">
-        <h2 class="h5">Cómo llegó</h2>
+        <h2 class="h5">{% translate "Cómo llegó" %}</h2>
         <dl class="bo-facts">
             {% if invitation_used %}
-            <div><dt>Invitación</dt><dd>de {{ invitation_used.created_by.username|default:"—" }} a <a href="{% url 'backoffice:club_detail' invitation_used.club.public_id %}">{{ invitation_used.club.name }}</a></dd></div>
-            <div><dt>Usada el</dt><dd>{{ invitation_used.used_at|date:"j M Y H:i" }}</dd></div>
+            <div><dt>{% translate "Invitación" %}</dt><dd>{% url 'backoffice:club_detail' invitation_used.club.public_id as club_url %}{% with creator=invitation_used.created_by.username|default:"—" club_name=invitation_used.club.name %}{% blocktranslate trimmed %}de {{ creator }} a <a href="{{ club_url }}">{{ club_name }}</a>{% endblocktranslate %}{% endwith %}</dd></div>
+            <div><dt>{% translate "Usada el" %}</dt><dd>{{ invitation_used.used_at|date:"j M Y H:i" }}</dd></div>
             {% else %}
-            <div><dt>Invitación</dt><dd>No entró por invitación</dd></div>
+            <div><dt>{% translate "Invitación" %}</dt><dd>{% translate "No entró por invitación" %}</dd></div>
             {% endif %}
-            <div><dt>Invitaciones creadas</dt><dd>{{ invitations_sent }}</dd></div>
+            <div><dt>{% translate "Invitaciones creadas" %}</dt><dd>{{ invitations_sent }}</dd></div>
         </dl>
     </section>
 </div>
 
 <section class="z-panel">
-    <h2 class="h5">Clubes</h2>
+    <h2 class="h5">{% translate "Clubes" %}</h2>
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>Club</th><th>Rol</th></tr></thead>
+        <thead><tr><th>{% translate "Club" %}</th><th>{% translate "Rol" %}</th></tr></thead>
         <tbody>
         {% for m in memberships %}
             <tr>
                 <td><a href="{% url 'backoffice:club_detail' m.club.public_id %}">{{ m.club.name }}</a></td>
-                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">Administrador</span>{% else %}Miembro{% endif %}</td>
+                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Administrador" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="2" class="text-muted">No pertenece a ningún club.</td></tr>
+            <tr><td colspan="2" class="text-muted">{% translate "No pertenece a ningún club." %}</td></tr>
         {% endfor %}
         </tbody>
     </table></div>

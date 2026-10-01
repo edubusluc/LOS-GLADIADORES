@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Página no encontrada · Zyra{% endblock %}
+{% block title %}{% translate "Página no encontrada" %} · Zyra{% endblock %}
 
 {% block content %}
 <div class="z-auth">
     <div class="z-auth-card text-center">
         <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
-        <h1>Error 404</h1>
-        <p class="text-muted">La página que buscas no existe o no pertenece a tu club.</p>
-        <a class="btn btn-primary btn-lg" href="{% url 'home' %}">Volver al inicio</a>
+        <h1>{% translate "Error 404" %}</h1>
+        <p class="text-muted">{% translate "La página que buscas no existe o no pertenece a tu club." %}</p>
+        <a class="btn btn-primary btn-lg" href="{% url 'home' %}">{% translate "Volver al inicio" %}</a>
     </div>
 </div>
 {% endblock %}

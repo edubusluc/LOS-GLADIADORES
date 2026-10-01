@@ -1,45 +1,46 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Previsualizar importación{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Previsualizar importación" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:import_list' %}">Importar datos</a> · paso 3 de 3</span>
-        <h1>Previsualizar</h1>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:import_list' %}">{% translate "Importar datos" %}</a> · {% translate "paso 3 de 3" %}</span>
+        <h1>{% translate "Previsualizar" %}</h1>
     </div>
 </div>
 
 {% include 'backoffice/includes/messages.html' %}
 
-<p><strong>{{ job.filename }}</strong> → {{ entity.label }} de <strong>{{ job.club.name }}</strong> · {{ job.mode_label }}.</p>
+<p>{% blocktranslate trimmed with filename=job.filename entity=entity.label club=job.club.name mode=job.mode_label %}<strong>{{ filename }}</strong> → {{ entity }} de <strong>{{ club }}</strong> · {{ mode }}.{% endblocktranslate %}</p>
 
-<section class="bo-kpis" aria-label="Resumen de la importación">
-    <div class="bo-kpi"><span class="bo-kpi-label">Filas</span><b>{{ total }}</b><small>en el fichero</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Se crearán</span><b>{{ creates }}</b><small>registros nuevos</small></div>
-    <div class="bo-kpi"><span class="bo-kpi-label">Se actualizarán</span><b>{{ updates }}</b><small>registros existentes</small></div>
-    <div class="bo-kpi{% if errors %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">Con errores</span><b>{{ errors }}</b><small>{% if errors %}<a href="?errors=csv">descargar errores</a>{% else %}todo correcto{% endif %}</small></div>
+<section class="bo-kpis" aria-label="{% translate 'Resumen de la importación' %}">
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Filas" %}</span><b>{{ total }}</b><small>{% translate "en el fichero" %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Se crearán" %}</span><b>{{ creates }}</b><small>{% translate "registros nuevos" %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Se actualizarán" %}</span><b>{{ updates }}</b><small>{% translate "registros existentes" %}</small></div>
+    <div class="bo-kpi{% if errors %} bo-kpi--alert{% endif %}"><span class="bo-kpi-label">{% translate "Con errores" %}</span><b>{{ errors }}</b><small>{% if errors %}<a href="?errors=csv">{% translate "descargar errores" %}</a>{% else %}{% translate "todo correcto" %}{% endif %}</small></div>
 </section>
 
 <div class="bo-sql-actions mb-3">
     {% if errors %}
-    <span class="text-danger">Corrige los errores y vuelve a subir el fichero: no se importará nada mientras haya filas con errores.</span>
+    <span class="text-danger">{% translate "Corrige los errores y vuelve a subir el fichero: no se importará nada mientras haya filas con errores." %}</span>
     {% else %}
-    <form method="post" action="{% url 'backoffice:import_confirm' job.public_id %}" onsubmit="return confirm('¿Importar {{ total }} fila{{ total|pluralize }} en {{ job.club.name|escapejs }}?');">
-        {% csrf_token %}<button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Importar {{ total }} fila{{ total|pluralize }}</button>
+    <form method="post" action="{% url 'backoffice:import_confirm' job.public_id %}" onsubmit="return confirm('{% autoescape off %}{% blocktranslate trimmed count n=total with club=job.club.name asvar t_confirm %}¿Importar {{ n }} fila en {{ club }}?{% plural %}¿Importar {{ n }} filas en {{ club }}?{% endblocktranslate %}{% endautoescape %}{{ t_confirm|escapejs }}');">
+        {% csrf_token %}<button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> {% blocktranslate trimmed count n=total %}Importar {{ n }} fila{% plural %}Importar {{ n }} filas{% endblocktranslate %}</button>
     </form>
     {% endif %}
-    <a href="{% url 'backoffice:import_map' job.public_id %}" class="btn btn-outline-light">Cambiar columnas</a>
-    <a href="{% url 'backoffice:import_list' %}" class="btn btn-outline-light">Subir otro fichero</a>
+    <a href="{% url 'backoffice:import_map' job.public_id %}" class="btn btn-outline-light">{% translate "Cambiar columnas" %}</a>
+    <a href="{% url 'backoffice:import_list' %}" class="btn btn-outline-light">{% translate "Subir otro fichero" %}</a>
 </div>
 
-<h2 class="h5">{% if errors %}Filas con errores{% else %}Filas{% endif %}{% if rows|length == preview_rows %} (primeras {{ preview_rows }}){% endif %}</h2>
+<h2 class="h5">{% if errors %}{% translate "Filas con errores" %}{% else %}{% translate "Filas" %}{% endif %}{% if rows|length == preview_rows %} {% blocktranslate with n=preview_rows %}(primeras {{ n }}){% endblocktranslate %}{% endif %}</h2>
 <div class="z-table-wrap bo-sql-result"><table class="table table-sm align-middle">
-    <thead><tr><th>Línea</th><th>Acción</th>{% for f in fields %}<th>{{ f.label }}</th>{% endfor %}<th>Errores</th></tr></thead>
+    <thead><tr><th>{% translate "Línea" %}</th><th>{% translate "Acción" %}</th>{% for f in fields %}<th>{{ f.label }}</th>{% endfor %}<th>{% translate "Errores" %}</th></tr></thead>
     <tbody>
     {% for r, values in rows %}
         <tr>
             <td>{{ r.line }}</td>
-            <td>{% if not r.ok %}<span class="z-badge z-badge--danger">Error</span>{% elif r.action == 'create' %}<span class="z-badge z-badge--lime">Crear</span>{% else %}<span class="z-badge z-badge--warning">Actualizar</span>{% endif %}</td>
+            <td>{% if not r.ok %}<span class="z-badge z-badge--danger">{% translate "Error" %}</span>{% elif r.action == 'create' %}<span class="z-badge z-badge--lime">{% translate "Crear" %}</span>{% else %}<span class="z-badge z-badge--warning">{% translate "Actualizar" %}</span>{% endif %}</td>
             {% for v in values %}<td>{{ v }}</td>{% endfor %}
             <td class="bo-wrap text-danger small">{{ r.errors|join:" · " }}</td>
         </tr>

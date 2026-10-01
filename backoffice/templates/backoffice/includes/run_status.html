@@ -1,4 +1,4 @@
-{% if not run %}<span class="text-muted">Nunca</span>
-{% elif run.status == "ok" %}<span class="z-badge z-badge--lime">Correcta</span>
-{% elif run.status == "error" %}<span class="z-badge z-badge--danger">Con error</span>
-{% else %}<span class="z-badge z-badge--warning">En curso</span>{% endif %}
+{% load i18n %}{% if not run %}<span class="text-muted">{% translate "Nunca" %}</span>
+{% elif run.status == "ok" %}<span class="z-badge z-badge--lime">{% translate "Correcta" %}</span>
+{% elif run.status == "error" %}<span class="z-badge z-badge--danger">{% translate "Con error" %}</span>
+{% else %}<span class="z-badge z-badge--warning">{% translate "En curso" %}</span>{% endif %}

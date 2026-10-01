@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
         <a href="{% url 'call_for_match' match.public_id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ match.local }} vs {{ match.visiting }}</a>
-        <h1>Crear convocatoria</h1>
+        <h1>{% translate "Crear convocatoria" %}</h1>
     </div>
 </div>
 
@@ -14,6 +15,6 @@
 
 <form method="POST">
     {% csrf_token %}
-    {% include 'includes/player_selector.html' with selected=selected_players submit_label="Crear convocatoria" min_players=10 %}
+    {% include 'includes/player_selector.html' with selected=selected_players submit_label=_("Crear convocatoria") min_players=10 %}
 </form>
 {% endblock %}

@@ -14,6 +14,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.core.mail.message import SafeMIMEMultipart
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 
 from .models import Membership
 
@@ -21,13 +22,6 @@ logger = logging.getLogger(__name__)
 
 LOGO_CID = "zyra-logo"
 LOGO_PATH = settings.BASE_DIR / "static" / "zyra" / "email-logo.png"
-
-TEXT_FOOTER = (
-    "\n\n--\n"
-    "Zyra · Gestión de equipos de pádel\n"
-    "Contacto: {contact}\n"
-)
-
 
 @lru_cache(maxsize=1)
 def _logo_bytes():
@@ -59,7 +53,11 @@ class ZyraEmail(EmailMultiAlternatives):
 def build_email(subject, text, html_content, to, reply_to=None):
     """Monta un correo de Zyra con el pie corporativo en texto plano y en HTML."""
     contact = settings.ZYRA_SENDER
-    body = text.rstrip() + TEXT_FOOTER.format(contact=contact)
+    footer = "\n\n--\n%s\n%s\n" % (
+        _("Zyra · Gestión de equipos de pádel"),
+        _("Contacto: %(contact)s") % {"contact": contact},
+    )
+    body = text.rstrip() + footer
     html = render_to_string("emails/layout.html", {
         "subject": subject,
         "content": html_content,
@@ -96,8 +94,8 @@ def send_welcome_email(user, club, created=False, site_url=""):
         "site_url": site_url,
     }
     subject = (
-        f"Bienvenido a Zyra · Has creado {club.name}" if created
-        else f"Bienvenido a Zyra · Te has unido a {club.name}"
+        _("Bienvenido a Zyra · Has creado %(club)s") % {"club": club.name} if created
+        else _("Bienvenido a Zyra · Te has unido a %(club)s") % {"club": club.name}
     )
     email = build_email(
         subject,

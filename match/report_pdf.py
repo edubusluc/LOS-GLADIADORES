@@ -8,6 +8,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from reportlab.graphics.shapes import Circle, Drawing, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
@@ -83,15 +84,25 @@ def _badge(text, fill=LIME, fg=INK, width=16 * mm):
     return d
 
 
+def _wl(wins, losses):
+    """'3V-2D' (victorias-derrotas) en el idioma activo."""
+    return _("%(wins)sV-%(losses)sD") % {"wins": wins, "losses": losses}
+
+
 def _record(wins, played):
     if not played:
         return "—"
-    return f"{wins}V-{played - wins}D · {round(wins / played * 100)}%"
+    return f"{_wl(wins, played - wins)} · {round(wins / played * 100)}%"
+
+
+def _streak_label(kind, n):
+    """'3V' / '2D' (racha de victorias o derrotas) en el idioma activo."""
+    return (_("%(n)sV") if kind == "V" else _("%(n)sD")) % {"n": n}
 
 
 def _streak(streak):
     kind, n = streak
-    return f"{n}{kind}" if kind else "—"
+    return _streak_label(kind, n) if kind else "—"
 
 
 def _panel(content, padding=8):
@@ -165,13 +176,14 @@ def _on_page(canvas, doc, report):
     canvas.setFont("Archivo-Bold", 8)
     canvas.setFillColor(MUTED)
     canvas.drawRightString(PAGE_W - MARGIN, top, report["club"].name.upper())
-    canvas.drawRightString(PAGE_W - MARGIN, top - 3.8 * mm, timezone.localtime().strftime("Generado el %d/%m/%Y %H:%M"))
+    canvas.drawRightString(PAGE_W - MARGIN, top - 3.8 * mm,
+                           _("Generado el %(date)s") % {"date": timezone.localtime().strftime("%d/%m/%Y %H:%M")})
     canvas.setStrokeColor(BORDER)
     canvas.line(MARGIN, top - 6 * mm, PAGE_W - MARGIN, top - 6 * mm)
     # Pie
     canvas.setFont("Archivo", 7)
-    canvas.drawString(MARGIN, 8 * mm, "Informe automático de convocatoria · Zyra")
-    canvas.drawRightString(PAGE_W - MARGIN, 8 * mm, f"Página {doc.page} de 2")
+    canvas.drawString(MARGIN, 8 * mm, _("Informe automático de convocatoria · Zyra"))
+    canvas.drawRightString(PAGE_W - MARGIN, 8 * mm, _("Página %(page)s de %(total)s") % {"page": doc.page, "total": 2})
     canvas.restoreState()
 
 
@@ -184,11 +196,13 @@ def render_report(report):
     story = []
 
     # ---------------- Página 1 ----------------
-    story.append(Paragraph("INFORME DE CONVOCATORIA", st["title"]))
+    story.append(Paragraph(_("INFORME DE CONVOCATORIA"), st["title"]))
     story.append(Spacer(1, 2))
     story.append(Paragraph(
-        f"<b>{own}</b> vs <b>{report['rival']}</b> · {match.start_date:%d/%m/%Y} · "
-        f"jugáis como <font color='#B4F100'><b>{venue.upper()}</b></font> · temporada {match.season}",
+        _("<b>%(own)s</b> vs <b>%(rival)s</b> · %(date)s · "
+          "jugáis como <font color='#B4F100'><b>%(venue)s</b></font> · temporada %(season)s") % {
+            "own": own, "rival": report['rival'], "date": f"{match.start_date:%d/%m/%Y}",
+            "venue": venue.upper(), "season": match.season},
         st["subtitle"]))
     story.append(Spacer(1, 8))
 
@@ -196,36 +210,36 @@ def render_report(report):
     prec = report["precedents"]
     prec_w = sum(p["outcome"] == "V" for p in prec)
     story.append(_kpis([
-        ("Convocados", str(len(report["called"]))),
-        ("Temporada", f"{s['won']}V-{s['played'] - s['won']}D"),
-        (f"Como {venue}", f"{s['venue_won']}V-{s['venue_played'] - s['venue_won']}D"),
-        (f"Vs {report['rival']}"[:22], f"{prec_w}V-{len(prec) - prec_w}D" if prec else "—"),
+        (_("Convocados"), str(len(report["called"]))),
+        (_("Temporada"), _wl(s['won'], s['played'] - s['won'])),
+        (_("Como %(venue)s") % {"venue": venue}, _wl(s['venue_won'], s['venue_played'] - s['venue_won'])),
+        ((_("Vs %(rival)s") % {"rival": report['rival']})[:22], _wl(prec_w, len(prec) - prec_w) if prec else "—"),
     ], st))
 
     # Precedentes y rachas, en dos columnas
     if prec:
         prec_rows = [[Paragraph(f"{p['date']:%d/%m/%Y}", st["cell"]), Paragraph(p["venue"], st["cell"]),
                       Paragraph(f"<b>{p['score']}</b>", st["cell"]),
-                      _badge("VICTORIA" if p["outcome"] == "V" else "DERROTA" if p["outcome"] == "D" else "EMPATE",
+                      _badge(_("VICTORIA") if p["outcome"] == "V" else _("DERROTA") if p["outcome"] == "D" else _("EMPATE"),
                              fill=LIME if p["outcome"] == "V" else CORAL if p["outcome"] == "D" else MUTED)]
                      for p in prec]
-        prec_block = [Paragraph(f"PRECEDENTES CONTRA {str(report['rival']).upper()}", st["section"]),
-                      _data_table(["Fecha", "Sede", "Puntos", ""], prec_rows,
+        prec_block = [Paragraph(_("PRECEDENTES CONTRA %(rival)s") % {"rival": str(report['rival']).upper()}, st["section"]),
+                      _data_table([_("Fecha"), _("Sede"), _("Puntos"), ""], prec_rows,
                                   [20 * mm, 18 * mm, 14 * mm, 20 * mm], st)]
     else:
-        prec_block = [Paragraph(f"PRECEDENTES CONTRA {str(report['rival']).upper()}", st["section"]),
-                      Paragraph("Primer enfrentamiento contra este equipo.", st["muted"])]
+        prec_block = [Paragraph(_("PRECEDENTES CONTRA %(rival)s") % {"rival": str(report['rival']).upper()}, st["section"]),
+                      Paragraph(_("Primer enfrentamiento contra este equipo."), st["muted"])]
 
     def streak_lines(items, color):
         if not items:
-            return [Paragraph("Nadie con 2 o más resultados seguidos.", st["muted"])]
-        return [Paragraph(f"<font color='{color}'><b>{f.streak[1]}{f.streak[0]}</b></font>  {f.name}", st["body"])
+            return [Paragraph(_("Nadie con 2 o más resultados seguidos."), st["muted"])]
+        return [Paragraph(f"<font color='{color}'><b>{_streak_label(f.streak[0], f.streak[1])}</b></font>  {f.name}", st["body"])
                 for f in items]
 
-    streak_block = [Paragraph("JUGADORES EN RACHA", st["section"]),
+    streak_block = [Paragraph(_("JUGADORES EN RACHA"), st["section"]),
                     *streak_lines(report["hot"], "#B4F100"),
                     Spacer(1, 4),
-                    Paragraph("EN MALA RACHA", st["kpi_label"]),
+                    Paragraph(_("EN MALA RACHA"), st["kpi_label"]),
                     *streak_lines(report["cold"], "#FF5C63")]
     two_cols = Table([[prec_block, streak_block]], colWidths=[CONTENT_W * 0.56, CONTENT_W * 0.44])
     two_cols.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
@@ -233,10 +247,10 @@ def render_report(report):
     story.append(two_cols)
 
     # Convocados
-    story.append(Paragraph(f"CONVOCADOS · RENDIMIENTO COMO {venue.upper()}", st["section"]))
+    story.append(Paragraph(_("CONVOCADOS · RENDIMIENTO COMO %(venue)s") % {"venue": venue.upper()}, st["section"]))
     player_rows = [[
         Paragraph(f"<b>{f.name}</b>", st["cell"]),
-        Paragraph(f.player.position or "—", st["cell"]),
+        Paragraph(f.player.get_position_display() if f.player.position else "—", st["cell"]),
         Paragraph(f"{f.snp:g}" if f.snp else "—", st["cell"]),
         Paragraph(_record(f.venue_wins, f.venue_played), st["cell"]),
         Paragraph(_record(f.wins, f.played), st["cell"]),
@@ -245,11 +259,12 @@ def render_report(report):
         Paragraph(f"<b>{round(f.strength * 100)}%</b>", st["cell"]),
     ] for f in report["players"]]
     story.append(_data_table(
-        ["Jugador", "Posición", "SNP", f"Como {venue}", "Global", "Racha", "Forma", "Estim."],
+        [_("Jugador"), _("Posición"), "SNP", _("Como %(venue)s") % {"venue": venue}, _("Global"), _("Racha"),
+         _("Forma"), _("Estim.")],
         player_rows, [44 * mm, 19 * mm, 13 * mm, 30 * mm, 30 * mm, 13 * mm, 17 * mm, 16 * mm], st))
-    note = "Estim.: probabilidad estimada de ganar un partido (historial, rendimiento en la sede, forma y racha)."
+    note = _("Estim.: probabilidad estimada de ganar un partido (historial, rendimiento en la sede, forma y racha).")
     if report["hidden_players"]:
-        note += f" {report['hidden_players']} convocados más no caben en la tabla."
+        note += " " + _("%(n)s convocados más no caben en la tabla.") % {"n": report['hidden_players']}
     story.append(Spacer(1, 3))
     story.append(Paragraph(note, st["muted"]))
 
@@ -263,13 +278,13 @@ def render_report(report):
             Paragraph(f"{u['last']:%d/%m}" if u["last"] else "—", st["cell"]),
         ] for u in rows]
         half = (CONTENT_W - 6 * mm) / 2
-        return _data_table(["Jugador", "Partidos", "Convoc.", "Último"], body,
+        return _data_table([_("Jugador"), _("Partidos"), _("Convoc."), _("Último")], body,
                            [half - 49 * mm, 18 * mm, 16 * mm, 15 * mm], st)
 
     never = report["never_played"]
     usage_block = Table([[
-        [Paragraph("JUGADORES CON MÁS PARTIDOS", st["section"]), usage_table(report["most_games"])],
-        [Paragraph("JUGADORES CON MENOS PARTIDOS", st["section"]), usage_table(report["least_games"])],
+        [Paragraph(_("JUGADORES CON MÁS PARTIDOS"), st["section"]), usage_table(report["most_games"])],
+        [Paragraph(_("JUGADORES CON MENOS PARTIDOS"), st["section"]), usage_table(report["least_games"])],
     ]], colWidths=[(CONTENT_W + 6 * mm) / 2, (CONTENT_W - 6 * mm) / 2])
     usage_block.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
                                      ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (0, 0), 6 * mm)]))
@@ -277,16 +292,18 @@ def render_report(report):
         usage_block,
         Spacer(1, 3),
         Paragraph(
-            f"Temporada {match.season}, toda la plantilla ({report['squad_size']} jugadores). "
-            + (f"<font color='#FF5C63'><b>{never} sin jugar todavía.</b></font> " if never else "Todos han jugado ya. ")
-            + "En <font color='#B4F100'><b>lima</b></font>, convocados para este partido. "
-            "Convoc.: convocatorias cerradas en la temporada.",
+            _("Temporada %(season)s, toda la plantilla (%(n)s jugadores).") % {
+                "season": match.season, "n": report['squad_size']} + " "
+            + ("<font color='#FF5C63'><b>" + _("%(n)s sin jugar todavía.") % {"n": never} + "</b></font> "
+               if never else _("Todos han jugado ya.") + " ")
+            + _("En <font color='#B4F100'><b>lima</b></font>, convocados para este partido.") + " "
+            + _("Convoc.: convocatorias cerradas en la temporada."),
             st["muted"]),
     ]))
 
     # ---------------- Página 2 ----------------
     story.append(PageBreak())
-    story.append(Paragraph("PAREJAS CON HISTORIAL ENTRE LOS CONVOCADOS", st["section"]))
+    story.append(Paragraph(_("PAREJAS CON HISTORIAL ENTRE LOS CONVOCADOS"), st["section"]))
     if report["pairs"]:
         pair_rows = [[
             Paragraph(f"<b>{p.name}</b>", st["cell"]),
@@ -295,28 +312,29 @@ def render_report(report):
             Paragraph(_record(p.wins, p.played), st["cell"]),
             Paragraph(_streak(p.streak), st["cell"]),
         ] for p in report["pairs"]]
-        story.append(_data_table(["Pareja", "Suma SNP", f"Como {venue}", "Juntos", "Racha"],
+        story.append(_data_table([_("Pareja"), _("Suma SNP"), _("Como %(venue)s") % {"venue": venue}, _("Juntos"), _("Racha")],
                                  pair_rows, [70 * mm, 18 * mm, 36 * mm, 36 * mm, 22 * mm], st))
     else:
-        story.append(Paragraph("Ninguna pareja de convocados ha jugado junta todavía.", st["muted"]))
+        story.append(Paragraph(_("Ninguna pareja de convocados ha jugado junta todavía."), st["muted"]))
 
-    story.append(Paragraph("ALINEACIONES RECOMENDADAS", st["section"]))
+    story.append(Paragraph(_("ALINEACIONES RECOMENDADAS"), st["section"]))
     if not report["enough_players"]:
-        story.append(Paragraph("Hacen falta al menos 10 convocados para proponer una alineación.", st["body"]))
+        story.append(Paragraph(_("Hacen falta al menos 10 convocados para proponer una alineación."), st["body"]))
     for item in report["lineups"]:
         lineup = item["lineup"]
         rows = [[
             Paragraph(f"<b>{row['n']}</b>", st["cell_bold"]),
-            _badge(f"{row['value']} PTS", fill=LIME if row['value'] == 3 else SURFACE_2,
+            _badge(_("%(n)s PTS") % {"n": row['value']}, fill=LIME if row['value'] == 3 else SURFACE_2,
                    fg=INK if row['value'] == 3 else TEXT, width=13 * mm),
             Paragraph(f"<b>{row['pair'].name}</b>", st["cell"]),
             Paragraph(f"{row['pair'].snp_sum:g}", st["cell"]),
             Paragraph(f"<b>{row['pct']}%</b>", st["cell"]),
         ] for row in lineup.rows]
-        table = _data_table(["Partido", "Valor", "Pareja", "Suma SNP", "Victoria est."], rows,
+        table = _data_table([_("Partido"), _("Valor"), _("Pareja"), _("Suma SNP"), _("Victoria est.")], rows,
                             [16 * mm, 18 * mm, 86 * mm, 20 * mm, 22 * mm], st, highlight_first=True)
         block = [
-            Paragraph(f"{item['title'].upper()} · {round(lineup.win * 100)}% DE GANAR LA ELIMINATORIA",
+            Paragraph(_("%(title)s · %(pct)s%% DE GANAR LA ELIMINATORIA") % {
+                "title": item['title'].upper(), "pct": round(lineup.win * 100)},
                       st["lineup_title"]),
             Spacer(1, 4),
             table,
@@ -324,21 +342,21 @@ def render_report(report):
             Paragraph(item["explanation"], st["body"]),
         ]
         if lineup.bench:
-            block.append(Paragraph("Descansan: " + ", ".join(f.name for f in lineup.bench), st["muted"]))
+            block.append(Paragraph(_("Descansan: %(names)s") % {"names": ", ".join(f.name for f in lineup.bench)}, st["muted"]))
         story.append(KeepTogether([_panel(block)]))
         story.append(Spacer(1, 7))
 
     story.append(Paragraph(
-        "Formato SNP: 5 partidos; los partidos 1 y 2 valen 3 puntos y los 3, 4 y 5 valen 2. Las parejas se "
-        "ordenan por la suma de puntos SNP de sus jugadores y se necesitan 7 de 12 puntos para ganar la "
-        "eliminatoria. Las estimaciones se basan en el historial del club y son orientativas.",
+        _("Formato SNP: 5 partidos; los partidos 1 y 2 valen 3 puntos y los 3, 4 y 5 valen 2. Las parejas se "
+          "ordenan por la suma de puntos SNP de sus jugadores y se necesitan 7 de 12 puntos para ganar la "
+          "eliminatoria. Las estimaciones se basan en el historial del club y son orientativas."),
         st["muted"]))
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN,
         topMargin=22 * mm, bottomMargin=14 * mm,
-        title=f"Informe de convocatoria · {own} vs {report['rival']}", author="Zyra",
+        title=_("Informe de convocatoria · %(own)s vs %(rival)s") % {"own": own, "rival": report['rival']}, author="Zyra",
     )
     doc.build(story, onFirstPage=lambda c, d: _on_page(c, d, report),
               onLaterPages=lambda c, d: _on_page(c, d, report))

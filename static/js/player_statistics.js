@@ -2,6 +2,7 @@
   const read = (id) => JSON.parse(document.getElementById(id).textContent);
   const seasons = read('data-seasons');
   const affinity = read('data-affinity');
+  const lang = document.documentElement.lang || 'es';
 
   // Paleta Zyra (tema oscuro)
   const C = {
@@ -29,8 +30,8 @@
     data: {
       labels: seasons.labels,
       datasets: [
-        { label: 'Ganados', data: seasons.wins, backgroundColor: C.win, borderRadius: 4 },
-        { label: 'Perdidos', data: seasons.losses, backgroundColor: C.loss, borderRadius: 4 },
+        { label: gettext('Ganados'), data: seasons.wins, backgroundColor: C.win, borderRadius: 4 },
+        { label: gettext('Perdidos'), data: seasons.losses, backgroundColor: C.loss, borderRadius: 4 },
       ],
     },
     options: {
@@ -48,7 +49,7 @@
     data: {
       labels: seasons.labels,
       datasets: [{
-        label: '% victorias',
+        label: gettext('% victorias'),
         data: seasons.pct,
         borderColor: C.navy,
         backgroundColor: 'rgba(180, 241, 0, 0.15)',
@@ -79,7 +80,7 @@
       data: {
         labels: snp.labels,
         datasets: [{
-          label: 'Puntos SNP',
+          label: gettext('Puntos SNP'),
           data: snp.scores,
           borderColor: C.navy,
           backgroundColor: 'rgba(180, 241, 0, 0.15)',
@@ -93,10 +94,10 @@
       options: {
         ...base,
         plugins: { ...base.plugins, legend: { display: false },
-          tooltip: { callbacks: { label: (c) => ` ${c.parsed.y.toLocaleString('es-ES')} puntos` } } },
+          tooltip: { callbacks: { label: (c) => ' ' + interpolate(gettext('%(n)s puntos'), { n: c.parsed.y.toLocaleString(lang) }, true) } } },
         scales: {
           x: { grid: { display: false } },
-          y: { ticks: { callback: (v) => v.toLocaleString('es-ES') }, grid: { color: C.line } },
+          y: { ticks: { callback: (v) => v.toLocaleString(lang) }, grid: { color: C.line } },
         },
       },
     });
@@ -109,7 +110,7 @@
     data: {
       labels: affinity.map((a) => `${a.name} (${a.games})`),
       datasets: [{
-        label: 'Afinidad',
+        label: gettext('Afinidad'),
         data: affinity.map((a) => a.affinity),
         // por encima del 50 % rinden mejor de lo esperado juntos
         backgroundColor: affinity.map((a) => (a.affinity >= 50 ? C.win : C.loss)),
@@ -126,7 +127,7 @@
           callbacks: {
             label: (c) => {
               const a = affinity[c.dataIndex];
-              return ` ${a.affinity}% · ${a.wins}V - ${a.losses}D`;
+              return ` ${a.affinity}% · ` + interpolate(gettext('%(wins)sV - %(losses)sD'), { wins: a.wins, losses: a.losses }, true);
             },
           },
         },

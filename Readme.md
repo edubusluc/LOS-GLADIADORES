@@ -336,6 +336,31 @@ playwright install chromium       # navegador que usa el scraper
 python manage.py migrate          # crea players_snpaccount y players_snpscorehistory
 ```
 
+## Idiomas (español e inglés)
+
+La web sale en español. El selector de idioma de la cabecera (y del back-office) permite
+verla en inglés; la elección se guarda en una cookie, así que se mantiene entre visitas.
+No se mira el idioma del navegador: sin elegir nada, todo sale en español.
+
+Los textos se escriben en español en el código (`{% translate %}` / `{% blocktranslate %}`
+en las plantillas, `gettext` en Python y en `static/js`), y la traducción al inglés está en
+`locale/en/LC_MESSAGES/django.po` (páginas, formularios y mensajes) y `djangojs.po` (textos
+de los ficheros JavaScript). Los `.mo` compilados también están en git, así que para
+arrancar no hace falta nada más.
+
+Si añades o cambias textos, necesitas `gettext` instalado (`brew install gettext`,
+`apt install gettext`, o en Windows los binarios de gettext para Windows):
+
+```bash
+python manage.py makemessages -l en -d django --no-obsolete -i "*/tests*.py"
+python manage.py makemessages -l en -d djangojs --no-obsolete
+# traduce en los .po las entradas con msgstr "" (y quita las marcadas "fuzzy")
+python manage.py compilemessages -l en
+```
+
+Los correos y el PDF de la convocatoria salen en el idioma de quien hace la acción en la
+web; los que envían los procesos programados salen en español.
+
 ## Correos
 
 Todos los correos salen de join.zyra@gmail.com con el mismo pie corporativo (logo de

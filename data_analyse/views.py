@@ -9,6 +9,7 @@ from django.db.models import Q, Count
 from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
 from django.http import Http404
+from django.utils.translation import gettext as _
 from core.decorators import club_required, club_admin_required
 from penalty.models import Penalty
 from players.models import current_season
@@ -561,7 +562,7 @@ def statistics_per_pair(request):
         if p1 is None or p2 is None:
             raise Http404("Jugador no encontrado")
         if p1 == p2:
-            context['error'] = "Elige dos jugadores distintos."
+            context['error'] = _("Elige dos jugadores distintos.")
         else:
             summary = pair_stats.pair_summary(log, p1.id, p2.id)
             context.update({

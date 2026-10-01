@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n l10n %}
 
 {% block content %}
   <script src="{% static 'js/player-picker.js' %}" defer></script>
@@ -8,30 +8,30 @@
 
     <header class="st-head">
       <div>
-        <h1 class="st-title">{% if s %}{{ p1.name }} {{ p1.get_first_last_name }} / {{ p2.name }} {{ p2.get_first_last_name }}{% else %}Estadísticas por parejas{% endif %}</h1>
+        <h1 class="st-title">{% if s %}{{ p1.name }} {{ p1.get_first_last_name }} / {{ p2.name }} {{ p2.get_first_last_name }}{% else %}{% translate "Estadísticas por parejas" %}{% endif %}</h1>
         {% if s %}
-          <p class="st-subtitle">{{ s.played }} partido{{ s.played|pluralize }} juntos en {{ s.matches }} enfrentamiento{{ s.matches|pluralize }} · <a href="{% url 'pair_statistics' %}">Ver mejores y peores parejas</a></p>
+          <p class="st-subtitle">{% blocktranslate trimmed count n=s.played %}{{ n }} partido juntos{% plural %}{{ n }} partidos juntos{% endblocktranslate %} {% blocktranslate trimmed count n=s.matches %}en {{ n }} enfrentamiento{% plural %}en {{ n }} enfrentamientos{% endblocktranslate %} · <a href="{% url 'pair_statistics' %}">{% translate "Ver mejores y peores parejas" %}</a></p>
         {% else %}
-          <p class="st-subtitle">Busca dos jugadores para ver cómo rinden juntos.</p>
+          <p class="st-subtitle">{% translate "Busca dos jugadores para ver cómo rinden juntos." %}</p>
         {% endif %}
       </div>
 
       <form class="st-picker" method="GET" action="{% url 'pair_statistics' %}">
-        <label class="visually-hidden" for="p1">Jugador 1</label>
-        <select class="st-select" name="p1" id="p1" data-picker data-placeholder="Jugador 1: buscar...">
-          <option value="">Jugador 1</option>
+        <label class="visually-hidden" for="p1">{% translate "Jugador 1" %}</label>
+        <select class="st-select" name="p1" id="p1" data-picker data-placeholder="{% translate 'Jugador 1: buscar...' %}">
+          <option value="">{% translate "Jugador 1" %}</option>
           {% for p in players %}
-            <option value="{{ p.public_id }}" {% if p.public_id == selected_p1 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} (fuera del equipo){% endif %}</option>
+            <option value="{{ p.public_id }}" {% if p.public_id == selected_p1 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
           {% endfor %}
         </select>
-        <label class="visually-hidden" for="p2">Jugador 2</label>
-        <select class="st-select" name="p2" id="p2" data-picker data-placeholder="Jugador 2: buscar...">
-          <option value="">Jugador 2</option>
+        <label class="visually-hidden" for="p2">{% translate "Jugador 2" %}</label>
+        <select class="st-select" name="p2" id="p2" data-picker data-placeholder="{% translate 'Jugador 2: buscar...' %}">
+          <option value="">{% translate "Jugador 2" %}</option>
           {% for p in players %}
-            <option value="{{ p.public_id }}" {% if p.public_id == selected_p2 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} (fuera del equipo){% endif %}</option>
+            <option value="{{ p.public_id }}" {% if p.public_id == selected_p2 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
           {% endfor %}
         </select>
-        <button class="st-btn" type="submit">Ver pareja</button>
+        <button class="st-btn" type="submit">{% translate "Ver pareja" %}</button>
       </form>
       <script>
         // Al elegir los dos jugadores se abre directamente su detalle
@@ -50,66 +50,66 @@
     {% if s %}
       {% if not s.played %}
         <div class="st-empty">
-          <strong>Todavía no han jugado juntos</strong>
-          Cuando disputen su primer partido cerrado como pareja aparecerán aquí sus estadísticas.
+          <strong>{% translate "Todavía no han jugado juntos" %}</strong>
+          {% translate "Cuando disputen su primer partido cerrado como pareja aparecerán aquí sus estadísticas." %}
         </div>
       {% else %}
 
       {# ============ 1. RESUMEN ============ #}
-      <section aria-label="Resumen de la pareja">
+      <section aria-label="{% translate 'Resumen de la pareja' %}">
         <div class="st-kpis">
           <article class="st-kpi st-kpi--ring">
-            <div class="st-ring" style="--pct: {{ pct_w }}" role="img" aria-label="{{ s.pct }}% de victorias">
+            <div class="st-ring" style="--pct: {{ pct_w|unlocalize }}" role="img" aria-label="{% blocktranslate with pct=s.pct %}{{ pct }}% de victorias{% endblocktranslate %}">
               <span>{{ s.pct|floatformat:0 }}%</span>
             </div>
             <div>
-              <h2 class="st-kpi-label">Victorias</h2>
-              <p class="st-kpi-sub">{{ s.wins }} ganados · {{ s.losses }} perdidos</p>
+              <h2 class="st-kpi-label">{% translate "Victorias" %}</h2>
+              <p class="st-kpi-sub">{% blocktranslate with wins=s.wins losses=s.losses %}{{ wins }} ganados · {{ losses }} perdidos{% endblocktranslate %}</p>
             </div>
           </article>
 
           <article class="st-kpi">
-            <h2 class="st-kpi-label">Partidos jugados</h2>
+            <h2 class="st-kpi-label">{% translate "Partidos jugados" %}</h2>
             <p class="st-kpi-value">{{ s.played }}</p>
-            <p class="st-kpi-sub">en {{ s.matches }} enfrentamiento{{ s.matches|pluralize }} · {{ s.points }} puntos</p>
+            <p class="st-kpi-sub">{% blocktranslate trimmed with points=s.points count n=s.matches %}en {{ n }} enfrentamiento · {{ points }} puntos{% plural %}en {{ n }} enfrentamientos · {{ points }} puntos{% endblocktranslate %}</p>
           </article>
 
           <article class="st-kpi">
-            <h2 class="st-kpi-label">Racha actual</h2>
-            <p class="st-kpi-value {% if s.streak_type == 'V' %}st-up{% else %}st-down{% endif %}">{{ s.streak_len }}{{ s.streak_type }}</p>
-            <p class="st-kpi-sub">{% if s.streak_type == 'V' %}victoria{{ s.streak_len|pluralize }} seguida{{ s.streak_len|pluralize }}{% else %}derrota{{ s.streak_len|pluralize }} seguida{{ s.streak_len|pluralize }}{% endif %}</p>
+            <h2 class="st-kpi-label">{% translate "Racha actual" %}</h2>
+            <p class="st-kpi-value {% if s.streak_type == 'V' %}st-up{% else %}st-down{% endif %}">{% if s.streak_type == 'V' %}{% blocktranslate with n=s.streak_len %}{{ n }}V{% endblocktranslate %}{% elif s.streak_type == 'D' %}{% blocktranslate with n=s.streak_len %}{{ n }}D{% endblocktranslate %}{% else %}{{ s.streak_len }}{% endif %}</p>
+            <p class="st-kpi-sub">{% if s.streak_type == 'V' %}{% blocktranslate trimmed count n=s.streak_len %}victoria seguida{% plural %}victorias seguidas{% endblocktranslate %}{% else %}{% blocktranslate trimmed count n=s.streak_len %}derrota seguida{% plural %}derrotas seguidas{% endblocktranslate %}{% endif %}</p>
           </article>
 
           <article class="st-kpi">
-            <h2 class="st-kpi-label">Mejor racha</h2>
-            <p class="st-kpi-value st-up">{{ s.best_win_streak }}V</p>
-            <p class="st-kpi-sub">peor racha: {{ s.worst_loss_streak }}D</p>
+            <h2 class="st-kpi-label">{% translate "Mejor racha" %}</h2>
+            <p class="st-kpi-value st-up">{% blocktranslate with n=s.best_win_streak %}{{ n }}V{% endblocktranslate %}</p>
+            <p class="st-kpi-sub">{% blocktranslate with n=s.worst_loss_streak %}peor racha: {{ n }}D{% endblocktranslate %}</p>
           </article>
         </div>
 
         <div class="st-row">
           <article class="st-card">
-            <h2 class="st-card-title">Forma reciente</h2>
-            <p class="st-card-note">Últimos {{ s.form|length }} partidos juntos, el más reciente a la derecha.</p>
+            <h2 class="st-card-title">{% translate "Forma reciente" %}</h2>
+            <p class="st-card-note">{% blocktranslate with n=s.form|length %}Últimos {{ n }} partidos juntos, el más reciente a la derecha.{% endblocktranslate %}</p>
             <ol class="st-form">
               {% for r in s.form %}
-                <li class="st-pip {% if r %}st-pip--w{% else %}st-pip--l{% endif %}" title="{% if r %}Victoria{% else %}Derrota{% endif %}">{% if r %}V{% else %}D{% endif %}</li>
+                <li class="st-pip {% if r %}st-pip--w{% else %}st-pip--l{% endif %}" title="{% if r %}{% translate 'Victoria' %}{% else %}{% translate 'Derrota' %}{% endif %}">{% if r %}{% translate "V" context "abreviatura de victoria" %}{% else %}{% translate "D" context "abreviatura de derrota" %}{% endif %}</li>
               {% endfor %}
             </ol>
           </article>
 
           <article class="st-card">
-            <h2 class="st-card-title">Local y visitante</h2>
-            <p class="st-card-note">Victorias de la pareja según dónde juega.</p>
+            <h2 class="st-card-title">{% translate "Local y visitante" %}</h2>
+            <p class="st-card-note">{% translate "Victorias de la pareja según dónde juega." %}</p>
             <div class="st-split">
-              <div class="st-split-head"><span>Como local</span><b>{% if s.local_played %}{{ s.local_pct|floatformat:0 }}%{% else %}—{% endif %}</b></div>
-              <div class="st-meter"><span style="width: {{ local_pct_w }}%"></span></div>
-              <p class="st-split-foot">{% if s.local_played %}{{ s.local_wins }}V – {{ s.local_losses }}D en {{ s.local_played }} partido{{ s.local_played|pluralize }}{% else %}Sin partidos todavía{% endif %}</p>
+              <div class="st-split-head"><span>{% translate "Como local" %}</span><b>{% if s.local_played %}{{ s.local_pct|floatformat:0 }}%{% else %}—{% endif %}</b></div>
+              <div class="st-meter"><span style="width: {{ local_pct_w|unlocalize }}%"></span></div>
+              <p class="st-split-foot">{% if s.local_played %}{% blocktranslate trimmed with wins=s.local_wins losses=s.local_losses count n=s.local_played %}{{ wins }}V – {{ losses }}D en {{ n }} partido{% plural %}{{ wins }}V – {{ losses }}D en {{ n }} partidos{% endblocktranslate %}{% else %}{% translate "Sin partidos todavía" %}{% endif %}</p>
             </div>
             <div class="st-split">
-              <div class="st-split-head"><span>Como visitante</span><b>{% if s.visiting_played %}{{ s.visiting_pct|floatformat:0 }}%{% else %}—{% endif %}</b></div>
-              <div class="st-meter"><span style="width: {{ visiting_pct_w }}%"></span></div>
-              <p class="st-split-foot">{% if s.visiting_played %}{{ s.visiting_wins }}V – {{ s.visiting_losses }}D en {{ s.visiting_played }} partido{{ s.visiting_played|pluralize }}{% else %}Sin partidos todavía{% endif %}</p>
+              <div class="st-split-head"><span>{% translate "Como visitante" %}</span><b>{% if s.visiting_played %}{{ s.visiting_pct|floatformat:0 }}%{% else %}—{% endif %}</b></div>
+              <div class="st-meter"><span style="width: {{ visiting_pct_w|unlocalize }}%"></span></div>
+              <p class="st-split-foot">{% if s.visiting_played %}{% blocktranslate trimmed with wins=s.visiting_wins losses=s.visiting_losses count n=s.visiting_played %}{{ wins }}V – {{ losses }}D en {{ n }} partido{% plural %}{{ wins }}V – {{ losses }}D en {{ n }} partidos{% endblocktranslate %}{% else %}{% translate "Sin partidos todavía" %}{% endif %}</p>
             </div>
           </article>
         </div>
@@ -117,18 +117,18 @@
 
       {# ============ 2. ÚLTIMOS PARTIDOS ============ #}
       <section aria-labelledby="last-title" class="st-section">
-        <h2 class="st-section-title" id="last-title">Últimos {{ last_games|length }} partido{{ last_games|length|pluralize }}</h2>
+        <h2 class="st-section-title" id="last-title">{% blocktranslate trimmed count n=last_games|length %}Últimos {{ n }} partido{% plural %}Últimos {{ n }} partidos{% endblocktranslate %}</h2>
         <article class="st-card">
-          <p class="st-card-note mt-0">Del más reciente al más antiguo. Pulsa un partido para verlo en la sección de partidos.</p>
+          <p class="st-card-note mt-0">{% translate "Del más reciente al más antiguo. Pulsa un partido para verlo en la sección de partidos." %}</p>
           <div class="st-table-wrap">
             <table class="st-table st-table--links">
               <thead>
                 <tr>
-                  <th scope="col">Fecha</th>
-                  <th scope="col">Rival</th>
-                  <th scope="col">Partido</th>
-                  <th scope="col">Resultado</th>
-                  <th scope="col">Puntos</th>
+                  <th scope="col">{% translate "Fecha" %}</th>
+                  <th scope="col">{% translate "Rival" %}</th>
+                  <th scope="col">{% translate "Partido" %}</th>
+                  <th scope="col">{% translate "Resultado" %}</th>
+                  <th scope="col">{% translate "Puntos" %}</th>
                 </tr>
               </thead>
               <tbody>
@@ -137,10 +137,10 @@
                     <th scope="row">
                       <a href="{% url 'call_for_match' g.match_public_id %}#partido-{{ g.n_game }}">{{ g.date|date:"d/m/Y" }}</a>
                     </th>
-                    <td>{{ g.rival }} <span class="st-muted">({% if g.local %}local{% else %}visitante{% endif %})</span></td>
+                    <td>{{ g.rival }} <span class="st-muted">({% if g.local %}{% translate "local" %}{% else %}{% translate "visitante" %}{% endif %})</span></td>
                     <td>{{ g.n_game }}</td>
                     <td>
-                      <span class="{% if g.won %}st-up{% else %}st-down{% endif %}">{% if g.won %}V{% else %}D{% endif %}</span>
+                      <span class="{% if g.won %}st-up{% else %}st-down{% endif %}">{% if g.won %}{% translate "V" context "abreviatura de victoria" %}{% else %}{% translate "D" context "abreviatura de derrota" %}{% endif %}</span>
                       {% if g.sets %}<span class="st-muted">{{ g.sets }}</span>{% endif %}
                     </td>
                     <td>{{ g.points }}</td>
@@ -154,34 +154,34 @@
 
       {# ============ 3. POR TEMPORADAS ============ #}
       <section aria-labelledby="seasons-title" class="st-section">
-        <h2 class="st-section-title" id="seasons-title">Rendimiento por temporada</h2>
+        <h2 class="st-section-title" id="seasons-title">{% translate "Rendimiento por temporada" %}</h2>
         <div class="st-row">
           <article class="st-card">
-            <h3 class="st-card-title">Partidos jugados</h3>
-            <p class="st-card-note">Ganados y perdidos en cada temporada.</p>
+            <h3 class="st-card-title">{% translate "Partidos jugados" %}</h3>
+            <p class="st-card-note">{% translate "Ganados y perdidos en cada temporada." %}</p>
             <div class="st-chart"><canvas id="chartPlayed"></canvas></div>
           </article>
           <article class="st-card">
-            <h3 class="st-card-title">Evolución del % de victorias</h3>
-            <p class="st-card-note">Porcentaje de partidos ganados juntos por temporada.</p>
+            <h3 class="st-card-title">{% translate "Evolución del % de victorias" %}</h3>
+            <p class="st-card-note">{% translate "Porcentaje de partidos ganados juntos por temporada." %}</p>
             <div class="st-chart"><canvas id="chartPct"></canvas></div>
           </article>
         </div>
 
         <article class="st-card">
-          <h3 class="st-card-title">Detalle por temporada</h3>
+          <h3 class="st-card-title">{% translate "Detalle por temporada" %}</h3>
           <div class="st-table-wrap">
             <table class="st-table">
               <thead>
                 <tr>
-                  <th scope="col">Temporada</th>
-                  <th scope="col">Enfrentamientos</th>
-                  <th scope="col">Jugados</th>
-                  <th scope="col">Ganados</th>
-                  <th scope="col">Perdidos</th>
-                  <th scope="col">% victorias</th>
-                  <th scope="col">Cambio</th>
-                  <th scope="col">Puntos</th>
+                  <th scope="col">{% translate "Temporada" %}</th>
+                  <th scope="col">{% translate "Enfrentamientos" %}</th>
+                  <th scope="col">{% translate "Jugados" %}</th>
+                  <th scope="col">{% translate "Ganados" %}</th>
+                  <th scope="col">{% translate "Perdidos" %}</th>
+                  <th scope="col">{% translate "% victorias" %}</th>
+                  <th scope="col">{% translate "Cambio" %}</th>
+                  <th scope="col">{% translate "Puntos" %}</th>
                 </tr>
               </thead>
               <tbody>
@@ -217,17 +217,19 @@
     {# ============ PAREJAS DESTACADAS (solo sin pareja elegida) ============ #}
     {% if not s %}
       <section aria-labelledby="pairs-title" class="st-section">
-        <h2 class="st-section-title" id="pairs-title">Parejas destacadas</h2>
+        <h2 class="st-section-title" id="pairs-title">{% translate "Parejas destacadas" %}</h2>
         {% if best_pairs or worst_pairs %}
           <div class="st-row">
-            {% include 'includes/pair_rank_table.html' with title="Mejores parejas" rows=best_pairs note="Mayor % de victorias juntos." %}
-            {% include 'includes/pair_rank_table.html' with title="Peores parejas" rows=worst_pairs note="Menor % de victorias juntos." %}
+            {% translate "Mejores parejas" as t_title %}{% translate "Mayor % de victorias juntos." as t_note %}
+            {% include 'includes/pair_rank_table.html' with title=t_title rows=best_pairs note=t_note %}
+            {% translate "Peores parejas" as t_title %}{% translate "Menor % de victorias juntos." as t_note %}
+            {% include 'includes/pair_rank_table.html' with title=t_title rows=worst_pairs note=t_note %}
           </div>
-          <p class="st-card-note">Para ver cualquier otra pareja, búscala arriba.</p>
+          <p class="st-card-note">{% translate "Para ver cualquier otra pareja, búscala arriba." %}</p>
         {% else %}
           <div class="st-empty">
-            <strong>Todavía no hay parejas destacadas</strong>
-            Aparecerán cuando alguna pareja juegue al menos {{ min_games_pair }} partidos juntos. Mientras tanto puedes buscar cualquier pareja arriba.
+            <strong>{% translate "Todavía no hay parejas destacadas" %}</strong>
+            {% blocktranslate trimmed count n=min_games_pair %}Aparecerán cuando alguna pareja juegue al menos {{ n }} partido juntos. Mientras tanto puedes buscar cualquier pareja arriba.{% plural %}Aparecerán cuando alguna pareja juegue al menos {{ n }} partidos juntos. Mientras tanto puedes buscar cualquier pareja arriba.{% endblocktranslate %}
           </div>
         {% endif %}
       </section>

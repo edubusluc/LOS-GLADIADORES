@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from .models import Match, Game, Result
 from team.models import Team
 
@@ -6,13 +7,13 @@ class MatchForm(forms.ModelForm):
     class Meta:
         model = Match
         fields = ['local', 'visiting', 'start_date']
-        labels = {'local': 'Local', 'visiting': 'Visitante', 'start_date': 'Fecha'}
+        labels = {'local': _('Local'), 'visiting': _('Visitante'), 'start_date': _('Fecha')}
         widgets = {
             'local': forms.Select(),
             'visiting': forms.Select(),
             'start_date': forms.DateInput(
                 format='%Y-%m-%d',
-                attrs={'type': 'date', 'data-datepicker': '', 'data-placeholder': 'Elige el día del partido'},
+                attrs={'type': 'date', 'data-datepicker': '', 'data-placeholder': _('Elige el día del partido')},
             ),
         }
 

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import Teamform
 from .models import Team
 from django.contrib import messages
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods
 from core.decorators import club_required, club_admin_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -45,7 +46,7 @@ def create_team(request):
             team.save()
             return redirect("list_teams")
         else:
-            messages.error(request, "Error al crear el equipo. Por favor, verifica los datos.")
+            messages.error(request, _("Error al crear el equipo. Por favor, verifica los datos."))
 
     else:
         form = Teamform(club=request.club)
@@ -68,7 +69,7 @@ def edit_team(request, team_id):
             team.save()
             return redirect('list_teams')
         else:
-            messages.error(request, "Error al editar el equipo. Por favor, verifica los datos.")
+            messages.error(request, _("Error al editar el equipo. Por favor, verifica los datos."))
     else:
         form = Teamform(instance=team, club=request.club)
 

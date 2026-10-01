@@ -9,6 +9,7 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from data_analyse import pairs as pair_stats
@@ -89,7 +90,7 @@ def register_club(request):
                 login(request, user, backend=LOGIN_BACKEND)
             request.session[SESSION_KEY] = club.id
             send_welcome_email(user, club, created=True, site_url=_site_url(request))
-            messages.success(request, f"Club {club.name} creado correctamente.")
+            messages.success(request, _("Club %(club)s creado correctamente.") % {"club": club.name})
             return redirect("home")
     else:
         club_form = ClubForm()
@@ -123,7 +124,7 @@ def club_members(request):
         if form.is_valid():
             membership = form.save()
             send_welcome_email(membership.user, club, site_url=_site_url(request))
-            messages.success(request, f"{membership.user.username} añadido al club.")
+            messages.success(request, _("%(username)s añadido al club.") % {"username": membership.user.username})
             return redirect("club_members")
     else:
         form = AddMemberForm(club=club)
@@ -143,7 +144,7 @@ def club_members(request):
 @require_POST
 def create_invitation(request):
     Invitation.objects.create(club=request.club, created_by=request.user)
-    messages.success(request, "Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve para una sola persona.")
+    messages.success(request, _("Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve para una sola persona."))
     return redirect(reverse("club_members") + "#invitaciones")
 
 
@@ -151,7 +152,7 @@ def create_invitation(request):
 @require_POST
 def revoke_invitation(request, invitation_id):
     get_object_or_404(Invitation, public_id=invitation_id, club=request.club, used_at__isnull=True).delete()
-    messages.success(request, "Invitación anulada.")
+    messages.success(request, _("Invitación anulada."))
     return redirect(reverse("club_members") + "#invitaciones")
 
 
@@ -164,7 +165,7 @@ def _join(request, invitation, user):
         return False
     request.session[SESSION_KEY] = membership.club_id
     send_welcome_email(user, membership.club, site_url=_site_url(request))
-    messages.success(request, f"¡Bienvenido a {membership.club.name}!")
+    messages.success(request, _("¡Bienvenido a %(club)s!") % {"club": membership.club.name})
     return True
 
 
@@ -183,7 +184,7 @@ def invitation(request, token):
         if Membership.objects.filter(user=request.user, club=club).exists():
             request.session.pop(PENDING_INVITE_KEY, None)
             request.session[SESSION_KEY] = club.id
-            messages.info(request, f"Ya eres miembro de {club.name}.")
+            messages.info(request, _("Ya eres miembro de %(club)s.") % {"club": club.name})
             return redirect("home")
         # Vuelve de iniciar sesión con Google desde esta misma invitación: se une directamente.
         from_google = request.session.pop(PENDING_INVITE_KEY, None) == token
@@ -208,7 +209,7 @@ def invitation(request, token):
             login(request, user, backend=LOGIN_BACKEND)
             request.session[SESSION_KEY] = club.id
             send_welcome_email(user, club, site_url=_site_url(request))
-            messages.success(request, f"¡Bienvenido a {club.name}!")
+            messages.success(request, _("¡Bienvenido a %(club)s!") % {"club": club.name})
             return redirect("home")
     else:
         form = SignUpForm()
@@ -230,15 +231,15 @@ def update_member(request, membership_id):
     try:
         validate_email(email) if email else None
     except ValidationError:
-        messages.error(request, f"'{email}' no es un email válido.")
+        messages.error(request, _("'%(email)s' no es un email válido.") % {"email": email})
         return redirect("club_members")
     if email != membership.user.email:
         membership.user.email = email
         membership.user.save(update_fields=["email"])
     if role not in dict(Membership.ROLES):
-        messages.error(request, "Rol no válido.")
+        messages.error(request, _("Rol no válido."))
     elif role != Membership.ADMIN and _is_last_admin(membership):
-        messages.error(request, "El club debe tener al menos un administrador.")
+        messages.error(request, _("El club debe tener al menos un administrador."))
     else:
         membership.role = role
         membership.save()
@@ -250,7 +251,7 @@ def update_member(request, membership_id):
 def remove_member(request, membership_id):
     membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     if _is_last_admin(membership):
-        messages.error(request, "El club debe tener al menos un administrador.")
+        messages.error(request, _("El club debe tener al menos un administrador."))
     else:
         membership.delete()
     return redirect("club_members")

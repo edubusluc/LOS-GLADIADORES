@@ -14,6 +14,7 @@ import threading
 from django.conf import settings
 from django.db import connections, transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _, ngettext
 
 from core.crypto import DecryptionError
 
@@ -75,7 +76,7 @@ def plan_import(club, scores):
     category = {entry["name"]: entry["category"] for entry in scores}
     existing = [{"snp_name": snp_name, "category": category[snp_name], "player": str(player)}
                 for player, _, snp_name in matched]
-    existing += [{"snp_name": name, "category": category[name], "player": "varios jugadores con un nombre parecido"}
+    existing += [{"snp_name": name, "category": category[name], "player": _("varios jugadores con un nombre parecido")}
                  for name in ambiguous]
     to_add = []
     for snp_name in unmatched:
@@ -93,7 +94,7 @@ def search(team_import, scraper=None, **scrape_options):
     account = getattr(team_import.club, "snp_account", None)
     try:
         if account is None:
-            raise SnpScrapeError("El club no tiene cuenta SNP.")
+            raise SnpScrapeError(_("El club no tiene cuenta SNP."))
         scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None, **scrape_options)
     except (SnpScrapeError, DecryptionError) as exc:
         changes = {"status": SnpTeamImport.ERROR, "message": str(exc), "finished_at": timezone.now()}
@@ -122,7 +123,7 @@ def confirm(team_import):
     created, today, season = [], timezone.localdate(), current_season()
     for entry in team_import.to_add:
         if entry["snp_name"] not in still_missing:
-            team_import.existing.append({"snp_name": entry["snp_name"], "player": "creado mientras tanto"})
+            team_import.existing.append({"snp_name": entry["snp_name"], "player": _("creado mientras tanto")})
             continue
         player = Player.objects.create(
             club=club, team=club.own_team, name=entry["name"], last_name=entry["last_name"],
@@ -133,7 +134,7 @@ def confirm(team_import):
     team_import.created_players = created
     team_import.status = SnpTeamImport.DONE
     team_import.finished_at = timezone.now()
-    team_import.message = f"{len(created)} jugador{'es' if len(created) != 1 else ''} añadido{'s' if len(created) != 1 else ''}."
+    team_import.message = ngettext("%(n)s jugador añadido.", "%(n)s jugadores añadidos.", len(created)) % {"n": len(created)}
     team_import.save()
     return team_import
 
@@ -166,7 +167,7 @@ def active_import(club, now=None):
     ).first()
     if current and current.status == SnpTeamImport.RUNNING and now - current.created_at > STALE_AFTER:
         current.status = SnpTeamImport.ERROR
-        current.message = "La búsqueda en SNP no ha terminado. Vuelve a intentarlo."
+        current.message = _("La búsqueda en SNP no ha terminado. Vuelve a intentarlo.")
         current.finished_at = now
         current.save(update_fields=["status", "message", "finished_at"])
         return None
@@ -185,7 +186,7 @@ def start_search(club, user):
         except Exception:
             logger.exception("Ha fallado la búsqueda de «Completar equipo» de %s", club)
             SnpTeamImport.objects.filter(pk=team_import.pk).update(
-                status=SnpTeamImport.ERROR, message="Error inesperado al leer SNP.", finished_at=timezone.now(),
+                status=SnpTeamImport.ERROR, message=_("Error inesperado al leer SNP."), finished_at=timezone.now(),
             )
         finally:
             connections.close_all()

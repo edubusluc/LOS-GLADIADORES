@@ -1,17 +1,17 @@
 {% extends 'backoffice/base.html' %}
-{% load tz %}
-{% block title %}Registro de consultas{% endblock %}
+{% load i18n tz %}
+{% block title %}{% translate "Registro de consultas" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:sql_console' %}">Consola SQL</a> · {{ page.paginator.count }} consulta{{ page.paginator.count|pluralize }}</span>
-        <h1>Registro de consultas</h1>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:sql_console' %}">{% translate "Consola SQL" %}</a> · {% blocktranslate trimmed count n=page.paginator.count %}{{ n }} consulta{% plural %}{{ n }} consultas{% endblocktranslate %}</span>
+        <h1>{% translate "Registro de consultas" %}</h1>
     </div>
 </div>
 
 <div class="z-table-wrap"><table class="table align-middle">
-    <thead><tr><th>Cuándo</th><th>Quién</th><th>Consulta</th><th class="text-end">Filas</th><th class="text-end">Tiempo</th><th>Resultado</th></tr></thead>
+    <thead><tr><th>{% translate "Cuándo" %}</th><th>{% translate "Quién" %}</th><th>{% translate "Consulta" %}</th><th class="text-end">{% translate "Filas" %}</th><th class="text-end">{% translate "Tiempo" %}</th><th>{% translate "Resultado" %}</th></tr></thead>
     <tbody>
     {% for q in page %}
         <tr>
@@ -20,10 +20,10 @@
             <td class="bo-wrap"><code class="bo-mono">{{ q.sql|truncatechars:160 }}</code></td>
             <td class="text-end">{{ q.row_count|default_if_none:"—" }}</td>
             <td class="text-end">{% if q.duration_ms is not None %}{{ q.duration_ms }} ms{% else %}—{% endif %}</td>
-            <td>{% if q.error %}<span class="z-badge z-badge--danger" title="{{ q.error }}">Error</span>{% elif q.exported %}<span class="z-badge z-badge--lime">Exportada</span>{% else %}Ejecutada{% endif %}</td>
+            <td>{% if q.error %}<span class="z-badge z-badge--danger" title="{{ q.error }}">{% translate "Error" %}</span>{% elif q.exported %}<span class="z-badge z-badge--lime">{% translate "Exportada" %}</span>{% else %}{% translate "Ejecutada" %}{% endif %}</td>
         </tr>
     {% empty %}
-        <tr><td colspan="6" class="text-muted">Todavía no se ha lanzado ninguna consulta.</td></tr>
+        <tr><td colspan="6" class="text-muted">{% translate "Todavía no se ha lanzado ninguna consulta." %}</td></tr>
     {% endfor %}
     </tbody>
 </table></div>

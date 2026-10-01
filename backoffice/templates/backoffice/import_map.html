@@ -1,31 +1,32 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Emparejar columnas{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Emparejar columnas" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:import_list' %}">Importar datos</a> · paso 2 de 3</span>
-        <h1>Emparejar columnas</h1>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:import_list' %}">{% translate "Importar datos" %}</a> · {% translate "paso 2 de 3" %}</span>
+        <h1>{% translate "Emparejar columnas" %}</h1>
     </div>
 </div>
 
 {% include 'backoffice/includes/messages.html' %}
 
-<p><strong>{{ job.filename }}</strong> → {{ entity.label }} de <strong>{{ job.club.name }}</strong> · {{ job.mode_label }}.</p>
-<p class="text-muted">{{ entity.help }} Las celdas vacías dejan el valor por defecto en las altas y no cambian nada en las actualizaciones.</p>
+<p>{% blocktranslate trimmed with filename=job.filename entity=entity.label club=job.club.name mode=job.mode_label %}<strong>{{ filename }}</strong> → {{ entity }} de <strong>{{ club }}</strong> · {{ mode }}.{% endblocktranslate %}</p>
+<p class="text-muted">{{ entity.help }} {% translate "Las celdas vacías dejan el valor por defecto en las altas y no cambian nada en las actualizaciones." %}</p>
 
 <form method="post">
     {% csrf_token %}
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>Campo de Zyra</th><th>Columna del fichero</th><th>Ejemplo del fichero</th></tr></thead>
+        <thead><tr><th>{% translate "Campo de Zyra" %}</th><th>{% translate "Columna del fichero" %}</th><th>{% translate "Ejemplo del fichero" %}</th></tr></thead>
         <tbody>
         {% for f, current in fields %}
             <tr>
-                <td>{{ f.label }}{% if f.required %} <span class="text-danger" title="Obligatorio en altas">*</span>{% endif %}{% if f.name == 'id' %} <span class="small text-muted">(solo para actualizar)</span>{% endif %}</td>
+                <td>{{ f.label }}{% if f.required %} <span class="text-danger" title="{% translate 'Obligatorio en altas' %}">*</span>{% endif %}{% if f.name == 'id' %} <span class="small text-muted">{% translate "(solo para actualizar)" %}</span>{% endif %}</td>
                 <td>
-                    <select name="map_{{ f.name }}" class="form-select form-select-sm" data-field="{{ f.name }}" aria-label="Columna para {{ f.label }}">
-                        <option value="">— No importar —</option>
-                        {% for i, h in headers %}<option value="{{ i }}" {% if i == current %}selected{% endif %}>{{ h|default:"(sin nombre)" }}</option>{% endfor %}
+                    <select name="map_{{ f.name }}" class="form-select form-select-sm" data-field="{{ f.name }}" aria-label="{% blocktranslate with label=f.label %}Columna para {{ label }}{% endblocktranslate %}">
+                        <option value="">{% translate "— No importar —" %}</option>
+                        {% for i, h in headers %}<option value="{{ i }}" {% if i == current %}selected{% endif %}>{% if h %}{{ h }}{% else %}{% translate "(sin nombre)" %}{% endif %}</option>{% endfor %}
                     </select>
                 </td>
                 <td class="text-muted small bo-sample" data-sample-for="{{ f.name }}"></td>
@@ -34,8 +35,8 @@
         </tbody>
     </table></div>
     <div class="bo-sql-actions">
-        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Siguiente: previsualizar</button>
-        <a href="{% url 'backoffice:import_list' %}" class="btn btn-outline-light">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> {% translate "Siguiente: previsualizar" %}</button>
+        <a href="{% url 'backoffice:import_list' %}" class="btn btn-outline-light">{% translate "Cancelar" %}</a>
     </div>
 </form>
 

@@ -13,6 +13,7 @@ import time
 from dataclasses import dataclass, field
 
 from django.db import connection, transaction
+from django.utils.translation import gettext as _
 
 # Filas que se muestran en pantalla y que se exportan como máximo.
 DISPLAY_LIMIT = 500
@@ -71,18 +72,21 @@ def validate(sql):
     """Comprueba que la consulta es una única lectura y que no toca datos sensibles."""
     sql = clean(sql)
     if not sql:
-        raise QueryError("Escribe una consulta.")
+        raise QueryError(_("Escribe una consulta."))
     # Las comprobaciones se hacen sin el contenido de los textos entre comillas.
     code = _STRINGS.sub("''", sql)
     if ";" in code:
-        raise QueryError("Solo se puede ejecutar una consulta cada vez.")
+        raise QueryError(_("Solo se puede ejecutar una consulta cada vez."))
     first = code.split(None, 1)[0].lower()
     if first not in ("select", "with"):
-        raise QueryError("Solo se admiten consultas de lectura (SELECT o WITH).")
+        raise QueryError(_("Solo se admiten consultas de lectura (SELECT o WITH)."))
     words = set(re.findall(r"[a-z_][a-z0-9_]*", code.lower()))
     blocked = sorted(words & BLOCKED_WORDS)
     if blocked:
-        raise QueryError(f"Esta consulta usa datos protegidos ({', '.join(blocked)}), que no se pueden consultar desde aquí.")
+        raise QueryError(
+            _("Esta consulta usa datos protegidos (%(words)s), que no se pueden consultar desde aquí.")
+            % {"words": ", ".join(blocked)}
+        )
     return sql
 
 
@@ -98,7 +102,7 @@ def run(sql, limit=DISPLAY_LIMIT, timeout=TIMEOUT_SECONDS):
         elif connection.vendor == "postgresql":
             columns, rows, truncated = _run_postgres(sql, limit, timeout)
         else:
-            raise QueryError(f"La consola SQL no está preparada para {connection.vendor}.")
+            raise QueryError(_("La consola SQL no está preparada para %(vendor)s.") % {"vendor": connection.vendor})
     except QueryError:
         raise
     except Exception as exc:  # error de sintaxis, tabla inexistente, tiempo agotado...
@@ -147,10 +151,10 @@ def _run_postgres(sql, limit, timeout):
 def _explain(exc, timeout):
     text = str(exc)
     if "interrupted" in text.lower() or "statement timeout" in text.lower():
-        return f"La consulta tardó más de {timeout} segundos y se ha cancelado."
+        return _("La consulta tardó más de %(seconds)s segundos y se ha cancelado.") % {"seconds": timeout}
     if "readonly" in text.lower() or "read-only" in text.lower() or "query_only" in text.lower():
-        return "La consola es de solo lectura."
-    return f"Error en la consulta: {text}"
+        return _("La consola es de solo lectura.")
+    return _("Error en la consulta: %(error)s") % {"error": text}
 
 
 def schema():
@@ -257,7 +261,9 @@ def expand_relations(sql):
             if not owners:
                 continue  # no es una relación conocida: se deja tal cual
             if len(owners) > 1:
-                raise QueryError(f"«{m.group(1)}»: {parts[0]} existe en varias tablas; pon delante la tabla o su alias.")
+                raise QueryError(_("«%(path)s»: %(name)s existe en varias tablas; pon delante la tabla o su alias.") % {
+                    "path": m.group(1), "name": parts[0],
+                })
             ref, model = owners.pop()
             chain = parts
         if len(chain) < 2:
@@ -265,10 +271,12 @@ def expand_relations(sql):
         for name in chain[:-1]:
             rel = _relation(model, name)
             if rel is None:
-                raise QueryError(f"«{m.group(1)}»: {name} no es una relación de {model._meta.db_table}.")
+                raise QueryError(_("«%(path)s»: %(name)s no es una relación de %(table)s.") % {
+                    "path": m.group(1), "name": name, "table": model._meta.db_table,
+                })
             target = rel.related_model
             if target._meta.db_table in HIDDEN_TABLES:
-                raise QueryError(f"«{m.group(1)}»: {target._meta.db_table} tiene datos protegidos.")
+                raise QueryError(_("«%(path)s»: %(table)s tiene datos protegidos.") % {"path": m.group(1), "table": target._meta.db_table})
             key = (ref.lower(), rel.column.lower())
             if key not in join_alias:
                 alias = f"_r{len(joins) + 1}"
@@ -280,13 +288,15 @@ def expand_relations(sql):
             ref, model = join_alias[key], target
         column = _column(model, chain[-1])
         if column is None:
-            raise QueryError(f"«{m.group(1)}»: {model._meta.db_table} no tiene la columna {chain[-1]}.")
+            raise QueryError(_("«%(path)s»: %(table)s no tiene la columna %(column)s.") % {
+                "path": m.group(1), "table": model._meta.db_table, "column": chain[-1],
+            })
         replacements.append((m.start(1), m.end(1), f"{ref}.{column}", label))
 
     if not joins:
         return sql
     if len(re.findall(r"\bselect\b", code, re.IGNORECASE)) > 1:
-        raise QueryError("Las relaciones con punto (local_id.name) solo funcionan en consultas sin subconsultas.")
+        raise QueryError(_("Las relaciones con punto (local_id.name) solo funcionan en consultas sin subconsultas."))
 
     # Con una sola tabla en el FROM, sus columnas sin tabla delante se cualifican para que
     # no choquen con las de las tablas añadidas (SELECT name, club.name FROM players_player).

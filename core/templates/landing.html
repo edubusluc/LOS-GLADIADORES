@@ -1,39 +1,39 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Zyra · Improve your level{% endblock %}
+{% block title %}Zyra · {% translate "Improve your level" %}{% endblock %}
 
 {% block content %}
 <section class="z-hero">
     <div>
-        <p class="z-hero-tag">Improve your level</p>
+        <p class="z-hero-tag">{% translate "Improve your level" %}</p>
         <h1 class="z-hero-title">Zyra</h1>
-        <p class="z-hero-text">Gestiona tu equipo de pádel: jugadores, convocatorias, partidos y estadísticas, en privado para cada club.</p>
+        <p class="z-hero-text">{% translate "Gestiona tu equipo de pádel: jugadores, convocatorias, partidos y estadísticas, en privado para cada club." %}</p>
         <div class="z-hero-actions">
-            <a class="btn btn-primary btn-lg" href="{% url 'register_club' %}">Empezar</a>
-            <a class="btn btn-outline-light btn-lg" href="{% url 'login' %}">Ya tengo cuenta</a>
+            <a class="btn btn-primary btn-lg" href="{% url 'register_club' %}">{% translate "Empezar" %}</a>
+            <a class="btn btn-outline-light btn-lg" href="{% url 'login' %}">{% translate "Ya tengo cuenta" %}</a>
         </div>
     </div>
     <div class="z-hero-art">
-        <img src="{% static 'zyra/logo.svg' %}" alt="Logotipo de Zyra">
+        <img src="{% static 'zyra/logo.svg' %}" alt="{% translate 'Logotipo de Zyra' %}">
     </div>
 </section>
 
-<section class="z-features" aria-label="Qué puedes hacer">
+<section class="z-features" aria-label="{% translate 'Qué puedes hacer' %}">
     <div class="z-card z-feature">
         <i class="fa-solid fa-clipboard-list"></i>
-        <h3>Convocatorias</h3>
-        <p>Convoca jugadores, registra cambios y aplica sanciones.</p>
+        <h3>{% translate "Convocatorias" %}</h3>
+        <p>{% translate "Convoca jugadores, registra cambios y aplica sanciones." %}</p>
     </div>
     <div class="z-card z-feature">
         <i class="fa-solid fa-table-tennis-paddle-ball"></i>
-        <h3>Partidos</h3>
-        <p>Organiza las parejas y apunta los resultados de cada set.</p>
+        <h3>{% translate "Partidos" %}</h3>
+        <p>{% translate "Organiza las parejas y apunta los resultados de cada set." %}</p>
     </div>
     <div class="z-card z-feature">
         <i class="fa-solid fa-chart-line"></i>
-        <h3>Estadísticas</h3>
-        <p>Rachas, afinidad entre parejas y evolución por temporada.</p>
+        <h3>{% translate "Estadísticas" %}</h3>
+        <p>{% translate "Rachas, afinidad entre parejas y evolución por temporada." %}</p>
     </div>
 </section>
 {% endblock %}

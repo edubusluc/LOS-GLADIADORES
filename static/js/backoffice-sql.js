@@ -14,6 +14,11 @@
     'use strict';
 
     var MAX_ITEMS = 50;
+    // Catálogo de traducciones de Django (jsi18n); fuera del navegador (pruebas), el texto tal cual.
+    var gettext = typeof root.gettext === 'function' ? root.gettext : function (s) { return s; };
+    var interpolate = typeof root.interpolate === 'function' ? root.interpolate : function (fmt, obj) {
+        return fmt.replace(/%\((\w+)\)s/g, function (m, k) { return String(obj[k]); });
+    };
     var KEYWORDS = /^(select|from|join|left|right|inner|outer|cross|full|natural|on|where|group|order|by|having|limit|offset|union|all|distinct|as|and|or|not|in|is|null|like|between|case|when|then|else|end|with|asc|desc|using|window)$/i;
 
     // "FROM a x, " → después de la coma va otra tabla.
@@ -121,14 +126,14 @@
             var table = walk(parts, srcs, tables);
             if (!table) return null;
             return finish(columnItems(table, partial), caret - partial.length, end, partial,
-                          'Campos de ' + table.name + ' (' + parts.join('.') + ')');
+                          interpolate(gettext('Campos de %(table)s (%(path)s)'), { table: table.name, path: parts.join('.') }, true));
         }
 
         var prefix = token.toLowerCase();
         if (/\b(?:from|join)\s+$/i.test(head) || TABLE_LIST_COMMA.test(head)) {
             var names = schema.filter(function (t) { return t.name.toLowerCase().indexOf(prefix) === 0; })
                 .map(function (t) { return { value: t.name, target: '', table: '' }; });
-            return finish(names, tokenStart, end, prefix, 'Tablas');
+            return finish(names, tokenStart, end, prefix, gettext('Tablas'));
         }
         // Justo tras "FROM tabla " va el alias: no hay nada que proponer.
         if (/\b(?:from|join)\s+[A-Za-z_]\w*\s+(?:as\s+)?$/i.test(head)) return null;
@@ -145,8 +150,11 @@
             seen[key] = true;
             items = items.concat(columnItems(tables[s.table], prefix, key));
         });
-        var title = srcs.length === 1 ? 'Campos de ' + srcs[0].table : 'Campos';
-        return finish(items, tokenStart, end, prefix, title);
+        var title = srcs.length === 1 ? interpolate(gettext('Campos de %(table)s'), { table: srcs[0].table }, true) : gettext('Campos');
+        var result = finish(items, tokenStart, end, prefix, title);
+        // Con varias tablas, cada campo lleva al lado la tabla (o el alias) de la que viene.
+        if (result) result.showTable = srcs.length > 1;
+        return result;
     }
 
     function finish(items, start, end, prefix, title) {
@@ -181,7 +189,7 @@
             head.className = 'bo-ac-head';
             head.textContent = state.title;
             var hint = document.createElement('span');
-            hint.textContent = '↑↓ elegir · Tab o Enter insertar · Esc cerrar';
+            hint.textContent = gettext('↑↓ elegir · Tab o Enter insertar · Esc cerrar');
             head.appendChild(hint);
             box.appendChild(head);
             var list = document.createElement('ul');
@@ -200,7 +208,7 @@
                     fk.className = 'bo-fk';
                     fk.textContent = '→ ' + item.target;
                     li.appendChild(fk);
-                } else if (item.table && state.title === 'Campos') {
+                } else if (item.table && state.showTable) {
                     var t = document.createElement('span');
                     t.className = 'bo-ac-table';
                     t.textContent = item.table;
@@ -215,7 +223,7 @@
             if (state.more) {
                 var more = document.createElement('li');
                 more.className = 'bo-ac-more';
-                more.textContent = 'y ' + state.more + ' más: sigue escribiendo para filtrar';
+                more.textContent = interpolate(gettext('y %(n)s más: sigue escribiendo para filtrar'), { n: state.more }, true);
                 list.appendChild(more);
             }
             box.appendChild(list);

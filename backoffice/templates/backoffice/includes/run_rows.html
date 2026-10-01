@@ -1,6 +1,6 @@
-{% load backoffice_tags tz %}
+{% load i18n backoffice_tags tz %}
 <div class="z-table-wrap"><table class="table align-middle">
-    <thead><tr>{% if show_job %}<th>Proceso</th>{% endif %}<th>Inicio</th><th>Duración</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr>{% if show_job %}<th>{% translate "Proceso" %}</th>{% endif %}<th>{% translate "Inicio" context "hora de inicio" %}</th><th>{% translate "Duración" %}</th><th>{% translate "Tipo" %}</th><th>{% translate "Estado" %}</th><th></th></tr></thead>
     <tbody>
     {% for run in runs %}
         <tr>
@@ -9,10 +9,10 @@
             <td>{{ run.duration|duration }}</td>
             <td>{{ run.get_trigger_display }}{% if run.triggered_by %} <span class="text-muted">({{ run.triggered_by.username }})</span>{% endif %}</td>
             <td>{% run_status run %}</td>
-            <td class="text-end"><a href="{% url 'backoffice:run_detail' run.public_id %}">Ver salida</a></td>
+            <td class="text-end"><a href="{% url 'backoffice:run_detail' run.public_id %}">{% translate "Ver salida" %}</a></td>
         </tr>
     {% empty %}
-        <tr><td colspan="6" class="text-muted">Todavía no hay ejecuciones.</td></tr>
+        <tr><td colspan="6" class="text-muted">{% translate "Todavía no hay ejecuciones." %}</td></tr>
     {% endfor %}
     </tbody>
 </table></div>

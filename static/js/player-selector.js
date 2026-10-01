@@ -27,7 +27,7 @@
 
       const n = picks.filter((p) => box(p).checked).length;
       count.textContent = n;
-      hint.textContent = min && n < min ? `Mínimo ${min} para cerrar la convocatoria` : '';
+      hint.textContent = min && n < min ? interpolate(gettext('Mínimo %(min)s para cerrar la convocatoria'), {min: min}, true) : '';
     }
 
     search.addEventListener('input', refresh);

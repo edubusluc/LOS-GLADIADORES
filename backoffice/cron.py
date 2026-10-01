@@ -6,6 +6,9 @@ restringen a la vez el día del mes y el de la semana, basta con que se cumpla u
 """
 import datetime
 
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
+
 FIELDS = [
     ("minuto", 0, 59),
     ("hora", 0, 23),
@@ -14,7 +17,10 @@ FIELDS = [
     ("día de la semana", 0, 7),
 ]
 
-DAY_NAMES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"]
+DAY_NAMES = [
+    gettext_lazy("domingo"), gettext_lazy("lunes"), gettext_lazy("martes"), gettext_lazy("miércoles"),
+    gettext_lazy("jueves"), gettext_lazy("viernes"), gettext_lazy("sábado"),
+]
 
 
 class CronError(ValueError):
@@ -79,7 +85,7 @@ class Cron:
         tz = moment.tzinfo
         start = moment.replace(second=0, microsecond=0) + datetime.timedelta(minutes=1)
         day = start.date()
-        for _ in range(366 * 5):
+        for _attempt in range(366 * 5):
             if self._day_matches(day):
                 for hour in sorted(self.hours):
                     for minute in sorted(self.minutes):
@@ -90,19 +96,19 @@ class Cron:
         raise CronError(f"La expresión {self.expression} no se cumple nunca.")
 
     def describe(self):
-        """Descripción en español de los casos habituales; si no, la propia expresión."""
+        """Descripción (en el idioma activo) de los casos habituales; si no, la propia expresión."""
         m, h, dom, mon, dow = self.expression.split()
         if dom == "*" and mon == "*" and dow == "*":
             if m == "*" and h == "*":
-                return "Cada minuto"
+                return _("Cada minuto")
             if m.startswith("*/") and h == "*":
-                return f"Cada {m[2:]} minutos"
+                return _("Cada %(n)s minutos") % {"n": m[2:]}
             if m.isdigit() and h == "*":
-                return f"Cada hora, en el minuto {int(m)}"
+                return _("Cada hora, en el minuto %(minute)s") % {"minute": int(m)}
             if m.isdigit() and h.isdigit():
-                return f"Cada día a las {int(h):02d}:{int(m):02d}"
+                return _("Cada día a las %(time)s") % {"time": f"{int(h):02d}:{int(m):02d}"}
         if dom == "*" and mon == "*" and dow.isdigit() and m.isdigit() and h.isdigit():
-            return f"Cada {DAY_NAMES[int(dow) % 7]} a las {int(h):02d}:{int(m):02d}"
+            return _("Cada %(day)s a las %(time)s") % {"day": DAY_NAMES[int(dow) % 7], "time": f"{int(h):02d}:{int(m):02d}"}
         if dom.isdigit() and mon == "*" and dow == "*" and m.isdigit() and h.isdigit():
-            return f"El día {int(dom)} de cada mes a las {int(h):02d}:{int(m):02d}"
-        return f"cron «{self.expression}»"
+            return _("El día %(day)s de cada mes a las %(time)s") % {"day": int(dom), "time": f"{int(h):02d}:{int(m):02d}"}
+        return _("cron «%(expression)s»") % {"expression": self.expression}

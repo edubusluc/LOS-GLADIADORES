@@ -7,10 +7,14 @@
  * el selector de fecha nativo del navegador.
  */
 (function () {
-  const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
-    'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  const WEEKDAY_NAMES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  // Nombres de meses y días en el idioma de la página (es/en) vía Intl
+  const LANG = document.documentElement.lang || 'es';
+  const monthFmt = new Intl.DateTimeFormat(LANG, { month: 'long' });
+  const MONTHS = Array.from({ length: 12 }, (_, i) => monthFmt.format(new Date(2024, i, 1)));
+  // 1 ene 2024 fue lunes: la semana empieza en lunes
+  const weekdayFmt = new Intl.DateTimeFormat(LANG, { weekday: 'narrow' });
+  const WEEKDAYS = Array.from({ length: 7 }, (_, i) => weekdayFmt.format(new Date(2024, 0, 1 + i)));
+  const longFmt = new Intl.DateTimeFormat(LANG, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   const pad = (n) => String(n).padStart(2, '0');
   const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -28,7 +32,7 @@
     const d = new Date(+m[1], +m[2] - 1, +m[3]);
     return d.getMonth() === +m[2] - 1 ? d : null;
   };
-  const longLabel = (d) => `${WEEKDAY_NAMES[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
+  const longLabel = (d) => longFmt.format(d);
 
   let counter = 0;
 
@@ -62,18 +66,18 @@
     pop.className = 'z-datepicker-pop';
     pop.id = uid;
     pop.setAttribute('role', 'dialog');
-    pop.setAttribute('aria-label', 'Elegir fecha');
+    pop.setAttribute('aria-label', gettext('Elegir fecha'));
     pop.innerHTML = `
       <div class="z-datepicker-head">
-        <button type="button" class="z-datepicker-nav" data-nav="-1" aria-label="Mes anterior"><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" class="z-datepicker-nav" data-nav="-1" aria-label="${gettext('Mes anterior')}"><i class="fa-solid fa-chevron-left"></i></button>
         <div class="z-datepicker-title" aria-live="polite"></div>
-        <button type="button" class="z-datepicker-nav" data-nav="1" aria-label="Mes siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" class="z-datepicker-nav" data-nav="1" aria-label="${gettext('Mes siguiente')}"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
       <div class="z-datepicker-weekdays" aria-hidden="true">${WEEKDAYS.map((w) => `<span>${w}</span>`).join('')}</div>
       <div class="z-datepicker-grid" role="grid"></div>
       <div class="z-datepicker-foot">
-        <button type="button" class="z-datepicker-today">Hoy</button>
-        <button type="button" class="z-datepicker-clear">Borrar</button>
+        <button type="button" class="z-datepicker-today">${gettext('Hoy')}</button>
+        <button type="button" class="z-datepicker-clear">${gettext('Borrar')}</button>
       </div>`;
     const title = pop.querySelector('.z-datepicker-title');
     const grid = pop.querySelector('.z-datepicker-grid');
@@ -85,7 +89,7 @@
 
     function renderTrigger() {
       const label = selected ? longLabel(selected) : '';
-      triggerText.textContent = selected ? label[0].toUpperCase() + label.slice(1) : (input.dataset.placeholder || 'Elegir fecha');
+      triggerText.textContent = selected ? label[0].toUpperCase() + label.slice(1) : (input.dataset.placeholder || gettext('Elegir fecha'));
       trigger.classList.toggle('is-empty', !selected);
     }
 

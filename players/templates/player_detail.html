@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="z-page-head">
-    <a href="{% url 'list_players' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> Jugadores</a>
+    <a href="{% url 'list_players' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {% translate "Jugadores" %}</a>
     {% if is_club_admin %}
-    <a href="{% url 'edit_player' player.public_id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i> Editar</a>
+    <a href="{% url 'edit_player' player.public_id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i> {% translate "Editar" %}</a>
     {% endif %}
 </div>
 
@@ -13,22 +13,22 @@
     <div class="z-profile">
         <img src="{% if player.photo %}{{ player.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="" class="z-avatar z-avatar--xl">
         <div>
-            <span class="z-eyebrow">My profile</span>
+            <span class="z-eyebrow">{% translate "My profile" %}</span>
             <h1 class="z-profile-name">{{ player.name }} {{ player.get_first_last_name }}</h1>
             <p class="z-player-meta mb-0">
-                <span><i class="fa-solid fa-location-crosshairs"></i>{{ player.position }}</span>
-                <span><i class="fa-solid fa-hand"></i>{{ player.skillfull_hand }}</span>
-                <span><i class="fa-solid fa-calendar"></i>Desde {{ player.joined_season }}</span>
+                <span><i class="fa-solid fa-location-crosshairs"></i>{{ player.get_position_display }}</span>
+                <span><i class="fa-solid fa-hand"></i>{{ player.get_skillfull_hand_display }}</span>
+                <span><i class="fa-solid fa-calendar"></i>{% blocktranslate with season=player.joined_season %}Desde {{ season }}{% endblocktranslate %}</span>
             </p>
         </div>
         <div class="z-profile-stats">
-            <div class="z-stat"><b>{{ player.snp_score|default:"–" }}</b><span>Puntos SNP</span></div>
+            <div class="z-stat"><b>{{ player.snp_score|default:"–" }}</b><span>{% translate "Puntos SNP" %}</span></div>
         </div>
     </div>
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <h2 class="z-section-title mt-0">Últimos partidos</h2>
-        <a href="{% url 'player_statistics' %}?player={{ player.public_id }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-chart-simple me-1"></i> Ver estadísticas</a>
+        <h2 class="z-section-title mt-0">{% translate "Últimos partidos" %}</h2>
+        <a href="{% url 'player_statistics' %}?player={{ player.public_id }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-chart-simple me-1"></i> {% translate "Ver estadísticas" %}</a>
     </div>
     <ul class="z-results">
         {% for game in games %}
@@ -39,13 +39,13 @@
         {% endif %}
         <li>
             <div class="min-w-0">
-                <strong>{{ game.match.local }} vs {{ game.match.visiting }}</strong>
-                <div class="z-result-date">{{ game.match.start_date|date:"d/m/Y" }} · Partido {{ game.n_game }}</div>
+                <strong>{% blocktranslate with local=game.match.local visiting=game.match.visiting %}{{ local }} vs {{ visiting }}{% endblocktranslate %}</strong>
+                <div class="z-result-date">{{ game.match.start_date|date:"d/m/Y" }} · {% blocktranslate with n=game.n_game %}Partido {{ n }}{% endblocktranslate %}</div>
             </div>
-            <span class="z-wl z-wl--{{ res }}">{% if res == "w" %}V{% else %}D{% endif %}</span>
+            <span class="z-wl z-wl--{{ res }}">{% if res == "w" %}{% translate "V" context "victoria" %}{% else %}{% translate "D" context "derrota" %}{% endif %}</span>
         </li>
         {% empty %}
-        <li class="text-muted">Todavía no ha disputado ningún partido.</li>
+        <li class="text-muted">{% translate "Todavía no ha disputado ningún partido." %}</li>
         {% endfor %}
     </ul>
 </div>

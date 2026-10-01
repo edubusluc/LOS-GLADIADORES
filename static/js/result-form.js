@@ -10,6 +10,11 @@
   const checks = form.querySelector('[data-result-checks]');
   const names = Array.from(form.querySelectorAll('.z-result-team')).map((e) => e.textContent.trim());
 
+  const setWon = (n, team, a, b) =>
+    interpolate(gettext('Set %(n)s: gana %(team)s (%(score)s)'), { n: n, team: team, score: `${a}-${b}` }, true);
+  const setInvalid = (n, a, b) =>
+    interpolate(gettext('Set %(n)s: %(score)s no es un resultado válido'), { n: n, score: `${a}-${b}` }, true);
+
   function line(ok, text) {
     const li = document.createElement('li');
     li.className = ok === null ? '' : ok ? 'is-ok' : 'is-bad';
@@ -29,7 +34,7 @@
       if (a === null || b === null) { ok = false; return; }
       const good = validSet(a, b);
       ok = ok && good;
-      line(good, good ? `Set ${i + 1}: gana ${a > b ? names[0] : names[1]} (${a}-${b})` : `Set ${i + 1}: ${a}-${b} no es un resultado válido`);
+      line(good, good ? setWon(i + 1, a > b ? names[0] : names[1], a, b) : setInvalid(i + 1, a, b));
       if (good) winners.push(a > b ? 0 : 1);
     });
 
@@ -41,18 +46,18 @@
 
     if (split) {
       const [a, b] = s[2];
-      if (a === null || b === null) { ok = false; line(null, 'Set 3: cada pareja ha ganado un set, falta el tercero'); }
+      if (a === null || b === null) { ok = false; line(null, gettext('Set 3: cada pareja ha ganado un set, falta el tercero')); }
       else {
         const good = validSet(a, b) || validTB(a, b);
         ok = ok && good;
-        line(good, good ? `Set 3: gana ${a > b ? names[0] : names[1]} (${a}-${b})` : `Set 3: ${a}-${b} no es un resultado válido`);
+        line(good, good ? setWon(3, a > b ? names[0] : names[1], a, b) : setInvalid(3, a, b));
         if (good) winners.push(a > b ? 0 : 1);
       }
     }
 
     if (ok && winners.length >= 2) {
       const w = winners.filter((x) => x === 0).length >= 2 ? 0 : 1;
-      line(true, `Ganador del partido: ${names[w]}`);
+      line(true, interpolate(gettext('Ganador del partido: %(team)s'), { team: names[w] }, true));
     }
   }
 

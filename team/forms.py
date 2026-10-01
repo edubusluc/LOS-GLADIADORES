@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext as _
 from .models import Team
 
 class Teamform (forms.ModelForm):
@@ -15,5 +16,5 @@ class Teamform (forms.ModelForm):
         name = self.cleaned_data['name']
         duplicated = Team.objects.filter(club=self.club, name__iexact=name).exclude(pk=self.instance.pk)
         if duplicated.exists():
-            raise forms.ValidationError("Ya existe un equipo con ese nombre en tu club.")
+            raise forms.ValidationError(_("Ya existe un equipo con ese nombre en tu club."))
         return name

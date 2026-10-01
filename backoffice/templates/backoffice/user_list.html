@@ -1,37 +1,37 @@
 {% extends 'backoffice/base.html' %}
-{% load backoffice_tags %}
-{% block title %}Usuarios{% endblock %}
+{% load i18n backoffice_tags %}
+{% block title %}{% translate "Usuarios" %}{% endblock %}
 
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow">{{ page.paginator.count }} usuario{{ page.paginator.count|pluralize }}</span>
-        <h1>Usuarios</h1>
+        <span class="z-eyebrow">{% blocktranslate trimmed count n=page.paginator.count %}{{ n }} usuario{% plural %}{{ n }} usuarios{% endblocktranslate %}</span>
+        <h1>{% translate "Usuarios" %}</h1>
     </div>
 </div>
 
 <form method="get" class="bo-filters" role="search">
-    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por usuario, nombre o email" class="form-control" aria-label="Buscar usuario">
-    <select name="kind" class="form-select" aria-label="Tipo de usuario">
-        <option value="">Todos</option>
-        <option value="google" {% if kind == 'google' %}selected{% endif %}>Entran con Google</option>
-        <option value="no_club" {% if kind == 'no_club' %}selected{% endif %}>Sin club</option>
-        <option value="inactive" {% if kind == 'inactive' %}selected{% endif %}>Sin acceso en 30 días</option>
-        <option value="staff" {% if kind == 'staff' %}selected{% endif %}>Personal de Zyra</option>
+    <input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Buscar por usuario, nombre o email' %}" class="form-control" aria-label="{% translate 'Buscar usuario' %}">
+    <select name="kind" class="form-select" aria-label="{% translate 'Tipo de usuario' %}">
+        <option value="">{% translate "Todos" %}</option>
+        <option value="google" {% if kind == 'google' %}selected{% endif %}>{% translate "Entran con Google" %}</option>
+        <option value="no_club" {% if kind == 'no_club' %}selected{% endif %}>{% translate "Sin club" %}</option>
+        <option value="inactive" {% if kind == 'inactive' %}selected{% endif %}>{% translate "Sin acceso en 30 días" %}</option>
+        <option value="staff" {% if kind == 'staff' %}selected{% endif %}>{% translate "Personal de Zyra" %}</option>
     </select>
-    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Filtrar</button>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> {% translate "Filtrar" %}</button>
 </form>
 
 <div class="z-table-wrap"><table class="table align-middle">
-    <thead><tr><th>Usuario</th><th>Email</th><th class="text-end">Clubes</th><th>Último acceso</th><th>Alta</th></tr></thead>
+    <thead><tr><th>{% translate "Usuario" %}</th><th>{% translate "Email" %}</th><th class="text-end">{% translate "Clubes" %}</th><th>{% translate "Último acceso" %}</th><th>{% translate "Alta" %}</th></tr></thead>
     <tbody>
     {% for u in page %}
         <tr>
             <td>
                 <a href="{% url 'backoffice:user_detail' u.id %}">{{ u.username }}</a>
-                {% if u.uses_google %}<i class="fa-brands fa-google text-muted ms-1" title="Entra con Google"></i>{% endif %}
-                {% if u.is_staff %}<span class="z-badge z-badge--lime ms-1">Staff</span>{% endif %}
-                {% if not u.is_active %}<span class="z-badge z-badge--danger ms-1">Inactivo</span>{% endif %}
+                {% if u.uses_google %}<i class="fa-brands fa-google text-muted ms-1" title="{% translate 'Entra con Google' %}"></i>{% endif %}
+                {% if u.is_staff %}<span class="z-badge z-badge--lime ms-1">{% translate "Staff" %}</span>{% endif %}
+                {% if not u.is_active %}<span class="z-badge z-badge--danger ms-1">{% translate "Inactivo" %}</span>{% endif %}
             </td>
             <td>{{ u.email|default:"—" }}</td>
             <td class="text-end">{{ u.n_clubs }}</td>
@@ -39,7 +39,7 @@
             <td>{{ u.date_joined|date:"j M Y" }}</td>
         </tr>
     {% empty %}
-        <tr><td colspan="5" class="text-muted">No hay usuarios con esos filtros.</td></tr>
+        <tr><td colspan="5" class="text-muted">{% translate "No hay usuarios con esos filtros." %}</td></tr>
     {% endfor %}
     </tbody>
 </table></div>

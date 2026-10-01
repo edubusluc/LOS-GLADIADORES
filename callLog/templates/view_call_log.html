@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="table-container">
-    <h1>Cambios en la convocatoria</h1>
+    <h1>{% translate "Cambios en la convocatoria" %}</h1>
 
     {% if log_lines %}
         <div class="log-container">
@@ -17,15 +17,16 @@
             {% endfor %}
         </div>
     {% else %}
-        <p class = "alert-log">No hay cambios registrados en la convocatoria.</p>
+        <p class = "alert-log">{% translate "No hay cambios registrados en la convocatoria." %}</p>
     {% endif %}
 
     <div class="mt-4">
-        <h2 class="z-section-title">Aplicar sanciones</h2>
+        <h2 class="z-section-title">{% translate "Aplicar sanciones" %}</h2>
         <form method="POST" action="{% url 'create_penalty' call_id %}">
             {% csrf_token %}
-            <p class="text-muted small">Marca a los jugadores que quieres advertir (solo jugadores actuales del equipo).</p>
-            {% include 'includes/player_selector.html' with selected=None submit_label="Aplicar sanciones" %}
+            <p class="text-muted small">{% translate "Marca a los jugadores que quieres advertir (solo jugadores actuales del equipo)." %}</p>
+            {% translate "Aplicar sanciones" as penalty_label %}
+            {% include 'includes/player_selector.html' with selected=None submit_label=penalty_label %}
         </form>
     </div>
 </div>

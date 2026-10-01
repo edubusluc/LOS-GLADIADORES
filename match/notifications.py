@@ -11,7 +11,9 @@ import logging
 
 from django.core.mail import get_connection
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext as _
 
 from call.models import ReportDelivery
 
@@ -41,24 +43,27 @@ def _bodies(match):
     rival = match.visiting if match.own_is_local else match.local
     date = f"{match.start_date:%d/%m/%Y}"
     club = match.club.name
+    greeting = _("Hola,")
+    closed = _("Se ha cerrado la convocatoria de %(club)s para el partido contra %(rival)s del %(date)s "
+               "(%(local)s vs %(visiting)s).")
+    attached = _("Te adjuntamos el informe en PDF con el estado del equipo, las rachas, los precedentes "
+                 "contra este rival y dos alineaciones recomendadas según el formato de la SNP.")
+    questions = _("Si tienes cualquier duda, responde a este correo y le llegará a quien cerró la convocatoria.")
+    regards = _("Un saludo,")
+    values = {"club": club, "rival": rival, "date": date, "local": match.local, "visiting": match.visiting}
     text = (
-        f"Hola,\n\n"
-        f"Se ha cerrado la convocatoria de {club} para el partido contra {rival} del {date} "
-        f"({match.local} vs {match.visiting}).\n\n"
-        f"Te adjuntamos el informe en PDF con el estado del equipo, las rachas, los precedentes "
-        f"contra este rival y dos alineaciones recomendadas según el formato de la SNP.\n\n"
-        f"Si tienes cualquier duda, responde a este correo y le llegará a quien cerró la convocatoria.\n\n"
-        f"Un saludo,\nZyra · {club}"
+        f"{greeting}\n\n"
+        f"{closed % values}\n\n"
+        f"{attached}\n\n"
+        f"{questions}\n\n"
+        f"{regards}\nZyra · {club}"
     )
-    html = format_html(
-        "<p>Hola,</p>"
-        "<p>Se ha cerrado la convocatoria de <strong>{}</strong> para el partido contra "
-        "<strong>{}</strong> del <strong>{}</strong> ({} vs {}).</p>"
-        "<p>Te adjuntamos el informe en PDF con el estado del equipo, las rachas, los precedentes "
-        "contra este rival y dos alineaciones recomendadas según el formato de la SNP.</p>"
-        "<p>Si tienes cualquier duda, responde a este correo y le llegará a quien cerró la convocatoria.</p>"
-        "<p>Un saludo,<br>Zyra · {}</p>",
-        club, rival, date, match.local, match.visiting, club,
+    strong = {k: format_html("<strong>{}</strong>", values[k]) for k in ("club", "rival", "date")}
+    html_values = {**{k: escape(v) for k, v in values.items()}, **strong}
+    html = mark_safe(
+        format_html("<p>{}</p>", greeting)
+        + "<p>" + escape(closed) % html_values + "</p>"
+        + format_html("<p>{}</p><p>{}</p><p>{}<br>Zyra · {}</p>", attached, questions, regards, club)
     )
     return text, html
 
@@ -159,7 +164,8 @@ def deliver(deliveries, now=None):
                 for delivery in group:
                     _failed(delivery, f"No se pudo generar el PDF: {exc}", now)
                 continue
-            subject = f"Convocatoria cerrada · {match.local} vs {match.visiting} ({match.start_date:%d/%m/%Y})"
+            subject = _("Convocatoria cerrada · %(local)s vs %(visiting)s (%(date)s)") % {
+                "local": match.local, "visiting": match.visiting, "date": f"{match.start_date:%d/%m/%Y}"}
             text, html = _bodies(match)
             for delivery in group:
                 email = build_email(subject, text, html, to=[delivery.email],

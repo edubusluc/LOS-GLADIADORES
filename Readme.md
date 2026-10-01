@@ -63,6 +63,44 @@ python manage.py migrate
 columnas de las migraciones del repositorio, y solo cambia el historial de migraciones
 (ninguna tabla ni dato). Si le falta algo, se para y lo dice.
 
+### PostgreSQL
+
+Sin `DATABASE_URL` la aplicación usa SQLite (`db.sqlite3`), que basta para desarrollar.
+En producción se usa PostgreSQL: define `DATABASE_URL` en el `.env`.
+
+```
+DATABASE_URL=postgres://usuario:contraseña@servidor:5432/zyra
+```
+
+**PostgreSQL en tu ordenador con Docker** (opcional, para probar como en producción):
+
+```bash
+docker run -d --name zyra-postgres -p 5432:5432 \
+  -e POSTGRES_USER=zyra -e POSTGRES_PASSWORD=zyra -e POSTGRES_DB=zyra \
+  -v zyra-postgres:/var/lib/postgresql/data postgres:16
+```
+
+Y en el `.env`: `DATABASE_URL=postgres://zyra:zyra@localhost:5432/zyra`. Para volver a
+SQLite basta con quitar (o comentar) esa línea. `docker stop zyra-postgres` lo para y
+`docker start zyra-postgres` lo vuelve a arrancar con los datos.
+
+**Pasar los datos de SQLite a PostgreSQL** (una sola vez):
+
+1. El SQLite tiene que estar al día: sin `DATABASE_URL`, `python manage.py migrate`
+   (y antes `adopt_repo_migrations` si es una base de datos antigua).
+2. Con `DATABASE_URL` apuntando a un PostgreSQL **vacío**:
+
+```bash
+python manage.py migrate                               # crea las tablas en PostgreSQL
+python manage.py copy_sqlite_to_db                     # o: copy_sqlite_to_db ruta/a/otro.sqlite3
+```
+
+`copy_sqlite_to_db` copia todo en una sola transacción (o todo o nada), no modifica el
+SQLite y al final cuenta las filas de cada tabla en los dos lados; si alguna no coincide,
+lo dice. Se niega a copiar sobre un PostgreSQL que ya tenga datos. Las contraseñas, las
+sesiones y los enlaces con Google se copian tal cual; la cuenta SNP también, siempre que
+`FIELD_ENCRYPTION_KEY` sea la misma.
+
 ### Logs y errores
 
 Los logs (incluidos los errores 500 con su traza) salen por la salida estándar, que
@@ -75,8 +113,9 @@ con `SENTRY_DSN` los errores se envían a Sentry.
 DJANGO_DEBUG=True python manage.py test
 ```
 
-GitHub Actions (`.github/workflows/tests.yml`) ejecuta en cada PR y en `main`: que no
-falten migraciones, todos los tests y `check --deploy` con una configuración de producción.
+GitHub Actions (`.github/workflows/tests.yml`) ejecuta en cada PR y en `main`, con SQLite
+y con PostgreSQL: que no falten migraciones, todos los tests y `check --deploy` con una
+configuración de producción.
 
 
 ## Multi-club

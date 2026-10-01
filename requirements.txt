@@ -8,3 +8,5 @@ django-allauth[socialaccount]==65.19.5
 pillow==11.0.0
 reportlab==4.2.5
 sentry-sdk[django]==2.19.2
+dj-database-url==2.3.0
+psycopg[binary]==3.2.3

@@ -8,6 +8,31 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # SQLite (desarrollo) y PostgreSQL (producción).
+        database: [sqlite, postgresql]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zyra
+          POSTGRES_PASSWORD: zyra
+          POSTGRES_DB: zyra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_DEBUG: "True"
+      DATABASE_URL: ${{ matrix.database == 'postgresql' && 'postgres://zyra:zyra@localhost:5432/zyra' || '' }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,16 +45,15 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Las migraciones están al día con los modelos
-        env:
-          DJANGO_DEBUG: "True"
         run: python manage.py makemigrations --check --dry-run
 
       - name: Tests
-        env:
-          DJANGO_DEBUG: "True"
-        run: python manage.py test
+        run: python manage.py test --noinput
 
       - name: Configuración de producción (check --deploy)
+        if: matrix.database == 'postgresql'
+        env:
+          DJANGO_DEBUG: "False"
         run: |
           export DJANGO_SECRET_KEY="$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')"
           export FIELD_ENCRYPTION_KEY="$(python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"

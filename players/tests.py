@@ -361,6 +361,25 @@ class SnpBatchTests(TestCase):
         SnpAccount.objects.update(last_sync_at=madrid(2026, 9, 28, 22, 0))  # antes del lunes 28 a las 23:00
         self.assertEqual(pending_accounts(madrid(2026, 9, 30, 12, 0)).count(), 4)
 
+    def test_browser_work_runs_outside_the_database_thread(self):
+        # Playwright deja un bucle asíncrono abierto en su hilo y ahí Django no deja usar
+        # la base de datos: el navegador debe trabajar en un hilo aparte.
+        import threading
+        from . import scraper
+        caller = threading.get_ident()
+        seen = []
+
+        def fake_scrape(username, password, team_id, log, browser):
+            seen.append(threading.get_ident())
+            return [{"name": "Ana A", "score": 5.0}]
+
+        with mock.patch.object(scraper, "_scrape", fake_scrape), scraper.SnpBrowser() as browser:
+            scores = scraper.scrape_scores("u", "p", browser=browser)
+            scraper.scrape_scores("u", "p", browser=browser)
+        self.assertEqual(scores, [{"name": "Ana A", "score": 5.0}])
+        self.assertNotEqual(seen[0], caller)
+        self.assertEqual(seen[0], seen[1])  # el mismo hilo (y navegador) para todo el lote
+
     def test_cycle_start_is_the_last_monday_at_23(self):
         from players.management.commands.update_snp_scores import cycle_start
         self.assertEqual(cycle_start(madrid(2026, 9, 30, 12, 0)), madrid(2026, 9, 28, 23, 0))

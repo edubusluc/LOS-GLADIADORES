@@ -18,6 +18,7 @@ LOGIN_BUTTONS = ('input[type="submit"][value="Iniciar Sesión"]', 'button[type="
 USERNAME_FIELDS = ('input[name="email"]', 'input[name="usuario"]', 'input[name="username"]',
                    'input[type="email"]', 'input[type="text"]')
 RESULTS_TABLE = "table.results"
+PLAYER_NAME = "span.td_nombre_jugador"
 NEXT_PAGE = 'a.pag_numerada.page-link[num_pagina="{}"]'
 SERIES_MENU = 'a.menu-link.menu-toggle:has([data-i18n="Series Nacionales"])'
 SPAIN_LINK = 'a.menu-link:has([data-i18n="España"])'
@@ -187,9 +188,11 @@ def _wait_for_next_page(page, frame, previous_names, log):
 def _read_rows(page):
     rows = []
     for row in page.query_selector_all(f"{RESULTS_TABLE} tbody tr"):
-        name_cell = row.query_selector("td:nth-child(2)")
+        # La celda del nombre lleva también la categoría en una etiqueta aparte ("500"):
+        # leemos solo el nombre del jugador y, si no está, la celda entera.
+        name_cell = row.query_selector(f"td:nth-child(2) {PLAYER_NAME}") or row.query_selector("td:nth-child(2)")
         value_cell = row.query_selector("td:nth-child(3)")
-        name = name_cell.inner_text().strip() if name_cell else ""
+        name = " ".join(name_cell.inner_text().split()) if name_cell else ""
         if name:
             rows.append({"name": name, "score": parse_score(value_cell.inner_text() if value_cell else "")})
     return rows

@@ -45,17 +45,23 @@
             </td>
             <td>
                 {% if job.run_requested_at %}<span class="z-badge z-badge--warning">Pedida a mano</span>
-                {% elif job.enabled %}{{ job.next_run_at|timezone:time_zone|date:"j M H:i" }}
+                {% elif job.enabled and job.next_run_at %}{{ job.next_run_at|timezone:time_zone|date:"j M H:i" }}
                 {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="text-end">
                 <div class="bo-row-actions">
+                    {% if job.spec.params %}
+                    <a href="{% url 'backoffice:job_detail' job.name %}" class="btn btn-sm btn-primary"><i class="fa-solid fa-play"></i> Ejecutar…</a>
+                    {% else %}
                     <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
                     </form>
+                    {% endif %}
+                    {% if job.spec.schedule %}
                     <form method="post" action="{% url 'backoffice:job_toggle' job.name %}">{% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-outline-light">{% if job.enabled %}<i class="fa-solid fa-pause"></i> Pausar{% else %}<i class="fa-solid fa-play"></i> Reanudar{% endif %}</button>
                     </form>
+                    {% endif %}
                 </div>
             </td>
         </tr>

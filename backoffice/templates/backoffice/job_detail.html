@@ -9,26 +9,48 @@
         <h1>{{ job.name }}</h1>
     </div>
     <div class="z-actions">
+        {% if not job.spec.params %}
         <form method="post" action="{% url 'backoffice:job_run_now' job.name %}">{% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
             <button type="submit" class="btn btn-sm btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar ahora</button>
         </form>
+        {% endif %}
+        {% if job.spec.schedule %}
         <form method="post" action="{% url 'backoffice:job_toggle' job.name %}">{% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
             <button type="submit" class="btn btn-sm btn-outline-light">{% if job.enabled %}Pausar{% else %}Reanudar{% endif %}</button>
         </form>
+        {% endif %}
     </div>
 </div>
 
 {% include 'backoffice/includes/messages.html' %}
 
+{% if job.spec.params %}
+<section class="z-panel">
+    <h2 class="h5">Ejecutar ahora</h2>
+    <form method="post" action="{% url 'backoffice:job_run_now' job.name %}" class="row g-2 align-items-end">{% csrf_token %}
+        {% for param in job.spec.params %}
+        <div class="col-sm-6 col-lg-4">
+            <label for="param-{{ param.name }}" class="form-label">{{ param.label }}</label>
+            <input type="text" id="param-{{ param.name }}" name="{{ param.name }}" class="form-control" required inputmode="numeric">
+            {% if param.help %}<div class="form-text">{{ param.help }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary" {% if job.running_since %}disabled{% endif %}><i class="fa-solid fa-play"></i> Ejecutar</button>
+        </div>
+    </form>
+</section>
+{% endif %}
+
 <section class="z-panel">
     <dl class="bo-facts">
         <div><dt>Qué hace</dt><dd class="bo-wrap">{{ job.spec.description|default:"Ya no está definido en backoffice/jobs.py" }}</dd></div>
         <div><dt>Comando</dt><dd><code>python manage.py {{ job.spec.command }} {{ job.spec.args|join:" " }}</code></dd></div>
-        <div><dt>Cuándo</dt><dd>{{ job|cron_text }} <span class="text-muted">({{ job.spec.schedule }}, hora de {{ time_zone }})</span></dd></div>
+        <div><dt>Cuándo</dt><dd>{{ job|cron_text }}{% if job.spec.schedule %} <span class="text-muted">({{ job.spec.schedule }}, hora de {{ time_zone }})</span>{% endif %}</dd></div>
         <div><dt>Estado</dt><dd>{% if job.running_since %}{% with running=job.runs.first %}{% if running %}<a href="{% url 'backoffice:run_detail' running.id %}" class="z-badge z-badge--warning">En curso · ver en directo</a>{% else %}<span class="z-badge z-badge--warning">En curso</span>{% endif %}{% endwith %}{% elif job.enabled %}Activo{% else %}<span class="z-badge z-badge--outline">En pausa</span>{% endif %}{% if job.run_requested_at %} · pedida a mano por {{ job.run_requested_by.username|default:"—" }}{% endif %}</dd></div>
-        <div><dt>Próxima ejecución</dt><dd>{% if job.enabled %}{{ job.next_run_at|timezone:time_zone|date:"j M Y H:i" }}{% else %}—{% endif %}</dd></div>
+        <div><dt>Próxima ejecución</dt><dd>{% if job.enabled and job.next_run_at %}{{ job.next_run_at|timezone:time_zone|date:"j M Y H:i" }}{% else %}—{% endif %}</dd></div>
         <div><dt>Ejecuciones</dt><dd>{{ ok_count }} correcta{{ ok_count|pluralize }} · {{ error_count }} con error</dd></div>
     </dl>
 </section>

@@ -2,12 +2,14 @@ from io import StringIO
 from unittest import mock
 
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from core.models import Membership
 from core.services import create_club
+from team.models import Team
 
 from .models import Player, SnpAccount
 from .scraper import SnpScrapeError, parse_score, parse_team_id
@@ -231,3 +233,130 @@ class SnpAccountTests(TestCase):
     def test_snp_job_runs_weekly_on_monday_night(self):
         from backoffice.jobs import get_spec
         self.assertEqual(get_spec("update_snp_scores").schedule, "0 23 * * 1")
+
+
+SNP_TEAM = [
+    {"name": "ANA ALVAREZ 500", "score": 42.5},
+    {"name": "PEDRO RAPOSO BELLERIN 500", "score": 120.0},
+    {"name": "MARIA JOSE GOMEZ RUIZ Future", "score": 33.0},
+]
+
+
+class SplitSnpNameTests(TestCase):
+    def test_split(self):
+        from .snp_import import split_snp_name
+        self.assertEqual(split_snp_name("PEDRO RAPOSO BELLERIN 500"), ("Pedro", "Raposo Bellerin"))
+        self.assertEqual(split_snp_name("MARIA JOSE GOMEZ RUIZ Future"), ("Maria Jose", "Gomez Ruiz"))
+        self.assertEqual(split_snp_name("JUAN DE LA FUENTE LÓPEZ"), ("Juan", "de la Fuente López"))
+        self.assertEqual(split_snp_name("ANA ALVAREZ"), ("Ana", "Alvarez"))
+        self.assertEqual(split_snp_name("PELÉ"), ("Pelé", ""))
+
+
+@override_settings(FIELD_ENCRYPTION_KEY="", SNP_IMPORT_INLINE=True)
+class CompleteTeamTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.admin)
+        account = SnpAccount(club=self.club)
+        account.username, account.password = "capitan", "secreto"
+        account.save()
+        # Jugador existente con datos propios: no se debe tocar.
+        self.ana = Player.objects.create(club=self.club, name="Ana", last_name="Álvarez", position="Revés", snp_score=1.0)
+        self.client.login(username="admin", password="pass-12345")
+        patcher = mock.patch("players.snp_import.scrape_scores", lambda *a, **k: SNP_TEAM)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_preview_then_confirm_creates_only_new_players(self):
+        from .models import SnpScoreHistory, SnpTeamImport
+        self.assertContains(self.client.get(reverse("list_players")), "Completar equipo")
+        self.assertRedirects(self.client.post(reverse("complete_team_start")), reverse("list_players"))
+        team_import = SnpTeamImport.objects.get()
+        self.assertEqual(team_import.status, SnpTeamImport.READY)
+        self.assertEqual([(p["name"], p["last_name"]) for p in team_import.to_add],
+                         [("Maria Jose", "Gomez Ruiz"), ("Pedro", "Raposo Bellerin")])
+        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ 500", "player": "Ana Álvarez"}])
+        self.assertEqual(Player.objects.count(), 1)  # la búsqueda no crea nada
+
+        page = self.client.get(reverse("list_players"))
+        self.assertContains(page, 'id="completeTeamModal"')
+        self.assertContains(page, "Pedro Raposo Bellerin")
+        self.assertContains(page, "ya están registrados")
+        self.assertEqual(self.client.get(reverse("complete_team_status", args=[team_import.id])).json()["status"], "ready")
+
+        self.client.post(reverse("complete_team_confirm", args=[team_import.id]))
+        pedro = Player.objects.get(name="Pedro")
+        self.assertEqual((pedro.last_name, pedro.snp_score, pedro.in_team, pedro.team), ("Raposo Bellerin", 120.0, True, self.club.own_team))
+        self.assertTrue(SnpScoreHistory.objects.filter(player=pedro, score=120.0).exists())
+        self.ana.refresh_from_db()
+        self.assertEqual((self.ana.last_name, self.ana.position, self.ana.snp_score), ("Álvarez", "Revés", 1.0))
+        self.assertEqual(Player.objects.count(), 3)
+
+        # Solo una vez al mes.
+        page = self.client.get(reverse("list_players"))
+        self.assertContains(page, "Ya se ha completado este mes")
+        self.client.post(reverse("complete_team_start"))
+        self.assertEqual(SnpTeamImport.objects.count(), 1)
+
+    def test_confirm_skips_players_created_in_the_meantime(self):
+        from .models import SnpTeamImport
+        self.client.post(reverse("complete_team_start"))
+        team_import = SnpTeamImport.objects.get()
+        Player.objects.create(club=self.club, name="Pedro", last_name="Raposo")
+        self.client.post(reverse("complete_team_confirm", args=[team_import.id]))
+        self.assertEqual(Player.objects.filter(name="Pedro").count(), 1)
+        self.assertTrue(Player.objects.filter(name="Maria Jose").exists())
+
+    def test_cancel_does_not_count_for_the_monthly_limit(self):
+        from .models import SnpTeamImport
+        self.client.post(reverse("complete_team_start"))
+        team_import = SnpTeamImport.objects.get()
+        self.client.post(reverse("complete_team_cancel", args=[team_import.id]))
+        self.assertEqual(Player.objects.count(), 1)
+        self.client.post(reverse("complete_team_start"))
+        self.assertEqual(SnpTeamImport.objects.filter(status=SnpTeamImport.READY).count(), 1)
+
+    def test_no_button_without_snp_account_or_for_members(self):
+        viewer = User.objects.create_user("viewer", password="pass-12345")
+        Membership.objects.create(user=viewer, club=self.club, role=Membership.MEMBER)
+        self.client.login(username="viewer", password="pass-12345")
+        self.assertNotContains(self.client.get(reverse("list_players")), "Completar equipo")
+        self.client.post(reverse("complete_team_start"))
+        self.client.login(username="admin", password="pass-12345")
+        SnpAccount.objects.all().delete()
+        self.assertNotContains(self.client.get(reverse("list_players")), "Completar equipo")
+        self.assertEqual(Player.objects.count(), 1)
+
+    def test_backoffice_command_uses_team_id_and_ignores_monthly_limit(self):
+        from .models import SnpTeamImport
+        team_id = str(self.club.own_team.id)
+        out = StringIO()
+        call_command("complete_snp_team", team_id, "--dry-run", stdout=out)
+        self.assertIn("Jugadores a añadir: 2 (Maria Jose Gomez Ruiz, Pedro Raposo Bellerin)", out.getvalue())
+        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ 500 → Ana Álvarez)", out.getvalue())
+        self.assertEqual(Player.objects.count(), 1)
+
+        SnpTeamImport.objects.create(club=self.club, status=SnpTeamImport.DONE, finished_at=timezone.now())
+        out = StringIO()
+        call_command("complete_snp_team", team_id, stdout=out)
+        self.assertIn("Resultado: 2 jugadores añadidos.", out.getvalue())
+        self.assertEqual(Player.objects.count(), 3)
+
+        rival = Team.objects.create(club=self.club, name="Rival", location="X")
+        with self.assertRaises(CommandError):
+            call_command("complete_snp_team", str(rival.id), stdout=StringIO())
+
+    def test_complete_team_is_a_manual_backoffice_job(self):
+        from backoffice.jobs import get_spec
+        spec = get_spec("complete_snp_team")
+        self.assertEqual((spec.schedule, [p.name for p in spec.params]), ("", ["team_id"]))
+
+    def test_edit_player_saves_name_and_last_name(self):
+        response = self.client.post(reverse("edit_player", args=[self.ana.id]), {
+            "name": "Ana María", "last_name": "Álvarez Ruiz", "position": "Revés", "skillfull_hand": "Diestro",
+            "joined_season": "2026-2027", "in_team": "on",
+        })
+        self.assertRedirects(response, reverse("list_players"))
+        self.ana.refresh_from_db()
+        self.assertEqual((self.ana.name, self.ana.last_name), ("Ana María", "Álvarez Ruiz"))
+        self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.id])), 'name="last_name"')

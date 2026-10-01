@@ -1,5 +1,6 @@
 import csv
 import datetime
+import re
 from urllib.parse import urlencode
 
 from allauth.socialaccount.models import SocialAccount
@@ -242,7 +243,14 @@ def job_toggle(request, name):
 @require_POST
 def job_run_now(request, name):
     job = get_object_or_404(ScheduledJob, name=name)
-    run = start_manual_run(job, request.user)
+    args = []
+    for param in job.spec.params if job.spec else ():
+        value = request.POST.get(param.name, "").strip()
+        if not re.fullmatch(param.pattern, value):
+            messages.error(request, f"Indica un valor válido para «{param.label}».")
+            return redirect("backoffice:job_detail", name=job.name)
+        args.append(value)
+    run = start_manual_run(job, request.user, args)
     if run is None:
         messages.error(request, f"{job.name} ya se está ejecutando.")
         return _back(request)

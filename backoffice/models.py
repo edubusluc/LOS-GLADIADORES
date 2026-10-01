@@ -92,6 +92,8 @@ class JobRun(models.Model):
     status = models.CharField(max_length=10, choices=STATUSES, default=RUNNING, db_index=True)
     started_at = models.DateTimeField(db_index=True)
     finished_at = models.DateTimeField(null=True, blank=True)
+    # Datos pedidos al lanzarla a mano (JobSpec.params), que se pasan al comando.
+    args = models.JSONField(default=list, blank=True)
     output = models.TextField(blank=True, default="")
     error = models.TextField(blank=True, default="")
 

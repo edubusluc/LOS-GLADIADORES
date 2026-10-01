@@ -113,3 +113,43 @@ class SnpScoreHistory(models.Model):
 
     def __str__(self):
         return f"{self.player}: {self.score:g} ({self.date})"
+
+
+class SnpTeamImport(models.Model):
+    """
+    «Completar equipo»: alta de los jugadores que aparecen en el equipo de SNP del club y
+    todavía no están en Zyra. Primero se descarga la lista y se guarda lo que se va a
+    añadir (``to_add``) y lo que no porque ya existe (``existing``); el administrador lo
+    revisa y lo confirma. Desde el back-office se crea y se confirma en un solo paso.
+    Nunca modifica jugadores existentes.
+    """
+    RUNNING = "running"
+    READY = "ready"
+    ERROR = "error"
+    DONE = "done"
+    CANCELLED = "cancelled"
+    STATUSES = [(RUNNING, "Buscando en SNP"), (READY, "Pendiente de confirmar"), (ERROR, "Con error"),
+                (DONE, "Hecha"), (CANCELLED, "Cancelada")]
+
+    WEB = "web"
+    BACKOFFICE = "backoffice"
+    SOURCES = [(WEB, "Web del club"), (BACKOFFICE, "Back-office")]
+
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="snp_imports")
+    source = models.CharField(max_length=12, choices=SOURCES, default=WEB)
+    status = models.CharField(max_length=10, choices=STATUSES, default=RUNNING)
+    started_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    # [{"name", "last_name", "snp_name", "score"}]
+    to_add = models.JSONField(default=list, blank=True)
+    # [{"snp_name", "player"}]: nombres de SNP que ya tienen jugador en Zyra.
+    existing = models.JSONField(default=list, blank=True)
+    created_players = models.JSONField(default=list, blank=True)
+    message = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Completar equipo de {self.club} ({self.get_status_display()})"

@@ -4,10 +4,12 @@ from .forms import PlayerForm, SnpAccountForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from match.models import Game
-from players.models import Player, SnpAccount
+from players.models import Player, SnpAccount, SnpTeamImport
 from core.crypto import DecryptionError
+from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+from . import snp_import
 
 
 # Create your views here.
@@ -67,24 +69,44 @@ def list_players(request):
     except EmptyPage:
         players = paginator.page(paginator.num_pages)
 
-    return render(request, 'list_players.html', {
+    context = {
         'players': players,
         'order_by': order_by,
         'search': search,
-    })
+    }
+    if request.membership.is_admin:
+        context.update(_complete_team_context(request.club))
+    return render(request, 'list_players.html', context)
+
+
+def _complete_team_context(club):
+    """Estado del botón «Completar equipo» (solo con cuenta SNP; una vez al mes)."""
+    if not SnpAccount.objects.filter(club=club).exists():
+        return {}
+    last = snp_import.last_import_this_month(club)
+    return {
+        'snp_import_enabled': True,
+        'snp_import': snp_import.active_import(club),
+        'snp_import_last': last,
+        'snp_import_next': snp_import.next_month_start() if last else None,
+    }
 
 @club_admin_required
 def edit_player(request, player_id):
     player = get_object_or_404(Player, id=player_id, club=request.club)  # Asegúrate de que estás usando el modelo correcto
 
     if request.method == "POST":
-        name = request.POST.get("name")
+        name = (request.POST.get("name") or "").strip()
+        last_name = (request.POST.get("last_name") or "").strip()
         position = request.POST.get("position")
         skillfull_hand = request.POST.get("skillfull_hand")
         joined_season = request.POST.get("joined_season")
         in_team = 'in_team' in request.POST
 
-        player.name = name
+        if name:
+            player.name = name
+        if last_name:
+            player.last_name = last_name
         player.position = position
         player.skillfull_hand = skillfull_hand
         player.in_team = in_team
@@ -170,3 +192,50 @@ def snp_account_delete(request):
     SnpAccount.objects.filter(club=request.club).delete()
     messages.success(request, "Cuenta SNP borrada.")
     return redirect("snp_account")
+
+
+# ---------- «Completar equipo» con los jugadores de SNP ----------
+
+def _blocked_this_month(request):
+    last = snp_import.last_import_this_month(request.club)
+    if last:
+        messages.error(request, "El equipo ya se ha completado este mes. Podrás volver a hacerlo a partir del "
+                                f"{snp_import.next_month_start():%d/%m/%Y}.")
+    return last is not None
+
+
+@club_admin_required
+@require_POST
+def complete_team_start(request):
+    if not SnpAccount.objects.filter(club=request.club).exists():
+        messages.error(request, "Primero registra la cuenta SNP del capitán.")
+        return redirect("snp_account")
+    if not _blocked_this_month(request) and not snp_import.active_import(request.club):
+        snp_import.start_search(request.club, request.user)
+    return redirect("list_players")
+
+
+@club_admin_required
+def complete_team_status(request, import_id):
+    team_import = get_object_or_404(SnpTeamImport, pk=import_id, club=request.club)
+    return JsonResponse({"status": team_import.status, "message": team_import.message})
+
+
+@club_admin_required
+@require_POST
+def complete_team_confirm(request, import_id):
+    team_import = get_object_or_404(SnpTeamImport, pk=import_id, club=request.club, source=SnpTeamImport.WEB)
+    if team_import.status != SnpTeamImport.READY or not team_import.to_add or _blocked_this_month(request):
+        return redirect("list_players")
+    team_import = snp_import.confirm(team_import)
+    messages.success(request, f"Equipo completado: {team_import.message}")
+    return redirect("list_players")
+
+
+@club_admin_required
+@require_POST
+def complete_team_cancel(request, import_id):
+    SnpTeamImport.objects.filter(
+        pk=import_id, club=request.club, status__in=[SnpTeamImport.RUNNING, SnpTeamImport.READY],
+    ).update(status=SnpTeamImport.CANCELLED)
+    return redirect("list_players")

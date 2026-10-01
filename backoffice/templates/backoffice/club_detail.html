@@ -5,7 +5,7 @@
 {% block content %}
 <div class="z-page-head">
     <div>
-        <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">Clubes</a> · alta el {{ club.created_at|date:"j M Y" }}</span>
+        <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">Clubes</a> · alta el {{ club.created_at|date:"j M Y" }}{% with team=club.own_team %}{% if team %} · id del equipo: {{ team.id }}{% endif %}{% endwith %}</span>
         <h1>{{ club.name }}</h1>
     </div>
     {% if user.is_superuser %}

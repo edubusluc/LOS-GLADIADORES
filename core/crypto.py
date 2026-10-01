@@ -4,8 +4,8 @@ aplicación necesita poder leer después, como las credenciales de SNP de cada c
 
 La clave sale de la variable de entorno FIELD_ENCRYPTION_KEY (genérala con
 ``python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"``).
-Si no está definida se deriva de DJANGO_SECRET_KEY, así que cambiar esa clave dejaría
-ilegibles los datos cifrados.
+En producción es obligatoria (zyra/settings.py no arranca sin ella). Solo en
+desarrollo, si no está definida, se deriva de DJANGO_SECRET_KEY.
 """
 import base64
 import hashlib

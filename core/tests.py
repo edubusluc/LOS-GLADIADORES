@@ -377,3 +377,43 @@ class HomeTests(TestCase):
         self.assertEqual(response.context["hot_player"]["streak"], 2)
         self.assertEqual(response.context["hot_pair"]["label"], "Ana Alpha / Bea Beta")
         self.assertContains(response, "2 victorias seguidas")
+
+
+class AdoptRepoMigrationsTests(TestCase):
+    """Bases de datos creadas cuando cada entorno generaba sus propias migraciones."""
+
+    def _run(self, *args):
+        out = io.StringIO()
+        call_command("adopt_repo_migrations", *args, stdout=out)
+        return out.getvalue()
+
+    def _project_history(self):
+        from django.db import connection
+        from django.db.migrations.recorder import MigrationRecorder
+        from core.management.commands.adopt_repo_migrations import PROJECT_APPS
+        return {k for k in MigrationRecorder(connection).applied_migrations() if k[0] in PROJECT_APPS}
+
+    def test_nothing_to_do_when_history_matches_the_repo(self):
+        self.assertIn("Nada que hacer", self._run())
+
+    def test_replaces_local_history_with_repo_initials(self):
+        from django.db import connection
+        from django.db.migrations.recorder import MigrationRecorder
+        recorder = MigrationRecorder(connection)
+        recorder.migration_qs.filter(app__in=["core", "match", "backoffice"]).delete()
+        for key in [("core", "0001_initial"), ("core", "0007_invitation"), ("match", "0004_match_location")]:
+            recorder.record_applied(*key)
+
+        output = self._run("--dry-run")
+        self.assertIn("core.0007_invitation", output)
+        self.assertIn(("core", "0007_invitation"), self._project_history())
+
+        output = self._run()
+        self.assertIn("Historial adaptado", output)
+        history = self._project_history()
+        self.assertNotIn(("core", "0007_invitation"), history)
+        self.assertNotIn(("match", "0004_match_location"), history)
+        self.assertIn(("match", "0001_initial"), history)
+        self.assertIn(("backoffice", "0001_initial"), history)
+        # Las posteriores las aplica migrate.
+        self.assertNotIn(("backoffice", "0002_scheduledjob_heartbeat"), history)

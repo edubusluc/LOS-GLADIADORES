@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Las migraciones están al día con los modelos
+        env:
+          DJANGO_DEBUG: "True"
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        env:
+          DJANGO_DEBUG: "True"
+        run: python manage.py test
+
+      - name: Configuración de producción (check --deploy)
+        run: |
+          export DJANGO_SECRET_KEY="$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')"
+          export FIELD_ENCRYPTION_KEY="$(python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"
+          export DJANGO_ALLOWED_HOSTS=zyra.example.com
+          python manage.py check --deploy --fail-level WARNING

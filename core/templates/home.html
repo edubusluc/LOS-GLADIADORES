@@ -15,14 +15,20 @@
 </section>
 
 {% if snp_missing %}
-<a class="z-card z-card--link z-snp-notice" href="{% url 'snp_account' %}">
+<div class="z-card z-card--link z-snp-notice d-flex flex-column align-items-start">
     <i class="fa-solid fa-trophy"></i>
+
     <span>
-        <strong>Registra la cuenta SNP del capitán</strong>
-        <span class="text-muted d-block">Tendrás los puntos SNP de tus jugadores actualizados cada semana para montar las parejas de los partidos.</span>
+        <strong>Registra tu cuenta de SNP</strong>
+        <span class="text-muted d-block">
+            Mantén actualizados semanalmente los puntos SNP de tus jugadores y carga automáticamente sus datos para ahorrar tiempo y tenerlo todo siempre al día.
+        </span>
     </span>
-    <i class="fa-solid fa-chevron-right ms-auto"></i>
-</a>
+
+    <a class="btn btn-primary" href="{% url 'snp_account' %}">
+        Registrar cuenta
+    </a>
+</div>
 {% endif %}
 
 <h2 class="z-section-title">Próximo partido</h2>

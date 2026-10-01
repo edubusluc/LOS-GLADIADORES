@@ -35,6 +35,8 @@ LATE_AFTER = datetime.timedelta(minutes=10)
 
 
 def next_run(spec, after):
+    if not spec.schedule:
+        return None  # solo a mano
     local = after.astimezone(ZoneInfo(SCHEDULER_TIME_ZONE))
     return Cron(spec.schedule).next_after(local).astimezone(datetime.timezone.utc)
 
@@ -44,7 +46,7 @@ def sync_jobs(now=None):
     now = now or timezone.now()
     for spec in JOBS:
         job, created = ScheduledJob.objects.get_or_create(name=spec.name)
-        if created or job.next_run_at is None:
+        if (created or job.next_run_at is None) and spec.schedule:
             job.next_run_at = next_run(spec, now)
             job.save(update_fields=["next_run_at"])
     return ScheduledJob.objects.filter(name__in=[s.name for s in JOBS])
@@ -139,7 +141,7 @@ def _in_event_loop():
     return True
 
 
-def claim_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):
+def claim_job(job, trigger=JobRun.SCHEDULE, user=None, now=None, args=()):
     """
     Marca el proceso como "en ejecución" y crea su JobRun. Devuelve None si ya estaba en
     marcha (otra pasada del lanzador o de la web lo tiene cogido).
@@ -148,7 +150,7 @@ def claim_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):
     # Coger el proceso de forma atómica: solo una pasada puede ponerle la marca.
     if not ScheduledJob.objects.filter(pk=job.pk, running_since__isnull=True).update(running_since=now):
         return None
-    return JobRun.objects.create(job=job, trigger=trigger, triggered_by=user, started_at=now)
+    return JobRun.objects.create(job=job, trigger=trigger, triggered_by=user, started_at=now, args=list(args))
 
 
 def execute_run(run):
@@ -160,8 +162,9 @@ def execute_run(run):
     try:
         if spec is None:
             raise RuntimeError(f"El proceso {job.name} ya no existe en backoffice/jobs.py.")
-        out.log(f"Inicio: python manage.py {' '.join([spec.command, *spec.args])}")
-        call_command(spec.command, *spec.args, stdout=out, stderr=out)
+        args = [*spec.args, *run.args]
+        out.log(f"Inicio: python manage.py {' '.join([spec.command, *args])}")
+        call_command(spec.command, *args, stdout=out, stderr=out)
         run.status = JobRun.OK
         out.log(f"Fin: correcto en {time.monotonic() - started:.1f} s")
     except BaseException as exc:  # SystemExit/CommandError incluidos: nada debe tumbar el lanzador
@@ -194,13 +197,13 @@ def run_job(job, trigger=JobRun.SCHEDULE, user=None, now=None):
     return execute_run(run) if run else None
 
 
-def start_manual_run(job, user):
+def start_manual_run(job, user, args=()):
     """
     "Ejecutar ahora" desde el back-office: el proceso arranca al momento en segundo plano
-    y la página de la ejecución muestra su salida en directo. Devuelve el JobRun, o None
-    si ya estaba en marcha.
+    y la página de la ejecución muestra su salida en directo. ``args`` son los datos
+    pedidos al lanzarlo (JobSpec.params). Devuelve el JobRun, o None si ya estaba en marcha.
     """
-    run = claim_job(job, JobRun.MANUAL, user)
+    run = claim_job(job, JobRun.MANUAL, user, args=args)
     if run is None:
         return None
     if getattr(settings, "BACKOFFICE_RUN_JOBS_INLINE", False):  # tests

@@ -12,6 +12,11 @@
             <label for="name">Nombre:</label>
             <input type="text" id="name" name="name" value="{{ player.name }}" required>
         </div>
+
+        <div>
+            <label for="last_name">Apellidos:</label>
+            <input type="text" id="last_name" name="last_name" value="{{ player.last_name }}" required>
+        </div>
     
         <div>
             <label for="position">Posición:</label>
@@ -32,7 +37,7 @@
         </div>
 
         <div>
-            <label for="name">Temporada en la que se unió al equipo:</label>
+            <label for="joined_season">Temporada en la que se unió al equipo:</label>
             <input type="text" id="joined_season" name="joined_season" value="{{ player.joined_season }}" required>
         </div>
         

@@ -768,6 +768,22 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 
 .list-group-item { color: var(--z-text); background: var(--z-surface); border-color: var(--z-border); }
 
+.modal {
+    --bs-modal-bg: var(--z-surface);
+    --bs-modal-color: var(--z-text);
+    --bs-modal-border-color: var(--z-border);
+    --bs-modal-header-border-color: var(--z-border);
+    --bs-modal-footer-border-color: var(--z-border);
+    --bs-modal-border-radius: 18px;
+}
+.modal .btn-close { filter: invert(1); }
+
+/* «Completar equipo» */
+.z-import-list { max-height: 260px; overflow-y: auto; margin: 0 0 16px; padding: 0; list-style: none; }
+.z-import-list li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--z-border); }
+.z-import-list li:last-child { border-bottom: 0; }
+.z-import-list small { color: var(--z-muted); }
+
 
 /* ---------- Pantallas de acceso (login, registro, portada) ---------- */
 

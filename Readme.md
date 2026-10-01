@@ -121,6 +121,17 @@ si están definidas las variables de entorno `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT
 
 Si alguien entra con Google y ya existe una cuenta con ese email, entra en esa cuenta.
 
+### Completar equipo
+
+Con la cuenta SNP registrada, la lista de jugadores muestra a los administradores el
+botón **Completar equipo**: lee los jugadores del equipo en SNP y abre una ventana con
+los que se van a añadir y los que no porque ya están en Zyra (mismo criterio de nombres
+que la actualización de puntos). Al confirmar solo se crean jugadores nuevos; los
+existentes nunca se modifican. Desde la web se puede hacer una vez al mes. El staff lo
+lanza sin ese límite desde el back-office (proceso `complete_snp_team`, pide el id del
+equipo, que aparece en la ficha del club) o con
+`python manage.py complete_snp_team <id del equipo> [--dry-run]`.
+
 ### Desplegar esta versión
 
 ```bash

@@ -256,8 +256,49 @@ class CronTests(TestCase):
         from .jobs import JOBS
         self.assertEqual(len({j.name for j in JOBS}), len(JOBS))
         for spec in JOBS:
-            Cron(spec.schedule)
+            if spec.schedule:  # sin horario: solo a mano
+                Cron(spec.schedule)
             self.assertIn(spec.command, get_commands(), spec.name)
+
+
+class ManualJobWithParamsTests(TestCase):
+    """Procesos sin horario que piden datos al lanzarlos (p. ej. complete_snp_team con el id del equipo)."""
+
+    def setUp(self):
+        from unittest import mock
+        from .jobs import JobParam, JobSpec
+        specs = [JobSpec(name="param_job", description="Con datos", command="purge_job_runs", args=("--days",),
+                         params=(JobParam("days", "Días"),))]
+        for target in ("backoffice.scheduler.JOBS", "backoffice.jobs.JOBS"):
+            patcher = mock.patch(target, specs)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        User.objects.create_user("staff", password="pass-12345", is_staff=True)
+        self.client.login(username="staff", password="pass-12345")
+
+    def test_manual_only_job_is_never_scheduled(self):
+        from .scheduler import run_due_jobs, scheduler_is_late, sync_jobs
+        job = sync_jobs().get()
+        self.assertIsNone(job.next_run_at)
+        self.assertEqual(run_due_jobs(), [])
+        self.assertFalse(scheduler_is_late())
+        page = self.client.get(reverse("backoffice:job_detail", args=["param_job"]))
+        self.assertContains(page, "Solo a mano")
+        self.assertContains(page, 'name="days"')
+
+    @override_settings(BACKOFFICE_RUN_JOBS_INLINE=True)
+    def test_run_now_passes_the_params_to_the_command(self):
+        from .scheduler import sync_jobs
+        sync_jobs()
+        url = reverse("backoffice:job_run_now", args=["param_job"])
+        response = self.client.post(url, {"days": "abc"})
+        self.assertRedirects(response, reverse("backoffice:job_detail", args=["param_job"]))
+        self.assertFalse(JobRun.objects.exists())
+
+        self.client.post(url, {"days": " 30 "})
+        run = JobRun.objects.get()
+        self.assertEqual((run.args, run.status), (["30"], JobRun.OK))
+        self.assertIn("Inicio: python manage.py purge_job_runs --days 30", run.output)
 
 
 class SchedulerTests(TestCase):

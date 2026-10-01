@@ -40,7 +40,9 @@ def cron_text(job):
     """Horario de un proceso en palabras ('Cada día a las 03:00')."""
     from backoffice.cron import Cron
     spec = getattr(job, "spec", None)
-    return Cron(spec.schedule).describe() if spec else "—"
+    if spec is None:
+        return "—"
+    return Cron(spec.schedule).describe() if spec.schedule else "Solo a mano"
 
 
 @register.inclusion_tag("backoffice/includes/run_status.html")

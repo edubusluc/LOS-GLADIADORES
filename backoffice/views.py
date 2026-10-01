@@ -250,6 +250,16 @@ def job_run_now(request, name):
             messages.error(request, f"Indica un valor válido para «{param.label}».")
             return redirect("backoffice:job_detail", name=job.name)
         args.append(value)
+    for option in job.spec.options if job.spec else ():
+        value = request.POST.get(option.name, "").strip()
+        if not option.pattern:
+            if value:
+                args.append(option.flag)
+        elif value:
+            if not re.fullmatch(option.pattern, value):
+                messages.error(request, f"Indica un valor válido para «{option.label}».")
+                return redirect("backoffice:job_detail", name=job.name)
+            args += [option.flag, value]
     run = start_manual_run(job, request.user, args)
     if run is None:
         messages.error(request, f"{job.name} ya se está ejecutando.")

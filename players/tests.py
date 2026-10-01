@@ -380,6 +380,49 @@ class SnpBatchTests(TestCase):
         self.assertNotEqual(seen[0], caller)
         self.assertEqual(seen[0], seen[1])  # el mismo hilo (y navegador) para todo el lote
 
+    def test_waits_until_the_table_is_filled(self):
+        # SNP muestra la tabla vacía y la rellena después: no hay que leerla vacía.
+        from . import scraper
+        page, frame = mock.Mock(), mock.Mock()
+        frame.is_detached.return_value = False
+        reads = iter([[], [], ["ANA A"], ["ANA A", "BEA B"], ["ANA A", "BEA B"]])
+        with mock.patch.object(scraper, "_table_names", lambda f: next(reads)):
+            self.assertIs(scraper._wait_for_rows(page, frame, lambda m: None), frame)
+        self.assertEqual(page.wait_for_timeout.call_count, 4)
+
+        with mock.patch.object(scraper, "_table_names", lambda f: []), \
+                mock.patch.object(scraper, "TABLE_TIMEOUT_MS", 1500), self.assertRaises(scraper.SnpTemporaryError):
+            scraper._wait_for_rows(page, frame, lambda m: None)
+
+    @override_settings(BACKOFFICE_RUN_JOBS_INLINE=True)
+    def test_back_office_can_run_with_options(self):
+        from backoffice.models import JobRun
+        from backoffice.scheduler import sync_jobs
+        sync_jobs()
+        User.objects.create_user("staff", password="pass-12345", is_staff=True)
+        self.client.login(username="staff", password="pass-12345")
+        page = self.client.get(reverse("backoffice:job_detail", args=["update_snp_scores"]))
+        self.assertContains(page, "Repetir todos los equipos")
+        self.assertContains(page, 'name="club"')
+        url = reverse("backoffice:job_run_now", args=["update_snp_scores"])
+
+        self.run_command()  # todos al día: sin opciones no haría nada
+        self.calls.clear()
+        with mock.patch("players.snp.scrape_scores", self.scraper()):
+            self.client.post(url, {"all": "1", "verbose": "1"})
+        run = JobRun.objects.get()
+        self.assertEqual(run.args, ["--all", "--verbosity=2"])
+        self.assertEqual(len(self.calls), 4)
+
+        with mock.patch("players.snp.scrape_scores", self.scraper()):
+            self.client.post(url, {"club": "Club B"})
+        self.assertEqual(JobRun.objects.latest("pk").args, ["--club", "Club B"])
+        self.assertEqual(self.calls[-1], "capitanB")
+
+        response = self.client.post(url, {"club": "<script>"})
+        self.assertRedirects(response, reverse("backoffice:job_detail", args=["update_snp_scores"]))
+        self.assertEqual(JobRun.objects.count(), 2)
+
     def test_cycle_start_is_the_last_monday_at_23(self):
         from players.management.commands.update_snp_scores import cycle_start
         self.assertEqual(cycle_start(madrid(2026, 9, 30, 12, 0)), madrid(2026, 9, 28, 23, 0))

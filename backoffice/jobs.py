@@ -8,7 +8,8 @@ proceso (activo, última y próxima ejecución); la definición manda siempre el
 
 Un proceso sin ``schedule`` solo se lanza a mano desde el back-office. Si tiene
 ``params``, el back-office pide esos datos al lanzarlo y se pasan al comando como
-argumentos, en ese orden.
+argumentos, en ese orden. Las ``options`` son opcionales: al lanzarlo a mano se pueden
+marcar (casillas) o rellenar, y se añaden al comando como sus opciones (--all, --club …).
 """
 from dataclasses import dataclass, field
 
@@ -25,6 +26,18 @@ class JobParam:
 
 
 @dataclass(frozen=True)
+class JobOption:
+    name: str
+    label: str
+    # Opción del comando que se añade: "--all", "--club"…
+    flag: str
+    help: str = ""
+    # Sin patrón es una casilla; con patrón, un campo de texto opcional cuyo valor
+    # (si se rellena) debe cumplirlo y se pasa tras la opción.
+    pattern: str = ""
+
+
+@dataclass(frozen=True)
 class JobSpec:
     name: str
     description: str
@@ -32,6 +45,7 @@ class JobSpec:
     schedule: str = ""
     args: tuple = field(default_factory=tuple)
     params: tuple = field(default_factory=tuple)
+    options: tuple = field(default_factory=tuple)
 
 
 JOBS = [
@@ -64,6 +78,14 @@ JOBS = [
         # Cada día a las 23:00: el lunes empieza el ciclo semanal y los demás días se
         # completa lo que haya quedado pendiente (si no queda nada, termina al momento).
         schedule="0 23 * * *",
+        options=(
+            JobOption("all", "Repetir todos los equipos", "--all",
+                      "Aunque ya se hayan actualizado en este ciclo o su último error no se reintente solo."),
+            JobOption("club", "Solo este club", "--club", "Nombre o slug del club (se actualiza aunque ya esté al día).",
+                      pattern=r"[\w .,'()&-]{1,100}"),
+            JobOption("verbose", "Traza detallada", "--verbosity=2",
+                      "Muestra cada paso en SNP y los puntos de cada jugador."),
+        ),
     ),
     JobSpec(
         name="send_call_reports",

@@ -1,0 +1,6 @@
+# Deploy previews de Netlify. Netlify no ejecuta la aplicación Django: solo instala
+# requirements.txt y lanza el comando de build configurado en su panel. Desde que la
+# configuración arranca en modo producción por defecto (sin DJANGO_SECRET_KEY no arranca),
+# cualquier "python manage.py ..." del build fallaba; en el build basta el modo desarrollo.
+[build.environment]
+  DJANGO_DEBUG = "True"

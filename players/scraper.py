@@ -185,14 +185,30 @@ def _wait_for_next_page(page, frame, previous_names, log):
     raise SnpScrapeError("La página siguiente de la tabla de jugadores de SNP no ha terminado de cargar.")
 
 
+def _player_name(cell):
+    """
+    Nombre del jugador sin la categoría, que va en una etiqueta aparte ("500").
+    Se usa text_content y no inner_text: SNP puede ocultar el nombre con CSS (solo
+    se ve al pasar el ratón) y entonces inner_text lo devuelve vacío.
+    """
+    span = cell.query_selector(PLAYER_NAME)
+    name = " ".join((span.text_content() or "").split()) if span else ""
+    if name:
+        return name
+    name = " ".join((cell.text_content() or "").split())
+    for badge in cell.query_selector_all(".badge"):
+        label = " ".join((badge.text_content() or "").split())
+        if label and name.endswith(label):
+            name = name[:-len(label)].strip()
+    return name
+
+
 def _read_rows(page):
     rows = []
     for row in page.query_selector_all(f"{RESULTS_TABLE} tbody tr"):
-        # La celda del nombre lleva también la categoría en una etiqueta aparte ("500"):
-        # leemos solo el nombre del jugador y, si no está, la celda entera.
-        name_cell = row.query_selector(f"td:nth-child(2) {PLAYER_NAME}") or row.query_selector("td:nth-child(2)")
+        name_cell = row.query_selector("td:nth-child(2)")
         value_cell = row.query_selector("td:nth-child(3)")
-        name = " ".join(name_cell.inner_text().split()) if name_cell else ""
+        name = _player_name(name_cell) if name_cell else ""
         if name:
             rows.append({"name": name, "score": parse_score(value_cell.inner_text() if value_cell else "")})
     return rows

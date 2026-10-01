@@ -363,22 +363,26 @@ class CompleteTeamTests(TestCase):
 
 
 class ReadRowsTests(TestCase):
-    def test_reads_only_the_player_name_without_category(self):
+    HTML = """
+    <style>.solo_hover span { visibility: hidden; }</style>
+    <table class="results"><tbody>
+      <tr><td>1</td><td class="td_edit_jugador_nombre"><div class="avatar"><img src="" alt=""></div>
+        <a class="solo_hover" href="javascript:void(0);"><span class="td_nombre_jugador" identity="344080">PEDRO RAPOSO BELLERIN</span></a>
+        <span class="badge badge-primary">500</span></td><td>120,5</td></tr>
+      <tr><td>2</td><td>ALBERTO MONTAÑO LEON <span class="badge">500</span></td><td>3</td></tr>
+    </tbody></table>"""
+
+    def test_reads_only_the_player_name_even_if_hidden(self):
+        from playwright.sync_api import Error, sync_playwright
         from .scraper import _read_rows
-
-        def element(text=None, children=None):
-            el = mock.Mock()
-            el.inner_text.return_value = text
-            el.query_selector.side_effect = lambda selector: (children or {}).get(selector)
-            return el
-
-        with_span = element(children={
-            "td:nth-child(2) span.td_nombre_jugador": element("PEDRO RAPOSO BELLERIN"),
-            "td:nth-child(2)": element("PEDRO RAPOSO BELLERIN\n500"),
-            "td:nth-child(3)": element("120,5"),
-        })
-        without_span = element(children={"td:nth-child(2)": element(" ANA  ALVAREZ "), "td:nth-child(3)": element("3")})
-        page = mock.Mock()
-        page.query_selector_all.return_value = [with_span, without_span]
-        self.assertEqual(_read_rows(page), [{"name": "PEDRO RAPOSO BELLERIN", "score": 120.5},
-                                            {"name": "ANA ALVAREZ", "score": 3.0}])
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch()
+                page = browser.new_page()
+                page.set_content(self.HTML)
+                rows = _read_rows(page)
+                browser.close()
+        except Error as exc:
+            self.skipTest(f"Chromium no disponible: {exc}")
+        self.assertEqual(rows, [{"name": "PEDRO RAPOSO BELLERIN", "score": 120.5},
+                                {"name": "ALBERTO MONTAÑO LEON", "score": 3.0}])

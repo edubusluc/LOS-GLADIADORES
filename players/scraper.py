@@ -158,6 +158,32 @@ def _open_team_page(page, team_id, log):
     return frame
 
 
+def _table_names(frame):
+    try:
+        return [r["name"] for r in _read_rows(frame)]
+    except PlaywrightError:
+        return None  # la tabla se está recargando
+
+
+def _wait_for_next_page(page, frame, previous_names, log):
+    """
+    Espera a que la tabla muestre la página siguiente: que cambie respecto a la anterior
+    y que dos lecturas seguidas coincidan (la tabla ha terminado de cargar). Antes se
+    esperaban 3 segundos fijos y, si SNP tardaba más, se leía una página a medio cargar.
+    """
+    waited, last = 0, None
+    while waited < TIMEOUT_MS:
+        page.wait_for_timeout(500)
+        waited += 500
+        if frame.is_detached():
+            frame, _ = _find(page, RESULTS_TABLE, "la tabla de jugadores", log, url_pattern=r"/equipo/view/\d+")
+        names = _table_names(frame)
+        if names and names != previous_names and names == last:
+            return frame
+        last = names
+    raise SnpScrapeError("La página siguiente de la tabla de jugadores de SNP no ha terminado de cargar.")
+
+
 def _read_rows(page):
     rows = []
     for row in page.query_selector_all(f"{RESULTS_TABLE} tbody tr"):
@@ -191,15 +217,14 @@ def scrape_scores(username, password, team_id=None, headed=False, log=None):
                 log(f"Página del equipo abierta: {frame.url}")
                 for page_number in range(2, MAX_PAGES + 2):
                     rows = _read_rows(frame)
-                    log(f"Página {page_number - 1} de la tabla: {len(rows)} jugadores.")
+                    log(f"Página {page_number - 1} de la tabla: {len(rows)} jugadores ({', '.join(r['name'] for r in rows)}).")
                     players.extend(rows)
                     next_button = frame.query_selector(NEXT_PAGE.format(page_number))
                     if not next_button or not next_button.is_visible():
                         break
+                    before = [r["name"] for r in rows]
                     next_button.click()
-                    # La paginación recarga la tabla en la misma página.
-                    page.wait_for_timeout(3000)
-                    frame.wait_for_selector(RESULTS_TABLE, timeout=TIMEOUT_MS)
+                    frame = _wait_for_next_page(page, frame, before, log)
             finally:
                 browser.close()
     except PlaywrightError as exc:

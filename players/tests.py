@@ -192,6 +192,12 @@ class SnpAccountTests(TestCase):
         self.assertIn("Jugadores actualizados correctamente: 1\n", out.getvalue())
         self.assertIn("Jugadores no actualizados: 1 (Luis Gómez)\n", out.getvalue())
 
+        out = StringIO()
+        with mock.patch("players.snp.scrape_scores", lambda *a, **k: [{"name": "Ana Alvarez", "score": 3.0},
+                                                                     {"name": "Luis Gomes 500", "score": 4.0}]):
+            call_command("update_snp_scores", stdout=out)
+        self.assertIn("Nombres de SNP sin jugador en Zyra: Luis Gomes 500\n", out.getvalue())
+
     def test_sync_keeps_one_history_point_per_player_and_day(self):
         from .models import SnpScoreHistory, current_season
         account = self.make_account()

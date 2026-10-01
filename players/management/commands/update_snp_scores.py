@@ -38,10 +38,13 @@ class Command(BaseCommand):
             self.stdout.write(f"Jugadores actualizados correctamente: {len(result.updated)}")
             missing = f" ({', '.join(result.missing)})" if result.missing else ""
             self.stdout.write(f"Jugadores no actualizados: {len(result.missing)}{missing}")
+            # Ayuda a entender por qué un jugador no se ha actualizado.
+            if result.unmatched:
+                self.stdout.write("Nombres de SNP sin jugador en Zyra: " + ", ".join(result.unmatched))
+            if result.ambiguous:
+                self.stdout.write("Nombres de SNP que encajan con varios jugadores: " + ", ".join(result.ambiguous))
             if verbose:
                 for name, score in result.updated:
                     self.stdout.write(f"  {name}: {score:g}")
-                if result.unmatched:
-                    self.stdout.write("  En SNP pero sin jugador en Zyra: " + ", ".join(result.unmatched))
         if failed and failed == len(accounts):
             raise CommandError("No se ha podido actualizar ningún equipo.")

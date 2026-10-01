@@ -15,6 +15,7 @@ SnpBlockedError para que el proceso por lotes pare en vez de insistir.
 import base64
 import binascii
 import re
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlsplit
 
 from playwright.sync_api import Error as PlaywrightError, sync_playwright
@@ -232,18 +233,33 @@ class SnpBrowser:
     Chromium para cada club es lo más lento. Cada club se lee en un contexto propio
     (como una ventana de incógnito), así las sesiones de los capitanes nunca se mezclan.
     Chromium se arranca la primera vez que hace falta.
+
+    Mientras Playwright está abierto mantiene un bucle asíncrono en su hilo, y en ese
+    hilo Django no deja usar la base de datos. Por eso todo el trabajo con el navegador
+    se hace en un hilo propio (``run``) y el resto (guardar los puntos) en el del proceso.
     """
 
     def __init__(self, headed=False):
         self.headed = headed
         self._playwright = None
         self.browser = None
+        self._executor = None
 
     def __enter__(self):
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="snp-browser")
         return self
 
     def __exit__(self, *exc):
-        self.close()
+        executor, self._executor = self._executor, None
+        if executor:
+            executor.submit(self.close).result()
+            executor.shutdown()
+
+    def run(self, function, *args, **kwargs):
+        """Ejecuta ``function`` en el hilo del navegador y devuelve su resultado (o su error)."""
+        if self._executor is None:
+            raise RuntimeError("SnpBrowser se usa dentro de un bloque with.")
+        return self._executor.submit(function, *args, **kwargs).result()
 
     def close(self):
         for closer in (self.browser and self.browser.close, self._playwright and self._playwright.stop):
@@ -300,8 +316,11 @@ def scrape_scores(username, password, team_id=None, headed=False, log=None, brow
     """
     if browser is None:
         with SnpBrowser(headed=headed) as own:
-            return scrape_scores(username, password, team_id, log=log, browser=own)
+            return own.run(_scrape, username, password, team_id, log, own)
+    return browser.run(_scrape, username, password, team_id, log, browser)
 
+
+def _scrape(username, password, team_id, log, browser):
     log = log or (lambda message: None)
     players = []
     blocked = []  # respuestas de SNP que indican que nos está limitando

@@ -30,13 +30,15 @@
   };
   const longLabel = (d) => `${WEEKDAY_NAMES[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
 
+  let counter = 0;
+
   function enhance(input) {
     if (input.dataset.datepickerReady) return;
     input.dataset.datepickerReady = '1';
 
     let selected = parseISO(input.value);
     let focused = selected || today();
-    const uid = (input.id || 'date') + '-cal-' + Math.random().toString(36).slice(2, 7);
+    const uid = (input.id || 'date') + '-cal-' + (++counter);
 
     const wrap = document.createElement('div');
     wrap.className = 'z-datepicker';

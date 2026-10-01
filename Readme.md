@@ -9,10 +9,74 @@ El paquete de configuración de Django se llama `zyra` (antes `snp_gladiadores`)
 - Ajustes: `zyra.settings`
 - WSGI: `zyra.wsgi.application`
 
-Si despliegas en PythonAnywhere, actualiza el fichero WSGI del panel para usar
-`DJANGO_SETTINGS_MODULE = "zyra.settings"`.
-
 Los recursos de marca (logo, favicon, icono para móvil) están en `static/zyra/`.
+
+
+## Puesta en marcha
+
+### Configuración (`.env`)
+
+Todo lo que cambia entre tu ordenador y producción sale de variables de entorno o del
+fichero `.env` junto a `manage.py` (no se sube a git). Copia `.env.example` como `.env`:
+
+```bash
+cp .env.example .env
+```
+
+- **En tu ordenador** basta con `DJANGO_DEBUG=True`.
+- **En producción** (`DJANGO_DEBUG` sin definir o `False`) la aplicación **no arranca** si
+  falta `DJANGO_SECRET_KEY` (mínimo 50 caracteres) o `FIELD_ENCRYPTION_KEY` (clave Fernet
+  que cifra las cuentas SNP). Define también `DJANGO_ALLOWED_HOSTS`,
+  `DJANGO_CSRF_TRUSTED_ORIGINS` y, si el hosting tiene un proxy que termina el https,
+  `DJANGO_BEHIND_PROXY=True`. Activa solo https: redirección, cookies seguras y HSTS
+  (1 hora por defecto; súbelo con `DJANGO_SECURE_HSTS_SECONDS`).
+
+`.env.example` explica cada variable y cómo generar las claves. Para comprobar la
+configuración de producción: `python manage.py check --deploy`.
+
+### Base de datos y migraciones
+
+Las migraciones **están en git** (antes cada entorno generaba las suyas). Ya no hace falta
+`makemigrations` para desplegar: basta con
+
+```bash
+python manage.py migrate
+```
+
+Si cambias un modelo, genera la migración con `python manage.py makemigrations` y súbela
+con el resto del cambio. El CI falla si un modelo cambia sin su migración.
+
+**Bases de datos creadas antes de este cambio** (con migraciones generadas en local):
+
+1. Haz una copia de seguridad de la base de datos.
+2. **Antes de `git pull`**, borra tus ficheros de migración locales (todo lo que hay en
+   `*/migrations/` salvo `__init__.py`); si no, git no puede traer los del repositorio.
+3. Trae el código y ejecuta una sola vez:
+
+```bash
+python manage.py adopt_repo_migrations --dry-run   # muestra qué haría
+python manage.py adopt_repo_migrations             # adapta el historial de migraciones
+python manage.py migrate
+```
+
+`adopt_repo_migrations` comprueba antes que la base de datos tiene todas las tablas y
+columnas de las migraciones del repositorio, y solo cambia el historial de migraciones
+(ninguna tabla ni dato). Si le falta algo, se para y lo dice.
+
+### Logs y errores
+
+Los logs (incluidos los errores 500 con su traza) salen por la salida estándar, que
+recoge gunicorn o el hosting. El nivel se cambia con `DJANGO_LOG_LEVEL`. Opcionalmente,
+con `SENTRY_DSN` los errores se envían a Sentry.
+
+### Tests y CI
+
+```bash
+DJANGO_DEBUG=True python manage.py test
+```
+
+GitHub Actions (`.github/workflows/tests.yml`) ejecuta en cada PR y en `main`: que no
+falten migraciones, todos los tests y `check --deploy` con una configuración de producción.
 
 
 ## Multi-club
@@ -40,7 +104,6 @@ activo con el selector de la barra superior.
 ### Actualizar una base de datos existente
 
 ```bash
-python manage.py makemigrations core team players match
 python manage.py migrate
 # Crea el club "LOS GLADIADORES", le asigna todos los datos existentes
 # y da de alta a los usuarios actuales como administradores.
@@ -56,7 +119,6 @@ de datos ya tiene duplicados, límpialos **antes** de migrar:
 ```bash
 python manage.py fix_duplicate_games --dry-run   # muestra qué se borraría
 python manage.py fix_duplicate_games             # conserva el que tiene resultado o el más reciente
-python manage.py makemigrations match
 python manage.py migrate
 ```
 
@@ -71,7 +133,6 @@ Cada partido guarda una **copia** de la ubicación del equipo local al crearse
 Para rellenar los partidos que ya existían:
 
 ```bash
-python manage.py makemigrations match
 python manage.py migrate
 python manage.py fill_match_locations
 ```
@@ -106,7 +167,6 @@ siguen usando el id de Django.
 ### Desplegar esta versión
 
 ```bash
-python manage.py makemigrations core team players match call callLog penalty backoffice
 python manage.py migrate
 # Da un identificador a todas las filas que ya existían (se puede repetir sin riesgo)
 python manage.py assign_public_ids
@@ -169,7 +229,6 @@ equipo, que aparece en la ficha del club) o con
 
 ```bash
 pip install -r requirements.txt   # instala django-allauth
-python manage.py makemigrations core
 python manage.py migrate          # crea core_invitation y las tablas de allauth
 ```
 
@@ -190,8 +249,8 @@ registrarla. Solo el staff puede lanzarlo a mano, desde el back-office
 (*Ejecutar ahora*) o con `python manage.py update_snp_scores [--club "<nombre o slug>"] [--headed]`
 (`--headed` abre el navegador a la vista para seguir cada paso).
 
-Define una clave de cifrado propia en `.env` (si falta se deriva de
-`DJANGO_SECRET_KEY`, y cambiar esa clave dejaría ilegibles las cuentas guardadas):
+Define una clave de cifrado propia en `.env` (obligatoria en producción; si la cambias,
+las cuentas guardadas dejan de poder leerse y hay que volver a introducirlas):
 
 ```bash
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
@@ -203,7 +262,6 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 ```bash
 pip install -r requirements.txt   # añade cryptography
 playwright install chromium       # navegador que usa el scraper
-python manage.py makemigrations players
 python manage.py migrate          # crea players_snpaccount y players_snpscorehistory
 ```
 
@@ -275,6 +333,12 @@ ficha con la **traza en directo** (se va guardando cada segundo, con la hora de 
 línea). Si el proceso ya está en marcha, no se lanza otra vez. Puedes cerrar la página:
 la ejecución sigue y la traza queda en el log.
 
+Mientras un proceso está en marcha da una **señal de vida cada minuto**. Nunca se lanza
+una segunda copia mientras la primera siga viva, dure lo que dure (por ejemplo
+`update_snp_scores` con muchos clubes). Si deja de dar señales durante 10 minutos (se
+reinició o se cayó el servidor), la ejecución se marca como interrumpida y el proceso
+vuelve a lanzarse en su siguiente hora programada, no al momento.
+
 ### Consola SQL
 
 *Back-office → Consola SQL* (solo superusuarios) ejecuta consultas **de solo lectura**
@@ -315,7 +379,6 @@ partidos de un club desde un CSV: subir → emparejar columnas → previsualizar
 ### Desplegar esta versión
 
 ```bash
-python manage.py makemigrations backoffice
 python manage.py migrate          # crea las tablas del back-office
 ```
 

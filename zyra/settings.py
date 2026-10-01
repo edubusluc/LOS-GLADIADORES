@@ -12,37 +12,85 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-from decouple import config
+from cryptography.fernet import Fernet
+from decouple import Csv, config
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ---------------------------------------------------------------------------
+# Configuración por entorno
+#
+# Todo lo que cambia entre tu ordenador y producción sale de variables de entorno
+# (o del fichero .env junto a manage.py; hay un ejemplo en .env.example). Por
+# defecto la aplicación arranca en modo PRODUCCIÓN (DEBUG desactivado) y se niega a
+# arrancar si faltan las claves: así un olvido en el servidor no deja la web abierta.
+# En tu ordenador pon DJANGO_DEBUG=True en el .env.
+# ---------------------------------------------------------------------------
 
+DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
+# Valores que nunca valen en producción (incluido el que se usaba antes por defecto).
+INSECURE_SECRET_KEYS = {'', 'clave_por_defecto_no_segura', 'django-insecure-solo-para-desarrollo'}
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
+SECRET_KEY = config('DJANGO_SECRET_KEY', default='')
+if not DEBUG and (SECRET_KEY in INSECURE_SECRET_KEYS or len(SECRET_KEY) < 50):
+    raise ImproperlyConfigured(
+        "Falta DJANGO_SECRET_KEY o es demasiado corta (mínimo 50 caracteres). Genera una con: "
+        "python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\" "
+        "(en tu ordenador también puedes poner DJANGO_DEBUG=True en el .env)."
+    )
+SECRET_KEY = SECRET_KEY or 'django-insecure-solo-para-desarrollo'
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# Clave Fernet para cifrar datos sensibles guardados en la base de datos (credenciales
+# de SNP de cada club). Ver core/crypto.py. En producción es obligatoria: sin ella la
+# clave se derivaría de DJANGO_SECRET_KEY.
+FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')
+if FIELD_ENCRYPTION_KEY:
+    try:
+        Fernet(FIELD_ENCRYPTION_KEY)
+    except (ValueError, TypeError):
+        raise ImproperlyConfigured(
+            "FIELD_ENCRYPTION_KEY no es una clave Fernet válida. Genera una con: "
+            "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+        )
+elif not DEBUG:
+    raise ImproperlyConfigured(
+        "Falta FIELD_ENCRYPTION_KEY (cifra las cuentas SNP de los clubes). Genera una con: "
+        "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+    )
+
+# Dominios desde los que se sirve la web, separados por comas: "zyra.es,www.zyra.es".
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+# Orígenes HTTPS de confianza para los formularios: "https://zyra.es,https://www.zyra.es".
+CSRF_TRUSTED_ORIGINS = config('DJANGO_CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+
 # Ruta del Django admin (herramienta de emergencia, solo superusuarios). Se puede
 # cambiar por una menos obvia con la variable de entorno ADMIN_URL.
 ADMIN_URL = config('ADMIN_URL', default='admin/')
-
-SECRET_KEY = config('DJANGO_SECRET_KEY', default='clave_por_defecto_no_segura')
-
-# Clave Fernet para cifrar datos sensibles guardados en la base de datos (credenciales
-# de SNP de cada club). Ver core/crypto.py.
-FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'login'
 
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'snpgladiadoresitalica.pythonanywhere.com']
+# HTTPS en producción: redirección a https, cookies solo por https y HSTS.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = config('DJANGO_SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Empieza con 1 hora; cuando todo funcione por https súbelo a un año (31536000).
+    SECURE_HSTS_SECONDS = config('DJANGO_SECURE_HSTS_SECONDS', default=3600, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = config('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+    # HSTS para subdominios y la lista "preload" de los navegadores son decisiones difíciles
+    # de deshacer: se activan a mano cuando haya dominio definitivo, no por defecto.
+    SILENCED_SYSTEM_CHECKS = ['security.W005', 'security.W021']
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    # Si el hosting pone delante un proxy que termina el https (lo habitual), activa
+    # esto para que Django sepa que la petición original era https y no entre en bucle.
+    if config('DJANGO_BEHIND_PROXY', default=False, cast=bool):
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
@@ -211,3 +259,45 @@ SOCIALACCOUNT_PROVIDERS = {
            if GOOGLE_LOGIN_ENABLED else {}),
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# Logs
+#
+# Todo va a la salida estándar (la recoge gunicorn, systemd o el hosting). Incluye los
+# errores 500 con su traza: sin esto, con DEBUG desactivado Django no los escribe en
+# ningún sitio. El nivel se cambia con DJANGO_LOG_LEVEL (DEBUG, INFO, WARNING...).
+# ---------------------------------------------------------------------------
+LOG_LEVEL = config('DJANGO_LOG_LEVEL', default='INFO').upper()
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {'format': '%(asctime)s %(levelname)s [%(name)s] %(message)s'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'standard'},
+    },
+    'root': {'handlers': ['console'], 'level': LOG_LEVEL},
+    'loggers': {
+        # Errores 500 y 4xx de las peticiones (con traza).
+        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        # El resto de Django solo a partir de WARNING (si no, cada consulta SQL en DEBUG).
+        'django': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+    },
+}
+
+# Sentry (opcional): agrupa los errores y avisa por email. Basta con definir SENTRY_DSN
+# (lo da Sentry al crear el proyecto). Sin ella no se envía nada a ningún sitio.
+SENTRY_DSN = config('SENTRY_DSN', default='')
+if SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=config('SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production'),
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.0, cast=float),
+        # No enviar a Sentry datos personales (emails, IPs, cookies).
+        send_default_pii=False,
+    )

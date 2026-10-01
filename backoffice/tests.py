@@ -357,21 +357,69 @@ class SchedulerTests(TestCase):
         self.assertEqual((run.job.name, run.trigger, run.triggered_by), ("ok_job", JobRun.MANUAL, self.staff))
         self.assertIsNone(ScheduledJob.objects.get(name="ok_job").run_requested_at)
 
-    def test_running_job_is_not_started_twice_and_stale_lock_is_released(self):
+    def test_running_job_is_not_started_twice_and_dead_run_is_released(self):
         from .scheduler import run_due_jobs, run_job, sync_jobs
         sync_jobs()
         job = ScheduledJob.objects.get(name="ok_job")
         ScheduledJob.objects.filter(pk=job.pk).update(running_since=timezone.now())
         self.assertIsNone(run_job(job))
 
+        # El proceso murió hace rato: sin señales de vida desde hace 2 horas.
         long_ago = timezone.now() - datetime.timedelta(hours=2)
         stuck = JobRun.objects.create(job=job, started_at=long_ago)
-        ScheduledJob.objects.filter(pk=job.pk).update(running_since=long_ago, next_run_at=timezone.now())
+        ScheduledJob.objects.filter(pk=job.pk).update(running_since=long_ago, heartbeat_at=long_ago, next_run_at=timezone.now())
         runs = run_due_jobs()
         stuck.refresh_from_db()
         self.assertEqual(stuck.status, JobRun.ERROR)
         self.assertIn("Interrumpida", stuck.error)
         self.assertEqual([r.status for r in runs], [JobRun.OK])
+
+    def test_long_running_job_with_heartbeat_is_never_launched_again(self):
+        """Un proceso que sigue vivo (p. ej. update_snp_scores con miles de clubes) no se duplica."""
+        from .scheduler import claim_job, run_due_jobs, sync_jobs
+        start = timezone.now() - datetime.timedelta(hours=5)
+        sync_jobs(start)
+        ScheduledJob.objects.update(enabled=False)
+        ScheduledJob.objects.filter(name="ok_job").update(enabled=True, next_run_at=start)
+        job = ScheduledJob.objects.get(name="ok_job")
+        run = claim_job(job, now=start)
+        # Lleva 5 horas en marcha pero dio señales de vida hace un minuto.
+        ScheduledJob.objects.filter(pk=job.pk).update(heartbeat_at=timezone.now() - datetime.timedelta(minutes=1))
+        self.assertEqual(run_due_jobs(), [])
+        run.refresh_from_db()
+        self.assertEqual(run.status, JobRun.RUNNING)
+        self.assertIsNotNone(ScheduledJob.objects.get(pk=job.pk).running_since)
+
+    def test_claim_moves_next_run_so_an_interrupted_run_is_not_relaunched_at_once(self):
+        from .scheduler import claim_job, run_due_jobs, sync_jobs
+        now = timezone.now()
+        sync_jobs(now)
+        ScheduledJob.objects.update(enabled=False)
+        ScheduledJob.objects.filter(name="ok_job").update(enabled=True, next_run_at=now - datetime.timedelta(minutes=1))
+        job = ScheduledJob.objects.get(name="ok_job")
+        claim_job(job, now=now)
+        self.assertGreater(ScheduledJob.objects.get(pk=job.pk).next_run_at, now)
+
+        # El proceso muere: tras liberarse la marca, no se relanza hasta su siguiente hora.
+        later = now + datetime.timedelta(minutes=30)
+        self.assertEqual(run_due_jobs(now=later), [])
+        job.refresh_from_db()
+        self.assertIsNone(job.running_since)
+        self.assertEqual(job.runs.get().status, JobRun.ERROR)
+
+    def test_heartbeat_marks_the_running_job_as_alive(self):
+        from unittest import mock
+        from .scheduler import Heartbeat, sync_jobs
+        sync_jobs()
+        job = ScheduledJob.objects.get(name="ok_job")
+        started = timezone.now() - datetime.timedelta(hours=3)
+        ScheduledJob.objects.filter(pk=job.pk).update(running_since=started, heartbeat_at=started)
+        heartbeat = Heartbeat(job)
+        # Un latido y se para; se ejecuta en este hilo para usar la base de datos del test.
+        heartbeat.stopped = mock.Mock(wait=mock.Mock(side_effect=[False, True]))
+        with mock.patch("backoffice.scheduler.db_connections"):
+            heartbeat._beat()
+        self.assertGreater(ScheduledJob.objects.get(pk=job.pk).heartbeat_at, started)
 
     def test_scheduler_is_late(self):
         from .scheduler import scheduler_is_late, sync_jobs

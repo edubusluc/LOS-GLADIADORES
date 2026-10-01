@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 MAX_OUTPUT = 20_000
 # Si el lanzador no ha pasado en este tiempo, el back-office avisa de que no está en marcha.
 LATE_AFTER = datetime.timedelta(minutes=10)
+# Cada cuánto da señales de vida una ejecución en marcha y cuánto tiempo sin ellas hace
+# falta para darla por muerta. Una ejecución viva nunca se libera, dure lo que dure: si
+# se liberase, el lanzador arrancaría otra copia mientras la primera sigue trabajando.
+HEARTBEAT_EVERY = 60
+HEARTBEAT_STALE_AFTER = datetime.timedelta(minutes=10)
 
 
 def next_run(spec, after):
@@ -59,17 +64,50 @@ def _clip(text):
 
 
 def _release_stale_locks(now):
-    """Da por interrumpidas las ejecuciones que llevan más de su tiempo máximo en marcha."""
-    for job in ScheduledJob.objects.filter(running_since__isnull=False):
-        spec = job.spec
-        limit = datetime.timedelta(minutes=spec.timeout_minutes if spec else 60)
-        if now - job.running_since < limit:
-            continue
+    """
+    Da por interrumpidas las ejecuciones cuyo proceso ha muerto: las que llevan más de
+    HEARTBEAT_STALE_AFTER sin dar señales de vida (p. ej. se reinició el servidor).
+    """
+    limit = now - HEARTBEAT_STALE_AFTER
+    stale = ScheduledJob.objects.filter(running_since__isnull=False).filter(
+        Q(heartbeat_at__lt=limit) | Q(heartbeat_at__isnull=True, running_since__lt=limit)
+    )
+    for job in stale:
+        last_seen = job.heartbeat_at or job.running_since
+        minutes = int((now - last_seen).total_seconds() // 60)
         job.runs.filter(status=JobRun.RUNNING).update(
             status=JobRun.ERROR, finished_at=now,
-            error=f"Interrumpida: seguía en marcha después de {int(limit.total_seconds() // 60)} minutos.",
+            error=f"Interrumpida: el proceso dejó de dar señales de vida hace {minutes} minutos "
+                  "(probablemente se reinició o se cayó el servidor).",
         )
-        ScheduledJob.objects.filter(pk=job.pk).update(running_since=None)
+        ScheduledJob.objects.filter(pk=job.pk).update(running_since=None, heartbeat_at=None)
+
+
+class Heartbeat:
+    """Hilo que apunta cada HEARTBEAT_EVERY segundos que la ejecución sigue viva."""
+
+    def __init__(self, job, every=HEARTBEAT_EVERY):
+        self.job = job
+        self.every = every
+        self.stopped = threading.Event()
+        self.thread = threading.Thread(target=self._beat, name=f"heartbeat-{job.name}", daemon=True)
+
+    def __enter__(self):
+        self.thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self.stopped.set()
+        self.thread.join()
+
+    def _beat(self):
+        try:
+            while not self.stopped.wait(self.every):
+                ScheduledJob.objects.filter(pk=self.job.pk, running_since__isnull=False).update(heartbeat_at=timezone.now())
+        except Exception:
+            logger.exception("No se ha podido apuntar la señal de vida de %s", self.job.name)
+        finally:
+            db_connections.close_all()
 
 
 class LiveOutput(io.TextIOBase):
@@ -147,8 +185,14 @@ def claim_job(job, trigger=JobRun.SCHEDULE, user=None, now=None, args=()):
     marcha (otra pasada del lanzador o de la web lo tiene cogido).
     """
     now = now or timezone.now()
+    changes = {"running_since": now, "heartbeat_at": now}
+    spec = job.spec
+    if trigger == JobRun.SCHEDULE and spec and spec.schedule:
+        # La próxima ejecución se calcula ya al empezar: si esta se interrumpe, el lanzador
+        # no vuelve a lanzar el proceso hasta su siguiente hora.
+        changes["next_run_at"] = next_run(spec, now)
     # Coger el proceso de forma atómica: solo una pasada puede ponerle la marca.
-    if not ScheduledJob.objects.filter(pk=job.pk, running_since__isnull=True).update(running_since=now):
+    if not ScheduledJob.objects.filter(pk=job.pk, running_since__isnull=True).update(**changes):
         return None
     return JobRun.objects.create(job=job, trigger=trigger, triggered_by=user, started_at=now, args=list(args))
 
@@ -164,7 +208,8 @@ def execute_run(run):
             raise RuntimeError(f"El proceso {job.name} ya no existe en backoffice/jobs.py.")
         args = [*spec.args, *run.args]
         out.log(f"Inicio: python manage.py {' '.join([spec.command, *args])}")
-        call_command(spec.command, *args, stdout=out, stderr=out)
+        with Heartbeat(job):
+            call_command(spec.command, *args, stdout=out, stderr=out)
         run.status = JobRun.OK
         out.log(f"Fin: correcto en {time.monotonic() - started:.1f} s")
     except BaseException as exc:  # SystemExit/CommandError incluidos: nada debe tumbar el lanzador
@@ -178,7 +223,7 @@ def execute_run(run):
         run.output = out.getvalue()
         run.finished_at = finished
         run.save()
-        changes = {"running_since": None, "last_run_at": run.started_at}
+        changes = {"running_since": None, "heartbeat_at": None, "last_run_at": run.started_at}
         if run.trigger == JobRun.SCHEDULE and spec:
             changes["next_run_at"] = next_run(spec, finished)
         if run.trigger == JobRun.MANUAL:

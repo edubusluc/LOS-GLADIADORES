@@ -32,8 +32,6 @@ class JobSpec:
     schedule: str = ""
     args: tuple = field(default_factory=tuple)
     params: tuple = field(default_factory=tuple)
-    # Si una ejecución lleva más de esto en marcha, se da por interrumpida.
-    timeout_minutes: int = 60
 
 
 JOBS = [

@@ -55,6 +55,9 @@ class ScheduledJob(models.Model):
     last_run_at = models.DateTimeField(null=True, blank=True)
     # Marca de "en ejecución", para que el mismo proceso no se lance dos veces a la vez.
     running_since = models.DateTimeField(null=True, blank=True)
+    # Última señal de vida de la ejecución en marcha (se actualiza cada minuto). Si deja
+    # de llegar, el proceso que la ejecutaba ha muerto y se libera la marca.
+    heartbeat_at = models.DateTimeField(null=True, blank=True)
     # "Ejecutar ahora" desde el back-office: lo recoge el lanzador en su siguiente pasada.
     run_requested_at = models.DateTimeField(null=True, blank=True)
     run_requested_by = models.ForeignKey(

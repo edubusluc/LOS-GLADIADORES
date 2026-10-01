@@ -13,24 +13,19 @@
 
     <h1>Cuenta SNP</h1>
     <p class="text-muted">
-        Con la cuenta de SNP del capitán, Zyra entra cada lunes por la noche en snpgalaxy.com, lee los puntos de los
-        jugadores del equipo y actualiza los «Puntos SNP» de la plantilla. Los nombres se comparan sin tener
-        en cuenta mayúsculas ni tildes. El usuario y la contraseña se guardan cifrados y nadie puede verlos
-        desde la aplicación.
+        Registra aquí el usuario y la contraseña de SNP del capitán y tendrás en Zyra los puntos SNP de todos
+        tus jugadores, actualizados cada semana. Así verás el nivel de cada uno de un vistazo y te será más
+        fácil montar las parejas de los partidos. Tus claves se guardan cifradas y nadie puede verlas.
     </p>
 
     {% if account %}
     <div class="mb-4">
-        <p class="mb-1"><strong>Equipo SNP:</strong> {{ account.team_id|default:"el único de la cuenta" }}</p>
-        <p class="mb-1"><strong>Última actualización:</strong>
+        <p class="mb-3"><strong>Última actualización:</strong>
             {% if account.last_sync_at %}
                 {{ account.last_sync_at|timezone:"Europe/Madrid"|date:"d/m/Y H:i" }}
                 {% if account.last_sync_ok %}<span class="badge bg-success">correcta</span>{% else %}<span class="badge bg-danger">con error</span>{% endif %}
             {% else %}todavía no se ha ejecutado{% endif %}
         </p>
-        {% if account.last_sync_message %}
-        <pre class="small bg-light p-2 mt-2" style="white-space: pre-wrap;">{{ account.last_sync_message }}</pre>
-        {% endif %}
         <form method="post" action="{% url 'snp_account_delete' %}" class="d-inline" onsubmit="return confirm('¿Borrar la cuenta SNP del club?');">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-danger">Borrar cuenta</button>

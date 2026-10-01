@@ -1627,3 +1627,7 @@ a.z-location:hover span { text-decoration: underline; }
 .z-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--z-muted); font-size: .85rem; }
 .z-or::before, .z-or::after { content: ""; flex: 1; height: 1px; background: var(--z-border); }
 .z-google-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+
+/* Aviso de la portada para registrar la cuenta SNP */
+.z-snp-notice { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; border-color: var(--z-lime); }
+.z-snp-notice > .fa-trophy { font-size: 1.5rem; color: var(--z-lime); }

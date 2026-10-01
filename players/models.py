@@ -96,3 +96,20 @@ class SnpAccount(models.Model):
 
     def __str__(self):
         return f"Cuenta SNP de {self.club}"
+
+
+class SnpScoreHistory(models.Model):
+    """Puntos SNP de un jugador en cada actualización (una fila por jugador y día)."""
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="snp_history")
+    season = models.CharField(max_length=9, default=current_season)
+    date = models.DateField()
+    score = models.FloatField()
+
+    class Meta:
+        ordering = ["date"]
+        constraints = [
+            models.UniqueConstraint(fields=["player", "date"], name="unique_snp_score_per_player_day"),
+        ]
+
+    def __str__(self):
+        return f"{self.player}: {self.score:g} ({self.date})"

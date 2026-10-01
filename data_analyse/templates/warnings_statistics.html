@@ -79,7 +79,7 @@
                   <tr>
                     <td>{{ p.call.match.start_date|date:"d/m/Y" }}</td>
                     <td>{{ p.player.name }} {{ p.player.last_name }}</td>
-                    <td><a href="{% url 'call_for_match' p.call.match_id %}">{{ p.call.match.local }} vs {{ p.call.match.visiting }}</a></td>
+                    <td><a href="{% url 'call_for_match' p.call.match.public_id %}">{{ p.call.match.local }} vs {{ p.call.match.visiting }}</a></td>
                   </tr>
                 {% endfor %}
               </tbody>

@@ -73,8 +73,8 @@
             <ul class="bo-list">
                 {% for q in saved_queries %}
                 <li>
-                    <a href="?saved={{ q.pk }}">{{ q.name }}</a>
-                    <form method="post" action="{% url 'backoffice:sql_delete_saved' q.pk %}" class="ms-auto" onsubmit="return confirm('¿Borrar la consulta guardada?');">
+                    <a href="?saved={{ q.public_id }}">{{ q.name }}</a>
+                    <form method="post" action="{% url 'backoffice:sql_delete_saved' q.public_id %}" class="ms-auto" onsubmit="return confirm('¿Borrar la consulta guardada?');">
                         {% csrf_token %}<button type="submit" class="btn btn-link btn-sm p-0 text-muted" title="Borrar"><i class="fa-solid fa-trash"></i><span class="visually-hidden">Borrar {{ q.name }}</span></button>
                     </form>
                 </li>

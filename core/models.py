@@ -6,13 +6,16 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
+from .public_id import PublicIdModel
 
-class Club(models.Model):
+
+class Club(PublicIdModel):
     """
     Cada club es un "inquilino" de la aplicación: tiene sus propios jugadores,
     equipos rivales, partidos, convocatorias y estadísticas.
     Ningún usuario puede ver datos de un club al que no pertenece.
     """
+    PUBLIC_ID_PREFIX = "CLB"
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,7 +38,8 @@ class Club(models.Model):
         return self.name
 
 
-class Membership(models.Model):
+class Membership(PublicIdModel):
+    PUBLIC_ID_PREFIX = "MBR"
     ADMIN = "admin"
     MEMBER = "member"
     ROLES = [
@@ -71,11 +75,12 @@ def _invitation_expiry():
     return timezone.now() + INVITATION_TTL
 
 
-class Invitation(models.Model):
+class Invitation(PublicIdModel):
     """
     Enlace de un solo uso que un administrador comparte para que un jugador se
     registre (o, si ya tiene cuenta, se una) al club como miembro. Caduca a las 24 h.
     """
+    PUBLIC_ID_PREFIX = "INV"
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="invitations")
     token = models.CharField(max_length=64, unique=True, default=_invitation_token, editable=False)
     created_by = models.ForeignKey(

@@ -79,6 +79,39 @@ python manage.py fill_match_locations
 Las tablas antiguas de publicaciones (`post_post`, `post_image`) quedan en la base
 de datos sin uso; se pueden borrar a mano si se quiere.
 
+## Identificadores públicos
+
+Como en Salesforce, cada objeto tiene un identificador público de 15 caracteres:
+un prefijo de 3 letras que dice qué es y 12 caracteres aleatorios. Es el que aparece
+en las URLs y en los filtros de estadísticas, así no se ven números consecutivos
+(`/players/player_details/PLYa8Kd02LmQx7Z/` en vez de `/players/player_details/2/`).
+El id numérico sigue siendo la clave interna de la base de datos y de las relaciones.
+
+| Prefijo | Objeto | Prefijo | Objeto |
+| --- | --- | --- | --- |
+| `CLB` | Club | `MAT` | Enfrentamiento |
+| `MBR` | Miembro | `GAM` | Partido |
+| `INV` | Invitación | `RES` | Resultado |
+| `TEA` | Equipo | `CAL` | Convocatoria |
+| `PLY` | Jugador | `LOG` | Registro de convocatoria |
+| `SNA` | Cuenta SNP | `PEN` | Penalización |
+| `SNH` | Histórico de puntos SNP | `IMP` | Importación (back-office) |
+| `SNI` | Completar equipo | `RUN` | Ejecución de proceso (back-office) |
+| | | `QRY` | Consulta guardada (back-office) |
+
+Los objetos nuevos lo reciben al guardarse (`core/public_id.py`). Los enlaces antiguos
+con números dejan de funcionar (dan 404). Las páginas de usuarios del back-office
+siguen usando el id de Django.
+
+### Desplegar esta versión
+
+```bash
+python manage.py makemigrations core team players match call callLog penalty backoffice
+python manage.py migrate
+# Da un identificador a todas las filas que ya existían (se puede repetir sin riesgo)
+python manage.py assign_public_ids
+```
+
 ## Informe automático al cerrar una convocatoria
 
 Al cerrar una convocatoria se genera un PDF (2 páginas, estilo Zyra) y se envía
@@ -128,7 +161,7 @@ botón **Completar equipo**: lee los jugadores del equipo en SNP y abre una vent
 los que se van a añadir y los que no porque ya están en Zyra (mismo criterio de nombres
 que la actualización de puntos). Al confirmar solo se crean jugadores nuevos; los
 existentes nunca se modifican. Desde la web se puede hacer una vez al mes. El staff lo
-lanza sin ese límite desde el back-office (proceso `complete_snp_team`, pide el id del
+lanza sin ese límite desde el back-office (proceso `complete_snp_team`, pide el id `TEA...` del
 equipo, que aparece en la ficha del club) o con
 `python manage.py complete_snp_team <id del equipo> [--dry-run]`.
 

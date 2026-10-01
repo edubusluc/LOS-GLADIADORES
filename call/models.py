@@ -1,10 +1,12 @@
 from django.db import models
+from core.public_id import PublicIdModel
 from players.models import Player
 from match.models import Match
 from datetime import datetime
 
 # Create your models here.
-class Call(models.Model):
+class Call(PublicIdModel):
+    PUBLIC_ID_PREFIX = "CAL"
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='match')
     players = models.ManyToManyField(Player, related_name='players')
     draft_mode = models.BooleanField(default=True)

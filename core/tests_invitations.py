@@ -70,12 +70,12 @@ class InvitationTests(TestCase):
         create_club("Club B", "Madrid", other_admin)
         invitation = self.invite()
         self.client.login(username="otro", password="pass-12345")
-        response = self.client.post(reverse("revoke_invitation", args=[invitation.id]))
+        response = self.client.post(reverse("revoke_invitation", args=[invitation.public_id]))
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Invitation.objects.filter(pk=invitation.pk).exists())
 
         self.client.login(username="capitan", password="pass-12345")
-        self.client.post(reverse("revoke_invitation", args=[invitation.id]))
+        self.client.post(reverse("revoke_invitation", args=[invitation.public_id]))
         self.assertFalse(Invitation.objects.filter(pk=invitation.pk).exists())
 
     def test_add_member_still_available_to_admins(self):

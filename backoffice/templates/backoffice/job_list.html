@@ -35,7 +35,7 @@
             <td>
                 <a href="{% url 'backoffice:job_detail' job.name %}"><strong>{{ job.name }}</strong></a>
                 {% if not job.enabled %}<span class="z-badge z-badge--outline ms-1">En pausa</span>{% endif %}
-                {% if job.running_since %}{% if job.last_run %}<a href="{% url 'backoffice:run_detail' job.last_run.id %}" class="z-badge z-badge--warning ms-1">En curso · ver en directo</a>{% else %}<span class="z-badge z-badge--warning ms-1">En curso</span>{% endif %}{% endif %}
+                {% if job.running_since %}{% if job.last_run %}<a href="{% url 'backoffice:run_detail' job.last_run.public_id %}" class="z-badge z-badge--warning ms-1">En curso · ver en directo</a>{% else %}<span class="z-badge z-badge--warning ms-1">En curso</span>{% endif %}{% endif %}
                 <div class="text-muted small bo-wrap">{{ job.spec.description }}</div>
             </td>
             <td>{{ job|cron_text }}</td>

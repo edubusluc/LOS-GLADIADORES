@@ -5,7 +5,7 @@
     <div class="table-container mt-4">
         <h1>Editar Equipo</h1>
         
-        <form method="POST" action="{% url 'edit_team' team.id %}" enctype="multipart/form-data">
+        <form method="POST" action="{% url 'edit_team' team.public_id %}" enctype="multipart/form-data">
             {% csrf_token %}
             
             <div class="mb-3">

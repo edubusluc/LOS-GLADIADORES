@@ -33,7 +33,7 @@ class CloseMatchTests(TestCase):
         self.client.login(username="admin", password="pass-12345")
 
     def test_closing_match_confirms_match_and_games(self):
-        self.client.post(reverse("close_match", args=[self.match.id]))
+        self.client.post(reverse("close_match", args=[self.match.public_id]))
         self.match.refresh_from_db()
         self.assertFalse(self.match.draft_mode)
         self.assertEqual(self.match.result_points, "12/0")
@@ -68,17 +68,17 @@ class MatchesAndCallsTests(TestCase):
         self.assertEqual(len(response.context["matches"]), 2)
 
     def test_call_players_are_alphabetical_and_current(self):
-        response = self.client.get(reverse("create_call", args=[self.current.id]))
+        response = self.client.get(reverse("create_call", args=[self.current.public_id]))
         self.assertEqual([p.name for p in response.context["players"]], ["Ana", "Zoe"])
 
     def test_penalties_only_for_current_players(self):
         call = Call.objects.create(match=self.current, draft_mode=False)
         call.players.set([self.ana])
-        response = self.client.get(reverse("view_call_log", args=[call.id]))
+        response = self.client.get(reverse("view_call_log", args=[call.public_id]))
         self.assertEqual([p.name for p in response.context["players"]], ["Ana", "Zoe"])
 
         # Zoe no está convocada pero sí en el equipo: se la puede sancionar; Bea ya no está.
-        self.client.post(reverse("create_penalty", args=[call.id]), {"players": [self.zoe.id, self.gone.id]})
+        self.client.post(reverse("create_penalty", args=[call.public_id]), {"players": [self.zoe.id, self.gone.id]})
         self.assertEqual(list(self.Penalty.objects.values_list("player__name", flat=True)), ["Zoe"])
 
     def test_warnings_view_is_admin_only(self):
@@ -159,14 +159,14 @@ class LineupTests(TestCase):
         return json.dumps(data)
 
     def test_incomplete_lineup_saves_nothing(self):
-        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": self.lineup(3)})
+        self.client.post(reverse("create_game", args=[self.match.public_id]), {"ordered_games": self.lineup(3)})
         self.assertEqual(self.match.games.count(), 0)
 
     def test_creating_twice_does_not_duplicate(self):
-        url = reverse("create_game", args=[self.match.id])
+        url = reverse("create_game", args=[self.match.public_id])
         self.client.post(url, {"ordered_games": self.lineup()})
         response = self.client.post(url, {"ordered_games": self.lineup()})
-        self.assertRedirects(response, reverse("edit_games_match", args=[self.match.id]), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("edit_games_match", args=[self.match.public_id]), fetch_redirect_response=False)
         self.assertEqual(sorted(self.match.games.values_list("n_game", flat=True)), [1, 2, 3, 4, 5])
         # El club juega como visitante: las parejas van en ese lado y el orden fija los puntos
         g1 = self.match.games.get(n_game=1)
@@ -176,15 +176,15 @@ class LineupTests(TestCase):
     def test_repeated_player_is_rejected(self):
         data = json.loads(self.lineup())
         data[1]["player1Id"] = data[0]["player1Id"]
-        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": json.dumps(data)})
+        self.client.post(reverse("create_game", args=[self.match.public_id]), {"ordered_games": json.dumps(data)})
         self.assertEqual(self.match.games.count(), 0)
 
     def test_edit_reorders_without_breaking_uniqueness(self):
-        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": self.lineup()})
+        self.client.post(reverse("create_game", args=[self.match.public_id]), {"ordered_games": self.lineup()})
         games = list(self.match.games.order_by("n_game"))
         data = json.loads(self.lineup(games=games))
         data.reverse()  # el último pasa a ser el partido 1
-        self.client.post(reverse("edit_games_match", args=[self.match.id]), {"ordered_games": json.dumps(data)})
+        self.client.post(reverse("edit_games_match", args=[self.match.public_id]), {"ordered_games": json.dumps(data)})
         games[4].refresh_from_db()
         self.assertEqual((games[4].n_game, games[4].score), (1, 3))
         self.assertEqual(self.match.games.count(), 5)
@@ -195,9 +195,9 @@ class LineupTests(TestCase):
             Game.objects.create(match=self.match, n_game=1)
 
     def test_result_views_validate_and_block_second_result(self):
-        self.client.post(reverse("create_game", args=[self.match.id]), {"ordered_games": self.lineup()})
+        self.client.post(reverse("create_game", args=[self.match.public_id]), {"ordered_games": self.lineup()})
         game = self.match.games.get(n_game=1)
-        url = reverse("create_result", args=[game.id])
+        url = reverse("create_result", args=[game.public_id])
         bad = {"set1_local": "6", "set1_visiting": "5", "set2_local": "6", "set2_visiting": "4"}
         self.assertIn("errors", self.client.post(url, bad).context)
         good = {"set1_local": "3", "set1_visiting": "6", "set2_local": "6", "set2_visiting": "4",
@@ -205,7 +205,7 @@ class LineupTests(TestCase):
         self.client.post(url, good)
         game.refresh_from_db()
         self.assertEqual(game.winner, "Visitante")
-        self.assertRedirects(self.client.get(url), reverse("edit_result", args=[game.id]), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(url), reverse("edit_result", args=[game.public_id]), fetch_redirect_response=False)
         self.assertEqual(Result.objects.filter(game=game).count(), 1)
 
 

@@ -40,13 +40,13 @@ class BackofficeAccessTests(TestCase):
 
     def test_club_admin_without_staff_gets_404(self):
         self.client.login(username="member", password="pass-12345")
-        for name, args in PAGES + [("backoffice:club_detail", [self.club.id]), ("backoffice:user_detail", [self.member.id])]:
+        for name, args in PAGES + [("backoffice:club_detail", [self.club.public_id]), ("backoffice:user_detail", [self.member.id])]:
             self.assertEqual(self.client.get(reverse(name, args=args)).status_code, 404, name)
 
     def test_staff_sees_every_page(self):
         User.objects.create_user("staff", password="pass-12345", is_staff=True)
         self.client.login(username="staff", password="pass-12345")
-        for name, args in PAGES + [("backoffice:club_detail", [self.club.id]), ("backoffice:user_detail", [self.member.id])]:
+        for name, args in PAGES + [("backoffice:club_detail", [self.club.public_id]), ("backoffice:user_detail", [self.member.id])]:
             self.assertEqual(self.client.get(reverse(name, args=args)).status_code, 200, name)
 
     def test_menu_link_only_for_staff(self):
@@ -127,7 +127,7 @@ class BackofficeDataTests(TestCase):
         self.assertEqual(names(kind="staff"), ["staff"])
 
     def test_detail_pages_show_club_data(self):
-        response = self.client.get(reverse("backoffice:club_detail", args=[self.club_a.id]))
+        response = self.client.get(reverse("backoffice:club_detail", args=[self.club_a.public_id]))
         self.assertContains(response, "ana@example.com")
         self.assertEqual(response.context["players_total"], 2)
         self.assertEqual(response.context["players_active"], 1)
@@ -390,7 +390,7 @@ class SchedulerTests(TestCase):
         # "Ejecutar ahora" arranca al momento y lleva a la traza de la ejecución.
         response = self.client.post(reverse("backoffice:job_run_now", args=["ok_job"]))
         run = JobRun.objects.get()
-        self.assertRedirects(response, reverse("backoffice:run_detail", args=[run.id]))
+        self.assertRedirects(response, reverse("backoffice:run_detail", args=[run.public_id]))
         self.assertEqual((run.trigger, run.triggered_by, run.status), (JobRun.MANUAL, self.staff, JobRun.OK))
         self.assertIn("Inicio: python manage.py purge_request_metrics", run.output)
         self.assertIn("Fin: correcto", run.output)
@@ -404,7 +404,7 @@ class SchedulerTests(TestCase):
         self.assertRedirects(response, reverse("backoffice:job_list"))
 
         self.assertContains(self.client.get(detail), "Correcta")
-        self.assertContains(self.client.get(reverse("backoffice:run_detail", args=[run.id])), "Borradas")
+        self.assertContains(self.client.get(reverse("backoffice:run_detail", args=[run.public_id])), "Borradas")
         log = self.client.get(reverse("backoffice:run_list"), {"status": "ok", "job": "ok_job"})
         self.assertEqual([r.id for r in log.context["page"]], [run.id])
 
@@ -423,10 +423,10 @@ class SchedulerTests(TestCase):
         job = ScheduledJob.objects.get(name="ok_job")
         run = JobRun.objects.create(job=job, started_at=timezone.now(), output="línea 1\nlínea 2\n")
         self.client.login(username="staff", password="pass-12345")
-        url = reverse("backoffice:run_live", args=[run.id])
+        url = reverse("backoffice:run_live", args=[run.public_id])
         data = self.client.get(url).json()
         self.assertEqual((data["finished"], data["output"], data["offset"]), (False, "línea 1\nlínea 2\n", 16))
-        self.assertContains(self.client.get(reverse("backoffice:run_detail", args=[run.id])), "En directo")
+        self.assertContains(self.client.get(reverse("backoffice:run_detail", args=[run.public_id])), "En directo")
 
         JobRun.objects.filter(pk=run.pk).update(output=run.output + "línea 3\n", status=JobRun.ERROR,
                                                  finished_at=timezone.now(), error="Boom")
@@ -547,13 +547,13 @@ class SqlConsoleTests(TestCase):
         from .models import SavedQuery
         response = self.client.post(self.url, {"sql": "SELECT name FROM core_club;", "action": "save", "name": "Clubes"})
         saved = SavedQuery.objects.get()
-        self.assertRedirects(response, f"{self.url}?saved={saved.pk}")
+        self.assertRedirects(response, f"{self.url}?saved={saved.public_id}")
         self.assertEqual(saved.sql, "SELECT name FROM core_club")
-        self.assertContains(self.client.get(self.url, {"saved": saved.pk}), "SELECT name FROM core_club")
+        self.assertContains(self.client.get(self.url, {"saved": saved.public_id}), "SELECT name FROM core_club")
         # No se guarda una consulta que no se podría ejecutar.
         self.client.post(self.url, {"sql": "DELETE FROM core_club", "action": "save", "name": "Mal"})
         self.assertEqual(SavedQuery.objects.count(), 1)
-        self.client.post(reverse("backoffice:sql_delete_saved", args=[saved.pk]))
+        self.client.post(reverse("backoffice:sql_delete_saved", args=[saved.public_id]))
         self.assertFalse(SavedQuery.objects.exists())
 
     def test_only_superusers(self):
@@ -580,7 +580,7 @@ class ImportTests(TestCase):
             "entity": entity, "mode": mode, "club": (club or self.club).pk, "file": f,
         })
         job = ImportJob.objects.latest("created_at")
-        self.assertRedirects(response, reverse("backoffice:import_map", args=[job.pk]))
+        self.assertRedirects(response, reverse("backoffice:import_map", args=[job.public_id]))
         return job
 
     def test_players_full_flow_with_auto_mapping_and_undo(self):
@@ -589,10 +589,10 @@ class ImportTests(TestCase):
         job = self.start("Nombre;Apellidos;Posición;En plantilla\nAna;García;Revés;sí\nLuis;Pérez;Derecha;no\n")
         self.assertEqual(set(job.mapping), {"name", "last_name", "position", "in_team"})
 
-        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.public_id]))
         self.assertEqual((preview.context["creates"], preview.context["updates"], preview.context["errors"]), (1, 1, 0))
 
-        self.client.post(reverse("backoffice:import_confirm", args=[job.pk]))
+        self.client.post(reverse("backoffice:import_confirm", args=[job.public_id]))
         job.refresh_from_db()
         self.assertEqual((job.status, job.created_count, job.updated_count), ("done", 1, 1))
         existing.refresh_from_db()
@@ -602,21 +602,21 @@ class ImportTests(TestCase):
         # El jugador del otro club no se ha tocado.
         self.assertEqual(Player.objects.filter(club=self.other).count(), 1)
 
-        self.client.post(reverse("backoffice:import_undo", args=[job.pk]))
+        self.client.post(reverse("backoffice:import_undo", args=[job.public_id]))
         existing.refresh_from_db()
         self.assertEqual(existing.position, "Derecha")
         self.assertFalse(Player.objects.filter(club=self.club, name="Luis").exists())
 
     def test_errors_block_the_whole_import(self):
         job = self.start("name,last_name,position\nAna,García,Derecha\n,Sin nombre,Revés\nEva,López,Portero\nAna,García,Revés\n")
-        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.public_id]))
         self.assertEqual(preview.context["errors"], 3)
-        errors = self.client.get(reverse("backoffice:import_preview", args=[job.pk]), {"errors": "csv"}).content.decode("utf-8-sig")
+        errors = self.client.get(reverse("backoffice:import_preview", args=[job.public_id]), {"errors": "csv"}).content.decode("utf-8-sig")
         self.assertIn("Nombre: obligatorio", errors)
         self.assertIn("Portero", errors)
         self.assertIn("Repetido en el fichero", errors)
 
-        self.client.post(reverse("backoffice:import_confirm", args=[job.pk]))
+        self.client.post(reverse("backoffice:import_confirm", args=[job.public_id]))
         self.assertFalse(Player.objects.exists())
         job.refresh_from_db()
         self.assertEqual(job.status, "draft")
@@ -624,29 +624,29 @@ class ImportTests(TestCase):
     def test_modes(self):
         Player.objects.create(club=self.club, name="Ana", last_name="García")
         job = self.start("name;last_name\nAna;García\nEva;López\n", mode="create")
-        self.assertEqual(self.client.get(reverse("backoffice:import_preview", args=[job.pk])).context["errors"], 1)
+        self.assertEqual(self.client.get(reverse("backoffice:import_preview", args=[job.public_id])).context["errors"], 1)
         job = self.start("name;last_name\nAna;García\nEva;López\n", mode="update")
-        self.assertEqual(self.client.get(reverse("backoffice:import_preview", args=[job.pk])).context["errors"], 1)
+        self.assertEqual(self.client.get(reverse("backoffice:import_preview", args=[job.public_id])).context["errors"], 1)
 
     def test_update_by_id_only_inside_the_club(self):
         mine = Player.objects.create(club=self.club, name="Ana", last_name="García")
         theirs = Player.objects.create(club=self.other, name="Eva", last_name="López")
         job = self.start(f"id;name\n{mine.pk};Anabel\n{theirs.pk};Hack\n", mode="update")
-        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.public_id]))
         self.assertEqual((preview.context["updates"], preview.context["errors"]), (1, 1))
 
     def test_manual_mapping(self):
         job = self.start("Col A;Col B\nPádel Norte;Sevilla\n", entity="teams", mode="create")
         self.assertEqual(job.mapping, {})
-        self.client.post(reverse("backoffice:import_map", args=[job.pk]), {"map_name": "0", "map_location": "1"})
-        self.client.post(reverse("backoffice:import_confirm", args=[job.pk]))
+        self.client.post(reverse("backoffice:import_map", args=[job.public_id]), {"map_name": "0", "map_location": "1"})
+        self.client.post(reverse("backoffice:import_confirm", args=[job.public_id]))
         team = Team.objects.get(club=self.club, name="Pádel Norte")
         self.assertEqual((team.location, team.is_own), ("Sevilla", False))
 
     def test_matches_need_existing_teams(self):
         Team.objects.create(club=self.club, name="Rival", location="X")
         job = self.start("Fecha;Local;Visitante\n25/10/2026;Los Gladiadores;Rival\n2026-11-01;Rival;Nadie\n", entity="matches", mode="create")
-        preview = self.client.get(reverse("backoffice:import_preview", args=[job.pk]))
+        preview = self.client.get(reverse("backoffice:import_preview", args=[job.public_id]))
         self.assertEqual((preview.context["creates"], preview.context["errors"]), (1, 1))
 
     def test_bad_files(self):

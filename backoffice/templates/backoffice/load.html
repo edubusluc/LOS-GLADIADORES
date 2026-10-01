@@ -40,7 +40,7 @@
         {% for a in online %}
             <tr>
                 <td><a href="{% url 'backoffice:user_detail' a.user_id %}">{{ a.user.username }}</a>{% if a.user.is_staff %} <span class="z-badge z-badge--lime">Staff</span>{% endif %}</td>
-                <td>{% if a.club %}<a href="{% url 'backoffice:club_detail' a.club_id %}">{{ a.club.name }}</a>{% else %}—{% endif %}</td>
+                <td>{% if a.club %}<a href="{% url 'backoffice:club_detail' a.club.public_id %}">{{ a.club.name }}</a>{% else %}—{% endif %}</td>
                 <td><code>{{ a.last_path }}</code></td>
                 <td>{{ a.last_seen|ago }}</td>
             </tr>

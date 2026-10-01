@@ -8,10 +8,12 @@ from urllib.parse import quote
 # Create your models here.
 
 from django.db import models
+from core.public_id import PublicIdModel
 from core.models import Club
 from team.models import Team
 
-class Match(models.Model):
+class Match(PublicIdModel):
+    PUBLIC_ID_PREFIX = "MAT"
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name='matches', null=True)
     local = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='local_matches', null=True)
     visiting = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='visiting_matches', null=True)
@@ -73,7 +75,8 @@ class Match(models.Model):
 
 
 
-class Game(models.Model):
+class Game(PublicIdModel):
+    PUBLIC_ID_PREFIX = "GAM"
     NUMBER_GAME = [
         ("1", "1"),
         ("2", "2"),
@@ -129,7 +132,8 @@ def validate_set_value(value):
         raise ValidationError('El valor debe estar entre 0 y 30.')
 
 
-class Result(models.Model):
+class Result(PublicIdModel):
+    PUBLIC_ID_PREFIX = "RES"
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='results')
     result = models.CharField(max_length=100, null = True)
     set1_local = models.IntegerField(validators=[validate_set_value])

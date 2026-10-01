@@ -150,7 +150,7 @@ def create_invitation(request):
 @club_admin_required
 @require_POST
 def revoke_invitation(request, invitation_id):
-    get_object_or_404(Invitation, id=invitation_id, club=request.club, used_at__isnull=True).delete()
+    get_object_or_404(Invitation, public_id=invitation_id, club=request.club, used_at__isnull=True).delete()
     messages.success(request, "Invitación anulada.")
     return redirect(reverse("club_members") + "#invitaciones")
 
@@ -224,7 +224,7 @@ def _is_last_admin(membership):
 @club_admin_required
 @require_POST
 def update_member(request, membership_id):
-    membership = get_object_or_404(Membership, id=membership_id, club=request.club)
+    membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     role = request.POST.get("role")
     email = request.POST.get("email", "").strip()
     try:
@@ -248,7 +248,7 @@ def update_member(request, membership_id):
 @club_admin_required
 @require_POST
 def remove_member(request, membership_id):
-    membership = get_object_or_404(Membership, id=membership_id, club=request.club)
+    membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     if _is_last_admin(membership):
         messages.error(request, "El club debe tener al menos un administrador.")
     else:

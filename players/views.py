@@ -93,7 +93,7 @@ def _complete_team_context(club):
 
 @club_admin_required
 def edit_player(request, player_id):
-    player = get_object_or_404(Player, id=player_id, club=request.club)  # Asegúrate de que estás usando el modelo correcto
+    player = get_object_or_404(Player, public_id=player_id, club=request.club)  # Asegúrate de que estás usando el modelo correcto
 
     if request.method == "POST":
         name = (request.POST.get("name") or "").strip()
@@ -123,7 +123,7 @@ def edit_player(request, player_id):
 
 @club_required
 def show_player(request, player_id):
-    player = get_object_or_404(Player, id=player_id, club=request.club)
+    player = get_object_or_404(Player, public_id=player_id, club=request.club)
     games = Game.objects.filter(
         (Q(player_1_local=player) | Q(player_2_local=player) |
         Q(player_1_visiting=player) | Q(player_2_visiting=player)) &
@@ -217,14 +217,14 @@ def complete_team_start(request):
 
 @club_admin_required
 def complete_team_status(request, import_id):
-    team_import = get_object_or_404(SnpTeamImport, pk=import_id, club=request.club)
+    team_import = get_object_or_404(SnpTeamImport, public_id=import_id, club=request.club)
     return JsonResponse({"status": team_import.status, "message": team_import.message})
 
 
 @club_admin_required
 @require_POST
 def complete_team_confirm(request, import_id):
-    team_import = get_object_or_404(SnpTeamImport, pk=import_id, club=request.club, source=SnpTeamImport.WEB)
+    team_import = get_object_or_404(SnpTeamImport, public_id=import_id, club=request.club, source=SnpTeamImport.WEB)
     if team_import.status != SnpTeamImport.READY or not team_import.to_add or _blocked_this_month(request):
         return redirect("list_players")
     team_import = snp_import.confirm(team_import)
@@ -236,6 +236,6 @@ def complete_team_confirm(request, import_id):
 @require_POST
 def complete_team_cancel(request, import_id):
     SnpTeamImport.objects.filter(
-        pk=import_id, club=request.club, status__in=[SnpTeamImport.RUNNING, SnpTeamImport.READY],
+        public_id=import_id, club=request.club, status__in=[SnpTeamImport.RUNNING, SnpTeamImport.READY],
     ).update(status=SnpTeamImport.CANCELLED)
     return redirect("list_players")

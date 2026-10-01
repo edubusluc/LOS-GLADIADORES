@@ -35,14 +35,14 @@
         <a href="{% url 'create_call' match_id %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i> Crear convocatoria</a>
         {% endif %}
         {% if call_for_match and match.draft_mode %}
-        <a href="{% url 'edit_call' call_for_match.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i> Editar</a>
-        <a href="{% url 'view_call_log' call_for_match.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-triangle-exclamation me-1"></i> Penalizaciones</a>
+        <a href="{% url 'edit_call' call_for_match.public_id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i> Editar</a>
+        <a href="{% url 'view_call_log' call_for_match.public_id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-triangle-exclamation me-1"></i> Penalizaciones</a>
         {% endif %}
         {% if call_for_match %}
-        <a href="{% url 'call_report' match.id %}" class="btn btn-secondary btn-sm" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i> Informe PDF</a>
+        <a href="{% url 'call_report' match.public_id %}" class="btn btn-secondary btn-sm" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i> Informe PDF</a>
         {% endif %}
         {% if call_for_match.draft_mode %}
-        <form action="{% url 'close_call' match.id %}" method="post" class="d-inline">
+        <form action="{% url 'close_call' match.public_id %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-lock me-1"></i> Cerrar convocatoria</button>
         </form>
@@ -89,7 +89,7 @@
     {% if is_club_admin %}
     <div class="d-flex flex-wrap gap-2">
         {% if match.draft_mode and call_for_match and game_for_match %}
-        <a href="{% url 'edit_games_match' match.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-shuffle me-1"></i> Editar parejas</a>
+        <a href="{% url 'edit_games_match' match.public_id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-shuffle me-1"></i> Editar parejas</a>
         {% endif %}
         {% if match.draft_mode and call_for_match and not call_for_match.draft_mode and not games_count %}
         <a href="{% url 'create_game' match_id %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i> Crear partidos</a>
@@ -108,9 +108,9 @@
                 <div class="z-game-sets-head" aria-hidden="true"><span>S1</span><span>S2</span><span>S3</span></div>
                 {% if is_club_admin %}
                 {% if r and match.draft_mode %}
-                <a href="{% url 'edit_result' g.id %}" class="z-edit position-static" aria-label="Editar resultado"><i class="fa-solid fa-pen"></i></a>
+                <a href="{% url 'edit_result' g.public_id %}" class="z-edit position-static" aria-label="Editar resultado"><i class="fa-solid fa-pen"></i></a>
                 {% elif not r %}
-                <a href="{% url 'create_result' g.id %}" class="z-edit position-static" aria-label="Añadir resultado"><i class="fa-solid fa-plus"></i></a>
+                <a href="{% url 'create_result' g.public_id %}" class="z-edit position-static" aria-label="Añadir resultado"><i class="fa-solid fa-plus"></i></a>
                 {% endif %}
                 {% endif %}
             </div>
@@ -144,7 +144,7 @@
 </div>
 
 {% if is_club_admin and games_count == 5 and match.draft_mode %}
-<form method="POST" action="{% url 'close_match' match.id %}" class="text-center mt-4">
+<form method="POST" action="{% url 'close_match' match.public_id %}" class="text-center mt-4">
     {% csrf_token %}
     <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-flag-checkered me-1"></i> Cerrar acta del partido</button>
 </form>

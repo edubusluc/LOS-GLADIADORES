@@ -22,7 +22,7 @@
             <tr>
                 <td>{{ m.user.username }}</td>
                 <td>
-                    <form method="post" action="{% url 'update_member' m.id %}" class="d-flex flex-wrap gap-2">
+                    <form method="post" action="{% url 'update_member' m.public_id %}" class="d-flex flex-wrap gap-2">
                         {% csrf_token %}
                         <input type="email" name="email" value="{{ m.user.email }}" placeholder="email@ejemplo.com" class="form-control form-control-sm" style="max-width: 240px;" aria-label="Email de {{ m.user.username }}">
                         <select name="role" style="max-width: 220px;" class="form-select form-select-sm">
@@ -34,7 +34,7 @@
                     </form>
                 </td>
                 <td class="text-end">
-                    <form method="post" action="{% url 'remove_member' m.id %}" onsubmit="return confirm('¿Quitar a {{ m.user.username }} del club?');">
+                    <form method="post" action="{% url 'remove_member' m.public_id %}" onsubmit="return confirm('¿Quitar a {{ m.user.username }} del club?');">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-danger">Quitar</button>
                     </form>
@@ -65,7 +65,7 @@
                 </td>
                 <td class="text-nowrap">{{ inv.expires_at|timezone:"Europe/Madrid"|date:"d/m H:i" }}</td>
                 <td class="text-end">
-                    <form method="post" action="{% url 'revoke_invitation' inv.id %}">
+                    <form method="post" action="{% url 'revoke_invitation' inv.public_id %}">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-outline-danger">Anular</button>
                     </form>

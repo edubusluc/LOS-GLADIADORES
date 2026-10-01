@@ -1,9 +1,11 @@
 from django.db import models
+from core.public_id import PublicIdModel
 from core.models import Club
 
 # Create your models here.
 
-class Team(models.Model):
+class Team(PublicIdModel):
+    PUBLIC_ID_PREFIX = "TEA"
     # null=True solo para poder migrar datos existentes (ver comando assign_default_club).
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="teams", null=True)
     # True para el equipo que representa al propio club; el resto son rivales.

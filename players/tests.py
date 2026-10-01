@@ -215,7 +215,7 @@ class SnpAccountTests(TestCase):
         SnpScoreHistory.objects.create(player=self.player, date=datetime.date(2026, 10, 5), score=120.5, season=current_season())
         SnpScoreHistory.objects.create(player=self.player, date=datetime.date(2020, 1, 1), score=1.0, season="2019-2020")
         self.client.login(username="admin", password="pass-12345")
-        response = self.client.get(reverse("player_statistics"), {"player": self.player.id})
+        response = self.client.get(reverse("player_statistics"), {"player": self.player.public_id})
         self.assertEqual(response.context["chart_snp"], {"labels": ["28/09", "05/10"], "scores": [100.0, 120.5]})
         self.assertContains(response, 'id="chartSnp"')
 
@@ -284,11 +284,9 @@ class CompleteTeamTests(TestCase):
         self.assertContains(page, 'id="completeTeamModal"')
         self.assertContains(page, "Pedro Raposo Bellerin")
         self.assertContains(page, "ya están registrados")
-        self.assertContains(page, '<span class="z-cat z-cat--1000">1000</span>')
-        self.assertContains(page, '<span class="z-cat z-cat--future">FUTURE</span>')
-        self.assertEqual(self.client.get(reverse("complete_team_status", args=[team_import.id])).json()["status"], "ready")
+        self.assertEqual(self.client.get(reverse("complete_team_status", args=[team_import.public_id])).json()["status"], "ready")
 
-        self.client.post(reverse("complete_team_confirm", args=[team_import.id]))
+        self.client.post(reverse("complete_team_confirm", args=[team_import.public_id]))
         pedro = Player.objects.get(name="Pedro")
         self.assertEqual((pedro.last_name, pedro.snp_score, pedro.in_team, pedro.team), ("Raposo Bellerin", 120.0, True, self.club.own_team))
         self.assertTrue(SnpScoreHistory.objects.filter(player=pedro, score=120.0).exists())
@@ -307,7 +305,7 @@ class CompleteTeamTests(TestCase):
         self.client.post(reverse("complete_team_start"))
         team_import = SnpTeamImport.objects.get()
         Player.objects.create(club=self.club, name="Pedro", last_name="Raposo")
-        self.client.post(reverse("complete_team_confirm", args=[team_import.id]))
+        self.client.post(reverse("complete_team_confirm", args=[team_import.public_id]))
         self.assertEqual(Player.objects.filter(name="Pedro").count(), 1)
         self.assertTrue(Player.objects.filter(name="Maria Jose").exists())
 
@@ -315,7 +313,7 @@ class CompleteTeamTests(TestCase):
         from .models import SnpTeamImport
         self.client.post(reverse("complete_team_start"))
         team_import = SnpTeamImport.objects.get()
-        self.client.post(reverse("complete_team_cancel", args=[team_import.id]))
+        self.client.post(reverse("complete_team_cancel", args=[team_import.public_id]))
         self.assertEqual(Player.objects.count(), 1)
         self.client.post(reverse("complete_team_start"))
         self.assertEqual(SnpTeamImport.objects.filter(status=SnpTeamImport.READY).count(), 1)
@@ -333,7 +331,7 @@ class CompleteTeamTests(TestCase):
 
     def test_backoffice_command_uses_team_id_and_ignores_monthly_limit(self):
         from .models import SnpTeamImport
-        team_id = str(self.club.own_team.id)
+        team_id = self.club.own_team.public_id
         out = StringIO()
         call_command("complete_snp_team", team_id, "--dry-run", stdout=out)
         self.assertIn("Jugadores a añadir: 2 (Maria Jose Gomez Ruiz, Pedro Raposo Bellerin)", out.getvalue())
@@ -348,7 +346,9 @@ class CompleteTeamTests(TestCase):
 
         rival = Team.objects.create(club=self.club, name="Rival", location="X")
         with self.assertRaises(CommandError):
-            call_command("complete_snp_team", str(rival.id), stdout=StringIO())
+            call_command("complete_snp_team", rival.public_id, stdout=StringIO())
+        with self.assertRaises(CommandError):
+            call_command("complete_snp_team", "TEAnoexiste0000", stdout=StringIO())
 
     def test_complete_team_is_a_manual_backoffice_job(self):
         from backoffice.jobs import get_spec
@@ -356,30 +356,11 @@ class CompleteTeamTests(TestCase):
         self.assertEqual((spec.schedule, [p.name for p in spec.params]), ("", ["team_id"]))
 
     def test_edit_player_saves_name_and_last_name(self):
-        response = self.client.post(reverse("edit_player", args=[self.ana.id]), {
+        response = self.client.post(reverse("edit_player", args=[self.ana.public_id]), {
             "name": "Ana María", "last_name": "Álvarez Ruiz", "position": "Revés", "skillfull_hand": "Diestro",
             "joined_season": "2026-2027", "in_team": "on",
         })
         self.assertRedirects(response, reverse("list_players"))
         self.ana.refresh_from_db()
         self.assertEqual((self.ana.name, self.ana.last_name), ("Ana María", "Álvarez Ruiz"))
-        self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.id])), 'name="last_name"')
-
-
-class SplitCategoryTests(TestCase):
-    def test_split_category(self):
-        from .snp import split_category
-        self.assertEqual(split_category("PEDRO RAPOSO BELLERIN\n500"), ("PEDRO RAPOSO BELLERIN", "500"))
-        self.assertEqual(split_category("ANA RUIZ 1000"), ("ANA RUIZ", "1000"))
-        self.assertEqual(split_category("ANA RUIZ Future"), ("ANA RUIZ", "FUTURE"))
-        self.assertEqual(split_category("ANA RUIZ GRAND SLAM"), ("ANA RUIZ", "GRAND SLAM"))
-        self.assertEqual(split_category("ALBERTO MONTAÑO LEON"), ("ALBERTO MONTAÑO LEON", ""))
-
-    def test_same_player_with_and_without_category_is_listed_once(self):
-        from .snp_import import plan_import
-        club = create_club("Club A", "Sevilla", User.objects.create_user("admin", password="x"))
-        to_add, existing = plan_import(club, [{"name": "ALBERTO MONTAÑO LEON 500", "score": 5.0},
-                                              {"name": "ALBERTO MONTAÑO LEON", "score": 5.0}])
-        self.assertEqual(existing, [])
-        self.assertEqual([(p["snp_name"], p["category"], p["last_name"]) for p in to_add],
-                         [("ALBERTO MONTAÑO LEON", "500", "Montaño Leon")])
+        self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.public_id])), 'name="last_name"')

@@ -11,7 +11,7 @@ def view_call_log(request, call_id):
     # Solo los jugadores que siguen en el equipo, por orden alfabético
     players = Player.objects.filter(club=request.club, in_team=True).order_by('name', 'last_name')
     try:
-        call_log = CallLog.objects.get(call=call_id, call__match__club=request.club)
+        call_log = CallLog.objects.get(call__public_id=call_id, call__match__club=request.club)
     except CallLog.DoesNotExist:
         return render(request, "view_call_log.html", {
             "error_message": "No se encontró el registro de llamada con el ID especificado.",

@@ -43,7 +43,7 @@
 {% if run.status == 'running' %}
 <script>
 (function () {
-    var url = "{% url 'backoffice:run_live' run.id %}";
+    var url = "{% url 'backoffice:run_live' run.public_id %}";
     var out = document.getElementById('run-output');
     var offset = out.textContent.length;
     var badges = {ok: '<span class="z-badge z-badge--lime">Correcta</span>', error: '<span class="z-badge z-badge--danger">Con error</span>'};

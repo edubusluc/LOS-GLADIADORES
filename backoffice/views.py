@@ -100,7 +100,7 @@ def club_list(request):
 
 @staff_required
 def club_detail(request, club_id):
-    club = get_object_or_404(annotate_clubs(Club.objects.all()), pk=club_id)
+    club = get_object_or_404(annotate_clubs(Club.objects.all()), public_id=club_id)
     today = timezone.localdate()
     matches = Match.objects.filter(club=club).select_related("local", "visiting")
     players = Player.objects.filter(club=club)
@@ -225,7 +225,7 @@ def run_list(request):
 
 @staff_required
 def run_detail(request, run_id):
-    run = get_object_or_404(JobRun.objects.select_related("job", "triggered_by"), pk=run_id)
+    run = get_object_or_404(JobRun.objects.select_related("job", "triggered_by"), public_id=run_id)
     return render(request, "backoffice/run_detail.html", {"section": "jobs", "run": run})
 
 
@@ -254,13 +254,13 @@ def job_run_now(request, name):
     if run is None:
         messages.error(request, f"{job.name} ya se está ejecutando.")
         return _back(request)
-    return redirect("backoffice:run_detail", run_id=run.pk)
+    return redirect("backoffice:run_detail", run_id=run.public_id)
 
 
 @staff_required
 def run_live(request, run_id):
     """Salida de una ejecución a partir de `offset`, para la consola en directo."""
-    run = get_object_or_404(JobRun, pk=run_id)
+    run = get_object_or_404(JobRun, public_id=run_id)
     try:
         offset = max(int(request.GET.get("offset", 0)), 0)
     except ValueError:
@@ -300,7 +300,7 @@ def _export_name(saved):
 def sql_console(request):
     saved = None
     if request.GET.get("saved"):
-        saved = SavedQuery.objects.filter(pk=request.GET["saved"]).first()
+        saved = SavedQuery.objects.filter(public_id=request.GET["saved"]).first()
     query = request.POST.get("sql") if request.method == "POST" else (saved.sql if saved else "")
     action = request.POST.get("action", "")
     result = error = None
@@ -332,7 +332,7 @@ def sql_console(request):
                                          "created_by": request.user},
                 )
                 messages.success(request, f"Consulta «{saved.name}» {'guardada' if created else 'actualizada'}.")
-                return redirect(f"{request.path}?saved={saved.pk}")
+                return redirect(f"{request.path}?saved={saved.public_id}")
 
     return render(request, "backoffice/sql_console.html", {
         "section": "sql", "query": query or "", "result": result, "error": error, "saved": saved,
@@ -345,7 +345,7 @@ def sql_console(request):
 @superuser_required
 @require_POST
 def sql_delete_saved(request, query_id):
-    saved = get_object_or_404(SavedQuery, pk=query_id)
+    saved = get_object_or_404(SavedQuery, public_id=query_id)
     saved.delete()
     messages.success(request, f"Consulta «{saved.name}» borrada.")
     return redirect("backoffice:sql_console")
@@ -387,7 +387,7 @@ def import_list(request):
             user=request.user, club=club, entity=entity_key, mode=mode, filename=upload.name[:255], content=text,
             mapping=importer.guess_mapping(importer.ENTITIES[entity_key], headers),
         )
-        return redirect("backoffice:import_map", job_id=job.pk)
+        return redirect("backoffice:import_map", job_id=job.public_id)
 
     return render(request, "backoffice/import_list.html", {
         "section": "import", "entities": importer.ENTITIES.values(), "modes": importer.MODES,
@@ -397,7 +397,7 @@ def import_list(request):
 
 
 def _draft(job_id):
-    return get_object_or_404(ImportJob.objects.select_related("club"), pk=job_id, status=ImportJob.DRAFT)
+    return get_object_or_404(ImportJob.objects.select_related("club"), public_id=job_id, status=ImportJob.DRAFT)
 
 
 @superuser_required
@@ -413,7 +413,7 @@ def import_map(request, job_id):
                 mapping[f.name] = int(value)
         job.mapping = mapping
         job.save(update_fields=["mapping"])
-        return redirect("backoffice:import_preview", job_id=job.pk)
+        return redirect("backoffice:import_preview", job_id=job.public_id)
     return render(request, "backoffice/import_map.html", {
         "section": "import", "job": job, "entity": entity, "headers": list(enumerate(headers)),
         "sample": rows[:3], "fields": [(f, job.mapping.get(f.name)) for f in entity.all_fields()],
@@ -438,7 +438,7 @@ def import_preview(request, job_id):
         results = _validate(job)
     except importer.ImportFileError as exc:
         messages.error(request, str(exc))
-        return redirect("backoffice:import_map", job_id=job.pk)
+        return redirect("backoffice:import_map", job_id=job.public_id)
 
     if request.GET.get("errors") == "csv":
         response = HttpResponse(content_type="text/csv; charset=utf-8")
@@ -472,10 +472,10 @@ def import_confirm(request, job_id):
         results = importer.run_import(job)
     except importer.ImportFileError as exc:
         messages.error(request, str(exc))
-        return redirect("backoffice:import_map", job_id=job.pk)
+        return redirect("backoffice:import_map", job_id=job.public_id)
     if any(not r.ok for r in results):
         messages.error(request, "Hay filas con errores: no se ha importado nada.")
-        return redirect("backoffice:import_preview", job_id=job.pk)
+        return redirect("backoffice:import_preview", job_id=job.public_id)
     job.status, job.finished_at = ImportJob.DONE, timezone.now()
     job.created_count = len(job.result["created"])
     job.updated_count = len(job.result["updated"])
@@ -487,7 +487,7 @@ def import_confirm(request, job_id):
 @superuser_required
 @require_POST
 def import_undo(request, job_id):
-    job = get_object_or_404(ImportJob, pk=job_id, status=ImportJob.DONE)
+    job = get_object_or_404(ImportJob, public_id=job_id, status=ImportJob.DONE)
     deleted, restored = importer.undo_import(job)
     job.status, job.undone_at = ImportJob.UNDONE, timezone.now()
     job.save(update_fields=["status", "undone_at"])

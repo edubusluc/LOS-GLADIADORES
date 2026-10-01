@@ -95,7 +95,7 @@ class ReportTests(TestCase):
         self.assertEqual(pdf_pages(render_report(report)), 2)
 
     def test_closing_call_emails_report_to_admins_only(self):
-        self.client.post(reverse("close_call", args=[self.match.id]))
+        self.client.post(reverse("close_call", args=[self.match.public_id]))
         self.call.refresh_from_db()
         self.assertFalse(self.call.draft_mode)
         self.assertEqual(len(mail.outbox), 1)
@@ -119,22 +119,22 @@ class ReportTests(TestCase):
     def test_each_admin_gets_an_individual_email(self):
         second = User.objects.create_user("segundo", password="pass-12345", email="segundo@example.com")
         Membership.objects.create(user=second, club=self.club, role=Membership.ADMIN)
-        self.client.post(reverse("close_call", args=[self.match.id]))
+        self.client.post(reverse("close_call", args=[self.match.public_id]))
         self.assertEqual(sorted(m.to[0] for m in mail.outbox), ["capitan@example.com", "segundo@example.com"])
         self.assertTrue(all(len(m.to) == 1 and not m.cc and not m.bcc for m in mail.outbox))
 
     def test_email_failure_does_not_block_closing(self):
         with mock.patch("match.views.send_call_report", side_effect=OSError("SMTP caído")):
-            response = self.client.post(reverse("close_call", args=[self.match.id]), follow=True)
+            response = self.client.post(reverse("close_call", args=[self.match.public_id]), follow=True)
         self.call.refresh_from_db()
         self.assertFalse(self.call.draft_mode)
         self.assertContains(response, "no se pudo enviar el informe")
 
     def test_manual_download_is_admin_only(self):
-        response = self.client.get(reverse("call_report", args=[self.match.id]))
+        response = self.client.get(reverse("call_report", args=[self.match.public_id]))
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.client.login(username="viewer", password="pass-12345")
-        self.assertEqual(self.client.get(reverse("call_report", args=[self.match.id])).status_code, 302)
+        self.assertEqual(self.client.get(reverse("call_report", args=[self.match.public_id])).status_code, 302)
 
     def test_report_ignores_matches_after_its_date(self):
         old = Match.objects.create(club=self.club, local=self.rival, visiting=self.club.own_team,

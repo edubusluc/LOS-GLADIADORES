@@ -5,6 +5,6 @@
     <i class="fa-solid fa-clipboard-check"></i>
     <h1 class="text-center">Convocatoria existente</h1>
     <p>Ya existe una convocatoria para este partido.</p>
-    <a href="{% url 'call_for_match' match.id %}" class="btn btn-primary">Ver convocatoria</a>
+    <a href="{% url 'call_for_match' match.public_id %}" class="btn btn-primary">Ver convocatoria</a>
 </div>
 {% endblock %}

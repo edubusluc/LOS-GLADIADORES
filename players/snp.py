@@ -26,12 +26,23 @@ def normalize(text):
     return " ".join(re.sub(r"[^a-z0-9ñ]+", " ", text).split())
 
 
+def split_category(text):
+    """
+    Separa la categoría que SNP pone tras el nombre del jugador:
+    "PEDRO RAPOSO BELLERIN 500" -> ("PEDRO RAPOSO BELLERIN", "500");
+    "ANA RUIZ GRAND SLAM" -> ("ANA RUIZ", "GRAND SLAM"); sin categoría -> (nombre, "").
+    """
+    tokens = (text or "").split()
+    if len(tokens) > 2 and [t.upper() for t in tokens[-2:]] == ["GRAND", "SLAM"]:
+        return " ".join(tokens[:-2]), "GRAND SLAM"
+    if len(tokens) > 1 and (tokens[-1].isdigit() or tokens[-1].upper() == "FUTURE"):
+        return " ".join(tokens[:-1]), tokens[-1].upper()
+    return " ".join(tokens), ""
+
+
 def _snp_tokens(name):
-    tokens = normalize(name).split()
-    # SNP añade al final la categoría del jugador (p. ej. "500" o "Future").
-    while len(tokens) > 1 and (tokens[-1].isdigit() or tokens[-1] == "future"):
-        tokens.pop()
-    return tokens
+    # SNP añade al final la categoría del jugador ("500", "Future", "Grand Slam"…).
+    return normalize(split_category(name)[0]).split()
 
 
 def _match_level(player_tokens, snp_tokens):

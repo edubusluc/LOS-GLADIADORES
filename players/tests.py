@@ -237,13 +237,15 @@ class SnpAccountTests(TestCase):
 
 SNP_TEAM = [
     {"name": "ANA ALVAREZ 500", "score": 42.5},
-    {"name": "PEDRO RAPOSO BELLERIN 500", "score": 120.0},
+    {"name": "PEDRO RAPOSO BELLERIN 1000", "score": 120.0},
     {"name": "MARIA JOSE GOMEZ RUIZ Future", "score": 33.0},
 ]
 
 
 class SplitSnpNameTests(TestCase):
     def test_split(self):
+        self.assertEqual(__import__("players.snp_import", fromlist=["x"]).split_snp_name("LUIS PEREZ GOMEZ GRAND SLAM"),
+                         ("Luis", "Perez Gomez"))
         from .snp_import import split_snp_name
         self.assertEqual(split_snp_name("PEDRO RAPOSO BELLERIN 500"), ("Pedro", "Raposo Bellerin"))
         self.assertEqual(split_snp_name("MARIA JOSE GOMEZ RUIZ Future"), ("Maria Jose", "Gomez Ruiz"))
@@ -275,7 +277,7 @@ class CompleteTeamTests(TestCase):
         self.assertEqual(team_import.status, SnpTeamImport.READY)
         self.assertEqual([(p["name"], p["last_name"]) for p in team_import.to_add],
                          [("Maria Jose", "Gomez Ruiz"), ("Pedro", "Raposo Bellerin")])
-        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ 500", "player": "Ana Álvarez"}])
+        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ", "category": "500", "player": "Ana Álvarez"}])
         self.assertEqual(Player.objects.count(), 1)  # la búsqueda no crea nada
 
         page = self.client.get(reverse("list_players"))
@@ -333,7 +335,7 @@ class CompleteTeamTests(TestCase):
         out = StringIO()
         call_command("complete_snp_team", team_id, "--dry-run", stdout=out)
         self.assertIn("Jugadores a añadir: 2 (Maria Jose Gomez Ruiz, Pedro Raposo Bellerin)", out.getvalue())
-        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ 500 → Ana Álvarez)", out.getvalue())
+        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ → Ana Álvarez)", out.getvalue())
         self.assertEqual(Player.objects.count(), 1)
 
         SnpTeamImport.objects.create(club=self.club, status=SnpTeamImport.DONE, finished_at=timezone.now())

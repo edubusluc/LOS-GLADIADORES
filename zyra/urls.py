@@ -16,9 +16,15 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, register_converter
+
+from core.public_id import PublicIdConverter
 
 from core.views import error_404_view, home
+
+# <pid:...>: identificador público de un objeto (core/public_id.py). Se registra antes de
+# cargar las URLs de cada aplicación, que lo usan.
+register_converter(PublicIdConverter, "pid")
 
 urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),

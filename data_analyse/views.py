@@ -309,7 +309,7 @@ def season_games(player, season):
     Partidos (Game) cerrados del jugador en una temporada, del más reciente al más antiguo.
     Solo partidos de enfrentamientos de su club: los enlaces llevan a call_for_match,
     que también exige que el enfrentamiento sea del club activo.
-    Cada elemento: {'match_id', 'n_game', 'date', 'rival', 'local', 'partner', 'sets', 'won', 'points'}
+    Cada elemento: {'match_id', 'match_public_id', 'n_game', 'date', 'rival', 'local', 'partner', 'sets', 'won', 'points'}
     """
     games = (
         Game.objects
@@ -336,6 +336,7 @@ def season_games(player, season):
 
         rows.append({
             'match_id': g.match_id,
+            'match_public_id': g.match.public_id,
             'n_game': g.n_game,
             'date': g.match.start_date,
             'rival': g.match.visiting if is_local else g.match.local,
@@ -466,11 +467,11 @@ def statistics_per_player(request):
     players = Player.objects.filter(club=request.club, in_team=True).order_by('name', 'last_name')
     player_id = request.GET.get('player')
 
-    if not player_id or not player_id.isdigit():
+    if not player_id:
         return render(request, 'player_statistics.html', {'players': players})
 
     # Solo jugadores del club activo: los de otros clubes dan 404
-    player = get_object_or_404(Player, id=player_id, club=request.club)
+    player = get_object_or_404(Player, public_id=player_id, club=request.club)
 
     # Chips de temporada: todas las del club
     all_seasons = sorted(get_total_season(Match.objects.filter(club=request.club)),
@@ -503,7 +504,7 @@ def statistics_per_player(request):
 
     context = {
         'players': players,
-        'selected_player': player.id,
+        'selected_player': player.public_id,
         'player': player,
         'seasons': all_seasons,
         'selected_season': selected_season,
@@ -540,7 +541,7 @@ def statistics_per_player(request):
 @require_GET
 def statistics_per_pair(request):
     club_players = list(Player.objects.filter(club=request.club).order_by('name', 'last_name'))
-    by_id = {p.id: p for p in club_players}
+    by_public_id = {p.public_id: p for p in club_players}
     log = pair_stats.club_game_log(request.club)
     best_pairs, worst_pairs = pair_stats.best_and_worst_pairs(pair_stats.all_pairs(log, club_players))
 
@@ -550,13 +551,13 @@ def statistics_per_pair(request):
         'best_pairs': best_pairs,
         'worst_pairs': worst_pairs,
         'min_games_pair': pair_stats.MIN_GAMES_PAIR,
-        'selected_p1': int(p1_id) if p1_id.isdigit() else None,
-        'selected_p2': int(p2_id) if p2_id.isdigit() else None,
+        'selected_p1': p1_id or None,
+        'selected_p2': p2_id or None,
     }
 
     if context['selected_p1'] and context['selected_p2']:
         # Solo jugadores del club activo: los de otros clubes dan 404
-        p1, p2 = by_id.get(context['selected_p1']), by_id.get(context['selected_p2'])
+        p1, p2 = by_public_id.get(context['selected_p1']), by_public_id.get(context['selected_p2'])
         if p1 is None or p2 is None:
             raise Http404("Jugador no encontrado")
         if p1 == p2:
@@ -588,7 +589,7 @@ PAIR_LAST_GAMES = 5
 def pair_last_games(club, p1, p2, n=PAIR_LAST_GAMES):
     """
     Últimos `n` partidos (Game) cerrados de la pareja en el club, del más reciente al más antiguo.
-    Cada elemento: {'match_id', 'n_game', 'date', 'season', 'rival', 'local', 'sets', 'won', 'points'}
+    Cada elemento: {'match_id', 'match_public_id', 'n_game', 'date', 'season', 'rival', 'local', 'sets', 'won', 'points'}
     """
     together = (
         Q(player_1_local=p1, player_2_local=p2) | Q(player_1_local=p2, player_2_local=p1) |
@@ -607,6 +608,7 @@ def pair_last_games(club, p1, p2, n=PAIR_LAST_GAMES):
         won = (g.winner == 'Local') == is_local
         rows.append({
             'match_id': g.match_id,
+            'match_public_id': g.match.public_id,
             'n_game': g.n_game,
             'date': g.match.start_date,
             'season': g.match.season,

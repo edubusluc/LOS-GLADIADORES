@@ -69,7 +69,7 @@ JOBS = [
         description=("«Completar equipo»: da de alta los jugadores del equipo de SNP de un club que todavía "
                      "no están en Zyra, sin tocar los que ya existen. Solo a mano y sin el límite mensual de la web."),
         command="complete_snp_team",
-        params=(JobParam("team_id", "Id del equipo", "Id del equipo propio del club en Zyra (aparece en la ficha del club)."),),
+        params=(JobParam("team_id", "Id del equipo", "Id del equipo propio del club en Zyra, TEA... (aparece en la ficha del club)."),),
     ),
 ]
 

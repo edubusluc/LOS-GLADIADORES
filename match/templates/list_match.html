@@ -48,7 +48,7 @@
                 <img src="{% if m.local.photo %}{{ m.local.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
                 <span>{{ m.local }}</span>
             </div>
-            <a href="{% url 'call_for_match' m.id %}" class="z-fixture-score stretched-link" aria-label="Ver {{ m.local }} contra {{ m.visiting }}">
+            <a href="{% url 'call_for_match' m.public_id %}" class="z-fixture-score stretched-link" aria-label="Ver {{ m.local }} contra {{ m.visiting }}">
                 {% if m.outcome %}{{ m.result_points }}{% else %}VS{% endif %}
             </a>
             <div class="z-fixture-team z-fixture-team--away {% if m.visiting.is_own %}is-own{% endif %}">
@@ -62,7 +62,7 @@
             {% elif m.outcome == 'E' %}<span class="z-wl" title="Empate">E</span>
             {% else %}<span class="z-badge">Pendiente</span>{% endif %}
             {% if m.draft_mode and is_club_admin %}
-            <a href="{% url 'delete_match' m.id %}" class="z-edit z-edit--danger position-relative" aria-label="Eliminar partido"><i class="fa-solid fa-trash"></i></a>
+            <a href="{% url 'delete_match' m.public_id %}" class="z-edit z-edit--danger position-relative" aria-label="Eliminar partido"><i class="fa-solid fa-trash"></i></a>
             {% endif %}
         </div>
     </li>

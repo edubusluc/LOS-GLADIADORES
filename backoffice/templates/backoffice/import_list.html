@@ -70,9 +70,9 @@
                 {% else %}<span class="z-badge z-badge--warning">Sin confirmar</span>{% endif %}
             </td>
             <td class="text-end">
-                {% if job.status == 'draft' %}<a href="{% url 'backoffice:import_preview' job.pk %}">Continuar</a>
+                {% if job.status == 'draft' %}<a href="{% url 'backoffice:import_preview' job.public_id %}">Continuar</a>
                 {% elif job.status == 'done' %}
-                <form method="post" action="{% url 'backoffice:import_undo' job.pk %}" onsubmit="return confirm('Se borrarán los registros creados y se restaurarán los valores anteriores de los actualizados. ¿Deshacer?');">
+                <form method="post" action="{% url 'backoffice:import_undo' job.public_id %}" onsubmit="return confirm('Se borrarán los registros creados y se restaurarán los valores anteriores de los actualizados. ¿Deshacer?');">
                     {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-rotate-left"></i> Deshacer</button>
                 </form>
                 {% endif %}

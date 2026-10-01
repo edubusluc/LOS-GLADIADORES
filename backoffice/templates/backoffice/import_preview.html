@@ -24,11 +24,11 @@
     {% if errors %}
     <span class="text-danger">Corrige los errores y vuelve a subir el fichero: no se importará nada mientras haya filas con errores.</span>
     {% else %}
-    <form method="post" action="{% url 'backoffice:import_confirm' job.pk %}" onsubmit="return confirm('¿Importar {{ total }} fila{{ total|pluralize }} en {{ job.club.name|escapejs }}?');">
+    <form method="post" action="{% url 'backoffice:import_confirm' job.public_id %}" onsubmit="return confirm('¿Importar {{ total }} fila{{ total|pluralize }} en {{ job.club.name|escapejs }}?');">
         {% csrf_token %}<button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Importar {{ total }} fila{{ total|pluralize }}</button>
     </form>
     {% endif %}
-    <a href="{% url 'backoffice:import_map' job.pk %}" class="btn btn-outline-light">Cambiar columnas</a>
+    <a href="{% url 'backoffice:import_map' job.public_id %}" class="btn btn-outline-light">Cambiar columnas</a>
     <a href="{% url 'backoffice:import_list' %}" class="btn btn-outline-light">Subir otro fichero</a>
 </div>
 

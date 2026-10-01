@@ -11,12 +11,15 @@ class Command(BaseCommand):
             "de una vez al mes de la web.")
 
     def add_arguments(self, parser):
-        parser.add_argument("team_id", type=int, help="Id del equipo propio del club en Zyra (se ve en el back-office, ficha del club).")
+        parser.add_argument("team_id", help="Id del equipo propio del club en Zyra, TEA... (se ve en el back-office, ficha del club).")
         parser.add_argument("--dry-run", action="store_true", help="Solo muestra qué jugadores se añadirían, sin crearlos.")
         parser.add_argument("--headed", action="store_true", help="Abre el navegador a la vista (necesita pantalla).")
 
     def handle(self, *args, team_id, dry_run=False, headed=False, **options):
-        team = Team.objects.select_related("club").filter(pk=team_id).first()
+        team_id = team_id.strip()
+        # También acepta el id numérico interno, por si se lanza a mano desde la consola
+        lookup = {"pk": int(team_id)} if team_id.isdigit() else {"public_id": team_id}
+        team = Team.objects.select_related("club").filter(**lookup).first()
         if team is None:
             raise CommandError(f"No existe ningún equipo con id {team_id}.")
         if not team.is_own or team.club is None:

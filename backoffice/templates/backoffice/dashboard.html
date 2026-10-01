@@ -82,7 +82,7 @@
         <ul class="bo-list">
             {% for c in kpis.recent_clubs %}
             <li>
-                <a href="{% url 'backoffice:club_detail' c.id %}">{{ c.name }}</a>
+                <a href="{% url 'backoffice:club_detail' c.public_id %}">{{ c.name }}</a>
                 <span class="text-muted">{{ c.n_members|default:0 }} miembro{{ c.n_members|pluralize }} · {{ c.n_players|default:0 }} jugador{{ c.n_players|pluralize:"es" }}</span>
                 <small class="text-muted ms-auto">{{ c.created_at|ago }}</small>
             </li>

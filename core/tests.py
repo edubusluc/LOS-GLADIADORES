@@ -59,18 +59,18 @@ class ClubIsolationTests(TestCase):
 
     def test_foreign_objects_return_404(self):
         urls = [
-            reverse("show_player", args=[self.player_b.id]),
-            reverse("edit_player", args=[self.player_b.id]),
-            reverse("edit_team", args=[self.rival_b.id]),
-            reverse("call_for_match", args=[self.match_b.id]),
-            reverse("create_call", args=[self.match_b.id]),
-            reverse("delete_match", args=[self.match_b.id]),
+            reverse("show_player", args=[self.player_b.public_id]),
+            reverse("edit_player", args=[self.player_b.public_id]),
+            reverse("edit_team", args=[self.rival_b.public_id]),
+            reverse("call_for_match", args=[self.match_b.public_id]),
+            reverse("create_call", args=[self.match_b.public_id]),
+            reverse("delete_match", args=[self.match_b.public_id]),
         ]
         for url in urls:
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 404)
 
-        response = self.client.get(reverse("player_statistics"), {"player": self.player_b.id})
+        response = self.client.get(reverse("player_statistics"), {"player": self.player_b.public_id})
         self.assertEqual(response.status_code, 404)
 
     def test_foreign_match_urls_return_404(self):
@@ -78,21 +78,21 @@ class ClubIsolationTests(TestCase):
         call_b = Call.objects.create(match=self.match_b)
         game_b = Game.objects.create(match=self.match_b, n_game=1)
         urls = [
-            reverse("call_for_match", args=[self.match_b.id]),
-            reverse("create_call", args=[self.match_b.id]),
-            reverse("existing_call", args=[self.match_b.id]),
-            reverse("close_call", args=[self.match_b.id]),
-            reverse("delete_call", args=[self.match_b.id]),
-            reverse("create_game", args=[self.match_b.id]),
-            reverse("edit_games_match", args=[self.match_b.id]),
-            reverse("close_match", args=[self.match_b.id]),
-            reverse("delete_match", args=[self.match_b.id]),
-            reverse("call_report", args=[self.match_b.id]),
-            reverse("edit_call", args=[call_b.id]),
-            reverse("closed_call", args=[call_b.id]),
-            reverse("create_penalty", args=[call_b.id]),
-            reverse("create_result", args=[game_b.id]),
-            reverse("edit_result", args=[game_b.id]),
+            reverse("call_for_match", args=[self.match_b.public_id]),
+            reverse("create_call", args=[self.match_b.public_id]),
+            reverse("existing_call", args=[self.match_b.public_id]),
+            reverse("close_call", args=[self.match_b.public_id]),
+            reverse("delete_call", args=[self.match_b.public_id]),
+            reverse("create_game", args=[self.match_b.public_id]),
+            reverse("edit_games_match", args=[self.match_b.public_id]),
+            reverse("close_match", args=[self.match_b.public_id]),
+            reverse("delete_match", args=[self.match_b.public_id]),
+            reverse("call_report", args=[self.match_b.public_id]),
+            reverse("edit_call", args=[call_b.public_id]),
+            reverse("closed_call", args=[call_b.public_id]),
+            reverse("create_penalty", args=[call_b.public_id]),
+            reverse("create_result", args=[game_b.public_id]),
+            reverse("edit_result", args=[game_b.public_id]),
         ]
         for url in urls:
             for method in ("get", "post"):
@@ -106,11 +106,11 @@ class ClubIsolationTests(TestCase):
     def test_member_of_both_clubs_only_sees_active_club_matches(self):
         """Aunque el usuario pertenezca a los dos clubes, solo accede a los partidos del club activo."""
         Membership.objects.create(user=self.user_a, club=self.club_b, role=Membership.MEMBER)
-        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_b.id])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_b.public_id])).status_code, 404)
 
         self.client.post(reverse("switch_club"), {"club_id": self.club_b.id})
-        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_b.id])).status_code, 200)
-        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_a.id])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_b.public_id])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("call_for_match", args=[self.match_a.public_id])).status_code, 404)
 
     def test_player_statistics_only_link_own_club_matches(self):
         """La tabla de partidos del jugador no incluye enfrentamientos de otro club."""
@@ -122,9 +122,9 @@ class ClubIsolationTests(TestCase):
         Game.objects.create(match=self.match_b, n_game=1, score=3, winner="Local", draft_mode=False,
                             player_1_local=self.player_a, player_2_local=self.player_b)
 
-        response = self.client.get(reverse("player_statistics"), {"player": self.player_a.id, "season": "2025-2026"})
+        response = self.client.get(reverse("player_statistics"), {"player": self.player_a.public_id, "season": "2025-2026"})
         self.assertEqual([g["match_id"] for g in response.context["d"]["games"]], [self.match_a.id])
-        self.assertNotContains(response, reverse("call_for_match", args=[self.match_b.id]))
+        self.assertNotContains(response, reverse("call_for_match", args=[self.match_b.public_id]))
 
     def test_player_statistics_only_lists_own_players(self):
         response = self.client.get(reverse("player_statistics"))
@@ -171,7 +171,7 @@ class ClubIsolationTests(TestCase):
         self.assertEqual(Match.objects.filter(club=self.club_a).count(), 2)
 
     def test_call_ignores_foreign_players(self):
-        self.client.post(reverse("create_call", args=[self.match_a.id]), {
+        self.client.post(reverse("create_call", args=[self.match_a.public_id]), {
             "players": [self.player_a.id, self.player_b.id],
         })
         call = Call.objects.get(match=self.match_a)
@@ -184,7 +184,7 @@ class ClubIsolationTests(TestCase):
 
         ordered = [{"player1Id": players[i].id, "player2Id": players[i + 1].id} for i in range(0, 10, 2)]
         import json
-        self.client.post(reverse("create_game", args=[self.match_a.id]), {"ordered_games": json.dumps(ordered)})
+        self.client.post(reverse("create_game", args=[self.match_a.public_id]), {"ordered_games": json.dumps(ordered)})
         games = Game.objects.filter(match=self.match_a)
         self.assertEqual(games.count(), 5)
         self.assertTrue(all(g.player_1_local and g.player_1_visiting is None for g in games))
@@ -238,7 +238,7 @@ class RolesAndClubSwitchTests(TestCase):
         self.assertTrue(Membership.objects.filter(user__username="nuevo", club=self.club).exists())
 
         owner_membership = Membership.objects.get(user=self.owner, club=self.club)
-        self.client.post(reverse("remove_member", args=[owner_membership.id]))
+        self.client.post(reverse("remove_member", args=[owner_membership.public_id]))
         self.assertTrue(Membership.objects.filter(pk=owner_membership.pk).exists())
 
     def test_register_club_creates_user_club_and_membership(self):

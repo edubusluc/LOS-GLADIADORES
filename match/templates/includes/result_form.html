@@ -2,7 +2,7 @@
 {% load static %}
 <div class="z-page-head">
     <div>
-        <a href="{% url 'call_for_match' game.match.id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ game.match.local }} vs {{ game.match.visiting }}</a>
+        <a href="{% url 'call_for_match' game.match.public_id %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {{ game.match.local }} vs {{ game.match.visiting }}</a>
         <h1>{{ title }}</h1>
     </div>
     <span class="z-badge z-badge--outline">Partido {{ game.n_game }} · {{ game.score }} pts</span>

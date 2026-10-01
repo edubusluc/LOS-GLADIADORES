@@ -57,7 +57,7 @@
             {% if next_match.location %}
             <a class="btn btn-secondary btn-sm" href="{{ next_match.maps_url }}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot me-1"></i> Cómo llegar</a>
             {% endif %}
-            <a class="btn btn-primary btn-sm" href="{% url 'call_for_match' next_match.id %}"><i class="fa-solid fa-clipboard-list me-1"></i> Ver convocatoria</a>
+            <a class="btn btn-primary btn-sm" href="{% url 'call_for_match' next_match.public_id %}"><i class="fa-solid fa-clipboard-list me-1"></i> Ver convocatoria</a>
         </div>
     </div>
 </article>
@@ -83,7 +83,7 @@
                 <span>{{ hot_player.streak }} victorias seguidas</span>
             </div>
         </div>
-        {% if is_club_admin %}<a class="btn btn-secondary btn-sm" href="{% url 'player_statistics' %}?player={{ p.id }}">Ver estadísticas</a>{% endif %}
+        {% if is_club_admin %}<a class="btn btn-secondary btn-sm" href="{% url 'player_statistics' %}?player={{ p.public_id }}">Ver estadísticas</a>{% endif %}
     </article>
     {% endwith %}
     {% endif %}

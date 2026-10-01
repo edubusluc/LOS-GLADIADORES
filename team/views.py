@@ -58,7 +58,7 @@ def create_team(request):
 @club_admin_required
 @require_http_methods(["GET", "POST"])
 def edit_team(request, team_id):
-    team = get_object_or_404(Team, id=team_id, club=request.club)
+    team = get_object_or_404(Team, public_id=team_id, club=request.club)
 
     if request.method == "POST":
         form = Teamform(request.POST, request.FILES, instance=team, club=request.club)  # Agregar request.FILES aquí

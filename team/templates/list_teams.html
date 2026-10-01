@@ -36,7 +36,7 @@
     {% for team in teams %}
     <div class="z-card z-team position-relative">
         {% if is_club_admin %}
-        <a href="{% url 'edit_team' team.id %}" class="z-edit" aria-label="Editar {{ team.name }}"><i class="fa-solid fa-pen"></i></a>
+        <a href="{% url 'edit_team' team.public_id %}" class="z-edit" aria-label="Editar {{ team.name }}"><i class="fa-solid fa-pen"></i></a>
         {% endif %}
         <img src="{% if team.photo %}{{ team.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="">
         <div class="min-w-0">
@@ -77,7 +77,7 @@
                 <td>{{ team.location }}</td>
                 {% if is_club_admin %}
                 <td>{% if team.in_group %}<span class="z-badge z-badge--outline">En tu grupo</span>{% else %}<span class="z-badge">Fuera</span>{% endif %}</td>
-                <td><a href="{% url 'edit_team' team.id %}" class="z-edit position-static" aria-label="Editar"><i class="fa-solid fa-pen"></i></a></td>
+                <td><a href="{% url 'edit_team' team.public_id %}" class="z-edit position-static" aria-label="Editar"><i class="fa-solid fa-pen"></i></a></td>
                 {% endif %}
             </tr>
             {% empty %}

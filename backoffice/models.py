@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from core.public_id import PublicIdModel
+
 
 class UserActivity(models.Model):
     """
@@ -73,8 +75,9 @@ class ScheduledJob(models.Model):
         return self.name
 
 
-class JobRun(models.Model):
+class JobRun(PublicIdModel):
     """Una ejecución de un proceso programado, con su salida y, si falló, el error."""
+    PUBLIC_ID_PREFIX = "RUN"
     RUNNING = "running"
     OK = "ok"
     ERROR = "error"
@@ -112,8 +115,9 @@ class JobRun(models.Model):
         return f"{self.job} {self.started_at:%Y-%m-%d %H:%M} ({self.get_status_display()})"
 
 
-class SavedQuery(models.Model):
+class SavedQuery(PublicIdModel):
     """Consulta SQL guardada en la consola, para repetirla o exportarla cuando haga falta."""
+    PUBLIC_ID_PREFIX = "QRY"
     name = models.CharField("nombre", max_length=120, unique=True)
     description = models.CharField("descripción", max_length=255, blank=True, default="")
     sql = models.TextField()
@@ -151,8 +155,9 @@ class QueryLog(models.Model):
         return f"{self.user} {self.created_at:%Y-%m-%d %H:%M}"
 
 
-class ImportJob(models.Model):
+class ImportJob(PublicIdModel):
     """Una importación de datos: el fichero, cómo se emparejaron sus columnas y qué cambió."""
+    PUBLIC_ID_PREFIX = "IMP"
     DRAFT = "draft"
     DONE = "done"
     UNDONE = "undone"

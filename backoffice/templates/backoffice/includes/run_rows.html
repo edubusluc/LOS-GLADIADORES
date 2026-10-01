@@ -9,7 +9,7 @@
             <td>{{ run.duration|duration }}</td>
             <td>{{ run.get_trigger_display }}{% if run.triggered_by %} <span class="text-muted">({{ run.triggered_by.username }})</span>{% endif %}</td>
             <td>{% run_status run %}</td>
-            <td class="text-end"><a href="{% url 'backoffice:run_detail' run.id %}">Ver salida</a></td>
+            <td class="text-end"><a href="{% url 'backoffice:run_detail' run.public_id %}">Ver salida</a></td>
         </tr>
     {% empty %}
         <tr><td colspan="6" class="text-muted">Todavía no hay ejecuciones.</td></tr>

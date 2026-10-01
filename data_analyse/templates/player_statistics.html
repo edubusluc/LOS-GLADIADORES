@@ -19,7 +19,7 @@
         <select class="st-select" name="player" id="player" onchange="this.form.submit()" data-picker data-placeholder="Buscar jugador...">
           <option value="">Elige un jugador</option>
           {% for p in players %}
-            <option value="{{ p.id }}" {% if p.id == selected_player %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>
+            <option value="{{ p.public_id }}" {% if p.public_id == selected_player %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>
           {% endfor %}
         </select>
         {% if selected_season %}<input type="hidden" name="season" value="{{ selected_season }}">{% endif %}
@@ -211,7 +211,7 @@
                       {% for g in d.games %}
                         <tr>
                           <th scope="row">
-                            <a href="{% url 'call_for_match' g.match_id %}#partido-{{ g.n_game }}">{{ g.date|date:"d/m/Y" }}</a>
+                            <a href="{% url 'call_for_match' g.match_public_id %}#partido-{{ g.n_game }}">{{ g.date|date:"d/m/Y" }}</a>
                           </th>
                           <td>{{ g.rival }} <span class="st-muted">({% if g.local %}local{% else %}visitante{% endif %})</span></td>
                           <td>{{ g.n_game }}</td>

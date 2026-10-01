@@ -6,6 +6,7 @@ from django.db import models
 
 from core import crypto
 from core.models import Club
+from core.public_id import PublicIdModel
 from team.models import Team
 
 # Mes en el que empieza la temporada (9 = septiembre).
@@ -20,7 +21,8 @@ def current_season():
     return f"{start}-{start + 1}"
 
 
-class Player(models.Model):
+class Player(PublicIdModel):
+    PUBLIC_ID_PREFIX = "PLY"
     POSITIONS = [
         ("Derecha", "Derecha"),
         ("Revés", "Revés"),
@@ -61,12 +63,13 @@ class Player(models.Model):
     def get_first_last_name(self):
         return self.last_name.split()[0]  # Obtiene el primer apellido
 
-class SnpAccount(models.Model):
+class SnpAccount(PublicIdModel):
     """
     Cuenta de SNP (snpgalaxy.com) del capitán de un club, con la que el proceso
     ``update_snp_scores`` descarga cada semana los puntos SNP de sus jugadores.
     Usuario y contraseña se guardan cifrados (core/crypto.py).
     """
+    PUBLIC_ID_PREFIX = "SNA"
     club = models.OneToOneField(Club, on_delete=models.CASCADE, related_name="snp_account")
     username_encrypted = models.TextField()
     password_encrypted = models.TextField()
@@ -98,8 +101,9 @@ class SnpAccount(models.Model):
         return f"Cuenta SNP de {self.club}"
 
 
-class SnpScoreHistory(models.Model):
+class SnpScoreHistory(PublicIdModel):
     """Puntos SNP de un jugador en cada actualización (una fila por jugador y día)."""
+    PUBLIC_ID_PREFIX = "SNH"
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="snp_history")
     season = models.CharField(max_length=9, default=current_season)
     date = models.DateField()
@@ -115,7 +119,7 @@ class SnpScoreHistory(models.Model):
         return f"{self.player}: {self.score:g} ({self.date})"
 
 
-class SnpTeamImport(models.Model):
+class SnpTeamImport(PublicIdModel):
     """
     «Completar equipo»: alta de los jugadores que aparecen en el equipo de SNP del club y
     todavía no están en Zyra. Primero se descarga la lista y se guarda lo que se va a
@@ -123,6 +127,7 @@ class SnpTeamImport(models.Model):
     revisa y lo confirma. Desde el back-office se crea y se confirma en un solo paso.
     Nunca modifica jugadores existentes.
     """
+    PUBLIC_ID_PREFIX = "SNI"
     RUNNING = "running"
     READY = "ready"
     ERROR = "error"

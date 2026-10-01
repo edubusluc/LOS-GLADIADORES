@@ -29,7 +29,7 @@ CREATE_MATCH_HTML = "create_match.html"
 
 def club_match(request, match_id):
     """Partido del club activo o 404: nunca se accede a partidos de otros clubes."""
-    return get_object_or_404(Match, id=match_id, club=request.club)
+    return get_object_or_404(Match, public_id=match_id, club=request.club)
 
 
 def club_call(request, **filters):
@@ -199,7 +199,7 @@ def selectable_players(club, include_ids=()):
 def create_call(request, match_id):
     match = club_match(request, match_id)
     if Call.objects.filter(match=match).exists() or match.draft_mode == False:
-        return redirect('existing_call', match.id)
+        return redirect('existing_call', match.public_id)
 
     selected_ids = []
     if request.method == 'POST':
@@ -211,7 +211,7 @@ def create_call(request, match_id):
             call = Call.objects.create(match=match)
             call.players.set(selected_ids)
             CallLog.objects.create(call=call, text="")
-            return redirect('call_for_match', match.id)
+            return redirect('call_for_match', match.public_id)
 
     return render(request, "create_call.html", {
         "players": selectable_players(request.club),
@@ -230,7 +230,7 @@ def validate_call(call):
 
 @club_admin_required
 def close_call(request, match_id):
-    call = club_call(request, match__id=match_id)
+    call = club_call(request, match__public_id=match_id)
     is_valid, error_message = validate_call(call)
 
     if not is_valid:
@@ -254,15 +254,15 @@ def close_call(request, match_id):
             else:
                 messages.info(request, "Convocatoria cerrada. Ningún administrador tiene email: añádelo en "
                                        "Miembros para recibir el informe automáticamente.")
-        return redirect('call_for_match', call.match.id)
+        return redirect('call_for_match', call.match.public_id)
 
-    return redirect('call_for_match', call.match.id)
+    return redirect('call_for_match', call.match.public_id)
 
 
 @club_admin_required
 def call_report_pdf(request, match_id):
     """Descarga manual del informe de convocatoria."""
-    call = club_call(request, match__id=match_id)
+    call = club_call(request, match__public_id=match_id)
     pdf = render_report(build_report(call))
     response = HttpResponse(pdf, content_type="application/pdf")
     response["Content-Disposition"] = f'inline; filename="{report_filename(call.match)}"'
@@ -270,14 +270,14 @@ def call_report_pdf(request, match_id):
 
 @club_admin_required
 def edit_call(request, call_id):
-    call = club_call(request, id=call_id)
+    call = club_call(request, public_id=call_id)
     selected_players = list(call.players.values_list('id', flat=True))
     all_players = selectable_players(request.club, include_ids=selected_players)
     call_log, _ = CallLog.objects.get_or_create(call=call, defaults={'text': ''})
     
     current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     if call.match.draft_mode == False:
-        return redirect('call_for_match', call.match.id)
+        return redirect('call_for_match', call.match.public_id)
     else:
         if request.method == "POST":
             selected_players_ids = list(club_players(request, request.POST.getlist("players")).values_list('id', flat=True))
@@ -312,7 +312,7 @@ def edit_call(request, call_id):
             call.players.set(selected_players_ids)
             call.save()
             
-            return redirect('call_for_match', call.match.id)
+            return redirect('call_for_match', call.match.public_id)
 
 
 
@@ -326,7 +326,7 @@ def edit_call(request, call_id):
 #VISTA POR SI SE INTENTA MODIFICAR UNA CONVOCATORIA YA CERRADA
 @club_admin_required
 def closed_call(request, call_id):
-    call = club_call(request, id=call_id)
+    call = club_call(request, public_id=call_id)
     return render(request, 'closed_call.html', {'match': call})
 
 
@@ -366,7 +366,7 @@ def call_for_match(request, match_id):
 
     return render(request, "call_for_match.html", {
         "call_for_match": call,
-        "match_id": match.id,
+        "match_id": match.public_id,
         "game_for_match": games,
         "games_count": len(games),
         "match": match,
@@ -399,16 +399,16 @@ def create_game_for_match(request, match_id):
 
     if match.games.exists():
         messages.info(request, "Los partidos ya están creados: puedes cambiar las parejas desde aquí.")
-        return redirect('edit_games_match', match_id=match.id)
+        return redirect('edit_games_match', match_id=match.public_id)
 
     if request.method == "POST":
         try:
             lineup.create_games(match, lineup.parse_lineup(request.POST.get("ordered_games"), call))
         except lineup.LineupError as e:
             messages.error(request, str(e))
-            return redirect('create_game', match_id=match.id)
+            return redirect('create_game', match_id=match.public_id)
         messages.success(request, "Partidos creados.")
-        return redirect('call_for_match', match_id=match.id)
+        return redirect('call_for_match', match_id=match.public_id)
 
     return render(request, "create_game.html", {
         "call": call,
@@ -435,17 +435,17 @@ def _save_result(request, game, result, template):
 
     game.winner = "Local" if result.result == "Victoria Local" else "Visitante"
     game.save(update_fields=['winner'])
-    return redirect('call_for_match', match_id=game.match_id)
+    return redirect('call_for_match', match_id=game.match.public_id)
 
 
 @club_admin_required
 def create_result(request, game_id):
-    game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), id=game_id, match__club=request.club)
+    game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), public_id=game_id, match__club=request.club)
     if not game.match.draft_mode:
         messages.error(request, "No se pueden añadir resultados a un partido ya confirmado")
-        return redirect('call_for_match', match_id=game.match_id)
+        return redirect('call_for_match', match_id=game.match.public_id)
     if game.results.exists():
-        return redirect('edit_result', game_id=game.id)
+        return redirect('edit_result', game_id=game.public_id)
 
     if request.method == "POST":
         return _save_result(request, game, Result(game=game), "create_result.html")
@@ -454,13 +454,13 @@ def create_result(request, game_id):
 
 @club_admin_required
 def edit_result(request, game_id):
-    game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), id=game_id, match__club=request.club)
+    game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), public_id=game_id, match__club=request.club)
     match = game.match
     result = get_object_or_404(Result, game=game)
 
     if not match.draft_mode:
         messages.error(request, "No se pueden editar los resultados de un partido ya confirmado")
-        return redirect('call_for_match', match_id=match.id)
+        return redirect('call_for_match', match_id=match.public_id)
 
     if request.method == "POST":
         return _save_result(request, game, result, "edit_result.html")
@@ -539,17 +539,17 @@ def edit_game_match(request, match_id):
 
     games = list(Game.objects.filter(match=match).order_by('n_game'))
     if not games:
-        return redirect('create_game', match_id=match.id)
-    call = club_call(request, match_id=match_id)
+        return redirect('create_game', match_id=match.public_id)
+    call = club_call(request, match__public_id=match_id)
 
     if request.method == "POST":
         try:
             lineup.update_games(match, lineup.parse_lineup(request.POST.get("ordered_games"), call, match_games=games))
         except lineup.LineupError as e:
             messages.error(request, str(e))
-            return redirect('edit_games_match', match_id=match.id)
+            return redirect('edit_games_match', match_id=match.public_id)
         messages.success(request, "Parejas actualizadas.")
-        return redirect('call_for_match', match_id=match.id)
+        return redirect('call_for_match', match_id=match.public_id)
 
     games_data = [
         {

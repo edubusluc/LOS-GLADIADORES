@@ -31,7 +31,7 @@
         <h2 class="h5">Cómo llegó</h2>
         <dl class="bo-facts">
             {% if invitation_used %}
-            <div><dt>Invitación</dt><dd>de {{ invitation_used.created_by.username|default:"—" }} a <a href="{% url 'backoffice:club_detail' invitation_used.club_id %}">{{ invitation_used.club.name }}</a></dd></div>
+            <div><dt>Invitación</dt><dd>de {{ invitation_used.created_by.username|default:"—" }} a <a href="{% url 'backoffice:club_detail' invitation_used.club.public_id %}">{{ invitation_used.club.name }}</a></dd></div>
             <div><dt>Usada el</dt><dd>{{ invitation_used.used_at|date:"j M Y H:i" }}</dd></div>
             {% else %}
             <div><dt>Invitación</dt><dd>No entró por invitación</dd></div>
@@ -48,7 +48,7 @@
         <tbody>
         {% for m in memberships %}
             <tr>
-                <td><a href="{% url 'backoffice:club_detail' m.club_id %}">{{ m.club.name }}</a></td>
+                <td><a href="{% url 'backoffice:club_detail' m.club.public_id %}">{{ m.club.name }}</a></td>
                 <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">Administrador</span>{% else %}Miembro{% endif %}</td>
             </tr>
         {% empty %}

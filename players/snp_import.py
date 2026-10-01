@@ -18,7 +18,7 @@ from django.utils import timezone
 from core.crypto import DecryptionError
 
 from .models import Player, SnpScoreHistory, SnpTeamImport, current_season
-from .scraper import SnpScrapeError, scrape_scores
+from .scraper import SnpScrapeError, scrape_scores, split_category
 from .snp import match_scores
 
 logger = logging.getLogger(__name__)
@@ -27,10 +27,6 @@ logger = logging.getLogger(__name__)
 PARTICLES = {"de", "del", "la", "las", "los", "y", "san", "van", "von", "da", "do", "dos", "di"}
 # Si una búsqueda lleva más de esto «en marcha», se da por perdida (p. ej. se reinició el servidor).
 STALE_AFTER = datetime.timedelta(minutes=10)
-
-
-def _is_category(token):
-    return token.isdigit() or token.lower() == "future"
 
 
 def _capitalize(token):
@@ -45,10 +41,7 @@ def split_snp_name(snp_name):
     "JUAN DE LA FUENTE LOPEZ" -> ("Juan", "de la Fuente Lopez").
     Se toman como apellidos los dos últimos (con sus partículas).
     """
-    tokens = snp_name.split()
-    while len(tokens) > 1 and _is_category(tokens[-1]):
-        tokens.pop()
-    tokens = [_capitalize(t) for t in tokens]
+    tokens = [_capitalize(t) for t in split_category(snp_name)[0].split()]
     if len(tokens) <= 1:
         return (tokens[0] if tokens else ""), ""
     start, surnames = len(tokens), 0
@@ -65,14 +58,17 @@ def plan_import(club, scores):
     players = list(Player.objects.filter(club=club))
     matched, unmatched, ambiguous = match_scores(players, scores)
     by_name = {entry["name"]: entry for entry in scores}
-    existing = [{"snp_name": snp_name, "player": str(player)} for player, _, snp_name in matched]
-    existing += [{"snp_name": name, "player": "varios jugadores con un nombre parecido"} for name in ambiguous]
+    category = {entry["name"]: entry.get("category", "") for entry in scores}
+    existing = [{"snp_name": snp_name, "category": category[snp_name], "player": str(player)}
+                for player, _, snp_name in matched]
+    existing += [{"snp_name": name, "category": category[name], "player": "varios jugadores con un nombre parecido"}
+                 for name in ambiguous]
     to_add = []
     for snp_name in unmatched:
         name, last_name = split_snp_name(snp_name)
         if name:
             to_add.append({"name": name, "last_name": last_name, "snp_name": snp_name,
-                           "score": by_name[snp_name]["score"]})
+                           "category": category[snp_name], "score": by_name[snp_name]["score"]})
     to_add.sort(key=lambda p: (p["name"], p["last_name"]))
     existing.sort(key=lambda p: p["snp_name"])
     return to_add, existing
@@ -107,7 +103,7 @@ def confirm(team_import):
     if team_import.status != SnpTeamImport.READY:
         return team_import
     club = team_import.club
-    entries = [{"name": e["snp_name"], "score": e["score"]} for e in team_import.to_add]
+    entries = [{"name": e["snp_name"], "category": e.get("category", ""), "score": e["score"]} for e in team_import.to_add]
     still_missing = {e["snp_name"] for e in plan_import(club, entries)[0]}
     created, today, season = [], timezone.localdate(), current_season()
     for entry in team_import.to_add:

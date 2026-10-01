@@ -12,7 +12,7 @@ from django.utils import timezone
 from core.crypto import DecryptionError
 
 from .models import Player, SnpScoreHistory, current_season
-from .scraper import SnpScrapeError, scrape_scores
+from .scraper import SnpScrapeError, scrape_scores, split_category
 
 # Coincidencia exacta > nombre completo al principio (sobra o falta el 2º apellido o la
 # categoría) > nombre y primer apellido presentes.
@@ -27,11 +27,8 @@ def normalize(text):
 
 
 def _snp_tokens(name):
-    tokens = normalize(name).split()
-    # SNP añade al final la categoría del jugador (p. ej. "500" o "Future").
-    while len(tokens) > 1 and (tokens[-1].isdigit() or tokens[-1] == "future"):
-        tokens.pop()
-    return tokens
+    # SNP añade al final la categoría del jugador ("500", "Future", "Grand Slam"…).
+    return normalize(split_category(name)[0]).split()
 
 
 def _match_level(player_tokens, snp_tokens):

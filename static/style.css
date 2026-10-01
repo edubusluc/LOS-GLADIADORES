@@ -784,6 +784,14 @@ a.z-card:hover, .z-card--link:hover { color: inherit; border-color: var(--z-lime
 .z-import-list li:last-child { border-bottom: 0; }
 .z-import-list small { color: var(--z-muted); }
 
+/* Categoría SNP del jugador: un color por tipo. */
+.z-cat { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }
+.z-cat--future { color: #0B1F14; background: #4ADE80; }
+.z-cat--500 { color: #FFFFFF; background: #8B5CF6; }
+.z-cat--1000 { color: #FFFFFF; background: #3B82F6; }
+.z-cat--grand-slam { color: #2A1B00; background: #F5B700; }
+.z-cat--other { color: var(--z-text); background: var(--z-surface-3); }
+
 
 /* ---------- Pantallas de acceso (login, registro, portada) ---------- */
 

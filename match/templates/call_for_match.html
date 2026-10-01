@@ -41,6 +41,12 @@
         {% if call_for_match %}
         <a href="{% url 'call_report' match.public_id %}" class="btn btn-secondary btn-sm" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i> Informe PDF</a>
         {% endif %}
+        {% if call_for_match and not call_for_match.draft_mode %}
+        <form action="{% url 'resend_call_report' match.public_id %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-paper-plane me-1"></i> Reenviar informe</button>
+        </form>
+        {% endif %}
         {% if call_for_match.draft_mode %}
         <form action="{% url 'close_call' match.public_id %}" method="post" class="d-inline">
             {% csrf_token %}
@@ -51,6 +57,15 @@
     {% endif %}
 </div>
 
+{% if is_club_admin and report_deliveries %}
+<p class="small text-muted mb-2"><i class="fa-solid fa-envelope me-1"></i> Informe por email:
+    {% for d in report_deliveries %}{{ d.email }}
+    {% if d.status == "sent" %}<span class="z-badge z-badge--lime">enviado {{ d.sent_at|date:"d/m H:i" }}</span>
+    {% elif d.status == "pending" %}<span class="z-badge" title="{{ d.last_error }}">{% if d.attempts %}reintento {{ d.next_attempt_at|date:"H:i" }}{% else %}pendiente{% endif %}</span>
+    {% else %}<span class="z-badge" title="{{ d.last_error }}">no enviado</span>{% endif %}{% if not forloop.last %} · {% endif %}
+    {% endfor %}
+</p>
+{% endif %}
 
 {% if call_for_match %}
 <div class="z-call">

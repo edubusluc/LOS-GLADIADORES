@@ -3,16 +3,20 @@ Actualización de los puntos SNP: cruza los nombres que devuelve SNP con los jug
 del club y guarda la puntuación. Lo usan el proceso programado ``update_snp_scores``
 y el botón «Actualizar ahora» de la página de la cuenta SNP.
 """
+import logging
 import re
 import unicodedata
 from dataclasses import dataclass, field
 
+from django.db import transaction
 from django.utils import timezone
 
 from core.crypto import DecryptionError
 
 from .models import Player, SnpScoreHistory, current_season
-from .scraper import SnpScrapeError, scrape_scores
+from .scraper import SnpBlockedError, SnpScrapeError, scrape_scores
+
+logger = logging.getLogger(__name__)
 
 # Coincidencia exacta > nombre completo al principio (sobra o falta el 2º apellido o la
 # categoría) > nombre y primer apellido presentes.
@@ -104,6 +108,9 @@ class SyncResult:
     unmatched: list = field(default_factory=list)
     ambiguous: list = field(default_factory=list)
     missing: list = field(default_factory=list)
+    # Fallo pasajero que se reintenta en la siguiente pasada / SNP nos está limitando.
+    retryable: bool = False
+    blocked: bool = False
 
     def report(self):
         lines = [self.message]
@@ -117,34 +124,48 @@ class SyncResult:
 
 
 def sync_club(account, scraper=None, **scrape_options):
-    """Descarga los puntos SNP del club de ``account`` y los guarda. Nunca lanza: devuelve un SyncResult."""
+    """
+    Descarga los puntos SNP del club de ``account`` y los guarda. Nunca lanza: devuelve
+    un SyncResult. Los puntos del club se guardan en una sola transacción (o todos o
+    ninguno), así un fallo a medias no deja el equipo con unos jugadores actualizados y
+    otros no, ni afecta a los demás clubes.
+    """
     try:
         scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None, **scrape_options)
+        with transaction.atomic():
+            result = _save_scores(account, scores)
     except (SnpScrapeError, DecryptionError) as exc:
-        result = SyncResult(ok=False, message=str(exc))
-    else:
-        players = list(Player.objects.filter(club=account.club, in_team=True))
-        matched, unmatched, ambiguous = match_scores(players, scores)
-        today, season = timezone.localdate(), current_season()
-        for player, score, _ in matched:
-            if player.snp_score != score:
-                player.snp_score = score
-                player.save(update_fields=["snp_score"])
-            # Histórico para el gráfico de la temporada: un punto por jugador y día.
-            SnpScoreHistory.objects.update_or_create(
-                player=player, date=today, defaults={"score": score, "season": season},
-            )
-        matched_ids = {p.pk for p, _, _ in matched}
-        result = SyncResult(
-            ok=True,
-            message=f"{len(matched)} de {len(players)} jugadores actualizados con los puntos de SNP.",
-            total=len(players),
-            updated=[(str(p), score) for p, score, _ in matched],
-            unmatched=unmatched, ambiguous=ambiguous,
-            missing=[str(p) for p in players if p.pk not in matched_ids],
-        )
+        result = SyncResult(ok=False, message=str(exc), retryable=getattr(exc, "retryable", False),
+                            blocked=isinstance(exc, SnpBlockedError))
+    except Exception as exc:  # un fallo inesperado en un club no debe parar a los demás
+        logger.exception("Error inesperado al actualizar los puntos SNP de %s", account.club)
+        result = SyncResult(ok=False, message=f"Error inesperado: {exc}", retryable=True)
     account.last_sync_at = timezone.now()
     account.last_sync_ok = result.ok
+    account.last_sync_retryable = result.retryable
     account.last_sync_message = result.report()
-    account.save(update_fields=["last_sync_at", "last_sync_ok", "last_sync_message"])
+    account.save(update_fields=["last_sync_at", "last_sync_ok", "last_sync_retryable", "last_sync_message"])
     return result
+
+
+def _save_scores(account, scores):
+    players = list(Player.objects.filter(club=account.club, in_team=True))
+    matched, unmatched, ambiguous = match_scores(players, scores)
+    today, season = timezone.localdate(), current_season()
+    for player, score, _ in matched:
+        if player.snp_score != score:
+            player.snp_score = score
+            player.save(update_fields=["snp_score"])
+        # Histórico para el gráfico de la temporada: un punto por jugador y día.
+        SnpScoreHistory.objects.update_or_create(
+            player=player, date=today, defaults={"score": score, "season": season},
+        )
+    matched_ids = {p.pk for p, _, _ in matched}
+    return SyncResult(
+        ok=True,
+        message=f"{len(matched)} de {len(players)} jugadores actualizados con los puntos de SNP.",
+        total=len(players),
+        updated=[(str(p), score) for p, score, _ in matched],
+        unmatched=unmatched, ambiguous=ambiguous,
+        missing=[str(p) for p in players if p.pk not in matched_ids],
+    )

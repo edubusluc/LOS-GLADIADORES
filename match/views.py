@@ -5,6 +5,7 @@ from .forms import MatchForm
 from .models import Match, Game, Result
 from . import lineup
 from .notifications import send_call_report, report_filename
+from call.models import ReportDelivery
 from .report import build_report
 from .report_pdf import render_report
 from django.http import HttpResponse
@@ -240,22 +241,43 @@ def close_call(request, match_id):
     if request.method == "POST":
         call.draft_mode = False
         call.save()
-        # Automatización: informe PDF a los administradores. Si falla el envío,
-        # la convocatoria queda cerrada igualmente.
-        try:
-            recipients = send_call_report(call, sender=request.user)
-        except Exception:
-            logger.exception("No se pudo enviar el informe de la convocatoria %s", call.pk)
-            messages.warning(request, "Convocatoria cerrada, pero no se pudo enviar el informe por email. "
-                                      "Puedes descargarlo desde esta página.")
-        else:
-            if recipients:
-                messages.success(request, f"Convocatoria cerrada. Informe enviado a {', '.join(recipients)}.")
-            else:
-                messages.info(request, "Convocatoria cerrada. Ningún administrador tiene email: añádelo en "
-                                       "Miembros para recibir el informe automáticamente.")
+        _send_report(request, call, "Convocatoria cerrada")
         return redirect('call_for_match', call.match.public_id)
 
+    return redirect('call_for_match', call.match.public_id)
+
+
+def _send_report(request, call, done):
+    """
+    Informe PDF a los administradores: se intenta al momento y lo que falle se reintenta
+    solo (send_call_reports). Si falla el envío, la convocatoria queda cerrada igualmente.
+    """
+    try:
+        deliveries = send_call_report(call, sender=request.user)
+    except Exception:
+        logger.exception("No se pudo enviar el informe de la convocatoria %s", call.pk)
+        messages.warning(request, f"{done}, pero no se pudo enviar el informe por email. "
+                                  "Puedes descargarlo desde esta página.")
+        return
+    if not deliveries:
+        messages.info(request, f"{done}. Ningún administrador tiene email: añádelo en "
+                               "Miembros para recibir el informe automáticamente.")
+        return
+    sent = [d.email for d in deliveries if d.status == ReportDelivery.SENT]
+    pending = [d.email for d in deliveries if d.status != ReportDelivery.SENT]
+    if sent:
+        messages.success(request, f"{done}. Informe enviado a {', '.join(sent)}.")
+    if pending:
+        messages.warning(request, f"{'' if sent else done + '. '}No se pudo enviar el informe a {', '.join(pending)}: "
+                                  "se reintentará automáticamente. Mientras, puedes descargarlo desde esta página.")
+
+
+@club_admin_required
+def resend_call_report(request, match_id):
+    """Vuelve a enviar el informe de una convocatoria cerrada a los administradores."""
+    call = club_call(request, match__public_id=match_id)
+    if request.method == "POST" and not call.draft_mode:
+        _send_report(request, call, "Informe reenviado")
     return redirect('call_for_match', call.match.public_id)
 
 
@@ -372,6 +394,7 @@ def call_for_match(request, match_id):
         "match": match,
         "groups": groups,
         "players_count": sum(len(g["players"]) for g in groups),
+        "report_deliveries": list(call.report_deliveries.order_by("email")) if call else [],
     })
 
 

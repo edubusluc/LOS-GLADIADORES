@@ -1,8 +1,19 @@
-"""Envío del informe de convocatoria a los administradores del club."""
+"""
+Envío del informe de convocatoria a los administradores del club.
+
+Cada envío es una fila de ReportDelivery (una por destinatario), que hace de cola: al
+cerrar la convocatoria se intenta enviar al momento y, si el correo falla (SMTP caído,
+límite del proveedor…), el proceso ``send_call_reports`` lo reintenta con esperas
+crecientes. Tras MAX_ATTEMPTS intentos se da por fallido y se avisa al personal.
+"""
+import datetime
 import logging
 
 from django.core.mail import get_connection
+from django.utils import timezone
 from django.utils.html import format_html
+
+from call.models import ReportDelivery
 
 from core.emails import build_email
 from core.models import Membership
@@ -52,29 +63,129 @@ def _bodies(match):
     return text, html
 
 
+# Espera tras cada intento fallido (en minutos): 2, 10, 30 y 120. El quinto fallo es el último.
+RETRY_DELAYS = (2, 10, 30, 120)
+MAX_ATTEMPTS = len(RETRY_DELAYS) + 1
+# Mientras se envía, el envío queda reservado este tiempo para que nadie más lo coja.
+LEASE = datetime.timedelta(minutes=10)
+
+
+def queue_call_report(call, sender=None):
+    """
+    Deja en la cola un envío del informe para cada administrador del club con email
+    (si ya existía, vuelve a enviarse). Las respuestas le llegan a quien cerró la
+    convocatoria (``sender``), si tiene email. Devuelve los envíos.
+    """
+    reply_to = sender.email if sender is not None and sender.email else ""
+    now = timezone.now()
+    return [
+        ReportDelivery.objects.update_or_create(call=call, email=email, defaults={
+            "reply_to": reply_to, "status": ReportDelivery.PENDING, "attempts": 0,
+            "next_attempt_at": now, "last_error": "", "sent_at": None,
+        })[0]
+        for email in admin_emails(call.match.club)
+    ]
+
+
 def send_call_report(call, sender=None):
     """
-    Genera el PDF y lo envía a los administradores del club con email.
-    Se manda un correo individual a cada administrador (nadie ve las direcciones
-    de los demás) y, si se indica quién cerró la convocatoria (``sender``) y tiene
-    email, las respuestas le llegan a esa persona (Reply-To).
-    Devuelve la lista de destinatarios (vacía si ningún administrador tiene email).
+    Encola el informe para los administradores del club y lo intenta enviar al momento.
+    Se manda un correo individual a cada uno (nadie ve las direcciones de los demás).
+    Devuelve los envíos: los que no han salido se reintentan solos.
     """
-    match = call.match
-    recipients = admin_emails(match.club)
-    if not recipients:
-        return []
+    deliveries = queue_call_report(call, sender)
+    deliver(deliveries)
+    return deliveries
 
-    pdf = render_report(build_report(call))
-    subject = f"Convocatoria cerrada · {match.local} vs {match.visiting} ({match.start_date:%d/%m/%Y})"
-    text, html = _bodies(match)
-    reply_to = [sender.email] if sender is not None and sender.email else None
 
-    messages = []
-    for recipient in recipients:
-        email = build_email(subject, text, html, to=[recipient], reply_to=reply_to)
-        email.attach(report_filename(match), pdf, "application/pdf")
-        messages.append(email)
-    get_connection(fail_silently=False).send_messages(messages)
-    logger.info("Informe de convocatoria %s enviado a %s", call.pk, recipients)
-    return recipients
+def due_deliveries(now=None, limit=None):
+    now = now or timezone.now()
+    due = (ReportDelivery.objects.filter(status=ReportDelivery.PENDING, next_attempt_at__lte=now)
+           .select_related("call__match__club", "call__match__local", "call__match__visiting")
+           .order_by("next_attempt_at", "pk"))
+    return list(due[:limit] if limit else due)
+
+
+def _claim(delivery, now):
+    """Reserva el envío de forma atómica: si otra pasada ya lo tiene, devuelve False."""
+    return ReportDelivery.objects.filter(
+        pk=delivery.pk, status=ReportDelivery.PENDING, next_attempt_at__lte=now,
+    ).update(next_attempt_at=now + LEASE) == 1
+
+
+def _failed(delivery, error, now):
+    delivery.attempts += 1
+    delivery.last_error = str(error)[:2000] or error.__class__.__name__
+    if delivery.attempts >= MAX_ATTEMPTS:
+        delivery.status = ReportDelivery.FAILED
+        delivery.next_attempt_at = None
+    else:
+        delivery.next_attempt_at = now + datetime.timedelta(minutes=RETRY_DELAYS[delivery.attempts - 1])
+    delivery.save(update_fields=["attempts", "last_error", "status", "next_attempt_at"])
+    logger.warning("No se pudo enviar el informe %s a %s (intento %s): %s",
+                   delivery.call_id, delivery.email, delivery.attempts, error)
+
+
+def _sent(delivery, now):
+    delivery.attempts += 1
+    delivery.status = ReportDelivery.SENT
+    delivery.sent_at = now
+    delivery.next_attempt_at = None
+    delivery.last_error = ""
+    delivery.save(update_fields=["attempts", "status", "sent_at", "next_attempt_at", "last_error"])
+
+
+def deliver(deliveries, now=None):
+    """
+    Envía los envíos pendientes que se le pasen (los que otra pasada no tenga ya
+    reservados). El PDF se genera una vez por convocatoria y cada correo se envía por
+    separado: si falla uno, los demás siguen. Devuelve los envíos intentados.
+    """
+    now = now or timezone.now()
+    claimed = [d for d in deliveries if d.status == ReportDelivery.PENDING and _claim(d, now)]
+    by_call = {}
+    for delivery in claimed:
+        by_call.setdefault(delivery.call_id, []).append(delivery)
+
+    connection = None
+    try:
+        for group in by_call.values():
+            call = group[0].call
+            match = call.match
+            try:
+                pdf = render_report(build_report(call))
+            except Exception as exc:
+                logger.exception("No se pudo generar el informe de la convocatoria %s", call.pk)
+                for delivery in group:
+                    _failed(delivery, f"No se pudo generar el PDF: {exc}", now)
+                continue
+            subject = f"Convocatoria cerrada · {match.local} vs {match.visiting} ({match.start_date:%d/%m/%Y})"
+            text, html = _bodies(match)
+            for delivery in group:
+                email = build_email(subject, text, html, to=[delivery.email],
+                                    reply_to=[delivery.reply_to] if delivery.reply_to else None)
+                email.attach(report_filename(match), pdf, "application/pdf")
+                try:
+                    if connection is None:
+                        connection = get_connection(fail_silently=False)
+                        connection.open()
+                    connection.send_messages([email])
+                except Exception as exc:
+                    _failed(delivery, exc, now)
+                    # Tras un error la conexión puede quedar inservible: se abre otra.
+                    _close(connection)
+                    connection = None
+                else:
+                    _sent(delivery, now)
+                    logger.info("Informe de convocatoria %s enviado a %s", call.pk, delivery.email)
+    finally:
+        _close(connection)
+    return claimed
+
+
+def _close(connection):
+    if connection is not None:
+        try:
+            connection.close()
+        except Exception:
+            pass

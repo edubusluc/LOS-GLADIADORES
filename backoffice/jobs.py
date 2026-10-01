@@ -57,10 +57,20 @@ JOBS = [
     ),
     JobSpec(
         name="update_snp_scores",
-        description="Descarga de SNP los puntos de los jugadores de cada club con cuenta SNP configurada.",
+        description=("Descarga de SNP los puntos de los jugadores de los clubes con cuenta SNP, por lotes de 50 y con "
+                     "pausas. El ciclo empieza los lunes a las 23:00; el resto de días solo hace lo que quedó pendiente "
+                     "(clubes sin procesar o con un fallo pasajero)."),
         command="update_snp_scores",
-        # Lunes a las 23:00.
-        schedule="0 23 * * 1",
+        # Cada día a las 23:00: el lunes empieza el ciclo semanal y los demás días se
+        # completa lo que haya quedado pendiente (si no queda nada, termina al momento).
+        schedule="0 23 * * *",
+    ),
+    JobSpec(
+        name="send_call_reports",
+        description=("Envía los informes de convocatoria pendientes y reintenta los que fallaron "
+                     "(esperas crecientes; tras 5 intentos se dan por fallidos y se avisa al personal)."),
+        command="send_call_reports",
+        schedule="*/5 * * * *",
     ),
     JobSpec(
         name="complete_snp_team",

@@ -130,10 +130,14 @@ equipos rivales, partidos, convocatorias y estadísticas, y sus usuarios
 Un club nuevo se registra desde `/core/register_club/`. Desde *Miembros del club*
 (`/core/members/`) los administradores pueden:
 
-- **Generar una invitación**: un enlace de un solo uso, válido 24 horas, para que un
-  jugador se registre (usuario, email y contraseña, o con Google) y entre como miembro.
-  Si ya tiene cuenta, inicia sesión y se une con un clic.
-- **Añadir miembro** directamente, creando la cuenta o eligiendo una existente y su rol.
+- **Invitar por email**: el jugador recibe un enlace de un solo uso, válido 24 horas,
+  para registrarse (usuario, email y contraseña, o con Google) y entrar como miembro.
+  Si ya tiene cuenta, inicia sesión y se une con un clic. Los capitanes no crean
+  cuentas: cada jugador crea la suya.
+- Cambiar el email y el rol de los miembros, o quitarlos del club.
+
+En los formularios con contraseña hay un botón para mostrarla, y al crear una se
+muestra la lista de requisitos que se va marcando mientras se escribe.
 
 Se puede iniciar sesión con el usuario o con el email. Al registrarse (con invitación o
 creando un club) se envía un correo de bienvenida con el usuario, el equipo y sus

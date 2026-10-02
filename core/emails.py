@@ -109,3 +109,30 @@ def send_welcome_email(user, club, created=False, site_url=""):
         logger.exception("No se pudo enviar el correo de bienvenida a %s", user.email)
         return False
     return True
+
+
+def send_invitation_email(invitation, url):
+    """
+    Envía la invitación de un capitán al email indicado. Devuelve True si el
+    correo salió; un fallo se registra y el llamante decide qué hacer.
+    """
+    inviter = invitation.created_by
+    context = {
+        "club": invitation.club,
+        "inviter": (inviter.get_full_name() or inviter.username) if inviter else "",
+        "url": url,
+        "expires_at": invitation.expires_at,
+    }
+    email = build_email(
+        _("Te han invitado a %(club)s en Zyra") % {"club": invitation.club.name},
+        render_to_string("emails/invitation.txt", context),
+        render_to_string("emails/invitation.html", context),
+        to=[invitation.email],
+        reply_to=[inviter.email] if inviter and inviter.email else None,
+    )
+    try:
+        email.send(fail_silently=False)
+    except Exception:  # SMTP caído, credenciales mal configuradas...
+        logger.exception("No se pudo enviar la invitación a %s", invitation.email)
+        return False
+    return True

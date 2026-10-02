@@ -1,13 +1,22 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.password_validation import MinimumLengthValidator, get_default_password_validators
+from django.template.loader import render_to_string
 from django.utils.translation import gettext, gettext_lazy as _
 
 from team.models import Team
 from .models import Membership
 
 User = get_user_model()
+
+
+def password_min_length():
+    """Longitud mínima de MinimumLengthValidator en AUTH_PASSWORD_VALIDATORS (8 si no está)."""
+    for validator in get_default_password_validators():
+        if isinstance(validator, MinimumLengthValidator):
+            return validator.min_length
+    return 8
 
 
 class ClubForm(forms.Form):
@@ -33,7 +42,11 @@ class SignUpForm(UserCreationForm):
         self.fields["username"].label = _("Usuario")
         self.fields["username"].help_text = _("Letras, números y @ . + - _ (máximo 150).")
         self.fields["password1"].label = _("Contraseña")
-        self.fields["password1"].help_text = _("Al menos 8 caracteres; no puede ser solo números ni parecerse a tu usuario.")
+        # Lista de requisitos que static/js/password.js va marcando mientras se escribe.
+        self.fields["password1"].help_text = render_to_string("includes/password_rules.html", {
+            "min_length": password_min_length(),
+        })
+        self.fields["password1"].widget.attrs["data-password-rules"] = "password-rules"
         self.fields["password2"].label = _("Repite la contraseña")
         self.fields["password2"].help_text = ""
 
@@ -44,50 +57,19 @@ class SignUpForm(UserCreationForm):
         return email
 
 
-class AddMemberForm(forms.Form):
-    username = forms.CharField(label=_("Usuario"), max_length=150)
-    password = forms.CharField(
-        label=_("Contraseña"), required=False, widget=forms.PasswordInput,
-        help_text=_("Solo si el usuario no existe todavía: se creará con esta contraseña."),
-    )
+class InviteMemberForm(forms.Form):
+    """El capitán invita por email: la cuenta la crea el propio jugador desde el enlace."""
     email = forms.EmailField(
-        label=_("Email"), required=False,
-        help_text=_("Los capitanes con email reciben el informe al cerrar cada convocatoria."),
+        label=_("Email del jugador"),
+        help_text=_("Le enviaremos un enlace para registrarse (o unirse con su cuenta) como miembro. Caduca en 24 horas."),
     )
-    role = forms.ChoiceField(label=_("Rol"), choices=Membership.ROLES, initial=Membership.MEMBER)
 
     def __init__(self, *args, club=None, **kwargs):
         self.club = club
         super().__init__(*args, **kwargs)
 
-    def clean(self):
-        cleaned = super().clean()
-        username = cleaned.get("username")
-        if not username:
-            return cleaned
-
-        user = User.objects.filter(username=username).first()
-        if user is None:
-            password = cleaned.get("password")
-            if not password:
-                raise forms.ValidationError(gettext("El usuario no existe: indica una contraseña para crearlo."))
-            validate_password(password, User(username=username))
-        elif Membership.objects.filter(user=user, club=self.club).exists():
-            raise forms.ValidationError(gettext("Ese usuario ya es miembro del club."))
-
-        cleaned["user"] = user
-        return cleaned
-
-    def save(self):
-        user = self.cleaned_data["user"]
-        email = self.cleaned_data.get("email", "")
-        if user is None:
-            user = User.objects.create_user(
-                username=self.cleaned_data["username"],
-                password=self.cleaned_data["password"],
-                email=email,
-            )
-        elif email and not user.email:
-            user.email = email
-            user.save(update_fields=["email"])
-        return Membership.objects.create(user=user, club=self.club, role=self.cleaned_data["role"])
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if Membership.objects.filter(club=self.club, user__email__iexact=email).exists():
+            raise forms.ValidationError(gettext("Ese email ya pertenece a un miembro del club."))
+        return email

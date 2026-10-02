@@ -39,31 +39,67 @@ class InvitationTests(TestCase):
 
     # --- Creación y gestión ------------------------------------------------
 
-    def test_admin_creates_invitation_valid_for_24_hours(self):
+    def test_captain_invites_by_email(self):
         self.client.login(username="capitan", password="pass-12345")
-        self.client.post(reverse("create_invitation"))
+        response = self.client.post(reverse("create_invitation"), {"email": "Jugador@Example.com"})
+        self.assertRedirects(response, reverse("club_members") + "#invitaciones", fetch_redirect_response=False)
         invitation = Invitation.objects.get(club=self.club)
-        self.assertEqual(invitation.created_by, self.admin)
+        self.assertEqual((invitation.created_by, invitation.email), (self.admin, "jugador@example.com"))
         self.assertAlmostEqual(
             (invitation.expires_at - timezone.now()).total_seconds(), 24 * 3600, delta=60,
         )
+
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ["jugador@example.com"])
+        self.assertEqual(email.reply_to, ["capitan@example.com"])
+        self.assertIn("Club A", email.subject)
+        self.assertIn(f"http://testserver/core/invite/{invitation.token}/", email.body)
+        self.assertIn(f"/core/invite/{invitation.token}/", email.alternatives[0][0])
+
         page = self.client.get(reverse("club_members"))
-        self.assertContains(page, f"/core/invite/{invitation.token}/")
+        self.assertContains(page, "jugador@example.com")
+        self.assertNotContains(page, invitation.token)
+
+    def test_reinviting_replaces_pending_invitation(self):
+        self.client.login(username="capitan", password="pass-12345")
+        self.client.post(reverse("create_invitation"), {"email": "j@example.com"})
+        first = Invitation.objects.get()
+        self.client.post(reverse("create_invitation"), {"email": "J@example.com"})
+        self.assertFalse(Invitation.objects.filter(pk=first.pk).exists())
+        self.assertEqual(Invitation.objects.filter(email="j@example.com").count(), 1)
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_cannot_invite_existing_member_or_invalid_email(self):
+        self.client.login(username="capitan", password="pass-12345")
+        response = self.client.post(reverse("create_invitation"), {"email": "CAPITAN@example.com"})
+        self.assertContains(response, "ya pertenece a un miembro del club")
+        response = self.client.post(reverse("create_invitation"), {"email": "no-es-un-email"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Invitation.objects.exists())
+        self.assertEqual(mail.outbox, [])
+
+    def test_failed_email_does_not_leave_invitation(self):
+        self.client.login(username="capitan", password="pass-12345")
+        with mock.patch("core.emails.ZyraEmail.send", side_effect=OSError("SMTP caído")):
+            self.client.post(reverse("create_invitation"), {"email": "j@example.com"})
+        self.assertFalse(Invitation.objects.exists())
 
     def test_members_cannot_create_invitations(self):
         self.client.login(username="viewer", password="pass-12345")
-        self.client.post(reverse("create_invitation"))
+        self.client.post(reverse("create_invitation"), {"email": "j@example.com"})
         self.assertFalse(Invitation.objects.exists())
+        self.assertEqual(mail.outbox, [])
 
     def test_used_and_expired_invitations_are_not_listed(self):
         used = self.invite(used_at=timezone.now())
         expired = self.invite(expires_at=timezone.now() - datetime.timedelta(minutes=1))
         active = self.invite()
         self.client.login(username="capitan", password="pass-12345")
-        tokens = [inv.token for inv, _ in self.client.get(reverse("club_members")).context["invitations"]]
-        self.assertEqual(tokens, [active.token])
-        self.assertNotIn(used.token, tokens)
-        self.assertNotIn(expired.token, tokens)
+        listed = list(self.client.get(reverse("club_members")).context["invitations"])
+        self.assertEqual(listed, [active])
+        self.assertNotIn(used, listed)
+        self.assertNotIn(expired, listed)
 
     def test_revoke_is_scoped_to_the_admins_club(self):
         other_admin = User.objects.create_user("otro", password="pass-12345")
@@ -78,13 +114,15 @@ class InvitationTests(TestCase):
         self.client.post(reverse("revoke_invitation", args=[invitation.public_id]))
         self.assertFalse(Invitation.objects.filter(pk=invitation.pk).exists())
 
-    def test_add_member_still_available_to_admins(self):
+    def test_captain_cannot_create_users(self):
         self.client.login(username="capitan", password="pass-12345")
+        page = self.client.get(reverse("club_members"))
+        self.assertNotContains(page, 'name="password"')
+        self.assertNotContains(page, 'name="username"')
         self.client.post(reverse("club_members"), {
             "username": "manual", "password": "Clave-Segura-123", "email": "manual@example.com", "role": Membership.ADMIN,
         })
-        self.assertTrue(Membership.objects.get(user__username="manual", club=self.club).is_admin)
-        self.assertEqual(mail.outbox[-1].to, ["manual@example.com"])
+        self.assertFalse(User.objects.filter(username="manual").exists())
 
     # --- Registro desde la invitación --------------------------------------
 
@@ -111,6 +149,14 @@ class InvitationTests(TestCase):
         html = email.alternatives[0][0]
         self.assertIn("capitan", html)
         self.assertIn("http://testserver/", html)
+
+    def test_signup_from_invitation_prefills_email_and_shows_password_rules(self):
+        page = self.client.get(self.url(self.invite(email="j@example.com")))
+        self.assertContains(page, 'value="j@example.com"')
+        self.assertContains(page, 'data-password-rules="password-rules"')
+        self.assertContains(page, "Al menos 8 caracteres")
+        self.assertContains(page, "Las dos contraseñas coinciden")
+        self.assertContains(page, "js/password.js")
 
     def test_invitation_is_single_use(self):
         invitation = self.invite()
@@ -191,6 +237,20 @@ class InvitationTests(TestCase):
     def test_allauth_password_signup_is_closed(self):
         self.client.post(reverse("account_signup"), SIGNUP)
         self.assertFalse(User.objects.filter(username="nuevo").exists())
+
+
+class PasswordCheckTests(TestCase):
+    def check(self, **data):
+        return self.client.post(reverse("password_check"), data).json()
+
+    def test_reports_server_side_rules(self):
+        self.assertEqual(self.check(password="Clave-Segura-123", username="nuevo"), {"similar": True, "common": True})
+        self.assertFalse(self.check(password="password")["common"])
+        self.assertFalse(self.check(password="jugadorpadel", username="jugadorpadel")["similar"])
+        self.assertFalse(self.check(password="maria.lopez@example.com", email="maria.lopez@example.com")["similar"])
+
+    def test_only_accepts_post(self):
+        self.assertEqual(self.client.get(reverse("password_check")).status_code, 405)
 
 
 class LoginAndWelcomeTests(TestCase):

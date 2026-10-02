@@ -5,21 +5,20 @@
 <div class="table-container">
     <h1>{% translate "Crear Partido" %}</h1>
 
-    {# Mostrar el mensaje de error si existe #}
-    {% if error %}
+    {% for error in form.non_field_errors %}
     <div class="alert-message">{{ error }}</div>
-    {% endif %}
+    {% endfor %}
 
     <form method="POST">
         {% csrf_token %}
 
-        {{ form.as_p }}
-
-        {# Imprimir errores para cada campo #}
         {% for field in form %}
-            {% for error in field.errors %}
-                <div class="alert-message">{{ error }}</div>
-            {% endfor %}
+        <p>
+            {{ field.label_tag }} {{ field }}
+        </p>
+        {% for error in field.errors %}
+            <div class="alert-message">{{ error }}</div>
+        {% endfor %}
         {% endfor %}
 
         <button type="submit" class="btn btn-primary">{% translate "Crear Partido" %}</button>

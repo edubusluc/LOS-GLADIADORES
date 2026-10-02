@@ -250,6 +250,54 @@ class CreateMatchTests(TestCase):
         self.assertFalse(Match.objects.exists())
 
 
+class CreateMatchOwnTeamTests(TestCase):
+    """El equipo del capitán (equipo propio del club) tiene que jugar como local o visitante."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        self.own = self.club.own_team
+        self.rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.other = Team.objects.create(club=self.club, name="Otro", location="Y", in_group=True)
+        self.client.force_login(self.user)
+        self.url = reverse("create_match")
+
+    def post(self, local, visiting):
+        return self.client.post(self.url, {"local": local.id, "visiting": visiting.id, "start_date": "2026-11-15"})
+
+    def test_match_between_two_rivals_is_rejected(self):
+        response = self.post(self.rival, self.other)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "tiene que jugar el partido")
+        self.assertFalse(Match.objects.exists())
+
+    def test_own_team_as_visiting_is_allowed(self):
+        response = self.post(self.rival, self.own)
+        self.assertRedirects(response, reverse("list_match"), fetch_redirect_response=False)
+        match = Match.objects.get()
+        self.assertEqual((match.local, match.visiting, match.club), (self.rival, self.own, self.club))
+
+    def test_same_team_twice_is_rejected(self):
+        self.post(self.own, self.own)
+        self.assertFalse(Match.objects.exists())
+
+    def test_own_team_is_selectable_even_if_not_in_group(self):
+        Team.objects.filter(pk=self.own.pk).update(in_group=False)
+        self.post(self.own, self.rival)
+        self.assertTrue(Match.objects.filter(local=self.own).exists())
+
+    def test_form_preselects_own_team_as_local(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["form"].initial["local"], self.own.pk)
+
+    def test_team_from_another_club_is_rejected(self):
+        other_user = User.objects.create_user("b", password="pass-12345")
+        foreign = Team.objects.create(club=create_club("Club B", "Madrid", other_user), name="Ajeno", location="Z",
+                                      in_group=True)
+        response = self.post(self.own, foreign)
+        self.assertContains(response, "Uno de los equipos no existe")
+        self.assertFalse(Match.objects.exists())
+
 class CreateMatchTypeTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("admin", password="pass-12345")

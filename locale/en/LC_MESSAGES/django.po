@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 13:29+0000\n"
+"POT-Creation-Date: 2026-10-02 16:25+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -212,12 +212,12 @@ msgstr "Matches"
 msgid "Fecha"
 msgstr "Date"
 
-#: backoffice/importer.py:238 core/templates/home.html:45 match/forms.py:11
+#: backoffice/importer.py:238 core/templates/home.html:46 match/forms.py:11
 #: match/report.py:85 match/templates/call_for_match.html:14
 msgid "Local"
 msgstr "Home"
 
-#: backoffice/importer.py:239 core/templates/home.html:51 match/forms.py:11
+#: backoffice/importer.py:239 core/templates/home.html:52 match/forms.py:11
 #: match/report.py:85 match/templates/call_for_match.html:19
 msgid "Visitante"
 msgstr "Away"
@@ -2109,7 +2109,7 @@ msgstr "Existing call-up"
 msgid "Ya existe una convocatoria para este partido."
 msgstr "A call-up already exists for this match."
 
-#: call/templates/existing_call.html:9 core/templates/home.html:66
+#: call/templates/existing_call.html:9 core/templates/home.html:67
 msgid "Ver convocatoria"
 msgstr "View call-up"
 
@@ -2603,12 +2603,12 @@ msgstr ""
 msgid "Entra en Zyra"
 msgstr "Go to Zyra"
 
-#: core/templates/home.html:10
+#: core/templates/home.html:11
 #, python-format
 msgid "Escudo de %(club)s"
 msgstr "%(club)s crest"
 
-#: core/templates/home.html:12
+#: core/templates/home.html:13
 #: data_analyse/templates/player_statistics.html:125
 #: data_analyse/templates/warnings_statistics.html:12
 #, python-format
@@ -2627,70 +2627,70 @@ msgstr ""
 "Keep your players' SNP points updated every week and load their data "
 "automatically to save time and keep everything up to date."
 
-#: core/templates/home.html:29
+#: core/templates/home.html:28
 msgid "Registrar cuenta"
 msgstr "Register account"
 
-#: core/templates/home.html:34
+#: core/templates/home.html:35
 msgid "Próximo partido"
 msgstr "Next match"
 
-#: core/templates/home.html:38
+#: core/templates/home.html:39
 msgid "Hoy"
 msgstr "Today"
 
-#: core/templates/home.html:38
+#: core/templates/home.html:39
 msgid "Mañana"
 msgstr "Tomorrow"
 
-#: core/templates/home.html:38
+#: core/templates/home.html:39
 #, python-format
 msgid "En %(n)s día"
 msgid_plural "En %(n)s días"
 msgstr[0] "In %(n)s day"
 msgstr[1] "In %(n)s days"
 
-#: core/templates/home.html:60 team/templates/list_teams.html:44
+#: core/templates/home.html:61 team/templates/list_teams.html:44
 msgid "Sin ubicación"
 msgstr "No location"
 
-#: core/templates/home.html:64
+#: core/templates/home.html:65
 msgid "Cómo llegar"
 msgstr "Directions"
 
-#: core/templates/home.html:73
+#: core/templates/home.html:74
 msgid "No hay partidos programados."
 msgstr "No matches scheduled."
 
-#: core/templates/home.html:74 match/templates/list_match.html:76
+#: core/templates/home.html:75 match/templates/list_match.html:76
 msgid "Crear partido"
 msgstr "Create match"
 
-#: core/templates/home.html:78
+#: core/templates/home.html:81
 msgid "En racha"
 msgstr "On a streak"
 
-#: core/templates/home.html:84
+#: core/templates/home.html:87
 msgid "Jugador en racha"
 msgstr "Player on a streak"
 
-#: core/templates/home.html:89 core/templates/home.html:106
+#: core/templates/home.html:92 core/templates/home.html:109
 #, python-format
 msgid "%(n)s victoria seguida"
 msgid_plural "%(n)s victorias seguidas"
 msgstr[0] "%(n)s win in a row"
 msgstr[1] "%(n)s wins in a row"
 
-#: core/templates/home.html:92 core/templates/home.html:109
+#: core/templates/home.html:94 core/templates/home.html:111
 #: players/templates/player_detail.html:31
 msgid "Ver estadísticas"
 msgstr "View statistics"
 
-#: core/templates/home.html:98
+#: core/templates/home.html:101
 msgid "Pareja en racha"
 msgstr "Pair on a streak"
 
-#: core/templates/home.html:116
+#: core/templates/home.html:119
 msgid "Nadie encadena victorias ahora mismo."
 msgstr "Nobody is on a winning streak right now."
 
@@ -4303,7 +4303,7 @@ msgstr ""
 "(10-8, 11-9...)."
 
 #: match/templates/call_for_match.html:8
-msgid "Match overview"
+msgid "Resumen del partido"
 msgstr "Match overview"
 
 #: match/templates/call_for_match.html:10
@@ -5200,8 +5200,8 @@ msgid "%(n)s cambios sin guardar"
 msgstr "%(n)s unsaved changes"
 
 #: players/templates/player_detail.html:16
-msgid "My profile"
-msgstr "My profile"
+msgid "Perfil del jugador"
+msgstr "Player profile"
 
 #: players/templates/player_detail.html:21
 #, python-format

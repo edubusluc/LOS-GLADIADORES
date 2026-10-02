@@ -202,7 +202,7 @@ class LoginAndWelcomeTests(TestCase):
 
     def test_register_club_sends_welcome_with_created_team(self):
         self.client.post(reverse("register_club"), {
-            "name": "Nuevo Club", "location": "Cádiz", "gender": "M", "country": "ES", **SIGNUP,
+            "name": "Nuevo Club", "location": "Cádiz", "gender": "M", "country": "ES", "division": "future", **SIGNUP,
         })
         self.assertTrue(Club.objects.filter(name="Nuevo Club").exists())
         self.assertEqual(len(mail.outbox), 1)
@@ -219,7 +219,7 @@ class LoginAndWelcomeTests(TestCase):
 
     def test_welcome_failure_does_not_break_registration(self):
         with mock.patch("core.emails.ZyraEmail.send", side_effect=OSError("SMTP caído")):
-            response = self.client.post(reverse("register_club"), {"name": "Club X", "location": "Y", "gender": "F", "country": "PT", **SIGNUP})
+            response = self.client.post(reverse("register_club"), {"name": "Club X", "location": "Y", "gender": "F", "country": "PT", "division": "500", **SIGNUP})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Club.objects.filter(name="Club X").exists())
 

@@ -37,6 +37,16 @@
             </div>
 
             <div class="mb-3">
+                <label for="division" class="form-label">{% translate "División:" %}</label>
+                <select id="division" name="division" class="form-select" required>
+                    <option value="">{% translate "Elige una opción" %}</option>
+                    {% for value, label in divisions %}
+                    <option value="{{ value }}" {% if team.division == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label for="location" class="form-label">{% translate "Ubicación:" %}</label>
                 <input type="text" id="location" name="location" class="form-control" value="{{ team.location }}" required>
             </div>

@@ -16,6 +16,7 @@ class ClubForm(forms.Form):
     gender = forms.ChoiceField(label=_("Categoría"), choices=[("", _("Elige una opción"))] + Team.GENDERS,
                                help_text=_("Los jugadores del club tendrán esta categoría."))
     country = forms.ChoiceField(label=_("País en el que juega"), choices=[("", _("Elige una opción"))] + Team.COUNTRIES)
+    division = forms.ChoiceField(label=_("División"), choices=[("", _("Elige una opción"))] + Team.DIVISIONS)
 
 
 class SignUpForm(UserCreationForm):

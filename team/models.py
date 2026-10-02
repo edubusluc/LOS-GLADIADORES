@@ -17,6 +17,12 @@ class Team(PublicIdModel):
         ("IT", _("Italia")),
         ("SE", _("Suecia")),
     ]
+    DIVISIONS = [
+        ("future", "Future"),
+        ("500", "500"),
+        ("1000", "1000"),
+        ("grand_slam", "Grand Slam"),
+    ]
     # null=True solo para poder migrar datos existentes (ver comando assign_default_club).
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="teams", null=True)
     # True para el equipo que representa al propio club; el resto son rivales.
@@ -28,12 +34,12 @@ class Team(PublicIdModel):
     # Vacíos solo en los equipos creados antes de existir estos campos; los formularios los piden.
     gender = models.CharField(_("Categoría"), max_length=1, choices=GENDERS, blank=True, default="")
     country = models.CharField(_("País en el que juega"), max_length=2, choices=COUNTRIES, blank=True, default="")
+    division = models.CharField(_("División"), max_length=10, choices=DIVISIONS, blank=True, default="")
 
     class Meta:
         constraints = [
-            # Puede haber dos equipos con el mismo nombre (p. ej. el masculino y el femenino
-            # de un mismo club rival); el mismo nombre, categoría y país sería un duplicado.
-            models.UniqueConstraint(fields=["club", "name", "gender", "country"], name="unique_team_per_club"),
+            # El nombre no puede repetirse dentro de una división: lo comprueba Teamform
+            # (sin distinguir mayúsculas ni tildes, que una restricción no puede).
             models.UniqueConstraint(fields=["club"], condition=models.Q(is_own=True), name="unique_own_team_per_club"),
         ]
 

@@ -31,26 +31,27 @@ class CreateTeamTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("admin", password="pass-12345")
         self.club = create_club("Club A", "Sevilla", self.user, gender="F", country="ES")
-        self.rival = Team.objects.create(club=self.club, name="CD Tomares", location="X", gender="M", country="ES")
+        self.rival = Team.objects.create(club=self.club, name="CD Tomares", location="X", gender="M", country="ES",
+                                         division="500")
         self.client.force_login(self.user)
         self.url = reverse("create_team")
-        self.data = {"name": "Tomares", "location": "Tomares", "gender": "F", "country": "ES"}
+        self.data = {"name": "Tomares", "location": "Tomares", "gender": "F", "country": "ES", "division": "500"}
 
-    def test_gender_and_country_are_required(self):
+    def test_gender_country_and_division_are_required(self):
         response = self.client.post(self.url, {"name": "Burguillos", "location": "X"})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Team.objects.filter(name="Burguillos").exists())
 
-    def test_creates_team_with_gender_and_country(self):
-        response = self.client.post(self.url, {**self.data, "name": "Burguillos", "country": "PT"})
+    def test_creates_team_with_gender_country_and_division(self):
+        response = self.client.post(self.url, {**self.data, "name": "Burguillos", "country": "PT", "division": "grand_slam"})
         self.assertRedirects(response, reverse("list_teams"), fetch_redirect_response=False)
         team = Team.objects.get(name="Burguillos")
-        self.assertEqual((team.gender, team.country, team.club), ("F", "PT", self.club))
+        self.assertEqual((team.gender, team.country, team.division, team.club), ("F", "PT", "grand_slam", self.club))
 
     def test_similar_name_asks_before_creating(self):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["similar"], ["CD Tomares (Masculino · España)"])
+        self.assertEqual(response.context["similar"], ["CD Tomares (Masculino · España · 500)"])
         self.assertContains(response, 'data-open="1"')
         self.assertFalse(Team.objects.filter(name="Tomares").exists())
 
@@ -60,19 +61,36 @@ class CreateTeamTests(TestCase):
 
     def test_check_request_returns_similar_names_without_creating(self):
         response = self.client.post(self.url, self.data, HTTP_X_SIMILAR_CHECK="1")
-        self.assertEqual(response.json(), {"valid": True, "similar": ["CD Tomares (Masculino · España)"]})
+        self.assertEqual(response.json(), {"valid": True, "similar": ["CD Tomares (Masculino · España · 500)"]})
         response = self.client.post(self.url, {"name": ""}, HTTP_X_SIMILAR_CHECK="1")
         self.assertEqual(response.json(), {"valid": False, "similar": []})
         self.assertFalse(Team.objects.filter(name="Tomares").exists())
 
-    def test_same_name_allowed_for_other_gender_but_not_identical_team(self):
-        data = {**self.data, "name": "CD Tomares", "confirm_similar": "1"}
-        self.client.post(self.url, data)
+    def test_same_name_in_same_division_is_rejected_even_after_confirming(self):
+        # Sin distinguir mayúsculas, tildes ni signos, y aunque cambie la categoría
+        response = self.client.post(self.url, {**self.data, "name": "C.D. TOMARES", "confirm_similar": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ya existe un equipo con ese nombre en esa división")
+        self.assertEqual(Team.objects.filter(club=self.club).count(), 2)
+
+    def test_same_name_in_other_division_asks_and_can_be_created(self):
+        data = {**self.data, "name": "CD Tomares", "division": "1000"}
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.context["similar"], ["CD Tomares (Masculino · España · 500)"])
+        self.client.post(self.url, {**data, "confirm_similar": "1"})
         self.assertEqual(Team.objects.filter(club=self.club, name="CD Tomares").count(), 2)
 
-        response = self.client.post(self.url, {**data, "name": "cd tomares", "gender": "M"})
+    def test_team_without_division_blocks_its_name_in_every_division(self):
+        # Equipos creados antes de existir la división (p. ej. el propio del club)
+        own = self.club.own_team
+        response = self.client.post(self.url, {**self.data, "name": own.name.upper(), "confirm_similar": "1"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Team.objects.filter(club=self.club, name__iexact="CD Tomares").count(), 2)
+        self.assertEqual(Team.objects.filter(club=self.club, name__iexact=own.name).count(), 1)
+
+    def test_editing_a_team_keeps_its_own_name(self):
+        response = self.client.post(reverse("edit_team", args=[self.rival.public_id]),
+                                    {**self.data, "name": "CD Tomares", "gender": "M"})
+        self.assertRedirects(response, reverse("list_teams"), fetch_redirect_response=False)
 
 
 class TeamGenderPropagationTests(TestCase):
@@ -94,7 +112,8 @@ class TeamGenderPropagationTests(TestCase):
         player = Player.objects.create(club=club, name="Ana", last_name="López")
         self.client.force_login(user)
         self.client.post(reverse("edit_team", args=[club.own_team.public_id]),
-                         {"name": "Club A", "location": "Sevilla", "gender": "F", "country": "IT", "in_group": "on"})
+                         {"name": "Club A", "location": "Sevilla", "gender": "F", "country": "IT", "division": "future",
+                          "in_group": "on"})
         own = Team.objects.get(pk=club.own_team.pk)
         self.assertEqual((own.gender, own.country), ("F", "IT"))
         player.refresh_from_db()

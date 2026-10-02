@@ -16,6 +16,11 @@ def _tokens(text):
     return normalize(text).split()
 
 
+def same_name(a, b):
+    """Mismo nombre sin distinguir mayúsculas, tildes, signos ni espacios: "C.D. Tomares" = "cd tomares"."""
+    return "".join(_tokens(a)) == "".join(_tokens(b))
+
+
 def is_similar(a, b, min_subset_tokens=1):
     """
     True si los nombres coinciden o se parecen mucho, sin distinguir mayúsculas,

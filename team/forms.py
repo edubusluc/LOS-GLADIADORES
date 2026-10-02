@@ -1,28 +1,29 @@
 from django import forms
 from django.utils.translation import gettext as _
+from core.similarity import same_name
 from .models import Team
 
 class Teamform (forms.ModelForm):
     class Meta:
         model = Team
-        fields = ['name', 'gender', 'country', 'location', 'photo']
+        fields = ['name', 'gender', 'country', 'division', 'location', 'photo']
 
     def __init__(self, *args, club=None, **kwargs):
         self.club = club
         super().__init__(*args, **kwargs)
         # Obligatorios en el formulario aunque los equipos antiguos los tengan vacíos.
-        for name in ('gender', 'country'):
+        for name in ('gender', 'country', 'division'):
             self.fields[name].required = True
             self.fields[name].choices = [("", _("Elige una opción"))] + list(Team._meta.get_field(name).choices)
 
     def clean(self):
-        # Mismo nombre, categoría y país en el club: es el mismo equipo. Los nombres
-        # parecidos solo se avisan (ver core/similarity.py).
+        # No puede haber dos equipos del club con el mismo nombre (sin distinguir mayúsculas,
+        # tildes ni signos) en la misma división. Los equipos antiguos sin división cuentan
+        # para todas. Los nombres solo parecidos se avisan (ver core/similarity.py).
         cleaned = super().clean()
-        name, gender, country = cleaned.get('name'), cleaned.get('gender'), cleaned.get('country')
-        if name and gender and country:
-            duplicated = (Team.objects.filter(club=self.club, name__iexact=name, gender=gender, country=country)
-                          .exclude(pk=self.instance.pk))
-            if duplicated.exists():
-                self.add_error('name', _("Ya existe un equipo con ese nombre, categoría y país en tu club."))
+        name, division = cleaned.get('name'), cleaned.get('division')
+        if name and division:
+            others = Team.objects.filter(club=self.club, division__in=[division, ""]).exclude(pk=self.instance.pk)
+            if any(same_name(name, t.name) for t in others):
+                self.add_error('name', _("Ya existe un equipo con ese nombre en esa división en tu club."))
         return cleaned

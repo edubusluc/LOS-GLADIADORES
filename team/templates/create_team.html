@@ -28,7 +28,7 @@
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.country.id_for_label }}" class="form-label">{% translate "País en el que juega:" %}</label>
+            <label for="{{ form.country.id_for_label }}" class="form-label">{% translate "Nacionalidad del equipo:" %}</label>
             {{ form.country }}
             {% for error in form.country.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>

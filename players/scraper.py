@@ -1,8 +1,8 @@
 """
 Descarga de los puntos SNP de los jugadores de un equipo desde snpgalaxy.com.
 
-Entra con la cuenta de SNP del capitán, navega como él (Series Nacionales → España →
-Mis equipos → el equipo) y lee la tabla de jugadores (todas las páginas). Devuelve una lista de ``{"name": ..., "score": ...}``
+Entra con la cuenta de SNP del capitán, navega como él (Series Nacionales → el país del
+equipo → Mis equipos → el equipo) y lee la tabla de jugadores (todas las páginas). Devuelve una lista de ``{"name": ..., "score": ...}``
 con el nombre tal y como aparece en SNP; el cruce con nuestros jugadores está en
 players/snp.py.
 
@@ -29,7 +29,10 @@ USERNAME_FIELDS = ('input[name="email"]', 'input[name="usuario"]', 'input[name="
 RESULTS_TABLE = "table.results"
 NEXT_PAGE = 'a.pag_numerada.page-link[num_pagina="{}"]'
 SERIES_MENU = 'a.menu-link.menu-toggle:has([data-i18n="Series Nacionales"])'
-SPAIN_LINK = 'a.menu-link:has([data-i18n="España"])'
+COUNTRY_LINK = 'a.menu-link:has([data-i18n="{}"])'
+# Nombre de cada país en el menú «Series Nacionales» de SNP, por el código de Team.COUNTRIES.
+SNP_COUNTRIES = {"ES": "España", "MX": "México", "PT": "Portugal", "IT": "Italia", "SE": "Suecia"}
+DEFAULT_COUNTRY = "ES"
 MY_TEAMS = '.card-equipos'
 TEAM_LINKS = '#form_equipos table.results tbody td:first-child a[href*="/equipo/view/"]'
 MAX_PAGES = 30
@@ -159,13 +162,19 @@ def _find(page, selector, what, log, url_pattern=None, timeout_ms=TIMEOUT_MS):
         waited += 500
 
 
-def _open_team_page(page, team_id, log):
+def snp_country_name(country):
+    """Nombre del país en el menú de SNP; España si el equipo no tiene nacionalidad."""
+    return SNP_COUNTRIES.get(country or "", SNP_COUNTRIES[DEFAULT_COUNTRY])
+
+
+def _open_team_page(page, team_id, log, country=None):
     """
-    Series Nacionales → España → Mis equipos → el equipo, como lo haría el capitán.
-    Devuelve el frame donde está la tabla de jugadores.
+    Series Nacionales → el país del equipo → Mis equipos → el equipo, como lo haría el
+    capitán. Devuelve el frame donde está la tabla de jugadores.
     """
+    country_name = snp_country_name(country)
     _find(page, SERIES_MENU, "el menú «Series Nacionales»", log)[1].click()
-    _find(page, SPAIN_LINK, "la opción «España»", log)[1].click()
+    _find(page, COUNTRY_LINK.format(country_name), f"la opción «{country_name}»", log)[1].click()
     page.wait_for_load_state("load", timeout=TIMEOUT_MS)
     _find(page, MY_TEAMS, "el botón «Mis equipos»", log)[1].click()
     frame, _ = _find(page, TEAM_LINKS, "la tabla «Mis equipos»", log)
@@ -328,10 +337,12 @@ def _skip_heavy_resources(route):
         route.continue_()
 
 
-def scrape_scores(username, password, team_id=None, headed=False, log=None, browser=None):
+def scrape_scores(username, password, team_id=None, headed=False, log=None, browser=None, country=None):
     """
     Puntos SNP de los jugadores del equipo ``team_id`` (o del único equipo de la cuenta
-    si no se indica). Lanza SnpScrapeError si algo falla.
+    si no se indica). Lanza SnpScrapeError si algo falla. ``country`` es la nacionalidad
+    del equipo (código de Team.COUNTRIES) y decide qué país se abre en «Series
+    Nacionales»; sin ella se usa España.
 
     ``headed`` abre el navegador a la vista (y más despacio) para seguir la ejecución;
     ``log`` recibe una línea por cada paso. ``browser`` es un SnpBrowser ya abierto que
@@ -339,11 +350,11 @@ def scrape_scores(username, password, team_id=None, headed=False, log=None, brow
     """
     if browser is None:
         with SnpBrowser(headed=headed) as own:
-            return own.run(_scrape, username, password, team_id, log, own)
-    return browser.run(_scrape, username, password, team_id, log, browser)
+            return own.run(_scrape, username, password, team_id, log, own, country)
+    return browser.run(_scrape, username, password, team_id, log, browser, country)
 
 
-def _scrape(username, password, team_id, log, browser):
+def _scrape(username, password, team_id, log, browser, country=None):
     log = log or (lambda message: None)
     players = []
     blocked = []  # respuestas de SNP que indican que nos está limitando
@@ -354,8 +365,8 @@ def _scrape(username, password, team_id, log, browser):
         page.on("response", lambda r: blocked.append(r.status) if _is_blocked(r) else None)
         log("Iniciando sesión en SNP…")
         _login(page, username, password)
-        log("Sesión iniciada. Abriendo Series Nacionales → España → Mis equipos…")
-        frame = _open_team_page(page, team_id, log)
+        log(f"Sesión iniciada. Abriendo Series Nacionales → {snp_country_name(country)} → Mis equipos…")
+        frame = _open_team_page(page, team_id, log, country)
         log(f"Página del equipo abierta: {frame.url}")
         for page_number in range(2, MAX_PAGES + 2):
             rows = _read_rows(frame)

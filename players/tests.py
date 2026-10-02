@@ -101,11 +101,33 @@ class SnpAccountTests(TestCase):
         account.refresh_from_db()
         self.assertEqual((account.username, account.password), ("capitan", "secreto"))
 
+    def test_sync_opens_the_country_of_the_team(self):
+        own = self.club.own_team
+        own.country = "MX"
+        own.save()
+        scraper = mock.Mock(return_value=[{"name": "ANA ALVAREZ 500", "score": 1.0}])
+        sync_club(self.make_account(), scraper=scraper)
+        scraper.assert_called_once_with("capitan", "secreto", "4380", country="MX")
+
+    def test_country_link_defaults_to_spain(self):
+        from . import scraper
+        self.assertEqual(scraper.snp_country_name("IT"), "Italia")
+        self.assertEqual(scraper.snp_country_name("SE"), "Suecia")
+        self.assertEqual(scraper.snp_country_name(""), "España")
+        self.assertEqual(scraper.snp_country_name(None), "España")
+        page, frame = mock.Mock(), mock.Mock()
+        frame.query_selector_all.return_value = []  # la cuenta no tiene equipos: para ahí
+        clicked = []
+        with mock.patch.object(scraper, "_find", side_effect=lambda p, selector, *a, **k: clicked.append(selector) or
+                               (frame, mock.Mock())), self.assertRaises(scraper.SnpScrapeError):
+            scraper._open_team_page(page, None, lambda m: None, "PT")
+        self.assertEqual(clicked[1], 'a.menu-link:has([data-i18n="Portugal"])')
+
     def test_sync_updates_scores_and_records_result(self):
         account = self.make_account()
         scraper = mock.Mock(return_value=[{"name": "ANA ALVAREZ 500", "score": 42.5}])
         result = sync_club(account, scraper=scraper)
-        scraper.assert_called_once_with("capitan", "secreto", "4380")
+        scraper.assert_called_once_with("capitan", "secreto", "4380", country="")
         self.assertTrue(result.ok)
         self.player.refresh_from_db()
         self.assertEqual(self.player.snp_score, 42.5)
@@ -369,7 +391,7 @@ class SnpBatchTests(TestCase):
         caller = threading.get_ident()
         seen = []
 
-        def fake_scrape(username, password, team_id, log, browser):
+        def fake_scrape(username, password, team_id, log, browser, country):
             seen.append(threading.get_ident())
             return [{"name": "Ana A", "score": 5.0}]
 

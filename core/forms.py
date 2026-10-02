@@ -24,7 +24,7 @@ class ClubForm(forms.Form):
     location = forms.CharField(label=_("Localización"), max_length=100)
     gender = forms.ChoiceField(label=_("Categoría"), choices=[("", _("Elige una opción"))] + Team.GENDERS,
                                help_text=_("Los jugadores del club tendrán esta categoría."))
-    country = forms.ChoiceField(label=_("País en el que juega"), choices=[("", _("Elige una opción"))] + Team.COUNTRIES)
+    country = forms.ChoiceField(label=_("Nacionalidad del equipo"), choices=[("", _("Elige una opción"))] + Team.COUNTRIES)
     division = forms.ChoiceField(label=_("División"), choices=[("", _("Elige una opción"))] + Team.DIVISIONS)
 
 

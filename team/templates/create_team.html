@@ -11,12 +11,26 @@
     </div>
     {% endif %}
     <h1>{% translate "Crear Equipo" %}</h1>
-    <form method="POST" class="mt-4" enctype="multipart/form-data">
+    <form method="POST" class="mt-4" enctype="multipart/form-data" data-similar-check>
         {% csrf_token %}
-        
+        <input type="hidden" name="confirm_similar" value="">
+
         <div class="mb-3">
             <label for="{{ form.name.id_for_label }}" class="form-label">{% translate "Nombre:" %}</label>
             {{ form.name }}  <!-- Se agregó la clase en la vista -->
+            {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.gender.id_for_label }}" class="form-label">{% translate "Categoría:" %}</label>
+            {{ form.gender }}
+            {% for error in form.gender.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.country.id_for_label }}" class="form-label">{% translate "País en el que juega:" %}</label>
+            {{ form.country }}
+            {% for error in form.country.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
 
         <div class="mb-3">
@@ -34,4 +48,7 @@
         </div>
     </form>
 </div>
+{% translate "Ya hay un equipo con un nombre parecido" as t_title %}
+{% translate "En tu club ya existe un equipo con este nombre o uno muy parecido:" as t_message %}
+{% include 'includes/similar_modal.html' with title=t_title message=t_message similar=similar %}
 {% endblock %}

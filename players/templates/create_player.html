@@ -16,9 +16,10 @@
         {% endif %}
         
         <h1>{% translate "Crear Jugador" %}</h1>
-        <form method="POST" class="mt-4" enctype="multipart/form-data">
+        <form method="POST" class="mt-4" enctype="multipart/form-data" data-similar-check>
             {% csrf_token %}
-            
+            <input type="hidden" name="confirm_similar" value="">
+
             <div class="mb-3">
                 <label for="{{ form.name.id_for_label }}" class="form-label">{% translate "Nombre:" %}</label>
                 {{ form.name }}  <!-- Se agregó la clase en la vista -->
@@ -44,9 +45,16 @@
                 {{ form.photo }}  <!-- Se agregó la clase en la vista -->
             </div>
 
+            {% if own_team.gender %}
+            <p class="form-text">{% blocktranslate with gender=own_team.get_gender_display %}Categoría: {{ gender }} (la del equipo del club).{% endblocktranslate %}</p>
+            {% endif %}
+
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">{% translate "Crear Jugador" %}</button>
             </div>
         </form>
     </div>
+    {% translate "Ya hay un jugador con un nombre parecido" as t_title %}
+    {% translate "En el equipo ya existe un jugador con este nombre y apellidos o unos muy parecidos:" as t_message %}
+    {% include 'includes/similar_modal.html' with title=t_title message=t_message similar=similar %}
 {% endblock %}

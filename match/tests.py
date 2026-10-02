@@ -248,3 +248,26 @@ class CreateMatchTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Fecha no válida")
         self.assertFalse(Match.objects.exists())
+
+
+class CreateMatchTypeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        self.rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.client.force_login(self.user)
+        self.data = {"local": self.club.own_team.id, "visiting": self.rival.id, "start_date": "2026-11-15"}
+
+    def test_form_offers_match_types(self):
+        response = self.client.get(reverse("create_match"))
+        for label in ("Enfrentamiento", "Reto", "Play Off"):
+            self.assertContains(response, label)
+
+    def test_creates_match_with_type(self):
+        self.client.post(reverse("create_match"), {**self.data, "match_type": Match.PLAYOFF})
+        self.assertEqual(Match.objects.get(club=self.club).match_type, Match.PLAYOFF)
+
+    def test_invalid_type_is_rejected(self):
+        response = self.client.post(reverse("create_match"), {**self.data, "match_type": "amistoso"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Match.objects.exists())

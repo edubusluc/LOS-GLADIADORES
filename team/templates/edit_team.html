@@ -13,6 +13,29 @@
                 <input type="text" id="name" name="name" class="form-control" value="{{ team.name }}" required>
             </div>
 
+            {% for error in form.name.errors %}<div class="text-danger small mb-3">{{ error }}</div>{% endfor %}
+
+            <div class="mb-3">
+                <label for="gender" class="form-label">{% translate "Categoría:" %}</label>
+                <select id="gender" name="gender" class="form-select" required>
+                    <option value="">{% translate "Elige una opción" %}</option>
+                    {% for value, label in genders %}
+                    <option value="{{ value }}" {% if team.gender == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if team.is_own %}<small class="form-text text-muted">{% translate "Los jugadores del club tienen la categoría de este equipo." %}</small>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="country" class="form-label">{% translate "País en el que juega:" %}</label>
+                <select id="country" name="country" class="form-select" required>
+                    <option value="">{% translate "Elige una opción" %}</option>
+                    {% for value, label in countries %}
+                    <option value="{{ value }}" {% if team.country == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="mb-3">
                 <label for="location" class="form-label">{% translate "Ubicación:" %}</label>
                 <input type="text" id="location" name="location" class="form-control" value="{{ team.location }}" required>

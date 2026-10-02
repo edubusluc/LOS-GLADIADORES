@@ -7,10 +7,11 @@ from .models import Club, Invitation, Membership
 
 
 @transaction.atomic
-def create_club(name, location, admin_user):
+def create_club(name, location, admin_user, gender="", country=""):
     """Crea un club con su equipo propio y deja a admin_user como administrador."""
     club = Club.objects.create(name=name)
-    Team.objects.create(club=club, name=name, location=location, is_own=True, in_group=True)
+    Team.objects.create(club=club, name=name, location=location, gender=gender, country=country,
+                        is_own=True, in_group=True)
     Membership.objects.create(user=admin_user, club=club, role=Membership.ADMIN)
     return club
 

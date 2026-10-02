@@ -109,6 +109,7 @@ def create_match(request):
         local_id = request.POST.get('local')
         visiting_id = request.POST.get('visiting')
         start_date_str = request.POST.get('start_date')
+        match_type = request.POST.get('match_type') or Match.ENFRENTAMIENTO
 
         # Intenta convertir la fecha
         try:
@@ -129,6 +130,12 @@ def create_match(request):
                 "error": _("Uno de los equipos no existe.")
             })
 
+        if match_type not in dict(Match.MATCH_TYPES):
+            return render(request, CREATE_MATCH_HTML, {
+                "form": MatchForm(request.POST, club=club),
+                "error": _("Tipo de partido no válido.")
+            })
+
         # Verifica si el enfrentamiento es válido
         if local_team == visiting_team or own_team not in (local_team, visiting_team):
             form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
@@ -144,6 +151,7 @@ def create_match(request):
                 local_id=local_id,
                 visiting_id=visiting_id,
                 start_date=start_date,
+                match_type=match_type,
             )
             return redirect("list_match")  # Redirección después de crear el partido
         else:

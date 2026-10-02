@@ -6,9 +6,10 @@ from team.models import Team
 class MatchForm(forms.ModelForm):
     class Meta:
         model = Match
-        fields = ['local', 'visiting', 'start_date']
+        fields = ['match_type', 'local', 'visiting', 'start_date']
         labels = {'local': _('Local'), 'visiting': _('Visitante'), 'start_date': _('Fecha')}
         widgets = {
+            'match_type': forms.Select(),
             'local': forms.Select(),
             'visiting': forms.Select(),
             'start_date': forms.DateInput(

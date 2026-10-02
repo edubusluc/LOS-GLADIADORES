@@ -44,6 +44,8 @@ class Player(PublicIdModel):
     photo = models.ImageField(upload_to='static/profile', null=True, blank=True)
     snp_score = models.FloatField(null=True)
     in_team = models.BooleanField(default=True)
+    # Copia de la categoría de su equipo (Team.gender): se asigna al guardar.
+    gender = models.CharField(_("Categoría"), max_length=1, choices=Team.GENDERS, blank=True, default="")
     joined_season = models.CharField(
         _("Temporada en la que se unió"),
         max_length=9,
@@ -56,6 +58,8 @@ class Player(PublicIdModel):
         # Los jugadores siempre pertenecen al equipo propio de su club.
         if self.club_id and not self.team_id:
             self.team = self.club.own_team
+        if self.team_id:
+            self.gender = self.team.gender
         super().save(*args, **kwargs)
 
     def __str__(self):

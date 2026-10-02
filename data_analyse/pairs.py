@@ -7,12 +7,20 @@ o en el visitante, así que la pareja es siempre la del lado que tiene jugadores
 """
 from django.db.models import Q
 
-from match.models import Game
+from match.models import Game, Match
 
 # Mínimo de partidos para entrar en un top 5 (evita que un 1/1 = 100 % encabece la tabla).
 MIN_GAMES_PLAYER = 3
 MIN_GAMES_PAIR = 2
 TOP_N = 5
+
+# En retos y play off se juegan pocos partidos: sus parejas se muestran sin mínimo.
+NO_MINIMUM_MATCH_TYPES = (Match.RETO, Match.PLAYOFF)
+
+
+def min_games_pair(match_type=None):
+    """Partidos mínimos de una pareja para salir en rankings según el tipo de partido filtrado."""
+    return 1 if match_type in NO_MINIMUM_MATCH_TYPES else MIN_GAMES_PAIR
 
 
 def pair_key(a_id, b_id):
@@ -44,9 +52,9 @@ def _current_run(results):
     return ('V' if last else 'D'), n
 
 
-def club_game_log(club, season=None):
+def club_game_log(club, season=None, match_type=None):
     """
-    Partidos cerrados del club en orden cronológico. Cada elemento:
+    Partidos cerrados del club en orden cronológico (de un tipo de partido si se indica). Cada elemento:
     {'pair': (id, id), 'local': bool, 'won': bool, 'season', 'match_id', 'points'}
     """
     games = (
@@ -57,6 +65,8 @@ def club_game_log(club, season=None):
     )
     if season:
         games = games.filter(match__season=season)
+    if match_type:
+        games = games.filter(match__match_type=match_type)
 
     log = []
     for g in games:
@@ -112,7 +122,7 @@ def top_players(log, players, local):
     return _rank(counts, names, MIN_GAMES_PLAYER)
 
 
-def top_pairs(log, players, local):
+def top_pairs(log, players, local, min_games=MIN_GAMES_PAIR):
     """Top 5 parejas por % de victorias como local (local=True) o visitante."""
     by_id = {p.id: p for p in players}
     counts = {}
@@ -125,7 +135,7 @@ def top_pairs(log, players, local):
         key: f"{pair_label(by_id[key[0]])} / {pair_label(by_id[key[1]])}"
         for key in counts if key[0] in by_id and key[1] in by_id
     }
-    return _rank(counts, names, MIN_GAMES_PAIR)
+    return _rank(counts, names, min_games)
 
 
 def pair_label(player):

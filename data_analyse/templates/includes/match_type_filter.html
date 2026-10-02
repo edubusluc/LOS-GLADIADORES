@@ -1,0 +1,10 @@
+{% load i18n %}
+{# Filtro por tipo de partido. Recibe match_types de data_analyse.views.match_type_context. #}
+<nav aria-label="{% translate 'Tipo de partido' %}">
+  <ul class="st-seasons">
+    <li class="st-filter-label">{% translate "Tipo de partido" %}</li>
+    {% for option in match_types %}
+      <li><a class="st-chip" href="{{ option.url }}" {% if option.active %}aria-current="page"{% endif %}>{{ option.label }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>

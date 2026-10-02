@@ -10,7 +10,7 @@
       <div>
         <h1 class="st-title">{% if s %}{{ p1.name }} {{ p1.get_first_last_name }} / {{ p2.name }} {{ p2.get_first_last_name }}{% else %}{% translate "Estadísticas por parejas" %}{% endif %}</h1>
         {% if s %}
-          <p class="st-subtitle">{% blocktranslate trimmed count n=s.played %}{{ n }} partido juntos{% plural %}{{ n }} partidos juntos{% endblocktranslate %} {% blocktranslate trimmed count n=s.matches %}en {{ n }} enfrentamiento{% plural %}en {{ n }} enfrentamientos{% endblocktranslate %} · <a href="{% url 'pair_statistics' %}">{% translate "Ver mejores y peores parejas" %}</a></p>
+          <p class="st-subtitle">{% blocktranslate trimmed count n=s.played %}{{ n }} partido juntos{% plural %}{{ n }} partidos juntos{% endblocktranslate %} {% blocktranslate trimmed count n=s.matches %}en {{ n }} enfrentamiento{% plural %}en {{ n }} enfrentamientos{% endblocktranslate %} · <a href="{% url 'pair_statistics' %}{% if selected_match_type %}?match_type={{ selected_match_type }}{% endif %}">{% translate "Ver mejores y peores parejas" %}</a></p>
         {% else %}
           <p class="st-subtitle">{% translate "Busca dos jugadores para ver cómo rinden juntos." %}</p>
         {% endif %}
@@ -31,6 +31,7 @@
             <option value="{{ p.public_id }}" {% if p.public_id == selected_p2 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
           {% endfor %}
         </select>
+        {% if selected_match_type %}<input type="hidden" name="match_type" value="{{ selected_match_type }}">{% endif %}
         <button class="st-btn" type="submit">{% translate "Ver pareja" %}</button>
       </form>
       <script>
@@ -42,6 +43,7 @@
         });
       </script>
     </header>
+    {% include 'includes/match_type_filter.html' %}
 
     {% if error %}
       <div class="alert warning">{{ error }}</div>

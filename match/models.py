@@ -27,7 +27,17 @@ class Match(PublicIdModel):
         ("NONE", _("Ninguno")),
     ]
     
+    ENFRENTAMIENTO = "enfrentamiento"
+    RETO = "reto"
+    PLAYOFF = "playoff"
+    MATCH_TYPES = [
+        (ENFRENTAMIENTO, _("Enfrentamiento")),
+        (RETO, _("Reto")),
+        (PLAYOFF, _("Play Off")),
+    ]
+
     start_date = models.DateField()
+    match_type = models.CharField(_("Tipo de partido"), max_length=15, choices=MATCH_TYPES, default=ENFRENTAMIENTO)
     result = models.CharField(max_length=20, choices=POSSIBLE_RESULT, blank = True, default="NONE")
     result_points = models.CharField(max_length=20, blank = True, default="NONE")
     draft_mode = models.BooleanField(default=True)

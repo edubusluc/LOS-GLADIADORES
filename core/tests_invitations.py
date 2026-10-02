@@ -59,7 +59,25 @@ class InvitationTests(TestCase):
 
         page = self.client.get(reverse("club_members"))
         self.assertContains(page, "jugador@example.com")
-        self.assertNotContains(page, invitation.token)
+        self.assertContains(page, f"/core/invite/{invitation.token}/")
+
+    def test_captain_generates_shareable_link(self):
+        self.client.login(username="capitan", password="pass-12345")
+        self.client.post(reverse("create_invitation_link"))
+        invitation = Invitation.objects.get(club=self.club)
+        self.assertEqual((invitation.created_by, invitation.email), (self.admin, ""))
+        self.assertAlmostEqual(
+            (invitation.expires_at - timezone.now()).total_seconds(), 24 * 3600, delta=60,
+        )
+        self.assertEqual(mail.outbox, [])
+        page = self.client.get(reverse("club_members"))
+        self.assertContains(page, f"/core/invite/{invitation.token}/")
+        self.assertContains(page, "Enlace compartido")
+
+    def test_members_cannot_generate_links(self):
+        self.client.login(username="viewer", password="pass-12345")
+        self.client.post(reverse("create_invitation_link"))
+        self.assertFalse(Invitation.objects.exists())
 
     def test_reinviting_replaces_pending_invitation(self):
         self.client.login(username="capitan", password="pass-12345")
@@ -96,7 +114,7 @@ class InvitationTests(TestCase):
         expired = self.invite(expires_at=timezone.now() - datetime.timedelta(minutes=1))
         active = self.invite()
         self.client.login(username="capitan", password="pass-12345")
-        listed = list(self.client.get(reverse("club_members")).context["invitations"])
+        listed = [inv for inv, _ in self.client.get(reverse("club_members")).context["invitations"]]
         self.assertEqual(listed, [active])
         self.assertNotIn(used, listed)
         self.assertNotIn(expired, listed)

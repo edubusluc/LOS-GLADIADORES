@@ -5,7 +5,7 @@
 <div class="z-page-head">
     <div>
         <a href="{% url 'list_match' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {% translate "Partidos" %}</a>
-        <h1>{% translate "Match overview" %}</h1>
+        <h1>{% translate "Resumen del partido" %}</h1>
     </div>
     {% if match.draft_mode %}<span class="z-badge">{% translate "Sin validar" %}</span>{% else %}<span class="z-badge z-badge--lime">{% translate "Acta cerrada" %}</span>{% endif %}
 </div>

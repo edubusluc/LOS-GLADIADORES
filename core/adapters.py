@@ -4,6 +4,10 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
+# Marca en la sesión que el último inicio de sesión con Google ha creado una cuenta
+# nueva (y no ha entrado en una que ya existía con ese email).
+GOOGLE_NEW_ACCOUNT_KEY = "google_new_account"
+
 
 class AccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
@@ -21,6 +25,12 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         # Cualquiera puede crear su cuenta con Google; para ver datos de un club
         # tiene que unirse con una invitación o registrar el suyo.
         return True
+
+    def save_user(self, request, sociallogin, form=None):
+        # Solo se llama cuando Google crea una cuenta nueva.
+        user = super().save_user(request, sociallogin, form)
+        request.session[GOOGLE_NEW_ACCOUNT_KEY] = True
+        return user
 
     def authenticate_by_email(self, sociallogin):
         """

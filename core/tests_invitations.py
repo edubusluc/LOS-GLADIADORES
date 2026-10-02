@@ -369,3 +369,36 @@ class GoogleSameAccountTests(TestCase):
         self.assertNotEqual(request.user, self.admin)
         self.assertEqual(request.user.email, "nuevo@example.com")
         self.assertFalse(Membership.objects.filter(user=request.user).exists())
+
+    # --- "Crear mi cuenta con Google" desde el alta de club -----------------
+
+    def register_with_google(self, email, sub):
+        """Vuelve de Google al formulario de alta de club con la sesión que deja allauth."""
+        from django.conf import settings
+
+        request = self.google_login(email, sub=sub)
+        request.session.save()
+        self.client.cookies[settings.SESSION_COOKIE_NAME] = request.session.session_key
+        return self.client.get(reverse("register_club") + "?google=1", follow=True)
+
+    def test_register_page_google_button_returns_to_register_club(self):
+        response = self.client.get(reverse("register_club"))
+        self.assertContains(response, 'name="next" value="/core/register_club/?google=1"')
+
+    def test_existing_email_with_google_from_register_goes_home_not_to_create_club(self):
+        response = self.register_with_google("capitan@example.com", sub="google-123")
+        self.assertRedirects(response, reverse("home"))
+        self.assertContains(response, "Ya tenías una cuenta con este email")
+        self.assertEqual(Club.objects.count(), 1)
+
+    def test_existing_email_without_club_lands_on_no_club_with_notice(self):
+        User.objects.create_user("sinclub", password="pass-12345", email="sinclub@example.com")
+        response = self.register_with_google("sinclub@example.com", sub="sinclub")
+        self.assertRedirects(response, reverse("no_club"))
+        self.assertContains(response, "Ya tenías una cuenta con este email")
+
+    def test_new_email_with_google_from_register_continues_to_create_club(self):
+        response = self.register_with_google("nuevo@example.com", sub="nuevo")
+        self.assertRedirects(response, reverse("register_club"))
+        self.assertContains(response, "Crear club")
+        self.assertNotIn("google_new_account", self.client.session)

@@ -19,6 +19,7 @@ from data_analyse import pairs as pair_stats
 from match.models import Match
 from players.models import Player, SnpAccount, current_season
 
+from .adapters import GOOGLE_NEW_ACCOUNT_KEY
 from .decorators import club_admin_required
 from .emails import send_invitation_email, send_welcome_email
 from .forms import ClubForm, InviteMemberForm, SignUpForm
@@ -28,6 +29,8 @@ from .services import InvitationError, accept_invitation, create_club
 
 # Invitación pendiente de aceptar mientras el visitante inicia sesión con Google
 PENDING_INVITE_KEY = "pending_invitation"
+# Parámetro con el que el botón de Google del alta de club vuelve a register_club
+FROM_GOOGLE_PARAM = "google"
 # Hay varios backends de autenticación (usuario/email y Google): al iniciar sesión
 # justo después de registrarse hay que indicar cuál se usa.
 LOGIN_BACKEND = "django.contrib.auth.backends.ModelBackend"
@@ -83,6 +86,14 @@ def register_club(request):
     """Alta de un club nuevo. Si el visitante no tiene cuenta, se le crea una."""
     anonymous = not request.user.is_authenticated
 
+    # Vuelve de "Crear mi cuenta con Google". Si el email ya tenía cuenta, Google ha
+    # iniciado sesión en ella: no es un alta nueva, así que va a su portada.
+    if not anonymous and request.GET.get(FROM_GOOGLE_PARAM):
+        if request.session.pop(GOOGLE_NEW_ACCOUNT_KEY, False):
+            return redirect("register_club")
+        messages.info(request, _("Ya tenías una cuenta con este email. Has iniciado sesión con ella."))
+        return redirect("home")
+
     if request.method == "POST":
         club_form = ClubForm(request.POST)
         user_form = SignUpForm(request.POST) if anonymous else None
@@ -103,7 +114,10 @@ def register_club(request):
         user_form = SignUpForm() if anonymous else None
 
     _style(club_form, user_form)
-    return render(request, "register_club.html", {"club_form": club_form, "user_form": user_form})
+    return render(request, "register_club.html", {
+        "club_form": club_form, "user_form": user_form,
+        "google_next": f"{reverse('register_club')}?{FROM_GOOGLE_PARAM}=1",
+    })
 
 
 @login_required

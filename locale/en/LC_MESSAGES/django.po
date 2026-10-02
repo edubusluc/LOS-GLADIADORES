@@ -2244,6 +2244,10 @@ msgstr "This invitation has already been used or has expired."
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
 
+#: core/views.py
+msgid "Ya tenías una cuenta con este email. Has iniciado sesión con ella."
+msgstr "You already had an account with this email. You are now signed in to it."
+
 #: core/templates/404.html:4
 msgid "Página no encontrada"
 msgstr "Page not found"

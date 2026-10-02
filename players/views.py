@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.utils.translation import gettext as _, ngettext
 from . import snp_import
+from core import similarity
 
 
 # Create your views here.
@@ -18,15 +19,23 @@ from . import snp_import
 
 @club_admin_required
 def create_player(request):
+    similar = []
     if request.method == "POST":
         form = PlayerForm(request.POST, request.FILES)
         if form.is_valid():
-            player = form.save(commit=False)
-            player.club = request.club
-            player.team = request.club.own_team
-            player.save()
-            return redirect("list_players")
-        else: 
+            # Jugadores con nombre y apellidos iguales o parecidos: se pregunta antes de crearlo.
+            similar = similarity.similar_players(request.club, form.cleaned_data['name'], form.cleaned_data['last_name'])
+            if similarity.is_check_request(request):
+                return JsonResponse({"valid": True, "similar": [str(p) for p in similar]})
+            if not similar or similarity.confirmed(request):
+                player = form.save(commit=False)
+                player.club = request.club
+                player.team = request.club.own_team  # save() le copia la categoría del equipo
+                player.save()
+                return redirect("list_players")
+        else:
+            if similarity.is_check_request(request):
+                return JsonResponse({"valid": False, "similar": []})
             messages.error(request, _("Error al crear el jugador. Por favor, verifica los datos."))
     else:
         form = PlayerForm()
@@ -35,7 +44,11 @@ def create_player(request):
     for field in form:
         field.field.widget.attrs.update({'class': 'form-control'})
 
-    return render(request, "create_player.html", {"form": form})
+    return render(request, "create_player.html", {
+        "form": form,
+        "similar": [str(p) for p in similar],
+        "own_team": request.club.own_team,
+    })
 
 
 ORDER_FIELDS = {'name', '-name', 'last_name', '-last_name', 'position', '-position', 'snp_score', '-snp_score'}

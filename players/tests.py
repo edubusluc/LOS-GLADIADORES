@@ -559,3 +559,36 @@ class CompleteTeamTests(TestCase):
         self.ana.refresh_from_db()
         self.assertEqual((self.ana.name, self.ana.last_name), ("Ana María", "Álvarez Ruiz"))
         self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.public_id])), 'name="last_name"')
+
+
+class CreatePlayerSimilarityTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("admin_sim", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user, gender="F", country="ES")
+        Player.objects.create(club=self.club, name="María", last_name="García López")
+        other = create_club("Club B", "Madrid", User.objects.create_user("otro", password="pass-12345"))
+        Player.objects.create(club=other, name="Lucía", last_name="Martín")
+        self.client.force_login(self.user)
+        self.url = reverse("create_player")
+        self.data = {"name": "Maria", "last_name": "Garcia", "position": "NONE", "skillfull_hand": "NONE"}
+
+    def test_similar_player_asks_before_creating(self):
+        response = self.client.post(self.url, self.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["similar"], ["María García López"])
+        self.assertEqual(Player.objects.filter(club=self.club).count(), 1)
+
+        self.client.post(self.url, {**self.data, "confirm_similar": "1"})
+        self.assertEqual(Player.objects.filter(club=self.club).count(), 2)
+
+    def test_check_request_and_players_of_other_clubs(self):
+        response = self.client.post(self.url, self.data, HTTP_X_SIMILAR_CHECK="1")
+        self.assertEqual(response.json(), {"valid": True, "similar": ["María García López"]})
+        # Solo cuenta el equipo del club activo
+        response = self.client.post(self.url, {**self.data, "name": "Lucia", "last_name": "Martin"}, HTTP_X_SIMILAR_CHECK="1")
+        self.assertEqual(response.json(), {"valid": True, "similar": []})
+
+    def test_new_player_gets_team_gender(self):
+        response = self.client.post(self.url, {**self.data, "name": "Ana", "last_name": "Ruiz"})
+        self.assertRedirects(response, reverse("list_players"), fetch_redirect_response=False)
+        self.assertEqual(Player.objects.get(name="Ana").gender, "F")

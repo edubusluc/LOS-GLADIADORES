@@ -23,9 +23,11 @@
           {% endfor %}
         </select>
         {% if selected_season %}<input type="hidden" name="season" value="{{ selected_season }}">{% endif %}
+        {% if selected_match_type %}<input type="hidden" name="match_type" value="{{ selected_match_type }}">{% endif %}
         <noscript><button class="st-btn" type="submit">{% translate "Ver" %}</button></noscript>
       </form>
     </header>
+    {% include 'includes/match_type_filter.html' %}
 
     {% if not selected_player %}
 
@@ -107,11 +109,11 @@
         <nav aria-label="{% translate 'Temporadas' %}">
           <ul class="st-seasons">
             <li>
-              <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}#temporadas" {% if not selected_season %}aria-current="page"{% endif %}>{% translate "Todas" %}</a>
+              <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}{{ match_type_qs }}#temporadas" {% if not selected_season %}aria-current="page"{% endif %}>{% translate "Todas" %}</a>
             </li>
             {% for season in seasons %}
               <li>
-                <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ season|urlencode:'' }}#temporadas" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a>
+                <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ season|urlencode:'' }}{{ match_type_qs }}#temporadas" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a>
               </li>
             {% endfor %}
           </ul>
@@ -278,7 +280,7 @@
                 {% for r in seasons_desc %}
                   <tr {% if r.season == selected_season %}class="st-current"{% endif %}>
                     <th scope="row">
-                      <a href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ r.season|urlencode:'' }}#temporadas">{{ r.season }}</a>
+                      <a href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ r.season|urlencode:'' }}{{ match_type_qs }}#temporadas">{{ r.season }}</a>
                     </th>
                     <td>{{ r.played }}</td>
                     <td>{{ r.wins }}</td>

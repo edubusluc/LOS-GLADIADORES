@@ -57,6 +57,7 @@
             </div>
         </div>
         <div class="z-fixture-status">
+            {% if m.match_type != m.ENFRENTAMIENTO %}<span class="z-badge z-badge--outline">{{ m.get_match_type_display }}</span>{% endif %}
             {% if m.outcome == 'V' %}<span class="z-wl z-wl--w" title="{% translate 'Victoria' %}">{% translate "V" context "inicial de victoria" %}</span>
             {% elif m.outcome == 'D' %}<span class="z-wl z-wl--l" title="{% translate 'Derrota' %}">{% translate "D" context "inicial de derrota" %}</span>
             {% elif m.outcome == 'E' %}<span class="z-wl" title="{% translate 'Empate' %}">{% translate "E" context "inicial de empate" %}</span>

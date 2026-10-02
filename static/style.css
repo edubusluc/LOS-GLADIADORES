@@ -1264,6 +1264,7 @@ a.z-location:hover span { text-decoration: underline; }
 }
 .st-chip:hover { color: #FFFFFF; border-color: var(--z-lime); }
 .st-chip[aria-current="page"] { color: var(--z-ink); background: var(--z-lime); border-color: var(--z-lime); }
+.st-filter-label { align-self: center; margin-right: 4px; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--z-muted); }
 
 .st-detail { margin-bottom: 24px; padding: 22px; background: rgba(var(--z-lime-rgb), .05); border: 1px solid rgba(var(--z-lime-rgb), .25); border-radius: 20px; }
 .st-detail-title { margin: 0 0 16px; font-size: 1.05rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--z-lime); }

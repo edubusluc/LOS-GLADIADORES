@@ -203,3 +203,78 @@ class PairStatisticsTests(TestCase):
         response = self.client.get(reverse("player_statistics"), {"player": e.public_id, "season": "2025-2026"})
         self.assertEqual(response.context["d"]["games"], [])
         self.assertContains(response, "No jugó ningún partido esta temporada.")
+
+
+class MatchTypeFilterTests(TestCase):
+    """
+    Un enfrentamiento (A+B gana, C+D... no juega), un reto (C+D gana) y un play off
+    (A+B pierde), todos como locales.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        own = self.club.own_team
+        rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        mk = lambda n: Player.objects.create(club=self.club, name=n, last_name=f"{n}son")
+        self.a, self.b, self.c, self.d = mk("A"), mk("B"), mk("C"), mk("D")
+
+        def match(date, match_type, p1, p2, won):
+            m = Match.objects.create(club=self.club, local=own, visiting=rival, start_date=date, draft_mode=False,
+                                     match_type=match_type, result="Victoria Local" if won else "Victoria Visitante")
+            Game.objects.create(match=m, n_game=1, score=3, winner='Local' if won else 'Visitante', draft_mode=False,
+                                player_1_local=p1, player_2_local=p2)
+
+        match(datetime.date(2025, 10, 1), Match.ENFRENTAMIENTO, self.a, self.b, True)
+        match(datetime.date(2025, 10, 8), Match.ENFRENTAMIENTO, self.a, self.b, True)
+        match(datetime.date(2025, 10, 15), Match.RETO, self.c, self.d, True)
+        match(datetime.date(2025, 10, 22), Match.PLAYOFF, self.a, self.b, False)
+        self.client.force_login(self.user)
+
+    def test_existing_matches_default_to_enfrentamiento(self):
+        m = Match.objects.create(club=self.club, local=self.club.own_team,
+                                 visiting=Team.objects.get(name="Rival"), start_date=datetime.date(2025, 11, 1))
+        self.assertEqual(m.match_type, Match.ENFRENTAMIENTO)
+
+    def test_team_statistics_filter_by_type(self):
+        response = self.client.get(reverse("team_statistics"))
+        self.assertEqual(response.context["total_matches"], 4)
+        self.assertEqual(response.context["min_games_pair"], 2)
+        self.assertEqual([r["name"] for r in response.context["top_local_pairs"]], ["A Ason / B Bson"])
+
+        response = self.client.get(reverse("team_statistics"), {"match_type": Match.RETO})
+        self.assertEqual((response.context["total_matches"], response.context["won_matches"]), (1, 1))
+        # En retos y play off no hay mínimo de partidos por pareja
+        self.assertEqual(response.context["min_games_pair"], 1)
+        self.assertEqual([r["name"] for r in response.context["top_local_pairs"]], ["C Cson / D Dson"])
+
+        response = self.client.get(reverse("team_statistics"), {"match_type": Match.ENFRENTAMIENTO})
+        self.assertEqual(response.context["total_matches"], 2)
+        self.assertEqual(response.context["min_games_pair"], 2)
+
+    def test_filter_links_keep_other_parameters(self):
+        response = self.client.get(reverse("player_statistics"), {"player": self.a.public_id, "match_type": Match.PLAYOFF})
+        self.assertEqual((response.context["s"]["played"], response.context["s"]["wins"]), (1, 0))
+        links = {o["label"]: o["url"] for o in response.context["match_types"]}
+        self.assertEqual(links["Todos"], f"{reverse('player_statistics')}?player={self.a.public_id}")
+        self.assertIn(f"player={self.a.public_id}", links["Reto"])
+        self.assertIn("match_type=reto", links["Reto"])
+
+    def test_pair_statistics_filter_by_type(self):
+        response = self.client.get(reverse("pair_statistics"))
+        pairs = [(r["p1"].name, r["p2"].name) for r in response.context["best_pairs"] + response.context["worst_pairs"]]
+        self.assertEqual(pairs, [("A", "B")])  # C+D solo tiene 1 partido
+
+        response = self.client.get(reverse("pair_statistics"), {"match_type": Match.RETO})
+        pairs = [(r["p1"].name, r["p2"].name) for r in response.context["best_pairs"] + response.context["worst_pairs"]]
+        self.assertEqual(pairs, [("C", "D")])
+
+        response = self.client.get(reverse("pair_statistics"),
+                                   {"p1": self.a.public_id, "p2": self.b.public_id, "match_type": Match.ENFRENTAMIENTO})
+        self.assertEqual(response.context["s"]["played"], 2)
+        self.assertEqual(len(response.context["last_games"]), 2)
+
+    def test_unknown_type_shows_everything(self):
+        response = self.client.get(reverse("team_statistics"), {"match_type": "otro"})
+        self.assertEqual(response.context["total_matches"], 4)
+        self.assertIsNone(response.context["selected_match_type"])

@@ -44,6 +44,8 @@
             <p><i class="fa-solid fa-location-dot text-lime me-1"></i>{% if team.location %}{{ team.location }}{% else %}{% translate "Sin ubicación" %}{% endif %}</p>
             <div class="d-flex flex-wrap gap-2">
                 {% if team.is_own %}<span class="z-badge z-badge--lime">{% translate "Tu equipo" %}</span>{% endif %}
+                {% if team.gender %}<span class="z-badge z-badge--outline">{{ team.get_gender_display }}</span>{% endif %}
+                {% if team.country %}<span class="z-badge z-badge--outline">{{ team.get_country_display }}</span>{% endif %}
                 {% if is_club_admin %}
                 {% if team.in_group %}<span class="z-badge z-badge--outline">{% translate "En tu grupo" %}</span>{% else %}<span class="z-badge">{% translate "Fuera de grupo" %}</span>{% endif %}
                 {% endif %}
@@ -74,7 +76,7 @@
             <tr>
                 <td><img src="{% if team.photo %}{{ team.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="" class="table-logo"></td>
                 <td><strong>{{ team.name }}</strong> {% if team.is_own %}<span class="z-badge z-badge--lime ms-1">{% translate "Tu equipo" %}</span>{% endif %}</td>
-                <td>{{ team.location }}</td>
+                <td>{{ team.location }}{% if team.gender or team.country %}<br><small class="text-muted">{{ team.get_gender_display }}{% if team.gender and team.country %} · {% endif %}{{ team.get_country_display }}</small>{% endif %}</td>
                 {% if is_club_admin %}
                 <td>{% if team.in_group %}<span class="z-badge z-badge--outline">{% translate "En tu grupo" %}</span>{% else %}<span class="z-badge">{% translate "Fuera" context "fuera de grupo" %}</span>{% endif %}</td>
                 <td><a href="{% url 'edit_team' team.public_id %}" class="z-edit position-static" aria-label="{% translate 'Editar' %}"><i class="fa-solid fa-pen"></i></a></td>

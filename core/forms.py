@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext, gettext_lazy as _
 
+from team.models import Team
 from .models import Membership
 
 User = get_user_model()
@@ -12,6 +13,9 @@ User = get_user_model()
 class ClubForm(forms.Form):
     name = forms.CharField(label=_("Nombre del club"), max_length=100)
     location = forms.CharField(label=_("Localización"), max_length=100)
+    gender = forms.ChoiceField(label=_("Categoría"), choices=[("", _("Elige una opción"))] + Team.GENDERS,
+                               help_text=_("Los jugadores del club tendrán esta categoría."))
+    country = forms.ChoiceField(label=_("País en el que juega"), choices=[("", _("Elige una opción"))] + Team.COUNTRIES)
 
 
 class SignUpForm(UserCreationForm):

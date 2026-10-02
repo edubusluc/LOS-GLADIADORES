@@ -7,6 +7,8 @@ from django.views.decorators.http import require_GET, require_http_methods
 from core.decorators import club_required, club_admin_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q
+from django.http import JsonResponse
+from core import similarity
 
 # Create your views here.
 @club_required
@@ -38,23 +40,40 @@ def list_team(request):
 @club_admin_required
 @require_http_methods(["GET", "POST"])
 def create_team(request):
+    similar = []
     if request.method == "POST":
         form = Teamform(request.POST, request.FILES, club=request.club)
         if form.is_valid():
-            team = form.save(commit=False)
-            team.club = request.club
-            team.save()
-            return redirect("list_teams")
+            # Equipos con un nombre igual o parecido: se pregunta antes de crearlo.
+            similar = similarity.similar_teams(request.club, form.cleaned_data['name'])
+            if similarity.is_check_request(request):
+                return JsonResponse({"valid": True, "similar": [similar_team_label(t) for t in similar]})
+            if not similar or similarity.confirmed(request):
+                team = form.save(commit=False)
+                team.club = request.club
+                team.save()
+                return redirect("list_teams")
         else:
+            if similarity.is_check_request(request):
+                return JsonResponse({"valid": False, "similar": []})
             messages.error(request, _("Error al crear el equipo. Por favor, verifica los datos."))
 
     else:
         form = Teamform(club=request.club)
 
     for field in form:
-        field.field.widget.attrs.update({'class': 'form-control'})
+        field.field.widget.attrs.update({'class': 'form-select' if field.name in ('gender', 'country') else 'form-control'})
 
-    return render(request, "create_team.html", {"form": form})
+    return render(request, "create_team.html", {
+        "form": form,
+        "similar": [similar_team_label(t) for t in similar],
+    })
+
+
+def similar_team_label(team):
+    """«Tomares (Masculino · España)», o solo el nombre si no tiene categoría ni país."""
+    details = " · ".join(str(d) for d in (team.get_gender_display(), team.get_country_display()) if d)
+    return f"{team.name} ({details})" if details else team.name
 
 @club_admin_required
 @require_http_methods(["GET", "POST"])
@@ -74,8 +93,10 @@ def edit_team(request, team_id):
         form = Teamform(instance=team, club=request.club)
 
     context = {
-        'form': form,  
+        'form': form,
         'team': team,
+        'genders': Team.GENDERS,
+        'countries': Team.COUNTRIES,
     }
     return render(request, 'edit_team.html', context)
 

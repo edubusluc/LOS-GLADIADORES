@@ -1,5 +1,6 @@
 import datetime
 
+from django.forms import Select
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -72,7 +73,8 @@ def _site_url(request):
 def _style(*forms):
     for form in filter(None, forms):
         for field in form:
-            field.field.widget.attrs.update({'class': 'form-control'})
+            css = 'form-select' if isinstance(field.field.widget, Select) else 'form-control'
+            field.field.widget.attrs.update({'class': css})
 
 
 def register_club(request):
@@ -85,7 +87,8 @@ def register_club(request):
         if club_form.is_valid() and (user_form is None or user_form.is_valid()):
             with transaction.atomic():
                 user = user_form.save() if anonymous else request.user
-                club = create_club(club_form.cleaned_data["name"], club_form.cleaned_data["location"], user)
+                data = club_form.cleaned_data
+                club = create_club(data["name"], data["location"], user, gender=data["gender"], country=data["country"])
             if anonymous:
                 login(request, user, backend=LOGIN_BACKEND)
             request.session[SESSION_KEY] = club.id

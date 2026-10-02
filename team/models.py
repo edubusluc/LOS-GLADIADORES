@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from core.public_id import PublicIdModel
 from core.models import Club
 
@@ -6,6 +7,16 @@ from core.models import Club
 
 class Team(PublicIdModel):
     PUBLIC_ID_PREFIX = "TEA"
+    MALE = "M"
+    FEMALE = "F"
+    GENDERS = [(MALE, _("Masculino")), (FEMALE, _("Femenino"))]
+    COUNTRIES = [
+        ("ES", _("España")),
+        ("MX", _("México")),
+        ("PT", _("Portugal")),
+        ("IT", _("Italia")),
+        ("SE", _("Suecia")),
+    ]
     # null=True solo para poder migrar datos existentes (ver comando assign_default_club).
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="teams", null=True)
     # True para el equipo que representa al propio club; el resto son rivales.
@@ -14,12 +25,23 @@ class Team(PublicIdModel):
     in_group = models.BooleanField(default=False)
     location = models.CharField(max_length=100)
     photo = models.ImageField(upload_to='static/team', null=True, blank=True)
+    # Vacíos solo en los equipos creados antes de existir estos campos; los formularios los piden.
+    gender = models.CharField(_("Categoría"), max_length=1, choices=GENDERS, blank=True, default="")
+    country = models.CharField(_("País en el que juega"), max_length=2, choices=COUNTRIES, blank=True, default="")
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["club", "name"], name="unique_team_name_per_club"),
+            # Puede haber dos equipos con el mismo nombre (p. ej. el masculino y el femenino
+            # de un mismo club rival); el mismo nombre, categoría y país sería un duplicado.
+            models.UniqueConstraint(fields=["club", "name", "gender", "country"], name="unique_team_per_club"),
             models.UniqueConstraint(fields=["club"], condition=models.Q(is_own=True), name="unique_own_team_per_club"),
         ]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Los jugadores tienen la categoría (masculino/femenino) de su equipo.
+        if self.gender:
+            self.team.exclude(gender=self.gender).update(gender=self.gender)
 
     def __str__(self):
         return self.name

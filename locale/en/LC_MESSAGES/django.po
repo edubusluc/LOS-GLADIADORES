@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 07:08+0000\n"
+"POT-Creation-Date: 2026-10-02 07:33+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -140,7 +140,7 @@ msgstr "Players"
 #: backoffice/templates/backoffice/sql_console.html:35
 #: backoffice/templates/backoffice/user_detail.html:22
 #: players/templates/list_players.html:46
-#: players/templates/list_players.html:98 team/templates/list_teams.html:69
+#: players/templates/list_players.html:98 team/templates/list_teams.html:70
 msgid "Nombre"
 msgstr "Name"
 
@@ -222,7 +222,7 @@ msgstr "Home"
 msgid "Visitante"
 msgstr "Away"
 
-#: backoffice/importer.py:240 team/templates/list_teams.html:70
+#: backoffice/importer.py:240 team/templates/list_teams.html:71
 msgid "Ubicación"
 msgstr "Location"
 
@@ -699,21 +699,21 @@ msgstr "no matches played"
 
 #: backoffice/templates/backoffice/club_detail.html:28
 #: backoffice/templates/backoffice/load.html:38
-#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:32
-#: core/forms.py:47 core/templates/club_members.html:18
+#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:33
+#: core/forms.py:48 core/templates/club_members.html:18
 #: core/templates/emails/welcome.html:9 core/templates/emails/welcome.txt:5
 msgid "Usuario"
 msgstr "Username"
 
 #: backoffice/templates/backoffice/club_detail.html:28
 #: backoffice/templates/backoffice/user_detail.html:23
-#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:23
-#: core/forms.py:53
+#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:24
+#: core/forms.py:54
 msgid "Email"
 msgstr "Email"
 
 #: backoffice/templates/backoffice/club_detail.html:28
-#: backoffice/templates/backoffice/user_detail.html:47 core/forms.py:56
+#: backoffice/templates/backoffice/user_detail.html:47 core/forms.py:57
 msgid "Rol"
 msgstr "Role"
 
@@ -1780,7 +1780,7 @@ msgstr "Description"
 
 #: backoffice/templates/backoffice/sql_console.html:37
 #: core/templates/club_members.html:33 players/templates/edit_player.html:49
-#: players/templates/snp_account.html:49 team/templates/edit_team.html:55
+#: players/templates/snp_account.html:49 team/templates/edit_team.html:65
 msgid "Guardar"
 msgstr "Save"
 
@@ -2011,7 +2011,7 @@ msgstr "just now"
 msgid "Solo a mano"
 msgstr "Manual only"
 
-#: backoffice/views.py:159 core/forms.py:34 core/forms.py:49
+#: backoffice/views.py:159 core/forms.py:35 core/forms.py:50
 #: core/templates/registration/login.html:22
 #: core/templates/registration/login.html:23
 msgid "Contraseña"
@@ -2170,12 +2170,13 @@ msgstr "Location"
 
 #: core/forms.py:16 players/models.py:48
 #: players/templates/list_players.html:164
-#: players/templates/list_players.html:180 team/models.py:29
+#: players/templates/list_players.html:180 team/models.py:35
 msgid "Categoría"
 msgstr "Category"
 
-#: core/forms.py:16 core/forms.py:18 team/forms.py:16
+#: core/forms.py:16 core/forms.py:18 core/forms.py:19 team/forms.py:17
 #: team/templates/edit_team.html:21 team/templates/edit_team.html:32
+#: team/templates/edit_team.html:42
 msgid "Elige una opción"
 msgstr "Choose an option"
 
@@ -2183,51 +2184,55 @@ msgstr "Choose an option"
 msgid "Los jugadores del club tendrán esta categoría."
 msgstr "The club's players will have this category."
 
-#: core/forms.py:18 team/models.py:30
+#: core/forms.py:18 team/models.py:36
 msgid "País en el que juega"
 msgstr "Country where it plays"
 
-#: core/forms.py:23
+#: core/forms.py:19 team/models.py:37
+msgid "División"
+msgstr "Division"
+
+#: core/forms.py:24
 msgid ""
 "Te enviaremos la confirmación del registro. También puedes usarlo para "
 "iniciar sesión."
 msgstr ""
 "We'll send you the registration confirmation. You can also use it to log in."
 
-#: core/forms.py:33
+#: core/forms.py:34
 msgid "Letras, números y @ . + - _ (máximo 150)."
 msgstr "Letters, numbers and @ . + - _ (150 max)."
 
-#: core/forms.py:35
+#: core/forms.py:36
 msgid ""
 "Al menos 8 caracteres; no puede ser solo números ni parecerse a tu usuario."
 msgstr ""
 "At least 8 characters; it can't be only numbers or resemble your username."
 
-#: core/forms.py:36
+#: core/forms.py:37
 msgid "Repite la contraseña"
 msgstr "Repeat the password"
 
-#: core/forms.py:42
+#: core/forms.py:43
 msgid "Ya hay una cuenta con este email: inicia sesión con ella."
 msgstr "There is already an account with this email: log in with it."
 
-#: core/forms.py:50
+#: core/forms.py:51
 msgid "Solo si el usuario no existe todavía: se creará con esta contraseña."
 msgstr ""
 "Only if the user doesn't exist yet: it will be created with this password."
 
-#: core/forms.py:54
+#: core/forms.py:55
 msgid ""
 "Los administradores con email reciben el informe al cerrar cada convocatoria."
 msgstr ""
 "Administrators with an email receive the report when each call-up is closed."
 
-#: core/forms.py:72
+#: core/forms.py:73
 msgid "El usuario no existe: indica una contraseña para crearlo."
 msgstr "The user doesn't exist: enter a password to create it."
 
-#: core/forms.py:75
+#: core/forms.py:76
 msgid "Ese usuario ya es miembro del club."
 msgstr "That user is already a member of the club."
 
@@ -2239,7 +2244,7 @@ msgstr "Member (read-only)"
 msgid "Esta invitación ya se ha usado o ha caducado."
 msgstr "This invitation has already been used or has expired."
 
-#: core/services.py:34 core/views.py:190
+#: core/services.py:34 core/views.py:191
 #, python-format
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
@@ -2819,17 +2824,17 @@ msgstr "See you soon"
 msgid "Has cerrado sesión correctamente."
 msgstr "You have been logged out."
 
-#: core/views.py:96
+#: core/views.py:97
 #, python-format
 msgid "Club %(club)s creado correctamente."
 msgstr "Club %(club)s created successfully."
 
-#: core/views.py:130
+#: core/views.py:131
 #, python-format
 msgid "%(username)s añadido al club."
 msgstr "%(username)s added to the club."
 
-#: core/views.py:150
+#: core/views.py:151
 msgid ""
 "Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve "
 "para una sola persona."
@@ -2837,25 +2842,25 @@ msgstr ""
 "Invitation created: copy the link and share it. It expires in 24 hours and "
 "works for one person only."
 
-#: core/views.py:158
+#: core/views.py:159
 msgid "Invitación anulada."
 msgstr "Invitation revoked."
 
-#: core/views.py:171 core/views.py:215
+#: core/views.py:172 core/views.py:216
 #, python-format
 msgid "¡Bienvenido a %(club)s!"
 msgstr "Welcome to %(club)s!"
 
-#: core/views.py:237
+#: core/views.py:238
 #, python-format
 msgid "'%(email)s' no es un email válido."
 msgstr "'%(email)s' is not a valid email."
 
-#: core/views.py:243
+#: core/views.py:244
 msgid "Rol no válido."
 msgstr "Invalid role."
 
-#: core/views.py:245 core/views.py:257
+#: core/views.py:246 core/views.py:258
 msgid "El club debe tener al menos un administrador."
 msgstr "The club must have at least one administrator."
 
@@ -4166,7 +4171,7 @@ msgstr "Create call-up"
 
 #: match/templates/call_for_match.html:38
 #: players/templates/list_players.html:126
-#: players/templates/player_detail.html:8 team/templates/list_teams.html:82
+#: players/templates/player_detail.html:8 team/templates/list_teams.html:83
 msgid "Editar"
 msgstr "Edit"
 
@@ -4420,7 +4425,7 @@ msgstr "Games per set"
 
 #: match/templates/includes/result_form.html:24
 #: match/templates/includes/result_form.html:29
-#: team/templates/list_teams.html:46 team/templates/list_teams.html:78
+#: team/templates/list_teams.html:46 team/templates/list_teams.html:79
 msgid "Tu equipo"
 msgstr "Your team"
 
@@ -4799,8 +4804,8 @@ msgstr "Position:"
 msgid "Mano hábil:"
 msgstr "Dominant hand:"
 
-#: players/templates/create_player.html:44 team/templates/create_team.html:42
-#: team/templates/edit_team.html:45
+#: players/templates/create_player.html:44 team/templates/create_team.html:48
+#: team/templates/edit_team.html:55
 msgid "Foto:"
 msgstr "Photo:"
 
@@ -5163,9 +5168,9 @@ msgstr "First register the captain's SNP account."
 msgid "Equipo completado: %(message)s"
 msgstr "Team completed: %(message)s"
 
-#: team/forms.py:27
-msgid "Ya existe un equipo con ese nombre, categoría y país en tu club."
-msgstr "Your club already has a team with that name, category and country."
+#: team/forms.py:28
+msgid "Ya existe un equipo con ese nombre en esa división en tu club."
+msgstr "Your club already has a team with that name in that division."
 
 #: team/models.py:12
 msgid "Masculino"
@@ -5195,7 +5200,7 @@ msgstr "Italy"
 msgid "Suecia"
 msgstr "Sweden"
 
-#: team/templates/create_team.html:13 team/templates/create_team.html:47
+#: team/templates/create_team.html:13 team/templates/create_team.html:53
 msgid "Crear Equipo"
 msgstr "Create team"
 
@@ -5207,15 +5212,19 @@ msgstr "Category:"
 msgid "País en el que juega:"
 msgstr "Country where it plays:"
 
-#: team/templates/create_team.html:37
+#: team/templates/create_team.html:37 team/templates/edit_team.html:40
+msgid "División:"
+msgstr "Division:"
+
+#: team/templates/create_team.html:43
 msgid "Localización:"
 msgstr "Location:"
 
-#: team/templates/create_team.html:51
+#: team/templates/create_team.html:57
 msgid "Ya hay un equipo con un nombre parecido"
 msgstr "There is already a team with a similar name"
 
-#: team/templates/create_team.html:52
+#: team/templates/create_team.html:58
 msgid "En tu club ya existe un equipo con este nombre o uno muy parecido:"
 msgstr "Your club already has a team with this name or a very similar one:"
 
@@ -5227,15 +5236,15 @@ msgstr "Edit team"
 msgid "Los jugadores del club tienen la categoría de este equipo."
 msgstr "The club's players have this team's category."
 
-#: team/templates/edit_team.html:40
+#: team/templates/edit_team.html:50
 msgid "Ubicación:"
 msgstr "Location:"
 
-#: team/templates/edit_team.html:47
+#: team/templates/edit_team.html:57
 msgid "Dejar vacío si no deseas cambiar la foto."
 msgstr "Leave empty if you don't want to change the photo."
 
-#: team/templates/edit_team.html:52
+#: team/templates/edit_team.html:62
 msgid "¿Se encuentra en tu grupo?"
 msgstr "Is it in your group?"
 
@@ -5256,28 +5265,28 @@ msgstr "Search team"
 msgid "Editar %(name)s"
 msgstr "Edit %(name)s"
 
-#: team/templates/list_teams.html:50 team/templates/list_teams.html:81
+#: team/templates/list_teams.html:51 team/templates/list_teams.html:82
 msgid "En tu grupo"
 msgstr "In your group"
 
-#: team/templates/list_teams.html:50
+#: team/templates/list_teams.html:51
 msgid "Fuera de grupo"
 msgstr "Outside group"
 
-#: team/templates/list_teams.html:58 team/templates/list_teams.html:86
+#: team/templates/list_teams.html:59 team/templates/list_teams.html:87
 #, python-format
 msgid "No hay equipos que coincidan con \"%(search)s\"."
 msgstr "No teams match \"%(search)s\"."
 
-#: team/templates/list_teams.html:58 team/templates/list_teams.html:86
+#: team/templates/list_teams.html:59 team/templates/list_teams.html:87
 msgid "Todavía no hay equipos."
 msgstr "There are no teams yet."
 
-#: team/templates/list_teams.html:71
+#: team/templates/list_teams.html:72
 msgid "Grupo"
 msgstr "Group"
 
-#: team/templates/list_teams.html:81
+#: team/templates/list_teams.html:82
 msgctxt "fuera de grupo"
 msgid "Fuera"
 msgstr "Outside"
@@ -5286,6 +5295,6 @@ msgstr "Outside"
 msgid "Error al crear el equipo. Por favor, verifica los datos."
 msgstr "Error creating the team. Please check the data."
 
-#: team/views.py:91
+#: team/views.py:92
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."

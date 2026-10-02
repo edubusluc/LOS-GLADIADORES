@@ -143,13 +143,13 @@ class ClubIsolationTests(TestCase):
         self.assertEqual(player.club, self.club_a)
         self.assertEqual(player.team, self.club_a.own_team)
 
-        self.client.post(reverse("create_team"), {"name": "Otro equipo", "location": "Z", "gender": "M", "country": "ES"})
+        self.client.post(reverse("create_team"), {"name": "Otro equipo", "location": "Z", "gender": "M", "country": "ES", "division": "500"})
         self.assertEqual(Team.objects.get(name="Otro equipo").club, self.club_a)
 
     def test_identical_team_is_rejected(self):
         self.rival_a.gender, self.rival_a.country = "M", "ES"
         self.rival_a.save()
-        data = {"name": "rival", "location": "Z", "gender": "M", "country": "ES", "confirm_similar": "1"}
+        data = {"name": "rival", "location": "Z", "gender": "M", "country": "ES", "division": "500", "confirm_similar": "1"}
         response = self.client.post(reverse("create_team"), data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Team.objects.filter(club=self.club_a, name__iexact="rival").count(), 1)
@@ -246,7 +246,7 @@ class RolesAndClubSwitchTests(TestCase):
 
     def test_register_club_creates_user_club_and_membership(self):
         response = self.client.post(reverse("register_club"), {
-            "name": "Nuevo Club", "location": "Cádiz", "gender": "F", "country": "MX",
+            "name": "Nuevo Club", "location": "Cádiz", "gender": "F", "country": "MX", "division": "1000",
             "username": "fundador", "email": "f@example.com",
             "password1": "Clave-Segura-123", "password2": "Clave-Segura-123",
         })

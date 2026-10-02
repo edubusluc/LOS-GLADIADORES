@@ -62,7 +62,7 @@ def create_team(request):
         form = Teamform(club=request.club)
 
     for field in form:
-        field.field.widget.attrs.update({'class': 'form-select' if field.name in ('gender', 'country') else 'form-control'})
+        field.field.widget.attrs.update({'class': 'form-select' if field.name in ('gender', 'country', 'division') else 'form-control'})
 
     return render(request, "create_team.html", {
         "form": form,
@@ -71,8 +71,9 @@ def create_team(request):
 
 
 def similar_team_label(team):
-    """«Tomares (Masculino · España)», o solo el nombre si no tiene categoría ni país."""
-    details = " · ".join(str(d) for d in (team.get_gender_display(), team.get_country_display()) if d)
+    """«Tomares (Masculino · España · 500)», o solo el nombre si no tiene categoría ni país."""
+    details = " · ".join(str(d) for d in (team.get_gender_display(), team.get_country_display(),
+                                          team.get_division_display()) if d)
     return f"{team.name} ({details})" if details else team.name
 
 @club_admin_required
@@ -97,6 +98,7 @@ def edit_team(request, team_id):
         'team': team,
         'genders': Team.GENDERS,
         'countries': Team.COUNTRIES,
+        'divisions': Team.DIVISIONS,
     }
     return render(request, 'edit_team.html', context)
 

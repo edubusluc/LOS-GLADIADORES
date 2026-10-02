@@ -88,7 +88,8 @@ def register_club(request):
             with transaction.atomic():
                 user = user_form.save() if anonymous else request.user
                 data = club_form.cleaned_data
-                club = create_club(data["name"], data["location"], user, gender=data["gender"], country=data["country"])
+                club = create_club(data["name"], data["location"], user, gender=data["gender"], country=data["country"],
+                                   division=data["division"])
             if anonymous:
                 login(request, user, backend=LOGIN_BACKEND)
             request.session[SESSION_KEY] = club.id

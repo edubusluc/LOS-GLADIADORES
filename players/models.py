@@ -28,12 +28,12 @@ class Player(PublicIdModel):
         ("Derecha", _("Derecha")),
         ("Revés", _("Revés")),
         ("Mixto", _(" Mixto")),
-        ("NONE", "NONE"),
+        ("NONE", "—"),  # sin indicar; los formularios lo muestran como «Elige una opción»
     ]
     HAND = [
         ("Diestro", _("Diestro")),
         ("Zurdo", _("Zurdo")),
-        ("NONE", "NONE")
+        ("NONE", "—"),
     ]
     name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)

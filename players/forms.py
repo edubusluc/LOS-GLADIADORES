@@ -2,10 +2,20 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import Player
 
+def with_placeholder(choices):
+    """Las opciones con «NONE» (sin indicar) al principio y rotulada «Elige una opción»."""
+    return [("NONE", _("Elige una opción"))] + [c for c in choices if c[0] != "NONE"]
+
+
 class PlayerForm (forms.ModelForm):
     class Meta:
         model = Player
         fields = ['name', 'last_name', 'position', 'skillfull_hand', 'photo']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['position'].choices = with_placeholder(Player.POSITIONS)
+        self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
 
 class SnpAccountForm(forms.Form):
     username = forms.CharField(label=_("Usuario de SNP"), max_length=150)

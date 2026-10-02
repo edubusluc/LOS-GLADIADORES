@@ -23,6 +23,8 @@ class MatchForm(forms.ModelForm):
         teams = Team.objects.filter(club=club, in_group=True)
         self.fields['local'].queryset = teams
         self.fields['visiting'].queryset = teams
+        for name in ('local', 'visiting'):
+            self.fields[name].empty_label = _("Elige una opción")
 
 class GameForm (forms.ModelForm):
     class Meta:

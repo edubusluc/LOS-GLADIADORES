@@ -5343,3 +5343,12 @@ msgstr "Error creating the team. Please check the data."
 #: team/views.py:92
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
+
+#: match/forms.py
+msgid "Tu club no tiene equipo propio: no se pueden crear partidos."
+msgstr "Your club has no team of its own, so matches cannot be created."
+
+#: match/forms.py
+#, python-format
+msgid "Tu equipo (%(team)s) tiene que jugar el partido: elígelo como local o visitante."
+msgstr "Your team (%(team)s) must play the match: choose it as the home or away team."

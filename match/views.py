@@ -102,67 +102,12 @@ def list_match(request):
 
 @club_admin_required
 def create_match(request):
-    club = request.club
-    own_team = club.own_team
-    if request.method == "POST":
-        # Obtiene los datos del formulario
-        local_id = request.POST.get('local')
-        visiting_id = request.POST.get('visiting')
-        start_date_str = request.POST.get('start_date')
-        match_type = request.POST.get('match_type') or Match.ENFRENTAMIENTO
-
-        # Intenta convertir la fecha
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        except (TypeError, ValueError):
-            return render(request, CREATE_MATCH_HTML, {
-                "form": MatchForm(request.POST, club=club),
-                "error": _("Fecha no válida. Usa el formato AAAA-MM-DD.")
-            })
-
-        # Verifica que todos los campos necesarios están presentes
-        try:
-            local_team = Team.objects.get(id=local_id, club=club)
-            visiting_team = Team.objects.get(id=visiting_id, club=club)
-        except (Team.DoesNotExist, ValueError):
-            return render(request, CREATE_MATCH_HTML, {
-                "form": MatchForm(request.POST, club=club),
-                "error": _("Uno de los equipos no existe.")
-            })
-
-        if match_type not in dict(Match.MATCH_TYPES):
-            return render(request, CREATE_MATCH_HTML, {
-                "form": MatchForm(request.POST, club=club),
-                "error": _("Tipo de partido no válido.")
-            })
-
-        # Verifica si el enfrentamiento es válido
-        if local_team == visiting_team or own_team not in (local_team, visiting_team):
-            form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
-            return render(request, CREATE_MATCH_HTML, {
-                "form": form,
-                "error": _("No es un enfrentamiento válido. %(team)s debe ser local o visitante") % {"team": own_team}
-            })
-
-        # Verifica si los campos están completos
-        if local_id and visiting_id and start_date:
-            Match.objects.create(
-                club=club,
-                local_id=local_id,
-                visiting_id=visiting_id,
-                start_date=start_date,
-                match_type=match_type,
-            )
-            return redirect("list_match")  # Redirección después de crear el partido
-        else:
-            form = MatchForm(request.POST, club=club)  # Re-crea el formulario con los datos enviados
-            return render(request,CREATE_MATCH_HTML, {
-                "form": form,
-                "error": _("Por favor, completa todos los campos.")
-            })
-    else:
-        form = MatchForm(club=club)
-
+    # Las reglas (equipos del club, el equipo propio como local o visitante,
+    # fecha y tipo válidos) están en MatchForm.
+    form = MatchForm(request.POST or None, club=request.club)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("list_match")
     return render(request, CREATE_MATCH_HTML, {"form": form})
 
 @club_admin_required

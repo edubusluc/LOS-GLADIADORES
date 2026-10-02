@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = (
         "Pasa los datos anteriores al modo multi-club: crea (o reutiliza) un club, "
         "le asigna todos los equipos, jugadores, partidos y publicaciones sin club, "
-        "marca su equipo propio y da de alta a los usuarios existentes como administradores."
+        "marca su equipo propio y da de alta a los usuarios existentes como capitanes."
     )
 
     def add_arguments(self, parser):

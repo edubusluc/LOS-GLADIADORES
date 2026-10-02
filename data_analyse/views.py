@@ -676,7 +676,7 @@ def pair_last_games(club, p1, p2, n=PAIR_LAST_GAMES, match_type=None):
 
 
 # ---------------------------------------------------------------
-# ADVERTENCIAS (solo administradores)
+# ADVERTENCIAS (solo capitanes)
 # ---------------------------------------------------------------
 
 ALL_SEASONS = "all"

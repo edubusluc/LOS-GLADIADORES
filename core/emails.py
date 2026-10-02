@@ -79,7 +79,7 @@ def club_admins(club):
 def send_welcome_email(user, club, created=False, site_url=""):
     """
     Correo de bienvenida al entrar en un club (``created=False``) o al registrar
-    uno nuevo (``created=True``). Indica el usuario, el club y sus administradores.
+    uno nuevo (``created=True``). Indica el usuario, el club y sus capitanes.
     Si el usuario no tiene email no se envía nada. Un fallo al enviar se registra
     pero no interrumpe el registro. Devuelve True si el correo salió.
     """

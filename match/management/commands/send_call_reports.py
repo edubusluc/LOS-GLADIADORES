@@ -28,4 +28,4 @@ class Command(BaseCommand):
         if failed:
             raise CommandError(f"{len(failed)} informes no se han podido enviar tras {MAX_ATTEMPTS} intentos: "
                                + ", ".join(f"{d.call} a {d.email}" for d in failed)
-                               + ". Los administradores pueden descargarlo o reenviarlo desde la convocatoria.")
+                               + ". Los capitanes pueden descargarlo o reenviarlo desde la convocatoria.")

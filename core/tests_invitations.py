@@ -107,7 +107,7 @@ class InvitationTests(TestCase):
         self.assertEqual(email.to, ["nuevo@example.com"])
         self.assertIn("Te has unido a Club A", email.subject)
         self.assertIn("Usuario: nuevo", email.body)
-        self.assertIn("Administradores: capitan", email.body)
+        self.assertIn("Capitanes: capitan", email.body)
         html = email.alternatives[0][0]
         self.assertIn("capitan", html)
         self.assertIn("http://testserver/", html)
@@ -209,7 +209,7 @@ class LoginAndWelcomeTests(TestCase):
         email = mail.outbox[0]
         self.assertIn("Has creado Nuevo Club", email.subject)
         self.assertIn("Equipo creado: Nuevo Club", email.body)
-        self.assertIn("Administradores: nuevo", email.body)
+        self.assertIn("Capitanes: nuevo", email.body)
 
     def test_welcome_is_skipped_without_email(self):
         user = User.objects.create_user("sinemail")

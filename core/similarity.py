@@ -1,7 +1,7 @@
 """
 Detección de nombres iguales o muy parecidos (equipos y jugadores).
 
-Se usa al crear un equipo o un jugador para avisar al administrador de que quizá ya
+Se usa al crear un equipo o un jugador para avisar al capitán de que quizá ya
 existe y evitar duplicados: no bloquea, solo pregunta si quiere continuar.
 """
 from difflib import SequenceMatcher

@@ -21,7 +21,7 @@ class Call(PublicIdModel):
 
 class ReportDelivery(PublicIdModel):
     """
-    Envío del informe PDF de una convocatoria a un administrador del club (uno por
+    Envío del informe PDF de una convocatoria a un capitán del club (uno por
     destinatario). Hace de cola: al cerrar la convocatoria se intenta enviar al momento
     y, si falla, el proceso ``send_call_reports`` lo reintenta con esperas crecientes.
     """

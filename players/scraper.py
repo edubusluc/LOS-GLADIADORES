@@ -45,7 +45,7 @@ CONTEXT_OPTIONS = {"locale": "es-ES", "timezone_id": "Europe/Madrid", "viewport"
 
 class SnpScrapeError(Exception):
     """
-    Error que se puede enseñar tal cual al administrador del club. ``retryable`` dice si
+    Error que se puede enseñar tal cual al capitán del club. ``retryable`` dice si
     tiene sentido volver a intentarlo más tarde (un fallo de red o de carga) o no (la
     contraseña no vale, la cuenta no tiene ese equipo…): reintentar un inicio de sesión
     rechazado una y otra vez puede acabar bloqueando la cuenta del capitán.
@@ -64,7 +64,7 @@ class SnpBlockedError(SnpTemporaryError):
 
 def parse_team_id(value):
     """
-    Número del equipo en SNP a partir de lo que pegue el administrador: el número
+    Número del equipo en SNP a partir de lo que pegue el capitán: el número
     (4380), la página del equipo (.../equipo/view/4380) o un enlace de snpgalaxy.com
     que la lleve codificada en base64 tras ``u_:``. None si no se reconoce.
     """

@@ -49,7 +49,7 @@
         {% for m in memberships %}
             <tr>
                 <td><a href="{% url 'backoffice:club_detail' m.club.public_id %}">{{ m.club.name }}</a></td>
-                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Administrador" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
+                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Capitán" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
             </tr>
         {% empty %}
             <tr><td colspan="2" class="text-muted">{% translate "No pertenece a ningún club." %}</td></tr>

@@ -258,7 +258,7 @@ def close_call(request, match_id):
 
 def _send_report(request, call, done):
     """
-    Informe PDF a los administradores: se intenta al momento y lo que falle se reintenta
+    Informe PDF a los capitanes: se intenta al momento y lo que falle se reintenta
     solo (send_call_reports). Si falla el envío, la convocatoria queda cerrada igualmente.
     """
     try:
@@ -269,7 +269,7 @@ def _send_report(request, call, done):
                                     "Puedes descargarlo desde esta página.") % {"done": done})
         return
     if not deliveries:
-        messages.info(request, _("%(done)s. Ningún administrador tiene email: añádelo en "
+        messages.info(request, _("%(done)s. Ningún capitán tiene email: añádelo en "
                                  "Miembros para recibir el informe automáticamente.") % {"done": done})
         return
     sent = [d.email for d in deliveries if d.status == ReportDelivery.SENT]
@@ -288,7 +288,7 @@ def _send_report(request, call, done):
 
 @club_admin_required
 def resend_call_report(request, match_id):
-    """Vuelve a enviar el informe de una convocatoria cerrada a los administradores."""
+    """Vuelve a enviar el informe de una convocatoria cerrada a los capitanes."""
     call = club_call(request, match__public_id=match_id)
     if request.method == "POST" and not call.draft_mode:
         _send_report(request, call, _("Informe reenviado"))

@@ -44,7 +44,7 @@ class Membership(PublicIdModel):
     ADMIN = "admin"
     MEMBER = "member"
     ROLES = [
-        (ADMIN, _("Administrador")),
+        (ADMIN, _("Capitán")),
         (MEMBER, _("Miembro (solo lectura)")),
     ]
 
@@ -78,7 +78,7 @@ def _invitation_expiry():
 
 class Invitation(PublicIdModel):
     """
-    Enlace de un solo uso que un administrador comparte para que un jugador se
+    Enlace de un solo uso que un capitán comparte para que un jugador se
     registre (o, si ya tiene cuenta, se una) al club como miembro. Caduca a las 24 h.
     """
     PUBLIC_ID_PREFIX = "INV"

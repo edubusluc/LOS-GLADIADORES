@@ -618,3 +618,57 @@ class PlayerChoicePlaceholderTests(TestCase):
         response = self.client.get(reverse("create_match"))
         self.assertNotContains(response, "---------")
         self.assertContains(response, "Elige una opción", count=2)
+
+
+class DeletePlayerTests(TestCase):
+    def setUp(self):
+        import datetime
+        from call.models import Call
+        from match.models import Game, Match, Result
+        from penalty.models import Penalty
+
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.ana = Player.objects.create(club=self.club, name="Ana", last_name="López")
+        self.bea = Player.objects.create(club=self.club, name="Bea", last_name="Ruiz")
+        self.match = Match.objects.create(club=self.club, local=self.club.own_team, visiting=rival,
+                                          start_date=datetime.date(2025, 10, 1))
+        call = Call.objects.create(match=self.match, draft_mode=False)
+        call.players.set([self.ana, self.bea])
+        self.penalty_model = Penalty
+        Penalty.objects.create(player=self.ana, call=call, reason="Retraso")
+        self.game = Game.objects.create(match=self.match, n_game=1, score=3, winner="Local", draft_mode=False,
+                                        player_1_local=self.ana, player_2_local=self.bea)
+        Result.objects.create(game=self.game, set1_local="6", set1_visiting="2", set2_local="6",
+                              set2_visiting="3", set3_local="0", set3_visiting="0")
+        self.client.login(username="admin", password="pass-12345")
+
+    def test_confirmation_warns_that_statistics_are_deleted(self):
+        page = self.client.get(reverse("delete_player", args=[self.ana.public_id])).content.decode()
+        self.assertIn("estadísticas relacionadas con este jugador", page)
+        self.assertIn("1 partido jugado", page)
+        self.assertTrue(Player.objects.filter(pk=self.ana.pk).exists())
+
+    def test_delete_keeps_match_game_and_result(self):
+        response = self.client.post(reverse("delete_player", args=[self.ana.public_id]))
+        self.assertRedirects(response, reverse("list_players"))
+        self.assertFalse(Player.objects.filter(pk=self.ana.pk).exists())
+        self.assertFalse(self.penalty_model.objects.exists())
+
+        self.game.refresh_from_db()
+        self.assertIsNone(self.game.player_1_local)
+        self.assertEqual(self.game.player_2_local, self.bea)
+        self.assertTrue(self.game.results.exists())
+        self.assertEqual(self.game.local_pair_label, "Ana López / Bea Ruiz")
+        page = self.client.get(reverse("call_for_match", args=[self.match.public_id])).content.decode()
+        self.assertIn("Ana López / Bea Ruiz", page)
+        # El compañero conserva sus estadísticas.
+        self.assertEqual(self.client.get(reverse("show_player", args=[self.bea.public_id])).status_code, 200)
+
+    def test_members_cannot_delete(self):
+        viewer = User.objects.create_user("viewer", password="pass-12345")
+        Membership.objects.create(user=viewer, club=self.club, role=Membership.MEMBER)
+        self.client.login(username="viewer", password="pass-12345")
+        self.client.post(reverse("delete_player", args=[self.ana.public_id]))
+        self.assertTrue(Player.objects.filter(pk=self.ana.pk).exists())

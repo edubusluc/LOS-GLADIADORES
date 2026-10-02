@@ -137,6 +137,28 @@ def edit_player(request, player_id):
     return render(request, 'edit_player.html', context)  # Renderizar con el contexto correcto
 
 
+@club_admin_required
+def delete_player(request, player_id):
+    """Elimina un jugador tras avisar de que se borran sus estadísticas. Los partidos se conservan."""
+    player = get_object_or_404(Player, public_id=player_id, club=request.club)
+    if request.method == "POST":
+        name = str(player)
+        player.delete()
+        messages.success(request, _("Jugador «%(name)s» eliminado.") % {"name": name})
+        return redirect("list_players")
+
+    played = Game.objects.filter(
+        Q(player_1_local=player) | Q(player_2_local=player) |
+        Q(player_1_visiting=player) | Q(player_2_visiting=player)
+    ).count()
+    return render(request, "confirm_delete.html", {
+        "player": player,
+        "games": played,
+        "calls": player.players.count(),
+        "penalties": player.player.count(),
+    })
+
+
 @club_required
 def show_player(request, player_id):
     player = get_object_or_404(Player, public_id=player_id, club=request.club)

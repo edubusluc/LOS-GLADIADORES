@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 11:18+0000\n"
+"POT-Creation-Date: 2026-10-02 11:37+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -1237,7 +1237,7 @@ msgstr "Next: preview"
 #: backoffice/templates/backoffice/import_map.html:39
 #: core/templates/includes/similar_modal.html:19
 #: match/templates/delete_match.html:12
-#: players/templates/confirm_delete.html:12
+#: players/templates/confirm_delete.html:24
 #: players/templates/list_players.html:194
 msgid "Cancelar"
 msgstr "Cancel"
@@ -2174,9 +2174,9 @@ msgstr "Location"
 msgid "Categoría"
 msgstr "Category"
 
-#: core/forms.py:16 core/forms.py:18 core/forms.py:19 team/forms.py:17
-#: team/templates/edit_team.html:21 team/templates/edit_team.html:32
-#: team/templates/edit_team.html:42
+#: core/forms.py:16 core/forms.py:18 core/forms.py:19 match/forms.py:27
+#: players/forms.py:7 team/forms.py:17 team/templates/edit_team.html:21
+#: team/templates/edit_team.html:32 team/templates/edit_team.html:42
 msgid "Elige una opción"
 msgstr "Choose an option"
 
@@ -2862,7 +2862,7 @@ msgid "El club debe tener al menos un capitán."
 msgstr "The club must have at least one captain."
 
 #: data_analyse/templates/includes/match_type_filter.html:3
-#: data_analyse/templates/includes/match_type_filter.html:5 match/models.py:40
+#: data_analyse/templates/includes/match_type_filter.html:5 match/models.py:42
 msgid "Tipo de partido"
 msgstr "Match type"
 
@@ -3797,35 +3797,35 @@ msgstr "This fixture does not belong to the club's team."
 msgid "Los partidos de este enfrentamiento ya estaban creados."
 msgstr "The matches of this fixture had already been created."
 
-#: match/models.py:24
+#: match/models.py:26
 msgid "Victoria Local"
 msgstr "Home win"
 
-#: match/models.py:25
+#: match/models.py:27
 msgid "Victoria Visitante"
 msgstr "Away win"
 
-#: match/models.py:26 match/templates/list_match.html:63
+#: match/models.py:28 match/templates/list_match.html:63
 msgid "Empate"
 msgstr "Draw"
 
-#: match/models.py:27
+#: match/models.py:29
 msgid "Ninguno"
 msgstr "None"
 
-#: match/models.py:34
+#: match/models.py:36
 msgid "Enfrentamiento"
 msgstr "League match"
 
-#: match/models.py:35
+#: match/models.py:37
 msgid "Reto"
 msgstr "Challenge"
 
-#: match/models.py:36
+#: match/models.py:38
 msgid "Play Off"
 msgstr "Play-off"
 
-#: match/models.py:143
+#: match/models.py:178
 msgid "El valor debe estar entre 0 y 30."
 msgstr "The value must be between 0 and 30."
 
@@ -4307,7 +4307,7 @@ msgstr ""
 "strong>. This action cannot be undone."
 
 #: match/templates/delete_match.html:11
-#: players/templates/confirm_delete.html:11
+#: players/templates/confirm_delete.html:23
 msgid "Eliminar"
 msgstr "Delete"
 
@@ -4619,23 +4619,23 @@ msgstr "Confirmed matches cannot be edited"
 msgid "Parejas actualizadas."
 msgstr "Pairs updated."
 
-#: players/forms.py:11
+#: players/forms.py:21
 msgid "Usuario de SNP"
 msgstr "SNP username"
 
-#: players/forms.py:13
+#: players/forms.py:23
 msgid "Contraseña de SNP"
 msgstr "SNP password"
 
-#: players/forms.py:14
+#: players/forms.py:24
 msgid "Se guarda cifrada. Déjala vacía para mantener la actual."
 msgstr "Stored encrypted. Leave blank to keep the current one."
 
-#: players/forms.py:17
+#: players/forms.py:27
 msgid "Equipo en SNP (opcional)"
 msgstr "SNP team (optional)"
 
-#: players/forms.py:18
+#: players/forms.py:28
 msgid ""
 "Solo si la cuenta tiene varios equipos: el número del equipo (p. ej. 4380) o "
 "la dirección de su página en SNP."
@@ -4643,11 +4643,11 @@ msgstr ""
 "Only if the account has several teams: the team number (e.g. 4380) or the "
 "address of its SNP page."
 
-#: players/forms.py:32
+#: players/forms.py:42
 msgid "Escribe la contraseña de SNP."
 msgstr "Enter the SNP password."
 
-#: players/forms.py:42
+#: players/forms.py:52
 msgid ""
 "Escribe el número del equipo (p. ej. 4380) o la dirección de su página en "
 "SNP."
@@ -4767,13 +4767,56 @@ msgid "Error inesperado al leer SNP."
 msgstr "Unexpected error while reading SNP."
 
 #: players/templates/confirm_delete.html:7
+#: players/templates/edit_player.html:50
 msgid "Eliminar jugador"
 msgstr "Delete player"
 
 #: players/templates/confirm_delete.html:8
 #, python-format
-msgid "¿Seguro que quieres eliminar a \"%(name)s\"?"
-msgstr "Are you sure you want to delete \"%(name)s\"?"
+msgid "¿Seguro que quieres eliminar a «%(name)s»?"
+msgstr "Are you sure you want to delete “%(name)s”?"
+
+#: players/templates/confirm_delete.html:11
+msgid ""
+"Se eliminarán también todas las estadísticas relacionadas con este jugador:"
+msgstr "All statistics related to this player will also be deleted:"
+
+#: players/templates/confirm_delete.html:13
+#, python-format
+msgid "Sus estadísticas de %(n)s partido jugado"
+msgid_plural "Sus estadísticas de %(n)s partidos jugados"
+msgstr[0] "Their statistics from %(n)s game played"
+msgstr[1] "Their statistics from %(n)s games played"
+
+#: players/templates/confirm_delete.html:14
+#, python-format
+msgid "%(n)s convocatoria"
+msgid_plural "%(n)s convocatorias"
+msgstr[0] "%(n)s call-up"
+msgstr[1] "%(n)s call-ups"
+
+#: players/templates/confirm_delete.html:15
+#, python-format
+msgid "%(n)s sanción"
+msgid_plural "%(n)s sanciones"
+msgstr[0] "%(n)s penalty"
+msgstr[1] "%(n)s penalties"
+
+#: players/templates/confirm_delete.html:16
+msgid "Su historial de puntos SNP"
+msgstr "Their SNP points history"
+
+#: players/templates/confirm_delete.html:18
+msgid ""
+"Los enfrentamientos y sus resultados no se borran: en las parejas en las que "
+"jugó se seguirá mostrando su nombre."
+msgstr ""
+"Matches and their results are not deleted: their name will still be shown in "
+"the pairs they played in."
+
+#: players/templates/confirm_delete.html:20
+msgid "Esta acción no se puede deshacer."
+msgstr "This action cannot be undone."
 
 #: players/templates/create_player.html:18
 #: players/templates/create_player.html:53
@@ -5107,35 +5150,40 @@ msgstr "Set up account"
 msgid "Error al crear el jugador. Por favor, verifica los datos."
 msgstr "Error creating the player. Please check the details."
 
-#: players/views.py:162
+#: players/views.py:147
+#, python-format
+msgid "Jugador «%(name)s» eliminado."
+msgstr "Player “%(name)s” deleted."
+
+#: players/views.py:186
 #, python-format
 msgid "%(n)s alta"
 msgid_plural "%(n)s altas"
 msgstr[0] "%(n)s added"
 msgstr[1] "%(n)s added"
 
-#: players/views.py:163
+#: players/views.py:187
 #, python-format
 msgid "%(n)s baja"
 msgid_plural "%(n)s bajas"
 msgstr[0] "%(n)s removed"
 msgstr[1] "%(n)s removed"
 
-#: players/views.py:164
+#: players/views.py:188
 #, python-format
 msgid "Plantilla actualizada: %(joined)s y %(left)s."
 msgstr "Roster updated: %(joined)s and %(left)s."
 
-#: players/views.py:166
+#: players/views.py:190
 msgid "No había cambios que guardar."
 msgstr "There were no changes to save."
 
-#: players/views.py:189
+#: players/views.py:213
 msgid ""
 "Cuenta SNP guardada. Los puntos se actualizarán cada lunes por la noche."
 msgstr "SNP account saved. Points will be updated every Monday night."
 
-#: players/views.py:198
+#: players/views.py:222
 msgid ""
 "No se ha podido leer la cuenta guardada (¿ha cambiado la clave de cifrado?). "
 "Vuelve a introducirla."
@@ -5143,11 +5191,11 @@ msgstr ""
 "The saved account could not be read (has the encryption key changed?). "
 "Please enter it again."
 
-#: players/views.py:209
+#: players/views.py:233
 msgid "Cuenta SNP borrada."
 msgstr "SNP account deleted."
 
-#: players/views.py:218
+#: players/views.py:242
 #, python-format
 msgid ""
 "El equipo ya se ha completado este mes. Podrás volver a hacerlo a partir del "
@@ -5156,11 +5204,11 @@ msgstr ""
 "The team has already been completed this month. You can do it again from "
 "%(date)s."
 
-#: players/views.py:227
+#: players/views.py:251
 msgid "Primero registra la cuenta SNP del capitán."
 msgstr "First register the captain's SNP account."
 
-#: players/views.py:247
+#: players/views.py:271
 #, python-format
 msgid "Equipo completado: %(message)s"
 msgstr "Team completed: %(message)s"

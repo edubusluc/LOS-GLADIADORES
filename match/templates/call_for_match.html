@@ -133,7 +133,7 @@
         <div class="z-game-row {% if g.winner == 'Local' %}is-winner{% endif %}">
             <div class="z-game-side">
                 <strong>{{ match.local }}</strong>
-                {% if g.player_1_local and g.player_2_local %}{{ g.player_1_local }} / {{ g.player_2_local }}{% endif %}
+                {{ g.local_pair_label }}
             </div>
             <span class="z-set">{{ r.set1_local|default_if_none:"–" }}</span>
             <span class="z-set">{{ r.set2_local|default_if_none:"–" }}</span>
@@ -142,7 +142,7 @@
         <div class="z-game-row {% if g.winner == 'Visitante' %}is-winner{% endif %}">
             <div class="z-game-side">
                 <strong>{{ match.visiting }}</strong>
-                {% if g.player_1_visiting and g.player_2_visiting %}{{ g.player_1_visiting }} / {{ g.player_2_visiting }}{% endif %}
+                {{ g.visiting_pair_label }}
             </div>
             <span class="z-set">{{ r.set1_visiting|default_if_none:"–" }}</span>
             <span class="z-set">{{ r.set2_visiting|default_if_none:"–" }}</span>

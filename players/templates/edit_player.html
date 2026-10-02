@@ -47,6 +47,7 @@
         </div>
         
         <button type="submit" class="btn btn-primary">{% translate "Guardar" %}</button>
+        <a href="{% url 'delete_player' player.public_id %}" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i> {% translate "Eliminar jugador" %}</a>
     </form>
 </div>
 {% endblock %}

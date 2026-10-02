@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from players.models import Player
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext, gettext_lazy as _
@@ -108,10 +110,14 @@ class Game(PublicIdModel):
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='games')
     n_game = models.IntegerField(choices= NUMBER_GAME, null = True)
-    player_1_local = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_1_local', null=True)
-    player_2_local = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_2_local', null=True)
-    player_1_visiting = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_1_visiting', null=True)
-    player_2_visiting = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player_2_visiting', null=True)
+    # SET_NULL: al eliminar un jugador el partido y su resultado se conservan; su nombre
+    # queda guardado en removed_player_names para seguir mostrando la pareja.
+    player_1_local = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name='player_1_local', null=True)
+    player_2_local = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name='player_2_local', null=True)
+    player_1_visiting = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name='player_1_visiting', null=True)
+    player_2_visiting = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name='player_2_visiting', null=True)
+    # {"player_1_local": "Ana López", ...}: jugadores eliminados que jugaron este partido.
+    removed_player_names = models.JSONField(default=dict, blank=True)
     score = models.IntegerField(choices= NUMBER_GAME, null = True)
     winner = models.CharField(max_length=10, null=True)
     draft_mode = models.BooleanField(default=True)
@@ -129,11 +135,40 @@ class Game(PublicIdModel):
         super().save(*args, **kwargs)
 
 
+    PLAYER_SLOTS = ("player_1_local", "player_2_local", "player_1_visiting", "player_2_visiting")
+
+    def player_name(self, slot):
+        """Nombre del jugador de esa posición, también si ya se ha eliminado."""
+        player = getattr(self, slot)
+        return str(player) if player else self.removed_player_names.get(slot, "")
+
+    def _pair_label(self, first, second):
+        names = [self.player_name(first), self.player_name(second)]
+        return " / ".join(names) if all(names) else ""
+
+    @property
+    def local_pair_label(self):
+        return self._pair_label("player_1_local", "player_2_local")
+
+    @property
+    def visiting_pair_label(self):
+        return self._pair_label("player_1_visiting", "player_2_visiting")
+
     def __str__(self):
         if self.player_1_local:
             return f'{self.match}-{self.n_game}: {self.player_1_local} - {self.player_2_local}'
         else:
             return f'{self.player_1_visiting} - {self.player_2_visiting}'
+
+
+@receiver(pre_delete, sender=Player)
+def keep_name_in_games(sender, instance, **kwargs):
+    """Antes de eliminar un jugador guarda su nombre en sus partidos (el FK pasará a NULL)."""
+    for slot in Game.PLAYER_SLOTS:
+        for game in Game.objects.filter(**{slot: instance}).only("id", "removed_player_names"):
+            game.removed_player_names = {**game.removed_player_names, slot: str(instance)}
+            # update() en lugar de save(): save() valida el partido y aquí solo cambia el nombre.
+            Game.objects.filter(pk=game.pk).update(removed_player_names=game.removed_player_names)
 
 
 def validate_set_value(value):

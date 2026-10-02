@@ -2,11 +2,13 @@ import datetime
 
 from django.forms import Select
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -18,8 +20,8 @@ from match.models import Match
 from players.models import Player, SnpAccount, current_season
 
 from .decorators import club_admin_required
-from .emails import send_welcome_email
-from .forms import ClubForm, SignUpForm, AddMemberForm
+from .emails import send_invitation_email, send_welcome_email
+from .forms import ClubForm, InviteMemberForm, SignUpForm
 from .middleware import SESSION_KEY
 from .models import Invitation, Membership
 from .services import InvitationError, accept_invitation, create_club
@@ -30,7 +32,7 @@ PENDING_INVITE_KEY = "pending_invitation"
 # justo después de registrarse hay que indicar cuál se usa.
 LOGIN_BACKEND = "django.contrib.auth.backends.ModelBackend"
 
-# Create your views here.
+User = get_user_model()
 
 
 def home(request):
@@ -120,33 +122,49 @@ def switch_club(request):
 
 
 @club_admin_required
-def club_members(request):
+def club_members(request, invite_form=None):
     club = request.club
-
-    if request.method == "POST":
-        form = AddMemberForm(request.POST, club=club)
-        if form.is_valid():
-            membership = form.save()
-            send_welcome_email(membership.user, club, site_url=_site_url(request))
-            messages.success(request, _("%(username)s añadido al club.") % {"username": membership.user.username})
-            return redirect("club_members")
-    else:
-        form = AddMemberForm(club=club)
-
-    _style(form)
+    invite_form = invite_form or InviteMemberForm(club=club)
+    _style(invite_form)
     memberships = club.memberships.select_related("user").order_by("user__username")
     invitations = [
         (inv, request.build_absolute_uri(reverse("invitation", args=[inv.token])))
         for inv in club.invitations.filter(used_at__isnull=True, expires_at__gt=timezone.now())
     ]
     return render(request, "club_members.html", {
-        "form": form, "memberships": memberships, "roles": Membership.ROLES, "invitations": invitations,
+        "invite_form": invite_form, "memberships": memberships, "roles": Membership.ROLES, "invitations": invitations,
     })
 
 
 @club_admin_required
 @require_POST
 def create_invitation(request):
+    """
+    El capitán invita a un jugador por email. Las cuentas las crea cada jugador
+    desde el enlace; el capitán ya no puede crear usuarios. Volver a invitar al
+    mismo email sustituye la invitación pendiente por una nueva.
+    """
+    club = request.club
+    form = InviteMemberForm(request.POST, club=club)
+    if not form.is_valid():
+        return club_members(request, invite_form=form)
+
+    email = form.cleaned_data["email"]
+    club.invitations.filter(email__iexact=email, used_at__isnull=True).delete()
+    invitation = Invitation.objects.create(club=club, created_by=request.user, email=email)
+    url = request.build_absolute_uri(reverse("invitation", args=[invitation.token]))
+    if send_invitation_email(invitation, url):
+        messages.success(request, _("Invitación enviada a %(email)s. El enlace caduca en 24 horas.") % {"email": email})
+    else:
+        invitation.delete()
+        messages.error(request, _("No se pudo enviar el correo a %(email)s. Inténtalo de nuevo más tarde.") % {"email": email})
+    return redirect(reverse("club_members") + "#invitaciones")
+
+
+@club_admin_required
+@require_POST
+def create_invitation_link(request):
+    """Invitación sin email: el capitán copia el enlace y lo comparte (por WhatsApp, por ejemplo)."""
     Invitation.objects.create(club=request.club, created_by=request.user)
     messages.success(request, _("Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve para una sola persona."))
     return redirect(reverse("club_members") + "#invitaciones")
@@ -158,6 +176,25 @@ def revoke_invitation(request, invitation_id):
     get_object_or_404(Invitation, public_id=invitation_id, club=request.club, used_at__isnull=True).delete()
     messages.success(request, _("Invitación anulada."))
     return redirect(reverse("club_members") + "#invitaciones")
+
+
+@require_POST
+def password_check(request):
+    """
+    Comprueba, mientras se escribe, las reglas de contraseña que solo conoce el
+    servidor (parecido al usuario/email y contraseñas comunes) para la lista de
+    requisitos de los formularios de registro. Solo responde sí/no por regla.
+    """
+    user = User(username=request.POST.get("username", ""), email=request.POST.get("email", ""))
+    codes = set()
+    try:
+        validate_password(request.POST.get("password", ""), user)
+    except ValidationError as exc:
+        codes = {error.code for error in exc.error_list}
+    return JsonResponse({
+        "similar": "password_too_similar" not in codes,
+        "common": "password_too_common" not in codes,
+    })
 
 
 def _join(request, invitation, user):
@@ -216,7 +253,7 @@ def invitation(request, token):
             messages.success(request, _("¡Bienvenido a %(club)s!") % {"club": club.name})
             return redirect("home")
     else:
-        form = SignUpForm()
+        form = SignUpForm(initial={"email": invitation.email})
 
     _style(form)
     return render(request, "invitation.html", {"invitation": invitation, "club": club, "form": form})

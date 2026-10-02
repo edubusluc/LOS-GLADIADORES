@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 12:21+0000\n"
+"POT-Creation-Date: 2026-10-02 12:36+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -699,21 +699,20 @@ msgstr "no matches played"
 
 #: backoffice/templates/backoffice/club_detail.html:28
 #: backoffice/templates/backoffice/load.html:38
-#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:33
-#: core/forms.py:48 core/templates/club_members.html:18
-#: core/templates/emails/welcome.html:9 core/templates/emails/welcome.txt:5
+#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:42
+#: core/templates/club_members.html:18 core/templates/emails/welcome.html:9
+#: core/templates/emails/welcome.txt:5
 msgid "Usuario"
 msgstr "Username"
 
 #: backoffice/templates/backoffice/club_detail.html:28
 #: backoffice/templates/backoffice/user_detail.html:23
-#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:24
-#: core/forms.py:54
+#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:33
 msgid "Email"
 msgstr "Email"
 
 #: backoffice/templates/backoffice/club_detail.html:28
-#: backoffice/templates/backoffice/user_detail.html:47 core/forms.py:57
+#: backoffice/templates/backoffice/user_detail.html:47
 msgid "Rol"
 msgstr "Role"
 
@@ -2011,7 +2010,7 @@ msgstr "just now"
 msgid "Solo a mano"
 msgstr "Manual only"
 
-#: backoffice/views.py:159 core/forms.py:35 core/forms.py:50
+#: backoffice/views.py:159 core/forms.py:44
 #: core/templates/registration/login.html:22
 #: core/templates/registration/login.html:23
 msgid "Contraseña"
@@ -2160,79 +2159,77 @@ msgstr "Welcome to Zyra · You have created %(club)s"
 msgid "Bienvenido a Zyra · Te has unido a %(club)s"
 msgstr "Welcome to Zyra · You have joined %(club)s"
 
-#: core/forms.py:14
+#: core/emails.py:127
+#, python-format
+msgid "Te han invitado a %(club)s en Zyra"
+msgstr "You've been invited to %(club)s on Zyra"
+
+#: core/forms.py:23
 msgid "Nombre del club"
 msgstr "Club name"
 
-#: core/forms.py:15
+#: core/forms.py:24
 msgid "Localización"
 msgstr "Location"
 
-#: core/forms.py:16 players/models.py:48
+#: core/forms.py:25 players/models.py:48
 #: players/templates/list_players.html:164
 #: players/templates/list_players.html:180 team/models.py:35
 msgid "Categoría"
 msgstr "Category"
 
-#: core/forms.py:16 core/forms.py:18 core/forms.py:19 match/forms.py:33
+#: core/forms.py:25 core/forms.py:27 core/forms.py:28 match/forms.py:33
 #: players/forms.py:7 team/forms.py:17 team/templates/edit_team.html:21
 #: team/templates/edit_team.html:32 team/templates/edit_team.html:42
 msgid "Elige una opción"
 msgstr "Choose an option"
 
-#: core/forms.py:17
+#: core/forms.py:26
 msgid "Los jugadores del club tendrán esta categoría."
 msgstr "The club's players will have this category."
 
-#: core/forms.py:18 team/models.py:36
+#: core/forms.py:27 team/models.py:36
 msgid "Nacionalidad del equipo"
 msgstr "Team nationality"
 
-#: core/forms.py:19 team/models.py:37
+#: core/forms.py:28 team/models.py:37
 msgid "División"
 msgstr "Division"
 
-#: core/forms.py:24
+#: core/forms.py:33
 msgid ""
 "Te enviaremos la confirmación del registro. También puedes usarlo para "
 "iniciar sesión."
 msgstr ""
 "We'll send you the registration confirmation. You can also use it to log in."
 
-#: core/forms.py:34
+#: core/forms.py:43
 msgid "Letras, números y @ . + - _ (máximo 150)."
 msgstr "Letters, numbers and @ . + - _ (150 max)."
 
-#: core/forms.py:36
-msgid ""
-"Al menos 8 caracteres; no puede ser solo números ni parecerse a tu usuario."
-msgstr ""
-"At least 8 characters; it can't be only numbers or resemble your username."
-
-#: core/forms.py:37
+#: core/forms.py:50
 msgid "Repite la contraseña"
 msgstr "Repeat the password"
 
-#: core/forms.py:43
+#: core/forms.py:56
 msgid "Ya hay una cuenta con este email: inicia sesión con ella."
 msgstr "There is already an account with this email: log in with it."
 
-#: core/forms.py:51
-msgid "Solo si el usuario no existe todavía: se creará con esta contraseña."
+#: core/forms.py:63
+msgid "Email del jugador"
+msgstr "Player's email"
+
+#: core/forms.py:64
+msgid ""
+"Le enviaremos un enlace para registrarse (o unirse con su cuenta) como "
+"miembro. Caduca en 24 horas."
 msgstr ""
-"Only if the user doesn't exist yet: it will be created with this password."
+"We'll send them a link to sign up (or join with their existing account) as a "
+"member. It expires in 24 hours."
 
-#: core/forms.py:55
-msgid "Los capitanes con email reciben el informe al cerrar cada convocatoria."
-msgstr "Captains with an email receive the report when each call-up is closed."
-
-#: core/forms.py:73
-msgid "El usuario no existe: indica una contraseña para crearlo."
-msgstr "The user doesn't exist: enter a password to create it."
-
-#: core/forms.py:76
-msgid "Ese usuario ya es miembro del club."
-msgstr "That user is already a member of the club."
+#: core/forms.py:74
+msgid "Ese email ya pertenece a un miembro del club."
+msgstr "That email already belongs to a club member."
 
 #: core/models.py:48
 msgid "Miembro (solo lectura)"
@@ -2242,7 +2239,7 @@ msgstr "Member (read-only)"
 msgid "Esta invitación ya se ha usado o ha caducado."
 msgstr "This invitation has already been used or has expired."
 
-#: core/services.py:34 core/views.py:191
+#: core/services.py:34 core/views.py:228
 #, python-format
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
@@ -2360,62 +2357,146 @@ msgstr "Invite players"
 
 #: core/templates/club_members.html:48
 msgid ""
-"Genera un enlace y compártelo con un jugador (por WhatsApp, por ejemplo). "
-"Podrá registrarse con usuario, email y contraseña o con Google, y entrará "
-"como miembro. Cada enlace sirve para una persona y caduca a las 24 horas."
+"Invita a un jugador por email o genera un enlace para compartirlo tú (por "
+"WhatsApp, por ejemplo). Podrá registrarse con usuario, email y contraseña o "
+"con Google, o unirse con la cuenta que ya tenga, y entrará como miembro. "
+"Cada invitación sirve para una persona y caduca a las 24 horas."
 msgstr ""
-"Generate a link and share it with a player (via WhatsApp, for example). They "
-"can sign up with a username, email and password or with Google, and will "
-"join as a member. Each link works for one person and expires after 24 hours."
+"Invite a player by email or generate a link to share yourself (on WhatsApp, "
+"for example). They can sign up with username, email and password or with "
+"Google, or join with an account they already have, and will join as a "
+"member. Each invitation works for one person and expires after 24 hours."
 
-#: core/templates/club_members.html:51
-msgid "Generar invitación"
-msgstr "Generate invitation"
+#: core/templates/club_members.html:52
+msgid "Enviar invitación"
+msgstr "Send invitation"
 
-#: core/templates/club_members.html:55
+#: core/templates/club_members.html:56
+msgid "Generar enlace de invitación"
+msgstr "Generate invitation link"
+
+#: core/templates/club_members.html:59
+msgid "Invitaciones pendientes"
+msgstr "Pending invitations"
+
+#: core/templates/club_members.html:61
+msgid "Enviada a"
+msgstr "Sent to"
+
+#: core/templates/club_members.html:61
 msgid "Enlace"
 msgstr "Link"
 
-#: core/templates/club_members.html:55
+#: core/templates/club_members.html:61
 msgid "Caduca"
 msgstr "Expires"
 
-#: core/templates/club_members.html:61
+#: core/templates/club_members.html:65
+msgid "Enlace compartido"
+msgstr "Shared link"
+
+#: core/templates/club_members.html:68
 msgid "Enlace de invitación"
 msgstr "Invitation link"
 
-#: core/templates/club_members.html:62
+#: core/templates/club_members.html:69
 msgid "Copiar"
 msgstr "Copy"
 
-#: core/templates/club_members.html:63
+#: core/templates/club_members.html:70
 #, python-format
 msgid "Únete a %(club)s en Zyra: %(url)s"
 msgstr "Join %(club)s on Zyra: %(url)s"
 
-#: core/templates/club_members.html:70
+#: core/templates/club_members.html:77
 msgid "Anular"
 msgstr "Revoke"
 
-#: core/templates/club_members.html:79
-msgid "Añadir miembro"
-msgstr "Add member"
-
-#: core/templates/club_members.html:80
-msgid ""
-"Crea tú mismo la cuenta de un usuario, o añade a alguien que ya tiene "
-"cuenta, y elige su rol."
-msgstr ""
-"Create a user's account yourself, or add someone who already has an account, "
-"and choose their role."
-
-#: core/templates/club_members.html:84
-msgid "Añadir"
-msgstr "Add"
-
-#: core/templates/club_members.html:87
+#: core/templates/club_members.html:86
 msgid "Copiado"
 msgstr "Copied"
+
+#: core/templates/emails/invitation.html:1
+#: core/templates/emails/invitation.txt:1
+#, python-format
+msgid "Únete a %(club)s en Zyra"
+msgstr "Join %(club)s on Zyra"
+
+#: core/templates/emails/invitation.html:2
+#, python-format
+msgid ""
+"<strong>%(name)s</strong>, capitán de <strong>%(club)s</strong>, te invita a "
+"entrar en el equipo para consultar partidos, convocatorias y estadísticas."
+msgstr ""
+"<strong>%(name)s</strong>, captain of <strong>%(club)s</strong>, invites you "
+"to join the team to see matches, call-ups and statistics."
+
+#: core/templates/emails/invitation.html:2
+#, python-format
+msgid ""
+"Te han invitado a entrar en <strong>%(club)s</strong> para consultar "
+"partidos, convocatorias y estadísticas."
+msgstr ""
+"You've been invited to join <strong>%(club)s</strong> to see matches, call-"
+"ups and statistics."
+
+#: core/templates/emails/invitation.html:3
+msgid ""
+"Pulsa el botón para crear tu cuenta (o unirte con la que ya tienes, también "
+"con Google)."
+msgstr ""
+"Click the button to create your account (or join with the one you already "
+"have, Google included)."
+
+#: core/templates/emails/invitation.html:4
+msgid "Aceptar invitación"
+msgstr "Accept invitation"
+
+#: core/templates/emails/invitation.html:5
+#: core/templates/emails/invitation.txt:8
+#, python-format
+msgid ""
+"El enlace sirve para una sola persona y caduca el %(date)s a las %(time)s."
+msgstr ""
+"The link works for one person only and expires on %(date)s at %(time)s."
+
+#: core/templates/emails/invitation.html:6
+#: core/templates/emails/invitation.txt:10
+#: core/templates/emails/welcome.html:24 core/templates/emails/welcome.txt:11
+#: match/notifications.py:52
+msgid "Un saludo,"
+msgstr "Best regards,"
+
+#: core/templates/emails/invitation.html:6
+#: core/templates/emails/invitation.txt:11
+#: core/templates/emails/welcome.html:24 core/templates/emails/welcome.txt:12
+msgid "El equipo de Zyra"
+msgstr "The Zyra team"
+
+#: core/templates/emails/invitation.txt:3
+#, python-format
+msgid ""
+"%(name)s, capitán de %(club)s, te invita a entrar en el equipo para "
+"consultar partidos, convocatorias y estadísticas."
+msgstr ""
+"%(name)s, captain of %(club)s, invites you to join the team to see matches, "
+"call-ups and statistics."
+
+#: core/templates/emails/invitation.txt:3
+#, python-format
+msgid ""
+"Te han invitado a entrar en %(club)s para consultar partidos, convocatorias "
+"y estadísticas."
+msgstr ""
+"You've been invited to join %(club)s to see matches, call-ups and statistics."
+
+#: core/templates/emails/invitation.txt:5
+msgid ""
+"Abre este enlace para crear tu cuenta (o unirte con la que ya tienes, "
+"también con Google):"
+msgstr ""
+"Open this link to create your account (or join with the one you already "
+"have, Google included):"
 
 #: core/templates/emails/layout.html:27
 msgid "Gestión de equipos de pádel"
@@ -2470,15 +2551,6 @@ msgstr "Captains"
 #: core/templates/emails/welcome.html:22
 msgid "Entrar en Zyra"
 msgstr "Go to Zyra"
-
-#: core/templates/emails/welcome.html:24 core/templates/emails/welcome.txt:11
-#: match/notifications.py:52
-msgid "Un saludo,"
-msgstr "Best regards,"
-
-#: core/templates/emails/welcome.html:24 core/templates/emails/welcome.txt:12
-msgid "El equipo de Zyra"
-msgstr "The Zyra team"
 
 #: core/templates/emails/welcome.txt:3
 #, python-format
@@ -2628,6 +2700,27 @@ msgstr "Next"
 #: core/templates/includes/pagination.html:13
 msgid "Última"
 msgstr "Last"
+
+#: core/templates/includes/password_rules.html:2
+#, python-format
+msgid "Al menos %(min_length)s caracteres"
+msgstr "At least %(min_length)s characters"
+
+#: core/templates/includes/password_rules.html:3
+msgid "No puede ser solo números"
+msgstr "Not only numbers"
+
+#: core/templates/includes/password_rules.html:4
+msgid "No se parece a tu usuario ni a tu email"
+msgstr "Not similar to your username or email"
+
+#: core/templates/includes/password_rules.html:5
+msgid "No es una contraseña demasiado común"
+msgstr "Not a too common password"
+
+#: core/templates/includes/password_rules.html:6
+msgid "Las dos contraseñas coinciden"
+msgstr "Both passwords match"
 
 #: core/templates/includes/similar_modal.html:9
 #: players/templates/list_players.html:194
@@ -2821,17 +2914,22 @@ msgstr "See you soon"
 msgid "Has cerrado sesión correctamente."
 msgstr "You have been logged out."
 
-#: core/views.py:97
+#: core/views.py:99
 #, python-format
 msgid "Club %(club)s creado correctamente."
 msgstr "Club %(club)s created successfully."
 
-#: core/views.py:131
+#: core/views.py:157
 #, python-format
-msgid "%(username)s añadido al club."
-msgstr "%(username)s added to the club."
+msgid "Invitación enviada a %(email)s. El enlace caduca en 24 horas."
+msgstr "Invitation sent to %(email)s. The link expires in 24 hours."
 
-#: core/views.py:151
+#: core/views.py:160
+#, python-format
+msgid "No se pudo enviar el correo a %(email)s. Inténtalo de nuevo más tarde."
+msgstr "The email to %(email)s could not be sent. Please try again later."
+
+#: core/views.py:169
 msgid ""
 "Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve "
 "para una sola persona."
@@ -2839,25 +2937,25 @@ msgstr ""
 "Invitation created: copy the link and share it. It expires in 24 hours and "
 "works for one person only."
 
-#: core/views.py:159
+#: core/views.py:177
 msgid "Invitación anulada."
 msgstr "Invitation revoked."
 
-#: core/views.py:172 core/views.py:216
+#: core/views.py:209 core/views.py:253
 #, python-format
 msgid "¡Bienvenido a %(club)s!"
 msgstr "Welcome to %(club)s!"
 
-#: core/views.py:238
+#: core/views.py:275
 #, python-format
 msgid "'%(email)s' no es un email válido."
 msgstr "'%(email)s' is not a valid email."
 
-#: core/views.py:244
+#: core/views.py:281
 msgid "Rol no válido."
 msgstr "Invalid role."
 
-#: core/views.py:246 core/views.py:258
+#: core/views.py:283 core/views.py:295
 msgid "El club debe tener al menos un capitán."
 msgstr "The club must have at least one captain."
 
@@ -5354,9 +5452,44 @@ msgstr "Error editing the team. Please check the data."
 #~ msgid "País en el que juega"
 #~ msgstr "Country where it plays"
 
+#~ msgid "País en el que juega:"
+#~ msgstr "Country where it plays:"
+
+#~ msgid ""
+#~ "Al menos 8 caracteres; no puede ser solo números ni parecerse a tu "
+#~ "usuario."
+#~ msgstr ""
+#~ "At least 8 characters; it can't be only numbers or resemble your username."
+
+#~ msgid "Solo si el usuario no existe todavía: se creará con esta contraseña."
+#~ msgstr ""
+#~ "Only if the user doesn't exist yet: it will be created with this password."
+
+#~ msgid ""
+#~ "Los capitanes con email reciben el informe al cerrar cada convocatoria."
+#~ msgstr ""
+#~ "Captains with an email receive the report when each call-up is closed."
+
+#~ msgid "El usuario no existe: indica una contraseña para crearlo."
+#~ msgstr "The user doesn't exist: enter a password to create it."
+
+#~ msgid "Añadir miembro"
+#~ msgstr "Add member"
+
+#~ msgid ""
+#~ "Crea tú mismo la cuenta de un usuario, o añade a alguien que ya tiene "
+#~ "cuenta, y elige su rol."
+#~ msgstr ""
+#~ "Create a user's account yourself, or add someone who already has an "
+#~ "account, and choose their role."
+
+#~ msgid "Añadir"
+#~ msgstr "Add"
+
+#, python-format
+#~ msgid "%(username)s añadido al club."
+#~ msgstr "%(username)s added to the club."
+
 #, python-format
 #~ msgid "No es un enfrentamiento válido. %(team)s debe ser local o visitante"
 #~ msgstr "This is not a valid fixture. %(team)s must be the home or away team"
-
-#~ msgid "País en el que juega:"
-#~ msgstr "Country where it plays:"

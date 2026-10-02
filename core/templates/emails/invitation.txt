@@ -1,0 +1,11 @@
+{% load i18n tz %}{% autoescape off %}{% blocktranslate with club=club.name %}Únete a {{ club }} en Zyra{% endblocktranslate %}
+
+{% if inviter %}{% blocktranslate trimmed with name=inviter club=club.name %}{{ name }}, capitán de {{ club }}, te invita a entrar en el equipo para consultar partidos, convocatorias y estadísticas.{% endblocktranslate %}{% else %}{% blocktranslate trimmed with club=club.name %}Te han invitado a entrar en {{ club }} para consultar partidos, convocatorias y estadísticas.{% endblocktranslate %}{% endif %}
+
+{% translate "Abre este enlace para crear tu cuenta (o unirte con la que ya tienes, también con Google):" %}
+{{ url }}
+
+{% blocktranslate trimmed with date=expires_at|timezone:"Europe/Madrid"|date:"d/m/Y" time=expires_at|timezone:"Europe/Madrid"|date:"H:i" %}El enlace sirve para una sola persona y caduca el {{ date }} a las {{ time }}.{% endblocktranslate %}
+
+{% translate "Un saludo," %}
+{% translate "El equipo de Zyra" %}{% endautoescape %}

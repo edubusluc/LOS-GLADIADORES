@@ -235,11 +235,8 @@ class RolesAndClubSwitchTests(TestCase):
         self.client.login(username="viewer", password="pass-12345-x")
         self.assertEqual(self.client.post(reverse("switch_club"), {"club_id": other.id}).status_code, 404)
 
-    def test_admin_adds_member_and_last_admin_is_protected(self):
+    def test_last_admin_is_protected(self):
         self.client.login(username="owner", password="pass-12345-x")
-        self.client.post(reverse("club_members"), {"username": "nuevo", "password": "Otra-Clave-9876", "role": "member"})
-        self.assertTrue(Membership.objects.filter(user__username="nuevo", club=self.club).exists())
-
         owner_membership = Membership.objects.get(user=self.owner, club=self.club)
         self.client.post(reverse("remove_member", args=[owner_membership.public_id]))
         self.assertTrue(Membership.objects.filter(pk=owner_membership.pk).exists())

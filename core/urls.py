@@ -12,6 +12,8 @@ urlpatterns = (
     path('members/<pid:membership_id>/update/', views.update_member, name='update_member'),
     path('members/<pid:membership_id>/remove/', views.remove_member, name='remove_member'),
     path('members/invitations/new/', views.create_invitation, name='create_invitation'),
+    path('members/invitations/link/', views.create_invitation_link, name='create_invitation_link'),
     path('members/invitations/<pid:invitation_id>/revoke/', views.revoke_invitation, name='revoke_invitation'),
     path('invite/<str:token>/', views.invitation, name='invitation'),
+    path('password-check/', views.password_check, name='password_check'),
 )

@@ -21,7 +21,7 @@
         <div>
             <label for="position">{% translate "Posición:" %}</label>
             <select id="position" name="position" required>
-                {% for value, display in player.POSITIONS %}
+                {% for value, display in positions %}
                     <option value="{{ value }}" {% if player.position == value %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>
@@ -30,7 +30,7 @@
         <div>
             <label for="skillfull_hand">{% translate "Mano hábil:" %}</label>
             <select id="skillfull_hand" name="skillfull_hand" required>
-                {% for value, display in player.HAND %}
+                {% for value, display in hands %}
                     <option value="{{ value }}" {% if player.skillfull_hand == value %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>

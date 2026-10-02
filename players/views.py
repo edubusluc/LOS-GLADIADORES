@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from core.decorators import club_required, club_admin_required
-from .forms import PlayerForm, SnpAccountForm
+from .forms import PlayerForm, SnpAccountForm, with_placeholder
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from match.models import Game
@@ -130,7 +130,9 @@ def edit_player(request, player_id):
         return redirect('list_players')  # Redirigir a la lista de jugadores después de guardar
 
     context = {
-        'player': player  # Asegúrate de pasar el objeto player a la plantilla
+        'player': player,
+        'positions': with_placeholder(Player.POSITIONS),
+        'hands': with_placeholder(Player.HAND),
     }
     return render(request, 'edit_player.html', context)  # Renderizar con el contexto correcto
 

@@ -592,3 +592,29 @@ class CreatePlayerSimilarityTests(TestCase):
         response = self.client.post(self.url, {**self.data, "name": "Ana", "last_name": "Ruiz"})
         self.assertRedirects(response, reverse("list_players"), fetch_redirect_response=False)
         self.assertEqual(Player.objects.get(name="Ana").gender, "F")
+
+
+class PlayerChoicePlaceholderTests(TestCase):
+    """Posición y mano sin indicar se muestran como «Elige una opción», nunca como NONE."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin_none", password="pass-12345")
+        self.club = create_club("Club N", "Sevilla", self.user)
+        self.player = Player.objects.create(club=self.club, name="Ana", last_name="Ruiz")
+        self.client.force_login(self.user)
+
+    def assert_placeholder(self, response):
+        self.assertNotContains(response, ">NONE<")
+        self.assertContains(response, '<option value="NONE" selected>Elige una opción</option>', count=2, html=True)
+
+    def test_create_and_edit_forms(self):
+        self.assert_placeholder(self.client.get(reverse("create_player")))
+        self.assert_placeholder(self.client.get(reverse("edit_player", args=[self.player.public_id])))
+
+    def test_lists_show_dash(self):
+        self.assertNotContains(self.client.get(reverse("list_players")), "NONE")
+
+    def test_match_form_team_selects(self):
+        response = self.client.get(reverse("create_match"))
+        self.assertNotContains(response, "---------")
+        self.assertContains(response, "Elige una opción", count=2)

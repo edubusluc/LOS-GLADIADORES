@@ -45,24 +45,20 @@
     </table></div>
 
     <h4 class="mt-4" id="invitaciones">{% translate "Invitar jugadores" %}</h4>
-    <p class="text-muted">{% translate "Genera un enlace y compártelo con un jugador (por WhatsApp, por ejemplo). Podrá registrarse con usuario, email y contraseña o con Google, y entrará como miembro. Cada enlace sirve para una persona y caduca a las 24 horas." %}</p>
-    <form method="post" action="{% url 'create_invitation' %}" class="mb-3">
+    <p class="text-muted">{% translate "Escribe el email del jugador y le enviaremos una invitación. Podrá registrarse con usuario, email y contraseña o con Google, o unirse con la cuenta que ya tenga, y entrará como miembro. Cada invitación sirve para una persona y caduca a las 24 horas." %}</p>
+    <form method="post" action="{% url 'create_invitation' %}" class="mb-3" novalidate>
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-link"></i> {% translate "Generar invitación" %}</button>
+        {{ invite_form.as_p }}
+        <button type="submit" class="btn btn-primary"><i class="fa-regular fa-envelope"></i> {% translate "Enviar invitación" %}</button>
     </form>
     {% if invitations %}
+    <h5 class="mt-3">{% translate "Invitaciones pendientes" %}</h5>
     <div class="z-table-wrap"><table class="table align-middle">
-        <thead><tr><th>{% translate "Enlace" %}</th><th>{% translate "Caduca" %}</th><th></th></tr></thead>
+        <thead><tr><th>{% translate "Email" %}</th><th>{% translate "Caduca" %}</th><th></th></tr></thead>
         <tbody>
-        {% for inv, url in invitations %}
+        {% for inv in invitations %}
             <tr>
-                <td>
-                    <div class="input-group input-group-sm" style="min-width: 260px;">
-                        <input type="text" class="form-control" value="{{ url }}" readonly aria-label="{% translate 'Enlace de invitación' %}" id="invite-{{ inv.id }}">
-                        <button type="button" class="btn btn-outline-primary" data-copy="#invite-{{ inv.id }}"><i class="fa-regular fa-copy"></i> {% translate "Copiar" %}</button>
-                        {% autoescape off %}{% blocktranslate asvar wa_text with club=current_club.name url=url %}Únete a {{ club }} en Zyra: {{ url }}{% endblocktranslate %}{% endautoescape %}<a class="btn btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/?text={{ wa_text|urlencode }}"><i class="fa-brands fa-whatsapp"></i></a>
-                    </div>
-                </td>
+                <td>{{ inv.email|default:"—" }}</td>
                 <td class="text-nowrap">{{ inv.expires_at|timezone:"Europe/Madrid"|date:"d/m H:i" }}</td>
                 <td class="text-end">
                     <form method="post" action="{% url 'revoke_invitation' inv.public_id %}">
@@ -75,27 +71,5 @@
         </tbody>
     </table></div>
     {% endif %}
-
-    <h4 class="mt-4">{% translate "Añadir miembro" %}</h4>
-    <p class="text-muted">{% translate "Crea tú mismo la cuenta de un usuario, o añade a alguien que ya tiene cuenta, y elige su rol." %}</p>
-    <form method="post" novalidate>
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">{% translate "Añadir" %}</button>
-    </form>
 </div>
-{% translate "Copiado" as t_copied %}
-<script>
-document.querySelectorAll('[data-copy]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        var input = document.querySelector(btn.dataset.copy);
-        var done = function () { btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + '{{ t_copied|escapejs }}'; };
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(input.value).then(done);
-        } else {
-            input.select(); document.execCommand('copy'); done();
-        }
-    });
-});
-</script>
 {% endblock %}

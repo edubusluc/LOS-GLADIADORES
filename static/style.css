@@ -530,6 +530,26 @@ form p { margin-bottom: 1rem; }
 form ul.errorlist, .errorlist { margin: 6px 0 0; padding: 0; list-style: none; font-size: .85rem; color: var(--z-danger); }
 .helptext { display: block; margin-top: 4px; font-size: .8rem; color: var(--z-muted); }
 
+/* Contraseñas: botón para mostrarla y lista de requisitos (static/js/password.js) */
+.z-password { position: relative; display: block; }
+.z-password input { padding-right: 3rem; }
+.z-password-toggle {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 3rem; padding: 0;
+    color: var(--z-muted); background: none; border: 0; border-radius: 0 12px 12px 0;
+    cursor: pointer;
+}
+.z-password-toggle:hover, .z-password-toggle:focus-visible { color: var(--z-lime); }
+.z-password-toggle:focus-visible { outline: 2px solid var(--z-lime); outline-offset: -4px; }
+.z-password-rules { display: block; margin: 6px 0 0; padding: 0; list-style: none; font-size: .8rem; color: var(--z-muted); }
+.z-password-rules li { position: relative; padding-left: 1.4em; margin: 2px 0; }
+.z-password-rules li::before { content: "•"; position: absolute; left: .35em; }
+.z-password-rules.is-live li::before { content: "○"; left: .15em; }
+.z-password-rules li.is-ok { color: var(--z-success); }
+.z-password-rules li.is-ok::before { content: "✓"; }
+.z-password-rules li.is-bad { color: var(--z-danger); }
+.z-password-rules li.is-bad::before { content: "✗"; }
+
 fieldset {
     margin: 0 0 16px;
     padding: 20px;

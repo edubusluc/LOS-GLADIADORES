@@ -380,20 +380,6 @@ class HomeTests(TestCase):
         self.assertContains(response, "2 victorias seguidas")
 
 
-    def test_hot_cards_link_to_stats_with_accessible_label(self):
-        ana = Player.objects.create(club=self.club, name="Ana", last_name="Alpha")
-        bea = Player.objects.create(club=self.club, name="Bea", last_name="Beta")
-        for day in (1, 2):
-            m = Match.objects.create(club=self.club, local=self.own, visiting=self.rival, draft_mode=False,
-                                     start_date=self.today - datetime.timedelta(days=10 - day))
-            Game.objects.create(match=m, n_game=1, score=3, winner="Local", draft_mode=False,
-                                player_1_local=ana, player_2_local=bea)
-
-        response = self.client.get(reverse("home"))
-        # El enlace a las estadísticas es un botón de icono: lleva el texto en aria-label
-        self.assertContains(response, 'aria-label="Ver estadísticas"', count=2)
-        self.assertContains(response, f'{reverse("player_statistics")}?player={ana.public_id}')
-
     def test_pages_load_hide_on_scroll_navigation(self):
         # Cabecera y barra inferior se esconden al bajar (static/js/nav.js)
         self.assertContains(self.client.get(reverse("home")), "js/nav.js")

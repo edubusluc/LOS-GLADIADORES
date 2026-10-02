@@ -134,6 +134,8 @@ Un club nuevo se registra desde `/core/register_club/`. Desde *Miembros del club
   para registrarse (usuario, email y contraseña, o con Google) y entrar como miembro.
   Si ya tiene cuenta, inicia sesión y se une con un clic. Los capitanes no crean
   cuentas: cada jugador crea la suya.
+- **Generar un enlace de invitación** para copiarlo o compartirlo por WhatsApp, con
+  las mismas condiciones (un solo uso, 24 horas).
 - Cambiar el email y el rol de los miembros, o quitarlos del club.
 
 En los formularios con contraseña hay un botón para mostrarla, y al crear una se

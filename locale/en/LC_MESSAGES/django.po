@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 12:11+0000\n"
+"POT-Creation-Date: 2026-10-02 12:22+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -708,7 +708,6 @@ msgstr "Username"
 #: backoffice/templates/backoffice/club_detail.html:28
 #: backoffice/templates/backoffice/user_detail.html:23
 #: backoffice/templates/backoffice/user_list.html:26 core/forms.py:33
-#: core/templates/club_members.html:57
 msgid "Email"
 msgstr "Email"
 
@@ -2240,7 +2239,7 @@ msgstr "Member (read-only)"
 msgid "Esta invitación ya se ha usado o ha caducado."
 msgstr "This invitation has already been used or has expired."
 
-#: core/services.py:34 core/views.py:216
+#: core/services.py:34 core/views.py:228
 #, python-format
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
@@ -2362,31 +2361,64 @@ msgstr "Invite players"
 
 #: core/templates/club_members.html:48
 msgid ""
-"Escribe el email del jugador y le enviaremos una invitación. Podrá "
-"registrarse con usuario, email y contraseña o con Google, o unirse con la "
-"cuenta que ya tenga, y entrará como miembro. Cada invitación sirve para una "
-"persona y caduca a las 24 horas."
+"Invita a un jugador por email o genera un enlace para compartirlo tú (por "
+"WhatsApp, por ejemplo). Podrá registrarse con usuario, email y contraseña o "
+"con Google, o unirse con la cuenta que ya tenga, y entrará como miembro. Cada"
+" invitación sirve para una persona y caduca a las 24 horas."
 msgstr ""
-"Enter the player's email and we'll send them an invitation. They can sign up "
-"with username, email and password or with Google, or join with an account "
-"they already have, and will join as a member. Each invitation works for one "
-"person and expires after 24 hours."
+"Invite a player by email or generate a link to share yourself (on WhatsApp, "
+"for example). They can sign up with username, email and password or with "
+"Google, or join with an account they already have, and will join as a member."
+" Each invitation works for one person and expires after 24 hours."
 
 #: core/templates/club_members.html:52
 msgid "Enviar invitación"
 msgstr "Send invitation"
 
-#: core/templates/club_members.html:55
+#: core/templates/club_members.html:56
+msgid "Generar enlace de invitación"
+msgstr "Generate invitation link"
+
+#: core/templates/club_members.html:59
 msgid "Invitaciones pendientes"
 msgstr "Pending invitations"
 
-#: core/templates/club_members.html:57
+#: core/templates/club_members.html:61
+msgid "Enviada a"
+msgstr "Sent to"
+
+#: core/templates/club_members.html:61
+msgid "Enlace"
+msgstr "Link"
+
+#: core/templates/club_members.html:61
 msgid "Caduca"
 msgstr "Expires"
 
-#: core/templates/club_members.html:66
+#: core/templates/club_members.html:65
+msgid "Enlace compartido"
+msgstr "Shared link"
+
+#: core/templates/club_members.html:68
+msgid "Enlace de invitación"
+msgstr "Invitation link"
+
+#: core/templates/club_members.html:69
+msgid "Copiar"
+msgstr "Copy"
+
+#: core/templates/club_members.html:70
+#, python-format
+msgid "Únete a %(club)s en Zyra: %(url)s"
+msgstr "Join %(club)s on Zyra: %(url)s"
+
+#: core/templates/club_members.html:77
 msgid "Anular"
 msgstr "Revoke"
+
+#: core/templates/club_members.html:86
+msgid "Copiado"
+msgstr "Copied"
 
 #: core/templates/emails/invitation.html:1
 #: core/templates/emails/invitation.txt:1
@@ -2890,35 +2922,43 @@ msgstr "You have been logged out."
 msgid "Club %(club)s creado correctamente."
 msgstr "Club %(club)s created successfully."
 
-#: core/views.py:154
+#: core/views.py:157
 #, python-format
 msgid "Invitación enviada a %(email)s. El enlace caduca en 24 horas."
 msgstr "Invitation sent to %(email)s. The link expires in 24 hours."
 
-#: core/views.py:157
+#: core/views.py:160
 #, python-format
 msgid "No se pudo enviar el correo a %(email)s. Inténtalo de nuevo más tarde."
 msgstr "The email to %(email)s could not be sent. Please try again later."
 
-#: core/views.py:165
+#: core/views.py:169
+msgid ""
+"Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve "
+"para una sola persona."
+msgstr ""
+"Invitation created: copy the link and share it. It expires in 24 hours and "
+"works for one person only."
+
+#: core/views.py:177
 msgid "Invitación anulada."
 msgstr "Invitation revoked."
 
-#: core/views.py:197 core/views.py:241
+#: core/views.py:209 core/views.py:253
 #, python-format
 msgid "¡Bienvenido a %(club)s!"
 msgstr "Welcome to %(club)s!"
 
-#: core/views.py:263
+#: core/views.py:275
 #, python-format
 msgid "'%(email)s' no es un email válido."
 msgstr "'%(email)s' is not a valid email."
 
-#: core/views.py:269
+#: core/views.py:281
 msgid "Rol no válido."
 msgstr "Invalid role."
 
-#: core/views.py:271 core/views.py:283
+#: core/views.py:283 core/views.py:295
 msgid "El club debe tener al menos un capitán."
 msgstr "The club must have at least one captain."
 
@@ -5427,15 +5467,6 @@ msgstr "Error editing the team. Please check the data."
 #~ msgid "El usuario no existe: indica una contraseña para crearlo."
 #~ msgstr "The user doesn't exist: enter a password to create it."
 
-#~ msgid "Enlace"
-#~ msgstr "Link"
-
-#~ msgid "Enlace de invitación"
-#~ msgstr "Invitation link"
-
-#~ msgid "Copiar"
-#~ msgstr "Copy"
-
 #~ msgid "Añadir miembro"
 #~ msgstr "Add member"
 
@@ -5449,19 +5480,9 @@ msgstr "Error editing the team. Please check the data."
 #~ msgid "Añadir"
 #~ msgstr "Add"
 
-#~ msgid "Copiado"
-#~ msgstr "Copied"
-
 #, python-format
 #~ msgid "%(username)s añadido al club."
 #~ msgstr "%(username)s added to the club."
-
-#~ msgid ""
-#~ "Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve "
-#~ "para una sola persona."
-#~ msgstr ""
-#~ "Invitation created: copy the link and share it. It expires in 24 hours and "
-#~ "works for one person only."
 
 #, python-format
 #~ msgid "No es un enfrentamiento válido. %(team)s debe ser local o visitante"

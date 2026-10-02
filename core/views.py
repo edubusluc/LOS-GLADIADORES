@@ -141,7 +141,10 @@ def club_members(request, invite_form=None):
     invite_form = invite_form or InviteMemberForm(club=club)
     _style(invite_form)
     memberships = club.memberships.select_related("user").order_by("user__username")
-    invitations = club.invitations.filter(used_at__isnull=True, expires_at__gt=timezone.now())
+    invitations = [
+        (inv, request.build_absolute_uri(reverse("invitation", args=[inv.token])))
+        for inv in club.invitations.filter(used_at__isnull=True, expires_at__gt=timezone.now())
+    ]
     return render(request, "club_members.html", {
         "invite_form": invite_form, "memberships": memberships, "roles": Membership.ROLES, "invitations": invitations,
     })
@@ -169,6 +172,15 @@ def create_invitation(request):
     else:
         invitation.delete()
         messages.error(request, _("No se pudo enviar el correo a %(email)s. Inténtalo de nuevo más tarde.") % {"email": email})
+    return redirect(reverse("club_members") + "#invitaciones")
+
+
+@club_admin_required
+@require_POST
+def create_invitation_link(request):
+    """Invitación sin email: el capitán copia el enlace y lo comparte (por WhatsApp, por ejemplo)."""
+    Invitation.objects.create(club=request.club, created_by=request.user)
+    messages.success(request, _("Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve para una sola persona."))
     return redirect(reverse("club_members") + "#invitaciones")
 
 

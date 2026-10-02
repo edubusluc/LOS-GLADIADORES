@@ -16,7 +16,7 @@ from core import similarity
 def list_team(request):
     search = request.GET.get('search', '').strip()
 
-    # Los administradores ven también los equipos fuera de grupo
+    # Los capitanes ven también los equipos fuera de grupo
     teams = Team.objects.filter(club=request.club)
     teams = teams.order_by('-in_group', 'name') if request.membership.is_admin else teams.filter(in_group=True).order_by('name')
 

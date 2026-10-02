@@ -131,7 +131,7 @@ class SnpTeamImport(PublicIdModel):
     """
     «Completar equipo»: alta de los jugadores que aparecen en el equipo de SNP del club y
     todavía no están en Zyra. Primero se descarga la lista y se guarda lo que se va a
-    añadir (``to_add``) y lo que no porque ya existe (``existing``); el administrador lo
+    añadir (``to_add``) y lo que no porque ya existe (``existing``); el capitán lo
     revisa y lo confirma. Desde el back-office se crea y se confirma en un solo paso.
     Nunca modifica jugadores existentes.
     """

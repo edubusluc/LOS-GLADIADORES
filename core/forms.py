@@ -52,7 +52,7 @@ class AddMemberForm(forms.Form):
     )
     email = forms.EmailField(
         label=_("Email"), required=False,
-        help_text=_("Los administradores con email reciben el informe al cerrar cada convocatoria."),
+        help_text=_("Los capitanes con email reciben el informe al cerrar cada convocatoria."),
     )
     role = forms.ChoiceField(label=_("Rol"), choices=Membership.ROLES, initial=Membership.MEMBER)
 

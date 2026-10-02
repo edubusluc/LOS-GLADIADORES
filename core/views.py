@@ -58,7 +58,7 @@ def home(request):
         'days_left': (next_match.start_date - today).days if next_match else None,
         'hot_player': hot_player,
         'hot_pair': hot_pair,
-        # Aviso al administrador (capitán) mientras no haya registrado la cuenta SNP del club.
+        # Aviso al capitán mientras no haya registrado la cuenta SNP del club.
         'snp_missing': request.membership.is_admin and not SnpAccount.objects.filter(club=club).exists(),
     })
 
@@ -243,7 +243,7 @@ def update_member(request, membership_id):
     if role not in dict(Membership.ROLES):
         messages.error(request, _("Rol no válido."))
     elif role != Membership.ADMIN and _is_last_admin(membership):
-        messages.error(request, _("El club debe tener al menos un administrador."))
+        messages.error(request, _("El club debe tener al menos un capitán."))
     else:
         membership.role = role
         membership.save()
@@ -255,7 +255,7 @@ def update_member(request, membership_id):
 def remove_member(request, membership_id):
     membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     if _is_last_admin(membership):
-        messages.error(request, _("El club debe tener al menos un administrador."))
+        messages.error(request, _("El club debe tener al menos un capitán."))
     else:
         membership.delete()
     return redirect("club_members")

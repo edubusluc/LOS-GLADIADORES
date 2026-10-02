@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 07:33+0000\n"
+"POT-Creation-Date: 2026-10-02 11:18+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -670,10 +670,10 @@ msgstr "Members"
 
 #: backoffice/templates/backoffice/club_detail.html:19
 #, python-format
-msgid "%(n)s administrador"
-msgid_plural "%(n)s administradores"
-msgstr[0] "%(n)s admin"
-msgstr[1] "%(n)s admins"
+msgid "%(n)s capitán"
+msgid_plural "%(n)s capitanes"
+msgstr[0] "%(n)s captain"
+msgstr[1] "%(n)s captains"
 
 #: backoffice/templates/backoffice/club_detail.html:20
 #, python-format
@@ -725,8 +725,8 @@ msgstr "Last login"
 
 #: backoffice/templates/backoffice/club_detail.html:34
 #: backoffice/templates/backoffice/user_detail.html:52 core/models.py:47
-msgid "Administrador"
-msgstr "Admin"
+msgid "Capitán"
+msgstr "Captain"
 
 #: backoffice/templates/backoffice/club_detail.html:34
 #: backoffice/templates/backoffice/user_detail.html:52
@@ -2138,8 +2138,8 @@ msgid "No se encontró el registro de llamada con el ID especificado."
 msgstr "No call-up log was found with the given ID."
 
 #: core/decorators.py:26
-msgid "Solo los administradores del club pueden realizar esta acción."
-msgstr "Only club administrators can perform this action."
+msgid "Solo los capitanes del club pueden realizar esta acción."
+msgstr "Only club captains can perform this action."
 
 #: core/emails.py:57
 msgid "Zyra · Gestión de equipos de pádel"
@@ -2223,10 +2223,8 @@ msgstr ""
 "Only if the user doesn't exist yet: it will be created with this password."
 
 #: core/forms.py:55
-msgid ""
-"Los administradores con email reciben el informe al cerrar cada convocatoria."
-msgstr ""
-"Administrators with an email receive the report when each call-up is closed."
+msgid "Los capitanes con email reciben el informe al cerrar cada convocatoria."
+msgstr "Captains with an email receive the report when each call-up is closed."
 
 #: core/forms.py:73
 msgid "El usuario no existe: indica una contraseña para crearlo."
@@ -2436,14 +2434,13 @@ msgstr "Welcome to Zyra, %(username)s!"
 #, python-format
 msgid ""
 "Tu registro se ha completado y has creado el equipo <strong>%(club)s</"
-"strong>. Como administrador puedes gestionar jugadores, partidos, "
-"convocatorias y estadísticas, e invitar al resto del equipo desde "
-"<em>Miembros del club</em>."
+"strong>. Como capitán puedes gestionar jugadores, partidos, convocatorias y "
+"estadísticas, e invitar al resto del equipo desde <em>Miembros del club</em>."
 msgstr ""
 "Your registration is complete and you have created the team "
-"<strong>%(club)s</strong>. As an administrator you can manage players, "
-"matches, call-ups and statistics, and invite the rest of the team from "
-"<em>Club members</em>."
+"<strong>%(club)s</strong>. As a captain you can manage players, matches, "
+"call-ups and statistics, and invite the rest of the team from <em>Club "
+"members</em>."
 
 #: core/templates/emails/welcome.html:5
 #, python-format
@@ -2467,8 +2464,8 @@ msgid "Equipo"
 msgstr "Team"
 
 #: core/templates/emails/welcome.html:17 core/templates/emails/welcome.txt:7
-msgid "Administradores"
-msgstr "Administrators"
+msgid "Capitanes"
+msgstr "Captains"
 
 #: core/templates/emails/welcome.html:22
 msgid "Entrar en Zyra"
@@ -2486,13 +2483,13 @@ msgstr "The Zyra team"
 #: core/templates/emails/welcome.txt:3
 #, python-format
 msgid ""
-"Tu registro se ha completado y has creado el equipo %(club)s. Como "
-"administrador puedes gestionar jugadores, partidos, convocatorias y "
-"estadísticas, e invitar al resto del equipo desde \"Miembros del club\"."
+"Tu registro se ha completado y has creado el equipo %(club)s. Como capitán "
+"puedes gestionar jugadores, partidos, convocatorias y estadísticas, e "
+"invitar al resto del equipo desde \"Miembros del club\"."
 msgstr ""
-"Your registration is complete and you have created the team %(club)s. As an "
-"administrator you can manage players, matches, call-ups and statistics, and "
-"invite the rest of the team from \"Club members\"."
+"Your registration is complete and you have created the team %(club)s. As a "
+"captain you can manage players, matches, call-ups and statistics, and invite "
+"the rest of the team from \"Club members\"."
 
 #: core/templates/emails/welcome.txt:3
 #, python-format
@@ -2710,8 +2707,8 @@ msgid "No encontramos esta invitación."
 msgstr "We couldn't find this invitation."
 
 #: core/templates/invitation_invalid.html:15
-msgid "Pide al administrador de tu equipo que te envíe una nueva."
-msgstr "Ask your team administrator to send you a new one."
+msgid "Pide al capitán de tu equipo que te envíe una nueva."
+msgstr "Ask your team captain to send you a new one."
 
 #: core/templates/invitation_invalid.html:17
 msgid "Ir a Zyra"
@@ -2765,11 +2762,11 @@ msgstr "Streaks, pair chemistry and progress by season."
 
 #: core/templates/no_club.html:9
 msgid ""
-"Todavía no perteneces a ningún club. Pide a un administrador que te añada "
-"como miembro, o registra un club nuevo."
+"Todavía no perteneces a ningún club. Pide a un capitán que te añada como "
+"miembro, o registra un club nuevo."
 msgstr ""
-"You don't belong to any club yet. Ask an administrator to add you as a "
-"member, or register a new club."
+"You don't belong to any club yet. Ask a captain to add you as a member, or "
+"register a new club."
 
 #: core/templates/no_club.html:10 core/templates/register_club.html:10
 msgid "Registrar un club"
@@ -2784,8 +2781,8 @@ msgstr ""
 "Nobody outside the club can see its data."
 
 #: core/templates/register_club.html:17
-msgid "Tu cuenta (administrador)"
-msgstr "Your account (administrator)"
+msgid "Tu cuenta (capitán)"
+msgstr "Your account (captain)"
 
 #: core/templates/register_club.html:20
 msgid "Crear club"
@@ -2861,8 +2858,8 @@ msgid "Rol no válido."
 msgstr "Invalid role."
 
 #: core/views.py:246 core/views.py:258
-msgid "El club debe tener al menos un administrador."
-msgstr "The club must have at least one administrator."
+msgid "El club debe tener al menos un capitán."
+msgstr "The club must have at least one captain."
 
 #: data_analyse/templates/includes/match_type_filter.html:3
 #: data_analyse/templates/includes/match_type_filter.html:5 match/models.py:40
@@ -3620,8 +3617,8 @@ msgid "Todas las temporadas"
 msgstr "All seasons"
 
 #: data_analyse/templates/warnings_statistics.html:13
-msgid "solo visible para administradores"
-msgstr "only visible to admins"
+msgid "solo visible para capitanes"
+msgstr "only visible to captains"
 
 #: data_analyse/templates/warnings_statistics.html:29
 msgid "Sin advertencias"
@@ -4537,11 +4534,11 @@ msgstr ""
 #: match/views.py:272
 #, python-format
 msgid ""
-"%(done)s. Ningún administrador tiene email: añádelo en Miembros para recibir "
-"el informe automáticamente."
+"%(done)s. Ningún capitán tiene email: añádelo en Miembros para recibir el "
+"informe automáticamente."
 msgstr ""
-"%(done)s. No administrator has an email address: add one in Members to "
-"receive the report automatically."
+"%(done)s. No captain has an email address: add one in Members to receive the "
+"report automatically."
 
 #: match/views.py:278
 #, python-format

@@ -1,5 +1,5 @@
 """
-Envío del informe de convocatoria a los administradores del club.
+Envío del informe de convocatoria a los capitanes del club.
 
 Cada envío es una fila de ReportDelivery (una por destinatario), que hace de cola: al
 cerrar la convocatoria se intenta enviar al momento y, si el correo falla (SMTP caído,
@@ -77,7 +77,7 @@ LEASE = datetime.timedelta(minutes=10)
 
 def queue_call_report(call, sender=None):
     """
-    Deja en la cola un envío del informe para cada administrador del club con email
+    Deja en la cola un envío del informe para cada capitán del club con email
     (si ya existía, vuelve a enviarse). Las respuestas le llegan a quien cerró la
     convocatoria (``sender``), si tiene email. Devuelve los envíos.
     """
@@ -94,7 +94,7 @@ def queue_call_report(call, sender=None):
 
 def send_call_report(call, sender=None):
     """
-    Encola el informe para los administradores del club y lo intenta enviar al momento.
+    Encola el informe para los capitanes del club y lo intenta enviar al momento.
     Se manda un correo individual a cada uno (nadie ve las direcciones de los demás).
     Devuelve los envíos: los que no han salido se reintentan solos.
     """

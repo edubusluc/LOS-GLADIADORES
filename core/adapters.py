@@ -8,7 +8,7 @@ from django.db.models import Count
 class AccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
         # Las cuentas con contraseña se crean desde una invitación, al registrar un
-        # club o las crea un administrador: el alta genérica de allauth queda cerrada.
+        # club o las crea un capitán: el alta genérica de allauth queda cerrada.
         return False
 
     def add_message(self, *args, **kwargs):

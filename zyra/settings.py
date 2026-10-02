@@ -292,7 +292,7 @@ ACCOUNT_ADAPTER = 'core.adapters.AccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'core.adapters.SocialAccountAdapter'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 # Google verifica el email: si ya hay una cuenta con ese email (p. ej. creada por
-# un administrador), el jugador entra en ella en lugar de crear otra.
+# un capitán), el jugador entra en ella en lugar de crear otra.
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_PROVIDERS = {

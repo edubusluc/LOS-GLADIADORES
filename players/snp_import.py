@@ -101,7 +101,7 @@ def search(team_import, scraper=None, **scrape_options):
     else:
         to_add, existing = plan_import(team_import.club, scores)
         changes = {"status": SnpTeamImport.READY, "to_add": to_add, "existing": existing}
-    # Solo si sigue en marcha: el administrador puede haberla cancelado mientras tanto.
+    # Solo si sigue en marcha: el capitán puede haberla cancelado mientras tanto.
     SnpTeamImport.objects.filter(pk=team_import.pk, status=SnpTeamImport.RUNNING).update(**changes)
     team_import.refresh_from_db()
     return team_import

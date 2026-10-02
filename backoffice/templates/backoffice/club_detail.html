@@ -16,7 +16,7 @@
 </div>
 
 <section class="bo-kpis" aria-label="{% translate 'Resumen del club' %}">
-    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Miembros" %}</span><b>{{ club.n_members|default:0 }}</b><small>{% with admins=club.n_admins|default:0 %}{% blocktranslate trimmed count n=admins %}{{ n }} administrador{% plural %}{{ n }} administradores{% endblocktranslate %}{% endwith %}</small></div>
+    <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Miembros" %}</span><b>{{ club.n_members|default:0 }}</b><small>{% with admins=club.n_admins|default:0 %}{% blocktranslate trimmed count n=admins %}{{ n }} capitán{% plural %}{{ n }} capitanes{% endblocktranslate %}{% endwith %}</small></div>
     <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Jugadores" %}</span><b>{{ players_active }}</b><small>{% blocktranslate with total=players_total %}{{ total }} en total, contando bajas{% endblocktranslate %}</small></div>
     <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Partidos" %}</span><b>{{ club.n_matches|default:0 }}</b><small>{% blocktranslate trimmed count n=rivals %}{{ n }} equipo rival{% plural %}{{ n }} equipos rivales{% endblocktranslate %}</small></div>
     <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Último partido" %}</span><b class="bo-kpi-date">{{ club.last_match|date:"j M Y"|default:"—" }}</b><small>{% if club.last_match %}{{ club.last_match|ago }}{% else %}{% translate "sin partidos jugados" %}{% endif %}</small></div>
@@ -31,7 +31,7 @@
             <tr>
                 <td><a href="{% url 'backoffice:user_detail' m.user.id %}">{{ m.user.username }}</a></td>
                 <td>{{ m.user.email|default:"—" }}</td>
-                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Administrador" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
+                <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Capitán" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
                 <td>{{ m.user.last_login|ago }}</td>
             </tr>
         {% empty %}

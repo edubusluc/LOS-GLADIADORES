@@ -12,7 +12,7 @@
             {% if invitation and invitation.is_used %}{% translate "Este enlace ya se ha usado: cada invitación sirve para una sola persona." %}
             {% elif invitation %}{% translate "Este enlace ha caducado: las invitaciones son válidas durante 24 horas." %}
             {% else %}{% translate "No encontramos esta invitación." %}{% endif %}
-            {% translate "Pide al administrador de tu equipo que te envíe una nueva." %}
+            {% translate "Pide al capitán de tu equipo que te envíe una nueva." %}
         </p>
         <a class="btn btn-primary btn-lg" href="{% url 'home' %}">{% translate "Ir a Zyra" %}</a>
     </div>

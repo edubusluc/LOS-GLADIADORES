@@ -55,8 +55,21 @@
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-primary"><i class="fa-solid fa-link"></i> {% translate "Generar enlace de invitación" %}</button>
     </form>
-    {% if invitations %}
+    {% if has_invitations %}
     <h5 class="mt-3">{% translate "Invitaciones pendientes" %}</h5>
+    <div class="z-toolbar">
+        <div class="z-toolbar-group">
+            <form method="get" action="#invitaciones" class="z-search" role="search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" name="q" placeholder="{% translate 'Buscar por email...' %}" value="{{ search }}" aria-label="{% translate 'Buscar invitación por email' %}">
+            </form>
+            {% if search %}
+            <span class="text-muted small">{% blocktranslate trimmed count n=invitations_page.paginator.count %}{{ n }} resultado{% plural %}{{ n }} resultados{% endblocktranslate %}</span>
+            <a href="{% url 'club_members' %}#invitaciones" class="btn btn-outline-secondary btn-sm">{% translate "Limpiar" %}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if invitations %}
     <div class="z-table-wrap"><table class="table align-middle">
         <thead><tr><th>{% translate "Enviada a" %}</th><th>{% translate "Enlace" %}</th><th>{% translate "Caduca" %}</th><th></th></tr></thead>
         <tbody>
@@ -81,6 +94,10 @@
         {% endfor %}
         </tbody>
     </table></div>
+    {% include 'includes/pagination.html' with page=invitations_page extra=extra %}
+    {% else %}
+    <p class="text-muted">{% blocktranslate %}No hay invitaciones pendientes para «{{ search }}».{% endblocktranslate %}</p>
+    {% endif %}
     {% endif %}
 </div>
 {% translate "Copiado" as t_copied %}

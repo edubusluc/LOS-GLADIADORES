@@ -91,6 +91,20 @@ class ReportTests(TestCase):
         self.assertTrue(pdf.startswith(b"%PDF"))
         self.assertEqual(pdf_pages(pdf), 2)
 
+    def test_pdf_fits_in_two_pages_in_worst_case(self):
+        # Máximo de precedentes (4) y jugadores en racha: el espaciado no debe empujar a una tercera página
+        for day in (15, 22):
+            m = Match.objects.create(club=self.club, local=self.rival, visiting=self.club.own_team,
+                                     start_date=datetime.date(2025, 10, day), draft_mode=False,
+                                     result="Victoria Visitante", result_points="3/9")
+            for n in range(1, 6):
+                Game.objects.create(match=m, n_game=n, score=3 if n < 3 else 2, winner="Visitante", draft_mode=False,
+                                    player_1_visiting=self.players[2 * n - 2], player_2_visiting=self.players[2 * n - 1])
+        report = build_report(self.call)
+        self.assertEqual(len(report["precedents"]), 4)
+        self.assertTrue(report["hot"])
+        self.assertEqual(pdf_pages(render_report(report)), 2)
+
     def test_not_enough_players(self):
         self.call.players.set(self.players[:6])
         report = build_report(self.call)

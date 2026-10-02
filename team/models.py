@@ -33,7 +33,7 @@ class Team(PublicIdModel):
     photo = models.ImageField(upload_to='static/team', null=True, blank=True)
     # Vacíos solo en los equipos creados antes de existir estos campos; los formularios los piden.
     gender = models.CharField(_("Categoría"), max_length=1, choices=GENDERS, blank=True, default="")
-    country = models.CharField(_("País en el que juega"), max_length=2, choices=COUNTRIES, blank=True, default="")
+    country = models.CharField(_("Nacionalidad del equipo"), max_length=2, choices=COUNTRIES, blank=True, default="")
     division = models.CharField(_("División"), max_length=10, choices=DIVISIONS, blank=True, default="")
 
     class Meta:

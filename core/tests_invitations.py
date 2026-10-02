@@ -119,6 +119,41 @@ class InvitationTests(TestCase):
         self.assertNotIn(used, listed)
         self.assertNotIn(expired, listed)
 
+    def test_pending_invitations_are_paginated(self):
+        for i in range(12):
+            self.invite(email=f"jugador{i:02}@example.com")
+        self.client.login(username="capitan", password="pass-12345")
+        first = self.client.get(reverse("club_members"))
+        self.assertEqual(len(first.context["invitations"]), 10)
+        self.assertContains(first, "1 de 2")
+        second = self.client.get(reverse("club_members"), {"page": 2})
+        self.assertEqual(len(second.context["invitations"]), 2)
+        listed = {inv for page in (first, second) for inv, _ in page.context["invitations"]}
+        self.assertEqual(len(listed), 12)
+        # Una página fuera de rango muestra la última en lugar de fallar.
+        self.assertEqual(self.client.get(reverse("club_members"), {"page": 99}).context["invitations_page"].number, 2)
+
+    def test_search_invitations_by_email_keeps_query_across_pages(self):
+        for i in range(11):
+            self.invite(email=f"ana{i:02}@example.com")
+        self.invite(email="luis@example.com")
+        link = self.invite()
+        self.client.login(username="capitan", password="pass-12345")
+        response = self.client.get(reverse("club_members"), {"q": "ANA"})
+        self.assertEqual(response.context["invitations_page"].paginator.count, 11)
+        self.assertContains(response, "?page=2&amp;q=ANA#invitaciones")
+        listed = [inv for inv, _ in self.client.get(reverse("club_members"), {"q": "ANA", "page": 2}).context["invitations"]]
+        self.assertEqual(len(listed), 1)
+        self.assertTrue(listed[0].email.startswith("ana"))
+
+        response = self.client.get(reverse("club_members"), {"q": "luis"})
+        self.assertEqual([inv.email for inv, _ in response.context["invitations"]], ["luis@example.com"])
+        self.assertNotIn(link, [inv for inv, _ in response.context["invitations"]])
+
+        response = self.client.get(reverse("club_members"), {"q": "nadie"})
+        self.assertEqual(response.context["invitations"], [])
+        self.assertContains(response, "No hay invitaciones pendientes para «nadie».")
+
     def test_revoke_is_scoped_to_the_admins_club(self):
         other_admin = User.objects.create_user("otro", password="pass-12345")
         create_club("Club B", "Madrid", other_admin)

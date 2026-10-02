@@ -1,4 +1,5 @@
 import datetime
+from urllib.parse import urlencode
 
 from django.forms import Select
 from django.contrib import messages
@@ -6,6 +7,7 @@ from django.contrib.auth import get_user_model, login
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.db import transaction
 from django.http import JsonResponse
@@ -26,6 +28,8 @@ from .forms import ClubForm, InviteMemberForm, SignUpForm
 from .middleware import SESSION_KEY
 from .models import Invitation, Membership
 from .services import InvitationError, accept_invitation, create_club
+
+INVITATIONS_PER_PAGE = 10
 
 # Invitación pendiente de aceptar mientras el visitante inicia sesión con Google
 PENDING_INVITE_KEY = "pending_invitation"
@@ -141,12 +145,20 @@ def club_members(request, invite_form=None):
     invite_form = invite_form or InviteMemberForm(club=club)
     _style(invite_form)
     memberships = club.memberships.select_related("user").order_by("user__username")
+    pending = club.invitations.filter(used_at__isnull=True, expires_at__gt=timezone.now())
+    has_invitations = pending.exists()
+    search = request.GET.get("q", "").strip()
+    if search:
+        pending = pending.filter(email__icontains=search)
+    page = Paginator(pending.order_by("-created_at", "-id"), INVITATIONS_PER_PAGE).get_page(request.GET.get("page"))
     invitations = [
         (inv, request.build_absolute_uri(reverse("invitation", args=[inv.token])))
-        for inv in club.invitations.filter(used_at__isnull=True, expires_at__gt=timezone.now())
+        for inv in page
     ]
+    extra = ("&" + urlencode({"q": search}) if search else "") + "#invitaciones"
     return render(request, "club_members.html", {
         "invite_form": invite_form, "memberships": memberships, "roles": Membership.ROLES, "invitations": invitations,
+        "invitations_page": page, "has_invitations": has_invitations, "search": search, "extra": extra,
     })
 
 

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 12:36+0000\n"
+"POT-Creation-Date: 2026-10-02 13:29+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -148,7 +148,7 @@ msgstr "Name"
 msgid "Apellidos"
 msgstr "Surname"
 
-#: backoffice/importer.py:216 match/report_pdf.py:262
+#: backoffice/importer.py:216 match/report_pdf.py:290
 #: players/templates/list_players.html:99
 msgid "Posición"
 msgstr "Position"
@@ -175,7 +175,7 @@ msgstr ""
 msgid "Equipos rivales"
 msgstr "Rival teams"
 
-#: backoffice/importer.py:228 match/report_pdf.py:227
+#: backoffice/importer.py:228 match/report_pdf.py:256
 msgid "Sede"
 msgstr "Venue"
 
@@ -197,7 +197,7 @@ msgstr ""
 #: core/templates/base.html:35 core/templates/base.html:130
 #: core/templates/landing.html:30
 #: data_analyse/templates/player_statistics.html:173
-#: data_analyse/templates/player_statistics.html:185 match/report_pdf.py:281
+#: data_analyse/templates/player_statistics.html:185 match/report_pdf.py:309
 #: match/templates/call_for_match.html:7
 #: match/templates/call_for_match.html:103 match/templates/list_match.html:8
 msgid "Partidos"
@@ -208,7 +208,7 @@ msgstr "Matches"
 #: data_analyse/templates/pair_statistics.html:129
 #: data_analyse/templates/player_statistics.html:204
 #: data_analyse/templates/warnings_statistics.html:72 match/forms.py:11
-#: match/report_pdf.py:227
+#: match/report_pdf.py:256
 msgid "Fecha"
 msgstr "Date"
 
@@ -2239,14 +2239,10 @@ msgstr "Member (read-only)"
 msgid "Esta invitación ya se ha usado o ha caducado."
 msgstr "This invitation has already been used or has expired."
 
-#: core/services.py:34 core/views.py:228
+#: core/services.py:34 core/views.py:254
 #, python-format
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
-
-#: core/views.py
-msgid "Ya tenías una cuenta con este email. Has iniciado sesión con ella."
-msgstr "You already had an account with this email. You are now signed in to it."
 
 #: core/templates/404.html:4
 msgid "Página no encontrada"
@@ -2383,40 +2379,66 @@ msgstr "Generate invitation link"
 msgid "Invitaciones pendientes"
 msgstr "Pending invitations"
 
-#: core/templates/club_members.html:61
+#: core/templates/club_members.html:64
+msgid "Buscar por email..."
+msgstr "Search by email..."
+
+#: core/templates/club_members.html:64
+msgid "Buscar invitación por email"
+msgstr "Search invitation by email"
+
+#: core/templates/club_members.html:67 players/templates/list_players.html:39
+#: team/templates/list_teams.html:24
+#, python-format
+msgid "%(n)s resultado"
+msgid_plural "%(n)s resultados"
+msgstr[0] "%(n)s result"
+msgstr[1] "%(n)s results"
+
+#: core/templates/club_members.html:68 players/templates/list_players.html:40
+#: team/templates/list_teams.html:25
+msgid "Limpiar"
+msgstr "Clear"
+
+#: core/templates/club_members.html:74
 msgid "Enviada a"
 msgstr "Sent to"
 
-#: core/templates/club_members.html:61
+#: core/templates/club_members.html:74
 msgid "Enlace"
 msgstr "Link"
 
-#: core/templates/club_members.html:61
+#: core/templates/club_members.html:74
 msgid "Caduca"
 msgstr "Expires"
 
-#: core/templates/club_members.html:65
+#: core/templates/club_members.html:78
 msgid "Enlace compartido"
 msgstr "Shared link"
 
-#: core/templates/club_members.html:68
+#: core/templates/club_members.html:81
 msgid "Enlace de invitación"
 msgstr "Invitation link"
 
-#: core/templates/club_members.html:69
+#: core/templates/club_members.html:82
 msgid "Copiar"
 msgstr "Copy"
 
-#: core/templates/club_members.html:70
+#: core/templates/club_members.html:83
 #, python-format
 msgid "Únete a %(club)s en Zyra: %(url)s"
 msgstr "Join %(club)s on Zyra: %(url)s"
 
-#: core/templates/club_members.html:77
+#: core/templates/club_members.html:90
 msgid "Anular"
 msgstr "Revoke"
 
-#: core/templates/club_members.html:86
+#: core/templates/club_members.html:99
+#, python-format
+msgid "No hay invitaciones pendientes para «%(search)s»."
+msgstr "No pending invitations for “%(search)s”."
+
+#: core/templates/club_members.html:103
 msgid "Copiado"
 msgstr "Copied"
 
@@ -2857,7 +2879,7 @@ msgstr "Set up the pairs and record the result of each set."
 msgid "Rachas, afinidad entre parejas y evolución por temporada."
 msgstr "Streaks, pair chemistry and progress by season."
 
-#: core/templates/no_club.html:9
+#: core/templates/no_club.html:12
 msgid ""
 "Todavía no perteneces a ningún club. Pide a un capitán que te añada como "
 "miembro, o registra un club nuevo."
@@ -2865,7 +2887,7 @@ msgstr ""
 "You don't belong to any club yet. Ask a captain to add you as a member, or "
 "register a new club."
 
-#: core/templates/no_club.html:10 core/templates/register_club.html:10
+#: core/templates/no_club.html:13 core/templates/register_club.html:10
 msgid "Registrar un club"
 msgstr "Register a club"
 
@@ -2918,22 +2940,27 @@ msgstr "See you soon"
 msgid "Has cerrado sesión correctamente."
 msgstr "You have been logged out."
 
-#: core/views.py:99
+#: core/views.py:98
+msgid "Ya tenías una cuenta con este email. Has iniciado sesión con ella."
+msgstr ""
+"You already had an account with this email. You are now signed in to it."
+
+#: core/views.py:114
 #, python-format
 msgid "Club %(club)s creado correctamente."
 msgstr "Club %(club)s created successfully."
 
-#: core/views.py:157
+#: core/views.py:183
 #, python-format
 msgid "Invitación enviada a %(email)s. El enlace caduca en 24 horas."
 msgstr "Invitation sent to %(email)s. The link expires in 24 hours."
 
-#: core/views.py:160
+#: core/views.py:186
 #, python-format
 msgid "No se pudo enviar el correo a %(email)s. Inténtalo de nuevo más tarde."
 msgstr "The email to %(email)s could not be sent. Please try again later."
 
-#: core/views.py:169
+#: core/views.py:195
 msgid ""
 "Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve "
 "para una sola persona."
@@ -2941,25 +2968,25 @@ msgstr ""
 "Invitation created: copy the link and share it. It expires in 24 hours and "
 "works for one person only."
 
-#: core/views.py:177
+#: core/views.py:203
 msgid "Invitación anulada."
 msgstr "Invitation revoked."
 
-#: core/views.py:209 core/views.py:253
+#: core/views.py:235 core/views.py:279
 #, python-format
 msgid "¡Bienvenido a %(club)s!"
 msgstr "Welcome to %(club)s!"
 
-#: core/views.py:275
+#: core/views.py:301
 #, python-format
 msgid "'%(email)s' no es un email válido."
 msgstr "'%(email)s' is not a valid email."
 
-#: core/views.py:281
+#: core/views.py:307
 msgid "Rol no válido."
 msgstr "Invalid role."
 
-#: core/views.py:283 core/views.py:295
+#: core/views.py:309 core/views.py:321
 msgid "El club debe tener al menos un capitán."
 msgstr "The club must have at least one captain."
 
@@ -2993,8 +3020,8 @@ msgstr "Statistics type"
 
 #: data_analyse/templates/includes/stats_tabs.html:5
 #: data_analyse/templates/player_statistics.html:18
-#: data_analyse/templates/warnings_statistics.html:73 match/report_pdf.py:262
-#: match/report_pdf.py:281 players/templates/list_players.html:164
+#: data_analyse/templates/warnings_statistics.html:73 match/report_pdf.py:290
+#: match/report_pdf.py:309 players/templates/list_players.html:164
 msgid "Jugador"
 msgstr "Player"
 
@@ -3129,13 +3156,13 @@ msgstr "Current streak"
 #: data_analyse/templates/pair_statistics.html:81
 #: data_analyse/templates/pair_statistics.html:87
 #: data_analyse/templates/player_statistics.html:63
-#: data_analyse/templates/player_statistics.html:69 match/report_pdf.py:100
+#: data_analyse/templates/player_statistics.html:69 match/report_pdf.py:114
 #, python-format
 msgid "%(n)sV"
 msgstr "%(n)sW"
 
 #: data_analyse/templates/pair_statistics.html:81
-#: data_analyse/templates/player_statistics.html:63 match/report_pdf.py:100
+#: data_analyse/templates/player_statistics.html:63 match/report_pdf.py:114
 #, python-format
 msgid "%(n)sD"
 msgstr "%(n)sL"
@@ -3256,14 +3283,14 @@ msgstr "Opponent"
 
 #: data_analyse/templates/pair_statistics.html:131
 #: data_analyse/templates/player_statistics.html:206
-#: data_analyse/templates/warnings_statistics.html:74 match/report_pdf.py:333
+#: data_analyse/templates/warnings_statistics.html:74 match/report_pdf.py:364
 msgid "Partido"
 msgstr "Match"
 
 #: data_analyse/templates/pair_statistics.html:133
 #: data_analyse/templates/pair_statistics.html:186
 #: data_analyse/templates/player_statistics.html:209
-#: data_analyse/templates/player_statistics.html:275 match/report_pdf.py:227
+#: data_analyse/templates/player_statistics.html:275 match/report_pdf.py:256
 msgid "Puntos"
 msgstr "Points"
 
@@ -3302,7 +3329,7 @@ msgid "Detalle por temporada"
 msgstr "Season breakdown"
 
 #: data_analyse/templates/pair_statistics.html:179
-#: data_analyse/templates/player_statistics.html:269 match/report_pdf.py:214
+#: data_analyse/templates/player_statistics.html:269 match/report_pdf.py:242
 #: match/templates/list_match.html:12 players/templates/list_players.html:102
 msgid "Temporada"
 msgstr "Season"
@@ -4009,30 +4036,30 @@ msgstr "away"
 msgid "Alineación %(letter)s · %(title)s"
 msgstr "Lineup %(letter)s · %(title)s"
 
-#: match/report_pdf.py:89
+#: match/report_pdf.py:103
 #, python-format
 msgid "%(wins)sV-%(losses)sD"
 msgstr "%(wins)sW-%(losses)sL"
 
-#: match/report_pdf.py:180
+#: match/report_pdf.py:208
 #, python-format
 msgid "Generado el %(date)s"
 msgstr "Generated on %(date)s"
 
-#: match/report_pdf.py:185
+#: match/report_pdf.py:213
 msgid "Informe automático de convocatoria · Zyra"
 msgstr "Automatic call-up report · Zyra"
 
-#: match/report_pdf.py:186
+#: match/report_pdf.py:214
 #, python-format
 msgid "Página %(page)s de %(total)s"
 msgstr "Page %(page)s of %(total)s"
 
-#: match/report_pdf.py:199
+#: match/report_pdf.py:227
 msgid "INFORME DE CONVOCATORIA"
 msgstr "CALL-UP REPORT"
 
-#: match/report_pdf.py:202
+#: match/report_pdf.py:230
 #, python-format
 msgid ""
 "<b>%(own)s</b> vs <b>%(rival)s</b> · %(date)s · jugáis como <font "
@@ -4041,75 +4068,75 @@ msgstr ""
 "<b>%(own)s</b> vs <b>%(rival)s</b> · %(date)s · you play <font "
 "color='#B4F100'><b>%(venue)s</b></font> · season %(season)s"
 
-#: match/report_pdf.py:213
+#: match/report_pdf.py:241
 msgid "Convocados"
 msgstr "Called up"
 
-#: match/report_pdf.py:215 match/report_pdf.py:262 match/report_pdf.py:315
+#: match/report_pdf.py:243 match/report_pdf.py:290 match/report_pdf.py:342
 #, python-format
 msgid "Como %(venue)s"
 msgstr "As %(venue)s"
 
-#: match/report_pdf.py:216
+#: match/report_pdf.py:244
 #, python-format
 msgid "Vs %(rival)s"
 msgstr "Vs %(rival)s"
 
-#: match/report_pdf.py:223
+#: match/report_pdf.py:252
 msgid "VICTORIA"
 msgstr "WIN"
 
-#: match/report_pdf.py:223
+#: match/report_pdf.py:252
 msgid "DERROTA"
 msgstr "LOSS"
 
-#: match/report_pdf.py:223
+#: match/report_pdf.py:252
 msgid "EMPATE"
 msgstr "DRAW"
 
-#: match/report_pdf.py:226 match/report_pdf.py:230
+#: match/report_pdf.py:255 match/report_pdf.py:259
 #, python-format
 msgid "PRECEDENTES CONTRA %(rival)s"
 msgstr "HEAD-TO-HEAD VS %(rival)s"
 
-#: match/report_pdf.py:231
+#: match/report_pdf.py:260
 msgid "Primer enfrentamiento contra este equipo."
 msgstr "First fixture against this team."
 
-#: match/report_pdf.py:235
+#: match/report_pdf.py:264
 msgid "Nadie con 2 o más resultados seguidos."
 msgstr "No one with 2 or more results in a row."
 
-#: match/report_pdf.py:239
+#: match/report_pdf.py:268
 msgid "JUGADORES EN RACHA"
 msgstr "PLAYERS ON A WINNING STREAK"
 
-#: match/report_pdf.py:242
+#: match/report_pdf.py:271
 msgid "EN MALA RACHA"
 msgstr "ON A LOSING STREAK"
 
-#: match/report_pdf.py:250
+#: match/report_pdf.py:278
 #, python-format
 msgid "CONVOCADOS · RENDIMIENTO COMO %(venue)s"
 msgstr "CALLED-UP PLAYERS · PERFORMANCE AS %(venue)s"
 
-#: match/report_pdf.py:262
+#: match/report_pdf.py:290
 msgid "Global"
 msgstr "Overall"
 
-#: match/report_pdf.py:262 match/report_pdf.py:315
+#: match/report_pdf.py:290 match/report_pdf.py:342
 msgid "Racha"
 msgstr "Streak"
 
-#: match/report_pdf.py:263
+#: match/report_pdf.py:291
 msgid "Forma"
 msgstr "Form"
 
-#: match/report_pdf.py:263
+#: match/report_pdf.py:291
 msgid "Estim."
 msgstr "Est."
 
-#: match/report_pdf.py:265
+#: match/report_pdf.py:293
 msgid ""
 "Estim.: probabilidad estimada de ganar un partido (historial, rendimiento en "
 "la sede, forma y racha)."
@@ -4117,104 +4144,104 @@ msgstr ""
 "Est.: estimated probability of winning a match (history, performance at the "
 "venue, form and streak)."
 
-#: match/report_pdf.py:267
+#: match/report_pdf.py:295
 #, python-format
 msgid "%(n)s convocados más no caben en la tabla."
 msgstr "%(n)s more called-up players do not fit in the table."
 
-#: match/report_pdf.py:281
+#: match/report_pdf.py:309
 msgid "Convoc."
 msgstr "Call-ups"
 
-#: match/report_pdf.py:281
+#: match/report_pdf.py:309
 msgid "Último"
 msgstr "Last"
 
-#: match/report_pdf.py:286
+#: match/report_pdf.py:314
 msgid "JUGADORES CON MÁS PARTIDOS"
 msgstr "PLAYERS WITH THE MOST MATCHES"
 
-#: match/report_pdf.py:287
+#: match/report_pdf.py:315
 msgid "JUGADORES CON MENOS PARTIDOS"
 msgstr "PLAYERS WITH THE FEWEST MATCHES"
 
-#: match/report_pdf.py:295
+#: match/report_pdf.py:322
 #, python-format
 msgid "Temporada %(season)s, toda la plantilla (%(n)s jugadores)."
 msgstr "Season %(season)s, whole squad (%(n)s players)."
 
-#: match/report_pdf.py:297
+#: match/report_pdf.py:324
 #, python-format
 msgid "%(n)s sin jugar todavía."
 msgstr "%(n)s yet to play."
 
-#: match/report_pdf.py:298
+#: match/report_pdf.py:325
 msgid "Todos han jugado ya."
 msgstr "Everyone has played already."
 
-#: match/report_pdf.py:299
+#: match/report_pdf.py:326
 msgid ""
 "En <font color='#B4F100'><b>lima</b></font>, convocados para este partido."
 msgstr ""
 "In <font color='#B4F100'><b>lime</b></font>, players called up for this "
 "match."
 
-#: match/report_pdf.py:300
+#: match/report_pdf.py:327
 msgid "Convoc.: convocatorias cerradas en la temporada."
 msgstr "Call-ups: closed call-ups this season."
 
-#: match/report_pdf.py:306
+#: match/report_pdf.py:333
 msgid "PAREJAS CON HISTORIAL ENTRE LOS CONVOCADOS"
 msgstr "PAIRS WITH HISTORY AMONG THE CALLED-UP PLAYERS"
 
-#: match/report_pdf.py:315 match/report_pdf.py:333
+#: match/report_pdf.py:342 match/report_pdf.py:364
 msgid "Pareja"
 msgstr "Pair"
 
-#: match/report_pdf.py:315 match/report_pdf.py:333
+#: match/report_pdf.py:342 match/report_pdf.py:364
 msgid "Suma SNP"
 msgstr "SNP sum"
 
-#: match/report_pdf.py:315
+#: match/report_pdf.py:342
 msgid "Juntos"
 msgstr "Together"
 
-#: match/report_pdf.py:318
+#: match/report_pdf.py:345
 msgid "Ninguna pareja de convocados ha jugado junta todavía."
 msgstr "No pair of called-up players has played together yet."
 
-#: match/report_pdf.py:320
+#: match/report_pdf.py:348
 msgid "ALINEACIONES RECOMENDADAS"
 msgstr "RECOMMENDED LINEUPS"
 
-#: match/report_pdf.py:322
+#: match/report_pdf.py:350
 msgid "Hacen falta al menos 10 convocados para proponer una alineación."
 msgstr "At least 10 called-up players are needed to suggest a lineup."
 
-#: match/report_pdf.py:327
+#: match/report_pdf.py:358
 #, python-format
 msgid "%(n)s PTS"
 msgstr "%(n)s PTS"
 
-#: match/report_pdf.py:333
+#: match/report_pdf.py:364
 msgid "Valor"
 msgstr "Value"
 
-#: match/report_pdf.py:333
+#: match/report_pdf.py:364
 msgid "Victoria est."
 msgstr "Est. win"
 
-#: match/report_pdf.py:336
+#: match/report_pdf.py:367
 #, python-format
 msgid "%(title)s · %(pct)s%% DE GANAR LA ELIMINATORIA"
 msgstr "%(title)s · %(pct)s%% CHANCE OF WINNING THE TIE"
 
-#: match/report_pdf.py:345
+#: match/report_pdf.py:376
 #, python-format
 msgid "Descansan: %(names)s"
 msgstr "Resting: %(names)s"
 
-#: match/report_pdf.py:350
+#: match/report_pdf.py:381
 msgid ""
 "Formato SNP: 5 partidos; los partidos 1 y 2 valen 3 puntos y los 3, 4 y 5 "
 "valen 2. Las parejas se ordenan por la suma de puntos SNP de sus jugadores y "
@@ -4226,7 +4253,7 @@ msgstr ""
 "and 7 of 12 points are needed to win the tie. Estimates are based on the "
 "club's history and are only a guide."
 
-#: match/report_pdf.py:359
+#: match/report_pdf.py:390
 #, python-format
 msgid "Informe de convocatoria · %(own)s vs %(rival)s"
 msgstr "Call-up report · %(own)s vs %(rival)s"
@@ -5012,17 +5039,6 @@ msgstr "Manage roster"
 msgid "Nuevo jugador"
 msgstr "New player"
 
-#: players/templates/list_players.html:39 team/templates/list_teams.html:24
-#, python-format
-msgid "%(n)s resultado"
-msgid_plural "%(n)s resultados"
-msgstr[0] "%(n)s result"
-msgstr[1] "%(n)s results"
-
-#: players/templates/list_players.html:40 team/templates/list_teams.html:25
-msgid "Limpiar"
-msgstr "Clear"
-
 #: players/templates/list_players.html:45
 msgid "Ordenar por"
 msgstr "Sort by"
@@ -5452,48 +5468,3 @@ msgstr "Error creating the team. Please check the data."
 #: team/views.py:92
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
-
-#~ msgid "País en el que juega"
-#~ msgstr "Country where it plays"
-
-#~ msgid "País en el que juega:"
-#~ msgstr "Country where it plays:"
-
-#~ msgid ""
-#~ "Al menos 8 caracteres; no puede ser solo números ni parecerse a tu "
-#~ "usuario."
-#~ msgstr ""
-#~ "At least 8 characters; it can't be only numbers or resemble your username."
-
-#~ msgid "Solo si el usuario no existe todavía: se creará con esta contraseña."
-#~ msgstr ""
-#~ "Only if the user doesn't exist yet: it will be created with this password."
-
-#~ msgid ""
-#~ "Los capitanes con email reciben el informe al cerrar cada convocatoria."
-#~ msgstr ""
-#~ "Captains with an email receive the report when each call-up is closed."
-
-#~ msgid "El usuario no existe: indica una contraseña para crearlo."
-#~ msgstr "The user doesn't exist: enter a password to create it."
-
-#~ msgid "Añadir miembro"
-#~ msgstr "Add member"
-
-#~ msgid ""
-#~ "Crea tú mismo la cuenta de un usuario, o añade a alguien que ya tiene "
-#~ "cuenta, y elige su rol."
-#~ msgstr ""
-#~ "Create a user's account yourself, or add someone who already has an "
-#~ "account, and choose their role."
-
-#~ msgid "Añadir"
-#~ msgstr "Add"
-
-#, python-format
-#~ msgid "%(username)s añadido al club."
-#~ msgstr "%(username)s added to the club."
-
-#, python-format
-#~ msgid "No es un enfrentamiento válido. %(team)s debe ser local o visitante"
-#~ msgstr "This is not a valid fixture. %(team)s must be the home or away team"

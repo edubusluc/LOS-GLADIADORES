@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 11:37+0000\n"
+"POT-Creation-Date: 2026-10-02 12:21+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -117,7 +117,7 @@ msgstr "There is no record with ID %(id)s in this club."
 msgid "No hay ningún equipo «%(team)s» en este club."
 msgstr "There is no team “%(team)s” in this club."
 
-#: backoffice/importer.py:204
+#: backoffice/importer.py:204 match/forms.py:52
 msgid "El equipo local y el visitante no pueden ser el mismo."
 msgstr "The home and away teams cannot be the same."
 
@@ -207,17 +207,17 @@ msgstr "Matches"
 #: backoffice/templates/backoffice/import_list.html:59
 #: data_analyse/templates/pair_statistics.html:129
 #: data_analyse/templates/player_statistics.html:204
-#: data_analyse/templates/warnings_statistics.html:72 match/forms.py:10
+#: data_analyse/templates/warnings_statistics.html:72 match/forms.py:11
 #: match/report_pdf.py:227
 msgid "Fecha"
 msgstr "Date"
 
-#: backoffice/importer.py:238 core/templates/home.html:45 match/forms.py:10
+#: backoffice/importer.py:238 core/templates/home.html:45 match/forms.py:11
 #: match/report.py:85 match/templates/call_for_match.html:14
 msgid "Local"
 msgstr "Home"
 
-#: backoffice/importer.py:239 core/templates/home.html:51 match/forms.py:10
+#: backoffice/importer.py:239 core/templates/home.html:51 match/forms.py:11
 #: match/report.py:85 match/templates/call_for_match.html:19
 msgid "Visitante"
 msgstr "Away"
@@ -2174,7 +2174,7 @@ msgstr "Location"
 msgid "Categoría"
 msgstr "Category"
 
-#: core/forms.py:16 core/forms.py:18 core/forms.py:19 match/forms.py:27
+#: core/forms.py:16 core/forms.py:18 core/forms.py:19 match/forms.py:33
 #: players/forms.py:7 team/forms.py:17 team/templates/edit_team.html:21
 #: team/templates/edit_team.html:32 team/templates/edit_team.html:42
 msgid "Elige una opción"
@@ -2185,8 +2185,8 @@ msgid "Los jugadores del club tendrán esta categoría."
 msgstr "The club's players will have this category."
 
 #: core/forms.py:18 team/models.py:36
-msgid "País en el que juega"
-msgstr "Country where it plays"
+msgid "Nacionalidad del equipo"
+msgstr "Team nationality"
 
 #: core/forms.py:19 team/models.py:37
 msgid "División"
@@ -3757,9 +3757,37 @@ msgstr ""
 "Estimated probability of winning the tie: %(pct)s (%(expected)s of 12 points "
 "expected)."
 
-#: match/forms.py:17
+#: match/forms.py:18
 msgid "Elige el día del partido"
 msgstr "Choose the match day"
+
+#: match/forms.py:28
+msgid "Uno de los equipos no existe."
+msgstr "One of the teams does not exist."
+
+#: match/forms.py:34
+msgid "Por favor, completa todos los campos."
+msgstr "Please fill in all the fields."
+
+#: match/forms.py:39
+msgid "Tipo de partido no válido."
+msgstr "Invalid match type."
+
+#: match/forms.py:40
+msgid "Fecha no válida. Usa el formato AAAA-MM-DD."
+msgstr "Invalid date. Use the YYYY-MM-DD format."
+
+#: match/forms.py:55
+msgid "Tu club no tiene equipo propio: no se pueden crear partidos."
+msgstr "Your club has no team of its own, so matches cannot be created."
+
+#: match/forms.py:58
+#, python-format
+msgid ""
+"Tu equipo (%(team)s) tiene que jugar el partido: elígelo como local o "
+"visitante."
+msgstr ""
+"Your team (%(team)s) must play the match: choose it as the home or away team."
 
 #: match/lineup.py:35
 msgid "Los datos de la alineación no son válidos."
@@ -4283,7 +4311,7 @@ msgstr "Close match scoresheet"
 msgid "Guardar partidos"
 msgstr "Save matches"
 
-#: match/templates/create_match.html:6 match/templates/create_match.html:25
+#: match/templates/create_match.html:6 match/templates/create_match.html:24
 msgid "Crear Partido"
 msgstr "Create Match"
 
@@ -4373,12 +4401,12 @@ msgstr "Search player"
 msgid "Filtrar por posición"
 msgstr "Filter by position"
 
-#: match/templates/includes/player_selector.html:11 match/views.py:376
+#: match/templates/includes/player_selector.html:11 match/views.py:321
 #: players/models.py:28
 msgid "Derecha"
 msgstr "Right side"
 
-#: match/templates/includes/player_selector.html:12 match/views.py:376
+#: match/templates/includes/player_selector.html:12 match/views.py:321
 #: players/models.py:29
 msgid "Revés"
 msgstr "Left side"
@@ -4477,52 +4505,31 @@ msgstr "There are no matches in the %(season)s season."
 msgid "No hay partidos."
 msgstr "There are no matches."
 
-#: match/views.py:120
-msgid "Fecha no válida. Usa el formato AAAA-MM-DD."
-msgstr "Invalid date. Use the YYYY-MM-DD format."
-
-#: match/views.py:130
-msgid "Uno de los equipos no existe."
-msgstr "One of the teams does not exist."
-
-#: match/views.py:136
-msgid "Tipo de partido no válido."
-msgstr "Invalid match type."
-
-#: match/views.py:144
-#, python-format
-msgid "No es un enfrentamiento válido. %(team)s debe ser local o visitante"
-msgstr "This is not a valid fixture. %(team)s must be the home or away team"
-
-#: match/views.py:161
-msgid "Por favor, completa todos los campos."
-msgstr "Please fill in all the fields."
-
-#: match/views.py:181
+#: match/views.py:126
 msgid "No se puede eliminar un partido ya confirmado"
 msgstr "A confirmed match cannot be deleted"
 
-#: match/views.py:185
+#: match/views.py:130
 msgid "El partido no existe"
 msgstr "The match does not exist"
 
-#: match/views.py:219
+#: match/views.py:164
 msgid "Debes seleccionar al menos un jugador."
 msgstr "You must select at least one player."
 
-#: match/views.py:235
+#: match/views.py:180
 msgid "Para cerrar una convocatoria al menos debes contar con 10 jugadores"
 msgstr "You need at least 10 players to close a call-up"
 
-#: match/views.py:237
+#: match/views.py:182
 msgid "Esta convocatoria ha sido cerrada"
 msgstr "This call-up has been closed"
 
-#: match/views.py:253
+#: match/views.py:198
 msgid "Convocatoria cerrada"
 msgstr "Call-up closed"
 
-#: match/views.py:268
+#: match/views.py:213
 #, python-format
 msgid ""
 "%(done)s, pero no se pudo enviar el informe por email. Puedes descargarlo "
@@ -4531,7 +4538,7 @@ msgstr ""
 "%(done)s, but the report could not be sent by email. You can download it "
 "from this page."
 
-#: match/views.py:272
+#: match/views.py:217
 #, python-format
 msgid ""
 "%(done)s. Ningún capitán tiene email: añádelo en Miembros para recibir el "
@@ -4540,12 +4547,12 @@ msgstr ""
 "%(done)s. No captain has an email address: add one in Members to receive the "
 "report automatically."
 
-#: match/views.py:278
+#: match/views.py:223
 #, python-format
 msgid "%(done)s. Informe enviado a %(emails)s."
 msgstr "%(done)s. Report sent to %(emails)s."
 
-#: match/views.py:281
+#: match/views.py:226
 #, python-format
 msgid ""
 "No se pudo enviar el informe a %(emails)s: se reintentará automáticamente. "
@@ -4554,7 +4561,7 @@ msgstr ""
 "The report could not be sent to %(emails)s: it will be retried "
 "automatically. Meanwhile, you can download it from this page."
 
-#: match/views.py:284
+#: match/views.py:229
 #, python-format
 msgid ""
 "%(done)s. No se pudo enviar el informe a %(emails)s: se reintentará "
@@ -4563,59 +4570,59 @@ msgstr ""
 "%(done)s. The report could not be sent to %(emails)s: it will be retried "
 "automatically. Meanwhile, you can download it from this page."
 
-#: match/views.py:294
+#: match/views.py:239
 msgid "Informe reenviado"
 msgstr "Report resent"
 
-#: match/views.py:376
+#: match/views.py:321
 msgid "Mixtos"
 msgstr "Mixed"
 
-#: match/views.py:417
+#: match/views.py:362
 msgid "No se pueden crear partidos, no existe ninguna convocatoria."
 msgstr "Matches cannot be created: there is no call-up."
 
-#: match/views.py:419
+#: match/views.py:364
 msgid "Para crear los partidos debes contar al menos con 10 jugadores"
 msgstr "You need at least 10 players to create the matches"
 
-#: match/views.py:421
+#: match/views.py:366
 msgid "Para crear los partidos debes confirmar la convocatoria"
 msgstr "You must confirm the call-up to create the matches"
 
-#: match/views.py:438
+#: match/views.py:383
 msgid "Los partidos ya están creados: puedes cambiar las parejas desde aquí."
 msgstr "The matches have already been created: you can change the pairs here."
 
-#: match/views.py:447
+#: match/views.py:392
 msgid "Partidos creados."
 msgstr "Matches created."
 
-#: match/views.py:482
+#: match/views.py:427
 msgid "No se pueden añadir resultados a un partido ya confirmado"
 msgstr "Results cannot be added to a confirmed match"
 
-#: match/views.py:499
+#: match/views.py:444
 msgid "No se pueden editar los resultados de un partido ya confirmado"
 msgstr "The results of a confirmed match cannot be edited"
 
-#: match/views.py:531
+#: match/views.py:476
 msgid "No se pueden cerrar actas, el partido ya ha sido cerrado"
 msgstr "The scoresheet cannot be closed: the match has already been closed"
 
-#: match/views.py:533
+#: match/views.py:478
 msgid "No se pueden cerrar actas, se requieren al menos 5 partidos."
 msgstr "The scoresheet cannot be closed: at least 5 matches are required."
 
-#: match/views.py:537
+#: match/views.py:482
 msgid "No se pueden cerrar actas, algunos partidos no tienen resultado."
 msgstr "The scoresheet cannot be closed: some matches have no result."
 
-#: match/views.py:574
+#: match/views.py:519
 msgid "No se pueden editar los partidos que se encuentran ya confirmados"
 msgstr "Confirmed matches cannot be edited"
 
-#: match/views.py:588
+#: match/views.py:533
 msgid "Parejas actualizadas."
 msgstr "Pairs updated."
 
@@ -4729,12 +4736,12 @@ msgstr "Names matching several players (left unchanged): %(names)s"
 msgid "Jugadores de Zyra que no aparecen en SNP: %(names)s"
 msgstr "Zyra players not found in SNP: %(names)s"
 
-#: players/snp.py:143
+#: players/snp.py:150
 #, python-format
 msgid "Error inesperado: %(error)s"
 msgstr "Unexpected error: %(error)s"
 
-#: players/snp.py:167
+#: players/snp.py:174
 #, python-format
 msgid "%(matched)s de %(total)s jugadores actualizados con los puntos de SNP."
 msgstr "%(matched)s of %(total)s players updated with SNP points."
@@ -4747,22 +4754,22 @@ msgstr "several players with a similar name"
 msgid "El club no tiene cuenta SNP."
 msgstr "The club has no SNP account."
 
-#: players/snp_import.py:126
+#: players/snp_import.py:127
 msgid "creado mientras tanto"
 msgstr "created in the meantime"
 
-#: players/snp_import.py:137
+#: players/snp_import.py:138
 #, python-format
 msgid "%(n)s jugador añadido."
 msgid_plural "%(n)s jugadores añadidos."
 msgstr[0] "%(n)s player added."
 msgstr[1] "%(n)s players added."
 
-#: players/snp_import.py:170
+#: players/snp_import.py:171
 msgid "La búsqueda en SNP no ha terminado. Vuelve a intentarlo."
 msgstr "The SNP search did not finish. Please try again."
 
-#: players/snp_import.py:189
+#: players/snp_import.py:190
 msgid "Error inesperado al leer SNP."
 msgstr "Unexpected error while reading SNP."
 
@@ -5254,8 +5261,8 @@ msgid "Categoría:"
 msgstr "Category:"
 
 #: team/templates/create_team.html:31 team/templates/edit_team.html:30
-msgid "País en el que juega:"
-msgstr "Country where it plays:"
+msgid "Nacionalidad del equipo:"
+msgstr "Team nationality:"
 
 #: team/templates/create_team.html:37 team/templates/edit_team.html:40
 msgid "División:"
@@ -5344,11 +5351,12 @@ msgstr "Error creating the team. Please check the data."
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
 
-#: match/forms.py
-msgid "Tu club no tiene equipo propio: no se pueden crear partidos."
-msgstr "Your club has no team of its own, so matches cannot be created."
+#~ msgid "País en el que juega"
+#~ msgstr "Country where it plays"
 
-#: match/forms.py
 #, python-format
-msgid "Tu equipo (%(team)s) tiene que jugar el partido: elígelo como local o visitante."
-msgstr "Your team (%(team)s) must play the match: choose it as the home or away team."
+#~ msgid "No es un enfrentamiento válido. %(team)s debe ser local o visitante"
+#~ msgstr "This is not a valid fixture. %(team)s must be the home or away team"
+
+#~ msgid "País en el que juega:"
+#~ msgstr "Country where it plays:"

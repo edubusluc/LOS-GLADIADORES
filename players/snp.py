@@ -124,6 +124,12 @@ class SyncResult:
         return "\n".join(lines)
 
 
+def team_country(club):
+    """Nacionalidad del equipo propio del club (vacía en equipos antiguos: el scraper usa España)."""
+    team = club.own_team
+    return team.country if team else ""
+
+
 def sync_club(account, scraper=None, **scrape_options):
     """
     Descarga los puntos SNP del club de ``account`` y los guarda. Nunca lanza: devuelve
@@ -132,7 +138,8 @@ def sync_club(account, scraper=None, **scrape_options):
     otros no, ni afecta a los demás clubes.
     """
     try:
-        scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None, **scrape_options)
+        scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None,
+                                          country=team_country(account.club), **scrape_options)
         with transaction.atomic():
             result = _save_scores(account, scores)
     except (SnpScrapeError, DecryptionError) as exc:

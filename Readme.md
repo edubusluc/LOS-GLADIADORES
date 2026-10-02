@@ -287,7 +287,7 @@ Cada administrador guarda en *Menú → Cuenta SNP* el usuario y la contraseña 
 (snpgalaxy.com) de su capitán y, solo si la cuenta tiene varios equipos, el número del
 equipo. Usuario y contraseña se guardan cifrados (`core/crypto.py`). El proceso
 programado `update_snp_scores` recorre los clubes, entra
-en SNP con su cuenta, navega Series Nacionales → España → Mis equipos → el equipo, lee
+en SNP con su cuenta, navega Series Nacionales → el país de la nacionalidad del equipo (España si no tiene) → Mis equipos → el equipo, lee
 los puntos de los jugadores (`players/scraper.py`) y actualiza los «Puntos SNP». Los
 nombres se cruzan sin tener en cuenta mayúsculas, tildes, la categoría final (500,
 Future) ni el segundo apellido si falta en un lado; lo que no encaja se muestra en la

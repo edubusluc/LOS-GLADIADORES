@@ -20,7 +20,7 @@ from core.crypto import DecryptionError
 
 from .models import Player, SnpScoreHistory, SnpTeamImport, current_season
 from .scraper import SnpScrapeError, scrape_scores
-from .snp import match_scores, split_category
+from .snp import team_country, match_scores, split_category
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,8 @@ def search(team_import, scraper=None, **scrape_options):
     try:
         if account is None:
             raise SnpScrapeError(_("El club no tiene cuenta SNP."))
-        scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None, **scrape_options)
+        scores = (scraper or scrape_scores)(account.username, account.password, account.team_id or None,
+                                          country=team_country(account.club), **scrape_options)
     except (SnpScrapeError, DecryptionError) as exc:
         changes = {"status": SnpTeamImport.ERROR, "message": str(exc), "finished_at": timezone.now()}
     else:

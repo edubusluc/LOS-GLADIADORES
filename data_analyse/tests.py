@@ -115,6 +115,15 @@ class PairStatisticsTests(TestCase):
         self.assertEqual(key(response.context["best_pairs"]), [("A", "B", 4, 75.0)])
         self.assertEqual(key(response.context["worst_pairs"]), [("C", "D", 2, 50.0)])
 
+    def test_ranking_links_open_the_pair(self):
+        """Los enlaces de mejores/peores parejas llevan identificadores públicos (antes daban 404)."""
+        response = self.client.get(reverse("pair_statistics"), {"match_type": "competitivo"})
+        link = f'?p1={self.a.public_id}&amp;p2={self.b.public_id}&amp;match_type=competitivo'
+        self.assertContains(response, link)
+        followed = self.client.get(reverse("pair_statistics"),
+                                   {"p1": self.a.public_id, "p2": self.b.public_id})
+        self.assertEqual(followed.status_code, 200)
+
     def test_best_and_worst_pairs_ranking(self):
         row = lambda name, played, wins: {'name': name, 'played': played, 'wins': wins,
                                           'pct': pair_stats._pct(wins, played)}

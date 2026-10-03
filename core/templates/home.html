@@ -106,7 +106,7 @@
                 <span>{% blocktranslate trimmed count n=hot_pair.streak %}{{ n }} victoria seguida{% plural %}{{ n }} victorias seguidas{% endblocktranslate %}</span>
             </div>
         </div>
-        <a class="btn btn-secondary btn-sm" href="{% url 'pair_statistics' %}?p1={{ hot_pair.p1.id }}&amp;p2={{ hot_pair.p2.id }}">{% translate "Ver estadísticas" %}</a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'pair_statistics' %}?p1={{ hot_pair.p1.public_id }}&amp;p2={{ hot_pair.p2.public_id }}">{% translate "Ver estadísticas" %}</a>
     </article>
     {% endif %}
 </div>

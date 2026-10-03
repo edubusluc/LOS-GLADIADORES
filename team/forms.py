@@ -8,11 +8,20 @@ from .models import Team
 class Teamform (forms.ModelForm):
     class Meta:
         model = Team
-        fields = ['name', 'gender', 'country', 'division', 'location', 'photo']
+        fields = ['name', 'gender', 'country', 'division', 'location', 'photo', 'in_group']
 
     def __init__(self, *args, club=None, **kwargs):
         self.club = club
         super().__init__(*args, **kwargs)
+        if self.instance.pk is None and not self.is_bound:
+            # Un equipo nuevo suele ser un rival del grupo del club: se propone en el grupo y
+            # con la categoría, nacionalidad y división del equipo propio (se pueden cambiar).
+            self.initial.setdefault('in_group', True)
+            own = club.own_team if club else None
+            if own:
+                for name in ('gender', 'country', 'division'):
+                    if getattr(own, name):
+                        self.initial.setdefault(name, getattr(own, name))
         plain_text(self, 'name', 'location')
         # Obligatorios en el formulario aunque los equipos antiguos los tengan vacíos.
         for name in ('gender', 'country', 'division'):

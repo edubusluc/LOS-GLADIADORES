@@ -118,3 +118,91 @@ class TeamGenderPropagationTests(TestCase):
         self.assertEqual((own.gender, own.country), ("F", "IT"))
         player.refresh_from_db()
         self.assertEqual(player.gender, "F")
+
+
+class NewTeamDefaultsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user, gender="F", country="IT", division="1000")
+        self.client.force_login(self.user)
+
+    def test_form_starts_with_own_team_category_country_and_division_in_group(self):
+        form = self.client.get(reverse("create_team")).context["form"]
+        self.assertEqual({f: form[f].value() for f in ("gender", "country", "division", "in_group")},
+                         {"gender": "F", "country": "IT", "division": "1000", "in_group": True})
+
+    def test_new_team_can_be_created_in_group(self):
+        self.client.post(reverse("create_team"), {"name": "Burguillos", "location": "X", "gender": "M", "country": "ES",
+                                                  "division": "500", "in_group": "on"})
+        team = Team.objects.get(name="Burguillos")
+        self.assertEqual((team.gender, team.division, team.in_group, team.is_own), ("M", "500", True, False))
+
+
+class ManageTeamsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user, gender="F", country="ES", division="500")
+        self.own = self.club.own_team
+        self.a = Team.objects.create(club=self.club, name="Tomares", location="X", gender="F", country="ES", division="500")
+        self.b = Team.objects.create(club=self.club, name="Burguillos", location="X", division="500", in_group=True)
+        self.c = Team.objects.create(club=self.club, name="TOMARES", location="X", gender="F", country="ES",
+                                     division="1000", in_group=True)
+        self.client.force_login(self.user)
+        self.url = reverse("manage_teams")
+
+    def post_form(self, **changes):
+        data = {}
+        for t in (self.own, self.a, self.b, self.c):
+            data.update({f"gender_{t.id}": t.gender, f"country_{t.id}": t.country, f"division_{t.id}": t.division})
+            if t.in_group:
+                data[f"in_group_{t.id}"] = "on"
+        for key, value in changes.items():
+            if value is None:
+                data.pop(key, None)
+            else:
+                data[key] = value
+        return self.client.post(self.url, data)
+
+    def test_only_admins_see_the_page(self):
+        member = User.objects.create_user("member", password="pass-12345")
+        from core.models import Membership
+        Membership.objects.create(user=member, club=self.club, role=Membership.MEMBER)
+        self.client.force_login(member)
+        self.assertNotEqual(self.client.get(self.url).status_code, 200)
+
+    def test_saves_several_teams_at_once(self):
+        response = self.post_form(**{f"gender_{self.a.id}": "M", f"division_{self.b.id}": "grand_slam",
+                                     f"gender_{self.b.id}": "M", f"in_group_{self.a.id}": "on",
+                                     f"in_group_{self.b.id}": None})
+        self.assertRedirects(response, self.url, fetch_redirect_response=False)
+        self.a.refresh_from_db()
+        self.b.refresh_from_db()
+        self.assertEqual((self.a.gender, self.a.in_group), ("M", True))
+        self.assertEqual((self.b.gender, self.b.division, self.b.in_group), ("M", "grand_slam", False))
+
+    def test_own_team_stays_in_group_and_passes_gender_to_players(self):
+        player = Player.objects.create(club=self.club, name="Ana", last_name="López")
+        self.post_form(**{f"gender_{self.own.id}": "M", f"in_group_{self.own.id}": None})
+        self.own.refresh_from_db()
+        player.refresh_from_db()
+        self.assertEqual((self.own.gender, self.own.in_group, player.gender), ("M", True, "M"))
+
+    def test_invalid_or_blank_values_are_ignored(self):
+        self.post_form(**{f"gender_{self.a.id}": "", f"division_{self.a.id}": "champions"})
+        self.a.refresh_from_db()
+        self.assertEqual((self.a.gender, self.a.division), ("F", "500"))
+
+    def test_same_name_in_same_division_saves_nothing(self):
+        response = self.post_form(**{f"division_{self.c.id}": "500", f"gender_{self.b.id}": "M"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ya existe un equipo con ese nombre en esa división")
+        self.c.refresh_from_db()
+        self.b.refresh_from_db()
+        self.assertEqual((self.c.division, self.b.gender), ("1000", ""))
+
+    def test_teams_of_other_clubs_are_not_touched(self):
+        other_user = User.objects.create_user("other", password="pass-12345")
+        other = create_club("Club B", "Huelva", other_user, gender="F").own_team
+        self.post_form(**{f"gender_{other.id}": "M"})
+        other.refresh_from_db()
+        self.assertEqual(other.gender, "F")

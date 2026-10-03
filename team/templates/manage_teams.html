@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <a href="{% url 'list_teams' %}" class="z-eyebrow"><i class="fa-solid fa-arrow-left me-1"></i> {% translate "Equipos" %}</a>
+        <h1>{% translate "Gestionar equipos" %}</h1>
+    </div>
+</div>
+
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+<p class="text-muted">{% translate "Cambia la categoría, la nacionalidad, la división o el grupo de varios equipos y guarda todos los cambios de una vez. Marca equipos para aplicarles el mismo valor a todos." %}</p>
+
+<form method="post" data-teams>
+    {% csrf_token %}
+    <div class="z-selector-tools">
+        <div class="z-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" placeholder="{% translate 'Buscar equipo...' %}" data-teams-search aria-label="{% translate 'Buscar equipo' %}">
+        </div>
+        <div class="z-segmented" role="group" aria-label="{% translate 'Filtrar' %}">
+            <button type="button" class="btn btn-sm active" data-teams-filter="">{% translate "Todos" %}</button>
+            <button type="button" class="btn btn-sm" data-teams-filter="in">{% translate "En tu grupo" %}</button>
+            <button type="button" class="btn btn-sm" data-teams-filter="out">{% translate "Fuera" context "fuera de grupo" %}</button>
+        </div>
+    </div>
+
+    <div class="z-bulk" data-teams-bulk>
+        <label class="form-check m-0">
+            <input type="checkbox" class="form-check-input" data-teams-all aria-label="{% translate 'Marcar los equipos visibles' %}">
+            <span class="form-check-label" data-teams-selected>{% translate "Marcar visibles" %}</span>
+        </label>
+        <select class="form-select form-select-sm" data-bulk="gender" aria-label="{% translate 'Categoría' %}">
+            <option value="">{% translate "Categoría…" %}</option>
+            {% for value, label in genders %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+        <select class="form-select form-select-sm" data-bulk="country" aria-label="{% translate 'Nacionalidad del equipo' %}">
+            <option value="">{% translate "Nacionalidad…" %}</option>
+            {% for value, label in countries %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+        <select class="form-select form-select-sm" data-bulk="division" aria-label="{% translate 'División' %}">
+            <option value="">{% translate "División…" %}</option>
+            {% for value, label in divisions %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+        <select class="form-select form-select-sm" data-bulk="in_group" aria-label="{% translate 'Grupo' %}">
+            <option value="">{% translate "Grupo…" %}</option>
+            <option value="1">{% translate "En tu grupo" %}</option>
+            <option value="0">{% translate "Fuera de grupo" %}</option>
+        </select>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-teams-apply disabled>{% translate "Aplicar a marcados" %}</button>
+    </div>
+
+    <div class="z-team-rows">
+        {% for row in rows %}{% with t=row.team %}
+        <div class="z-team-row{% if row.error %} has-error{% endif %}" data-name="{{ t.name }}">
+            <div class="z-team-row-head">
+                <input type="checkbox" class="form-check-input" data-teams-pick aria-label="{% blocktranslate with name=t.name %}Marcar {{ name }}{% endblocktranslate %}">
+                <img src="{% if t.photo %}{{ t.photo.url }}{% else %}{% static 'zyra/team.svg' %}{% endif %}" alt="" class="table-logo">
+                <span class="z-pick-body">
+                    <span class="z-pick-name">{{ t.name }}</span>
+                    <span class="z-pick-meta">{% if t.is_own %}{% translate "Tu equipo · sus jugadores tienen su categoría" %}{% else %}{{ t.location }}{% endif %}</span>
+                </span>
+            </div>
+            <div class="z-team-row-fields">
+                <select name="gender_{{ t.id }}" class="form-select form-select-sm" data-field="gender" data-initial="{{ t.gender }}" aria-label="{% translate 'Categoría' %}">
+                    {% if not t.gender %}<option value="">{% translate "Sin categoría" %}</option>{% endif %}
+                    {% for value, label in genders %}<option value="{{ value }}" {% if row.gender == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+                <select name="country_{{ t.id }}" class="form-select form-select-sm" data-field="country" data-initial="{{ t.country }}" aria-label="{% translate 'Nacionalidad del equipo' %}">
+                    {% if not t.country %}<option value="">{% translate "Sin nacionalidad" %}</option>{% endif %}
+                    {% for value, label in countries %}<option value="{{ value }}" {% if row.country == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+                <select name="division_{{ t.id }}" class="form-select form-select-sm" data-field="division" data-initial="{{ t.division }}" aria-label="{% translate 'División' %}">
+                    {% if not t.division %}<option value="">{% translate "Sin división" %}</option>{% endif %}
+                    {% for value, label in divisions %}<option value="{{ value }}" {% if row.division == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+                {% if t.is_own %}
+                <span class="z-badge z-badge--lime">{% translate "Tu equipo" %}</span>
+                {% else %}
+                <label class="form-check form-switch m-0 z-team-row-group">
+                    <input class="form-check-input" type="checkbox" role="switch" name="in_group_{{ t.id }}" data-field="in_group" {% if row.in_group %}checked{% endif %} data-initial="{% if t.in_group %}1{% else %}0{% endif %}">
+                    <span class="form-check-label">{% translate "En tu grupo" %}</span>
+                </label>
+                {% endif %}
+            </div>
+            {% if row.error %}<div class="text-danger small">{{ row.error }}</div>{% endif %}
+        </div>
+        {% endwith %}{% empty %}
+        <div class="z-empty">{% translate "Todavía no hay equipos." %}</div>
+        {% endfor %}
+        <p class="z-empty" data-teams-empty hidden>{% translate "Ningún equipo coincide con la búsqueda." %}</p>
+    </div>
+
+    <div class="z-selector-bar">
+        <div>
+            {% blocktranslate trimmed with count=in_group_count %}<b data-teams-count>{{ count }}</b> en tu grupo{% endblocktranslate %}
+            <small data-teams-changes>{% translate "Sin cambios" %}</small>
+        </div>
+        <button type="submit" class="btn btn-primary" data-teams-save disabled>{% translate "Guardar cambios" %}</button>
+    </div>
+</form>
+
+{% translate "Sin cambios" as t_none %}{% translate "Marcar visibles" as t_mark %}
+{% blocktranslate with n="{n}" asvar t_change_one %}{{ n }} equipo con cambios sin guardar{% endblocktranslate %}
+{% blocktranslate with n="{n}" asvar t_change_many %}{{ n }} equipos con cambios sin guardar{% endblocktranslate %}
+{% blocktranslate with n="{n}" asvar t_marked %}{{ n }} marcados{% endblocktranslate %}
+<script>
+(function () {
+  const T = { none: '{{ t_none|escapejs }}', mark: '{{ t_mark|escapejs }}', changeOne: '{{ t_change_one|escapejs }}',
+              changeMany: '{{ t_change_many|escapejs }}', marked: '{{ t_marked|escapejs }}' };
+  const root = document.querySelector('[data-teams]');
+  if (!root) return;
+  const norm = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const rows = Array.from(root.querySelectorAll('.z-team-row'));
+  const fields = (r) => Array.from(r.querySelectorAll('[data-field]'));
+  const value = (el) => el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
+  const pick = (r) => r.querySelector('[data-teams-pick]');
+  const group = (r) => r.querySelector('[data-field="in_group"]');
+  const search = root.querySelector('[data-teams-search]');
+  const all = root.querySelector('[data-teams-all]');
+  let filter = '';
+
+  function refresh() {
+    const q = norm(search.value);
+    let visible = 0, changes = 0, count = 0, marked = 0, visibleMarked = 0;
+    rows.forEach(function (r) {
+      const g = group(r);
+      const inGroup = !g || g.checked;
+      count += inGroup;
+      const changed = fields(r).some((el) => value(el) !== el.dataset.initial);
+      changes += changed;
+      r.classList.toggle('is-changed', changed);
+      r.hidden = !((!q || norm(r.dataset.name).includes(q)) && (!filter || (filter === 'in') === inGroup));
+      if (!r.hidden) { visible++; visibleMarked += pick(r).checked; }
+      marked += pick(r).checked;
+    });
+    root.querySelector('[data-teams-empty]').hidden = visible > 0 || !rows.length;
+    root.querySelector('[data-teams-count]').textContent = count;
+    root.querySelector('[data-teams-changes]').textContent = changes ? (changes === 1 ? T.changeOne : T.changeMany).replace('{n}', changes) : T.none;
+    root.querySelector('[data-teams-save]').disabled = !changes;
+    root.querySelector('[data-teams-selected]').textContent = marked ? T.marked.replace('{n}', marked) : T.mark;
+    all.checked = visible > 0 && visibleMarked === visible;
+    all.indeterminate = visibleMarked > 0 && visibleMarked < visible;
+    const anyBulk = Array.from(root.querySelectorAll('[data-bulk]')).some((s) => s.value);
+    root.querySelector('[data-teams-apply]').disabled = !(marked && anyBulk);
+  }
+
+  search.addEventListener('input', refresh);
+  root.querySelectorAll('[data-teams-filter]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      filter = b.dataset.teamsFilter;
+      root.querySelectorAll('[data-teams-filter]').forEach((x) => x.classList.toggle('active', x === b));
+      refresh();
+    });
+  });
+  all.addEventListener('change', function () {
+    rows.forEach((r) => { if (!r.hidden) pick(r).checked = all.checked; });
+    refresh();
+  });
+  root.querySelectorAll('[data-bulk]').forEach((s) => s.addEventListener('change', refresh));
+  root.querySelector('[data-teams-apply]').addEventListener('click', function () {
+    const bulk = {};
+    root.querySelectorAll('[data-bulk]').forEach((s) => { if (s.value) bulk[s.dataset.bulk] = s.value; });
+    rows.forEach(function (r) {
+      if (!pick(r).checked) return;
+      fields(r).forEach(function (el) {
+        const v = bulk[el.dataset.field];
+        if (v === undefined) return;
+        if (el.type === 'checkbox') el.checked = v === '1'; else el.value = v;
+      });
+      pick(r).checked = false;
+    });
+    root.querySelectorAll('[data-bulk]').forEach((s) => { s.value = ''; });
+    refresh();
+  });
+  rows.forEach(function (r) {
+    fields(r).forEach((el) => el.addEventListener('change', refresh));
+    pick(r).addEventListener('change', refresh);
+  });
+  window.addEventListener('beforeunload', function (e) {
+    if (!root.querySelector('[data-teams-save]').disabled && !root.dataset.submitting) { e.preventDefault(); e.returnValue = ''; }
+  });
+  root.addEventListener('submit', () => { root.dataset.submitting = '1'; });
+  refresh();
+})();
+</script>
+{% endblock %}

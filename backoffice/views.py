@@ -129,10 +129,15 @@ def club_detail(request, club_id):
 def club_toggle_suspended(request, club_id):
     """Suspende (o reactiva) un club: sus miembros no pueden entrar en él. No se borra nada."""
     club = get_object_or_404(Club, public_id=club_id)
-    if club.is_suspended:
+    # La acción va en el formulario: un doble envío o una pestaña antigua no deshacen la anterior.
+    suspend = request.POST.get("action") == "suspend"
+    if suspend == club.is_suspended:
+        messages.info(request, _("El club ya estaba suspendido.") if suspend else _("El club ya estaba activo."))
+        return redirect("backoffice:club_detail", club_id=club.public_id)
+    if not suspend:
         club.suspended_at, club.suspension_reason = None, ""
         # Se desbloquean los emails que se bloquearon al suspenderlo.
-        unblocked = BlockedEmail.objects.filter(club=club).delete()[0]
+        unblocked = blocklist.unblock_club(club)
         messages.success(request, _("Club reactivado.") + (" " + ngettext(
             "%(n)s email desbloqueado.", "%(n)s emails desbloqueados.", unblocked) % {"n": unblocked} if unblocked else ""))
     else:
@@ -145,7 +150,7 @@ def club_toggle_suspended(request, club_id):
         for m in club.memberships.filter(user_id__in=member_ids).select_related("user"):
             if m.user.email:
                 blocked += blocklist.block(
-                    m.user.email, club=club, blocked_by=request.user,
+                    m.user.email, user=m.user, club=club, blocked_by=request.user,
                     reason=club.suspension_reason or _("Club %(club)s suspendido") % {"club": club.name},
                 )
         messages.success(request, _("Club suspendido: sus miembros ya no pueden entrar.") + (" " + ngettext(
@@ -199,8 +204,7 @@ def user_detail(request, user_id):
         "invitation_used": Invitation.objects.filter(used_by=member).select_related("club", "created_by").first(),
         "invitations_sent": Invitation.objects.filter(created_by=member).count(),
         "photo_checks": [
-            c for c in PhotoCheck.objects.filter(Q(uploaded_by=member) | Q(player__user=member)).exclude(photo="")
-            .select_related("team", "player", "club") if c.in_use
+            c for c in PhotoCheck.objects.for_user(member).select_related("team", "player", "club") if c.in_use
         ],
         "photo_removals": PhotoRemoval.objects.filter(user=member).select_related("club", "removed_by"),
     })
@@ -591,9 +595,12 @@ def _remove_and_notify(request, checks, reason=""):
     solo correo a cada afectado. Devuelve (fotos eliminadas, avisados, sin poder avisar).
     """
     by_owner = {}
+    removed_photos = set()
     for check in checks:
         subject, owner, club = check.subject_label, check.owner, check.club
-        if _remove_photo(check):
+        # Una misma foto puede tener más de un registro: se cuenta una sola vez.
+        if check.photo not in removed_photos and _remove_photo(check):
+            removed_photos.add(check.photo)
             by_owner.setdefault(owner, []).append((subject, club))
         check.delete()
     removed = notified = not_notified = 0
@@ -687,8 +694,7 @@ def user_photos_delete(request, user_id):
     """Elimina todas las fotos que ha subido un usuario (o de su jugador) y siguen en uso."""
     member = get_object_or_404(User, pk=user_id)
     checks = (
-        PhotoCheck.objects.filter(Q(uploaded_by=member) | Q(player__user=member)).exclude(photo="")
-        .select_related("team", "player__user", "uploaded_by", "club")
+        PhotoCheck.objects.for_user(member).select_related("team", "player__user", "uploaded_by", "club")
     )
     _report_removal(request, *_remove_and_notify(request, list(checks), request.POST.get("reason", "").strip()[:500]))
     return redirect("backoffice:user_detail", user_id=member.pk)
@@ -701,6 +707,8 @@ def user_toggle_active(request, user_id):
     member = get_object_or_404(User, pk=user_id)
     if member == request.user or member.is_superuser:
         messages.error(request, _("No puedes suspender esta cuenta."))
+    elif (request.POST.get("action") == "activate") == member.is_active:
+        messages.info(request, _("La cuenta ya estaba activa.") if member.is_active else _("La cuenta ya estaba suspendida."))
     else:
         member.is_active = not member.is_active
         member.save(update_fields=["is_active"])
@@ -722,8 +730,10 @@ def blocked_email_list(request):
     q = request.GET.get("q", "").strip()
     emails = BlockedEmail.objects.select_related("club", "blocked_by")
     if q:
-        # Búsqueda por el principio del email normalizado: usa el índice del campo único.
-        emails = emails.filter(email__startswith=blocklist.normalize_email(q))
+        # Por el principio del email normalizado (usa el índice) o por cualquier parte del
+        # email tal y como se escribió (p. ej. el dominio). Solo afecta a esta página: la
+        # comprobación al registrarse o unirse es siempre una búsqueda exacta por índice.
+        emails = emails.filter(Q(email__startswith=blocklist.normalize_email(q)) | Q(original_email__icontains=q))
     return render(request, "backoffice/blocked_email_list.html", {
         "section": "blocked", "page": _page(request, emails), "q": q,
         "extra": "&" + urlencode({"q": q}) if q else "",

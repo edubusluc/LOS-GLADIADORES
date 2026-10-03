@@ -93,7 +93,7 @@ class SuspendClubBlocksEmailsTests(TestCase):
         self.assertNotContains(page, f'value="{self.member.pk}" id="block-{self.member.pk}" checked')
 
     def test_suspending_blocks_marked_emails_and_reactivating_unblocks(self):
-        self.client.post(self.url, {"reason": "Fotos", "block": [str(self.captain.pk)]})
+        self.client.post(self.url, {"action": "suspend", "reason": "Fotos", "block": [str(self.captain.pk)]})
         self.assertTrue(is_blocked("capitan@example.com"))
         self.assertFalse(is_blocked("jugador@example.com"))
         self.assertEqual(BlockedEmail.objects.get().club, self.club)
@@ -104,7 +104,35 @@ class SuspendClubBlocksEmailsTests(TestCase):
         self.assertFalse(Club.objects.filter(name="Club Nuevo").exists())
 
         self.client.force_login(self.staff)
-        self.client.post(self.url)
+        self.client.post(self.url, {"action": "reactivate"})
+        self.assertFalse(is_blocked("capitan@example.com"))
+
+    def test_changing_email_does_not_escape_the_block(self):
+        self.client.post(self.url, {"action": "suspend", "block": [str(self.captain.pk)]})
+        self.captain.email = "otro-email@example.com"
+        self.captain.save()
+        self.client.force_login(self.captain)
+        self.client.post(reverse("register_club"), CLUB)
+        self.assertFalse(Club.objects.filter(name="Club Nuevo").exists())
+
+    def test_blocked_email_cannot_be_added_to_an_account(self):
+        from django import forms
+
+        from core.adapters import AccountAdapter
+
+        block("malo@example.com")
+        with self.assertRaises(forms.ValidationError):
+            AccountAdapter().clean_email("Malo@example.com")
+
+    def test_reactivating_keeps_block_of_captain_of_another_suspended_club(self):
+        other = create_club("Club B", "Huelva", self.captain)
+        other_url = reverse("backoffice:club_toggle_suspended", args=[other.public_id])
+        self.client.post(self.url, {"action": "suspend", "block": [str(self.captain.pk)]})
+        self.client.post(other_url, {"action": "suspend", "block": [str(self.captain.pk)]})
+        self.client.post(self.url, {"action": "reactivate"})
+        self.assertTrue(is_blocked("capitan@example.com"))
+        self.assertEqual(BlockedEmail.objects.get().club, other)
+        self.client.post(other_url, {"action": "reactivate"})
         self.assertFalse(is_blocked("capitan@example.com"))
 
     def test_staff_blocklist_page(self):

@@ -51,8 +51,8 @@
                     <button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i> {% translate "Eliminar y avisar" %}</button>
                 </form>
                 {% endif %}
-                {% if c.status == 'unchecked' and c.in_use %}
-                <form method="post" action="{% url 'backoffice:photo_reviewed' c.public_id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-check"></i> {% translate "Correcta" %}</button></form>
+                {% if c.status == 'unchecked' %}
+                <form method="post" action="{% url 'backoffice:photo_reviewed' c.public_id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-check"></i> {% if c.in_use %}{% translate "Correcta" %}{% else %}{% translate "Quitar de pendientes" %}{% endif %}</button></form>
                 {% endif %}
             </td>
         </tr>

@@ -261,6 +261,27 @@ class BackofficePhotoTests(MediaMixin, TestCase):
         self.client.force_login(self.captain)
         self.assertEqual(self.client.get(reverse("backoffice:photo_list")).status_code, 404)
 
+    def test_removal_counts_for_who_uploaded_it(self):
+        # El capitán sube la foto al jugador de Ana: el aviso y el registro son para él.
+        self.check.uploaded_by = self.captain
+        self.check.save()
+        self.delete()
+        self.assertEqual(PhotoRemoval.objects.get().user, self.captain)
+        self.assertEqual(mail.outbox[0].to, ["capitan@example.com"])
+
+    def test_old_photo_without_uploader_counts_for_a_captain(self):
+        self.player.user = None
+        self.player.save()
+        self.check.uploaded_by = None
+        self.check.save()
+        self.delete()
+        self.assertEqual(PhotoRemoval.objects.get().user, self.captain)
+
+    def test_replaced_pending_photo_can_leave_the_queue(self):
+        self.player.photo = None
+        self.player.save()
+        self.assertContains(self.client.get(reverse("backoffice:photo_list")), "Quitar de pendientes")
+
     def test_delete_photo_emails_the_player(self):
         self.delete(reason="Imagen ofensiva")
         self.player.refresh_from_db()
@@ -320,15 +341,19 @@ class BackofficePhotoTests(MediaMixin, TestCase):
 
     def test_suspend_and_reactivate_account(self):
         url = reverse("backoffice:user_toggle_active", args=[self.player_user.pk])
-        self.client.post(url)
+        self.client.post(url, {"action": "suspend"})
         self.player_user.refresh_from_db()
         self.assertFalse(self.player_user.is_active)
-        self.client.post(url)
+        # Un segundo envío (doble clic, pestaña antigua) no la reactiva.
+        self.client.post(url, {"action": "suspend"})
+        self.player_user.refresh_from_db()
+        self.assertFalse(self.player_user.is_active)
+        self.client.post(url, {"action": "activate"})
         self.player_user.refresh_from_db()
         self.assertTrue(self.player_user.is_active)
 
     def test_cannot_suspend_yourself(self):
-        self.client.post(reverse("backoffice:user_toggle_active", args=[self.staff.pk]))
+        self.client.post(reverse("backoffice:user_toggle_active", args=[self.staff.pk]), {"action": "suspend"})
         self.staff.refresh_from_db()
         self.assertTrue(self.staff.is_active)
 
@@ -351,7 +376,7 @@ class ClubSuspensionTests(TestCase):
 
     def suspend(self, reason="Fotos inapropiadas repetidas"):
         self.client.force_login(self.staff)
-        return self.client.post(reverse("backoffice:club_toggle_suspended", args=[self.club.public_id]), {"reason": reason})
+        return self.client.post(reverse("backoffice:club_toggle_suspended", args=[self.club.public_id]), {"action": "suspend", "reason": reason})
 
     def test_staff_suspends_and_members_cannot_enter(self):
         self.suspend()
@@ -372,9 +397,15 @@ class ClubSuspensionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.wsgi_request.club, other)
 
+    def test_double_submit_does_not_undo_suspension(self):
+        self.suspend()
+        self.suspend()
+        self.club.refresh_from_db()
+        self.assertTrue(self.club.is_suspended)
+
     def test_reactivate(self):
         self.suspend()
-        self.client.post(reverse("backoffice:club_toggle_suspended", args=[self.club.public_id]))
+        self.client.post(reverse("backoffice:club_toggle_suspended", args=[self.club.public_id]), {"action": "reactivate"})
         self.club.refresh_from_db()
         self.assertFalse(self.club.is_suspended)
         self.client.force_login(self.captain)
@@ -390,7 +421,7 @@ class ClubSuspensionTests(TestCase):
 
     def test_only_staff(self):
         self.client.force_login(self.captain)
-        response = self.client.post(reverse("backoffice:club_toggle_suspended", args=[self.club.public_id]))
+        response = self.client.post(reverse("backoffice:club_toggle_suspended", args=[self.club.public_id]), {"action": "suspend"})
         self.assertEqual(response.status_code, 404)
         self.club.refresh_from_db()
         self.assertFalse(self.club.is_suspended)

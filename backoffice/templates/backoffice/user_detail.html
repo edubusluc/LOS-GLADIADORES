@@ -12,6 +12,7 @@
         {% if member != user and not member.is_superuser %}
         <form method="post" action="{% url 'backoffice:user_toggle_active' member.id %}" class="d-inline" {% if member.is_active %}onsubmit="return confirm('{% translate "¿Suspender esta cuenta? No podrá iniciar sesión hasta que la reactives." %}')"{% endif %}>
             {% csrf_token %}
+            <input type="hidden" name="action" value="{% if member.is_active %}suspend{% else %}activate{% endif %}">
             {% if member.is_active %}
             <button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-user-slash"></i> {% translate "Suspender cuenta" %}</button>
             {% else %}

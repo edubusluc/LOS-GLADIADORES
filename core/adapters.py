@@ -15,6 +15,18 @@ class AccountAdapter(DefaultAccountAdapter):
         # club o las crea un capitán: el alta genérica de allauth queda cerrada.
         return False
 
+    def clean_email(self, email):
+        # Un email bloqueado por el personal no se puede añadir a ninguna cuenta.
+        from django import forms
+        from django.utils.translation import gettext as _
+
+        from .blocklist import is_blocked
+
+        email = super().clean_email(email)
+        if is_blocked(email):
+            raise forms.ValidationError(_("Este email no puede usarse en Zyra."))
+        return email
+
     def add_message(self, *args, **kwargs):
         # Sin avisos de allauth ("Has iniciado sesión como..."): la app ya muestra los suyos.
         pass

@@ -123,6 +123,12 @@ class Invitation(PublicIdModel):
         return f"Invitación a {self.club} ({self.token[:6]}…)"
 
 
+class PhotoCheckQuerySet(models.QuerySet):
+    def for_user(self, user):
+        """Fotos guardadas que ha subido ``user`` o que son de su jugador."""
+        return self.filter(models.Q(uploaded_by=user) | models.Q(player__user=user)).exclude(photo="")
+
+
 class PhotoCheck(PublicIdModel):
     """
     Resultado de validar una foto subida (escudo o foto de jugador) con AWS Rekognition
@@ -157,6 +163,8 @@ class PhotoCheck(PublicIdModel):
     api_called = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    objects = PhotoCheckQuerySet.as_manager()
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["status", "created_at"])]
@@ -177,8 +185,18 @@ class PhotoCheck(PublicIdModel):
 
     @property
     def owner(self):
-        """A quién se avisa si se elimina: el jugador enlazado o, si no, quien la subió."""
-        return (self.player.user if self.player and self.player.user else None) or self.uploaded_by
+        """
+        Responsable de la foto (se le avisa y cuenta para él si se elimina): quien la subió;
+        si no se sabe (fotos anteriores a la revisión), el jugador enlazado o un capitán del club.
+        """
+        if self.uploaded_by:
+            return self.uploaded_by
+        if self.player and self.player.user:
+            return self.player.user
+        if self.club:
+            captain = self.club.memberships.filter(role=Membership.ADMIN).select_related("user").order_by("id").first()
+            return captain.user if captain else None
+        return None
 
     @property
     def in_use(self):
@@ -229,6 +247,10 @@ class BlockedEmail(PublicIdModel):
     email = models.CharField(max_length=254, unique=True)
     # Tal y como estaba escrito (para mostrarlo); la comprobación usa `email`.
     original_email = models.EmailField(max_length=254)
+    # Cuenta que tenía el email al bloquearlo: sigue bloqueada aunque cambie de email.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="blocked_emails",
+    )
     club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="blocked_emails")
     reason = models.CharField(max_length=500, blank=True)
     blocked_by = models.ForeignKey(

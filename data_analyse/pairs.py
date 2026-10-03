@@ -18,6 +18,20 @@ TOP_N = 5
 NO_MINIMUM_MATCH_TYPES = (Match.RETO, Match.PLAYOFF)
 
 
+# Filtro "Competitivos": todos los tipos de partido competitivo (enfrentamiento, reto, play off).
+COMPETITIVE = "competitivo"
+FILTER_VALUES = {COMPETITIVE, *dict(Match.MATCH_TYPES)}
+
+
+def match_type_lookup(match_type, prefix=""):
+    """Argumentos de .filter() para un valor del filtro de tipo; ``prefix`` es la ruta hasta Match ('match__')."""
+    if not match_type:
+        return {}
+    if match_type == COMPETITIVE:
+        return {f"{prefix}match_type__in": [value for value, _ in Match.COMPETITIVE_TYPES]}
+    return {f"{prefix}match_type": match_type}
+
+
 def min_games_pair(match_type=None):
     """Partidos mínimos de una pareja para salir en rankings según el tipo de partido filtrado."""
     return 1 if match_type in NO_MINIMUM_MATCH_TYPES else MIN_GAMES_PAIR
@@ -65,8 +79,7 @@ def club_game_log(club, season=None, match_type=None):
     )
     if season:
         games = games.filter(match__season=season)
-    if match_type:
-        games = games.filter(match__match_type=match_type)
+    games = games.filter(**match_type_lookup(match_type, "match__"))
 
     log = []
     for g in games:

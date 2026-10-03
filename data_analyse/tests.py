@@ -257,8 +257,9 @@ class MatchTypeFilterTests(TestCase):
         self.assertEqual((response.context["s"]["played"], response.context["s"]["wins"]), (1, 0))
         links = {o["label"]: o["url"] for o in response.context["match_types"]}
         self.assertEqual(links["Todos"], f"{reverse('player_statistics')}?player={self.a.public_id}")
-        self.assertIn(f"player={self.a.public_id}", links["Reto"])
-        self.assertIn("match_type=reto", links["Reto"])
+        types = {o["label"]: o["url"] for o in response.context["competitive_types"]}
+        self.assertIn(f"player={self.a.public_id}", types["Retos"])
+        self.assertIn("match_type=reto", types["Retos"])
 
     def test_pair_statistics_filter_by_type(self):
         response = self.client.get(reverse("pair_statistics"))
@@ -286,6 +287,32 @@ class MatchTypeFilterTests(TestCase):
         self.assertEqual(self.client.get(reverse("team_statistics")).context["total_matches"], 5)
         response = self.client.get(reverse("team_statistics"), {"match_type": Match.AMISTOSO})
         self.assertEqual(response.context["total_matches"], 1)
-        self.assertIn("Amistoso", [o["label"] for o in response.context["match_types"]])
+        self.assertEqual([o["label"] for o in response.context["match_types"] if o["active"]], ["Amistosos"])
+        self.assertEqual(response.context["competitive_types"], [])
         response = self.client.get(reverse("team_statistics"), {"match_type": Match.ENFRENTAMIENTO})
         self.assertEqual(response.context["total_matches"], 2)
+
+    def test_competitive_groups_every_competitive_type(self):
+        Match.objects.create(club=self.club, local=self.club.own_team, visiting=Team.objects.get(name="Rival"),
+                             start_date=datetime.date(2025, 11, 5), draft_mode=False,
+                             match_type=Match.AMISTOSO, result="Victoria Local")
+        response = self.client.get(reverse("team_statistics"), {"match_type": "competitivo"})
+        self.assertEqual(response.context["total_matches"], 4)
+        self.assertEqual([o["label"] for o in response.context["match_types"] if o["active"]], ["Competitivos"])
+        self.assertEqual([o["label"] for o in response.context["competitive_types"]],
+                         ["Todos los partidos", "Enfrentamientos", "Retos", "Play offs"])
+        self.assertContains(response, 'id="competitive-type"')
+
+        # Un tipo concreto sigue dentro de Competitivos, con el selector en ese tipo
+        response = self.client.get(reverse("team_statistics"), {"match_type": Match.RETO})
+        self.assertEqual([o["label"] for o in response.context["match_types"] if o["active"]], ["Competitivos"])
+        self.assertEqual([o["label"] for o in response.context["competitive_types"] if o["active"]], ["Retos"])
+
+        response = self.client.get(reverse("pair_statistics"), {"match_type": "competitivo"})
+        pairs = [(r["p1"].name, r["p2"].name) for r in response.context["best_pairs"] + response.context["worst_pairs"]]
+        self.assertEqual(pairs, [("A", "B")])
+
+    def test_all_hides_competitive_selector(self):
+        response = self.client.get(reverse("team_statistics"))
+        self.assertEqual(response.context["competitive_types"], [])
+        self.assertNotContains(response, 'id="competitive-type"')

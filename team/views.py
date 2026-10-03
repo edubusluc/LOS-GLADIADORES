@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import Teamform
 from .models import Team
 from django.contrib import messages
-from django.utils.translation import gettext as _
+from django.db import transaction
+from django.utils.translation import gettext as _, ngettext
 from django.views.decorators.http import require_GET, require_http_methods
 from core.decorators import club_required, club_admin_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -63,10 +64,12 @@ def create_team(request):
         form = Teamform(club=request.club)
 
     for field in form:
-        field.field.widget.attrs.update({'class': 'form-select' if field.name in ('gender', 'country', 'division') else 'form-control'})
+        if field.name != 'in_group':
+            field.field.widget.attrs.update({'class': 'form-select' if field.name in ('gender', 'country', 'division') else 'form-control'})
 
     return render(request, "create_team.html", {
         "form": form,
+        "own_team": request.club.own_team,
         "similar": [similar_team_label(t) for t in similar],
     })
 
@@ -86,9 +89,7 @@ def edit_team(request, team_id):
         form = Teamform(request.POST, request.FILES, instance=team, club=request.club)
         form.uploader = request.user
         if form.is_valid():
-            form.save(commit=False)  # Guarda el equipo
-            team.in_group = 'in_group' in request.POST
-            team.save()
+            form.save()
             return redirect('list_teams')
         else:
             messages.error(request, _("Error al editar el equipo. Por favor, verifica los datos."))
@@ -106,3 +107,60 @@ def edit_team(request, team_id):
 
 
 
+BULK_FIELDS = ('gender', 'country', 'division')
+
+
+@club_admin_required
+@require_http_methods(["GET", "POST"])
+def manage_teams(request):
+    """Cambia de una vez categoría, nacionalidad, división y grupo de varios equipos."""
+    teams = list(Team.objects.filter(club=request.club).order_by('-is_own', 'name'))
+    rows = [{"team": t, "error": "", **{f: getattr(t, f) for f in BULK_FIELDS}, "in_group": t.in_group} for t in teams]
+
+    if request.method == "POST":
+        valid = {f: {v for v, _label in Team._meta.get_field(f).choices} for f in BULK_FIELDS}
+        for row in rows:
+            team = row["team"]
+            for f in BULK_FIELDS:
+                value = request.POST.get(f"{f}_{team.id}", row[f])
+                # No se puede dejar en blanco un dato que ya tenía (los equipos antiguos sí lo tienen vacío).
+                if value in valid[f] or value == row[f]:
+                    row[f] = value
+            if not team.is_own:  # el equipo propio siempre está en el grupo
+                row["in_group"] = f"in_group_{team.id}" in request.POST
+        # Mismas reglas que Teamform: el nombre no puede repetirse en una división; los
+        # equipos sin división cuentan para todas.
+        for row in rows:
+            changed = row["division"] != row["team"].division
+            if not changed or not row["division"]:
+                continue
+            if any(o is not row and o["division"] in (row["division"], "") and similarity.same_name(row["team"].name, o["team"].name)
+                   for o in rows):
+                row["error"] = _("Ya existe un equipo con ese nombre en esa división en tu club.")
+
+        if any(row["error"] for row in rows):
+            messages.error(request, _("No se ha guardado nada: revisa los equipos marcados."))
+        else:
+            changed = 0
+            with transaction.atomic():
+                for row in rows:
+                    team = row["team"]
+                    new = {f: row[f] for f in (*BULK_FIELDS, "in_group")}
+                    if any(getattr(team, f) != v for f, v in new.items()):
+                        for f, v in new.items():
+                            setattr(team, f, v)
+                        team.save()  # save() pasa la categoría del equipo propio a sus jugadores
+                        changed += 1
+            if changed:
+                messages.success(request, ngettext("%(n)s equipo actualizado.", "%(n)s equipos actualizados.", changed) % {"n": changed})
+            else:
+                messages.info(request, _("No había cambios que guardar."))
+            return redirect('manage_teams')
+
+    return render(request, "manage_teams.html", {
+        "rows": rows,
+        "genders": Team.GENDERS,
+        "countries": Team.COUNTRIES,
+        "divisions": Team.DIVISIONS,
+        "in_group_count": sum(r["in_group"] for r in rows),
+    })

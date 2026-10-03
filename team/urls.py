@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import list_team,create_team, edit_team
+from .views import list_team, create_team, edit_team, manage_teams
 
 urlpatterns = [
     path("list_teams",list_team, name='list_teams'), 
     path("create_team",create_team, name='create_team'),
-    path("edit_team/<pid:team_id>/",edit_team, name='edit_team')
+    path("edit_team/<pid:team_id>/",edit_team, name='edit_team'),
+    path("manage_teams/", manage_teams, name='manage_teams'),
 ]

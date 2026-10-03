@@ -141,7 +141,7 @@ msgstr "Players"
 #: backoffice/templates/backoffice/user_detail.html:33
 #: data_analyse/templates/team_statistics.html:154
 #: players/templates/list_players.html:46
-#: players/templates/list_players.html:98 team/templates/list_teams.html:70
+#: players/templates/list_players.html:98 team/templates/list_teams.html:71
 msgid "Nombre"
 msgstr "Name"
 
@@ -227,7 +227,7 @@ msgstr "Home"
 msgid "Visitante"
 msgstr "Away"
 
-#: backoffice/importer.py:240 team/templates/list_teams.html:71
+#: backoffice/importer.py:240 team/templates/list_teams.html:72
 msgid "Ubicación"
 msgstr "Location"
 
@@ -1002,7 +1002,7 @@ msgstr "Most members"
 #: backoffice/templates/backoffice/run_list.html:22
 #: backoffice/templates/backoffice/user_list.html:22
 #: data_analyse/templates/includes/match_type_filter.html:19
-#: players/templates/manage_roster.html:25
+#: players/templates/manage_roster.html:25 team/templates/manage_teams.html:25
 msgid "Filtrar"
 msgstr "Filter"
 
@@ -2260,7 +2260,7 @@ msgstr "User type"
 
 #: backoffice/templates/backoffice/user_list.html:16 data_analyse/views.py:99
 #: match/templates/includes/player_selector.html:10
-#: players/templates/manage_roster.html:26
+#: players/templates/manage_roster.html:26 team/templates/manage_teams.html:26
 msgid "Todos"
 msgstr "All"
 
@@ -2571,11 +2571,12 @@ msgstr "Location"
 #: core/forms.py:27 players/models.py:54
 #: players/templates/list_players.html:164
 #: players/templates/list_players.html:180 team/models.py:36
+#: team/templates/manage_teams.html:37 team/templates/manage_teams.html:69
 msgid "Categoría"
 msgstr "Category"
 
 #: core/forms.py:27 core/forms.py:29 core/forms.py:30 match/forms.py:51
-#: players/forms.py:10 team/forms.py:20 team/templates/edit_team.html:21
+#: players/forms.py:10 team/forms.py:29 team/templates/edit_team.html:21
 #: team/templates/edit_team.html:32 team/templates/edit_team.html:42
 msgid "Elige una opción"
 msgstr "Choose an option"
@@ -2584,11 +2585,13 @@ msgstr "Choose an option"
 msgid "Los jugadores del club tendrán esta categoría."
 msgstr "The club's players will have this category."
 
-#: core/forms.py:29 team/models.py:37
+#: core/forms.py:29 team/models.py:37 team/templates/manage_teams.html:41
+#: team/templates/manage_teams.html:73
 msgid "Nacionalidad del equipo"
 msgstr "Team nationality"
 
-#: core/forms.py:30 team/models.py:38
+#: core/forms.py:30 team/models.py:38 team/templates/manage_teams.html:45
+#: team/templates/manage_teams.html:77
 msgid "División"
 msgstr "Division"
 
@@ -2747,7 +2750,7 @@ msgid "Inicio"
 msgstr "Home"
 
 #: core/templates/base.html:37 core/templates/base.html:134
-#: team/templates/list_teams.html:8
+#: team/templates/list_teams.html:8 team/templates/manage_teams.html:7
 msgid "Equipos"
 msgstr "Teams"
 
@@ -2858,7 +2861,7 @@ msgid "Buscar invitación por email"
 msgstr "Search invitation by email"
 
 #: core/templates/club_members.html:72 players/templates/list_players.html:39
-#: team/templates/list_teams.html:24
+#: team/templates/list_teams.html:25
 #, python-format
 msgid "%(n)s resultado"
 msgid_plural "%(n)s resultados"
@@ -2866,7 +2869,7 @@ msgstr[0] "%(n)s result"
 msgstr[1] "%(n)s results"
 
 #: core/templates/club_members.html:73 players/templates/list_players.html:40
-#: team/templates/list_teams.html:25
+#: team/templates/list_teams.html:26
 msgid "Limpiar"
 msgstr "Clear"
 
@@ -3172,7 +3175,7 @@ msgid_plural "En %(n)s días"
 msgstr[0] "In %(n)s day"
 msgstr[1] "In %(n)s days"
 
-#: core/templates/home.html:60 team/templates/list_teams.html:44
+#: core/templates/home.html:60 team/templates/list_teams.html:45
 msgid "Sin ubicación"
 msgstr "No location"
 
@@ -4957,7 +4960,7 @@ msgstr "Create call-up"
 
 #: match/templates/call_for_match.html:38
 #: players/templates/list_players.html:126
-#: players/templates/player_detail.html:8 team/templates/list_teams.html:83
+#: players/templates/player_detail.html:8 team/templates/list_teams.html:84
 msgid "Editar"
 msgstr "Edit"
 
@@ -5113,7 +5116,7 @@ msgid "Guardar convocatoria"
 msgstr "Save call-up"
 
 #: match/templates/edit_game_match.html:16
-#: players/templates/manage_roster.html:59
+#: players/templates/manage_roster.html:59 team/templates/manage_teams.html:103
 msgid "Guardar cambios"
 msgstr "Save changes"
 
@@ -5185,6 +5188,7 @@ msgid "Elegidos"
 msgstr "Selected"
 
 #: match/templates/includes/player_selector.html:17
+#: team/templates/manage_teams.html:35 team/templates/manage_teams.html:107
 msgid "Marcar visibles"
 msgstr "Select visible"
 
@@ -5216,7 +5220,8 @@ msgstr "Games per set"
 
 #: match/templates/includes/result_form.html:24
 #: match/templates/includes/result_form.html:29
-#: team/templates/list_teams.html:46 team/templates/list_teams.html:79
+#: team/templates/list_teams.html:47 team/templates/list_teams.html:80
+#: team/templates/manage_teams.html:82
 msgid "Tu equipo"
 msgstr "Your team"
 
@@ -5628,7 +5633,7 @@ msgid "Mano hábil:"
 msgstr "Dominant hand:"
 
 #: players/templates/create_player.html:44
-#: players/templates/link_player.html:57 team/templates/create_team.html:48
+#: players/templates/link_player.html:57 team/templates/create_team.html:52
 #: team/templates/edit_team.html:55
 msgid "Foto:"
 msgstr "Photo:"
@@ -5746,15 +5751,15 @@ msgstr "Manage roster"
 msgid "Nuevo jugador"
 msgstr "New player"
 
-#: players/templates/list_players.html:49 team/templates/list_teams.html:28
+#: players/templates/list_players.html:49 team/templates/list_teams.html:29
 msgid "Cambiar vista"
 msgstr "Change view"
 
-#: players/templates/list_players.html:50 team/templates/list_teams.html:29
+#: players/templates/list_players.html:50 team/templates/list_teams.html:30
 msgid "Vista de tarjetas"
 msgstr "Card view"
 
-#: players/templates/list_players.html:51 team/templates/list_teams.html:30
+#: players/templates/list_players.html:51 team/templates/list_teams.html:31
 msgid "Vista de tabla"
 msgstr "Table view"
 
@@ -5878,7 +5883,8 @@ msgid "<b data-roster-count>%(count)s</b> en el equipo"
 msgstr "<b data-roster-count>%(count)s</b> on the team"
 
 #: players/templates/manage_roster.html:57
-#: players/templates/manage_roster.html:63
+#: players/templates/manage_roster.html:63 team/templates/manage_teams.html:101
+#: team/templates/manage_teams.html:107
 msgid "Sin cambios"
 msgstr "No changes"
 
@@ -6012,7 +6018,7 @@ msgstr[1] "%(n)s removed"
 msgid "Plantilla actualizada: %(joined)s y %(left)s."
 msgstr "Roster updated: %(joined)s and %(left)s."
 
-#: players/views.py:178
+#: players/views.py:178 team/views.py:157
 msgid "No había cambios que guardar."
 msgstr "There were no changes to save."
 
@@ -6080,7 +6086,7 @@ msgstr "Your account is linked to %(player)s."
 msgid "%(player)s ya no está enlazado a ninguna cuenta."
 msgstr "%(player)s is no longer linked to any account."
 
-#: team/forms.py:35
+#: team/forms.py:44 team/views.py:139
 msgid "Ya existe un equipo con ese nombre en esa división en tu club."
 msgstr "Your club already has a team with that name in that division."
 
@@ -6112,31 +6118,48 @@ msgstr "Italy"
 msgid "Suecia"
 msgstr "Sweden"
 
-#: team/templates/create_team.html:13 team/templates/create_team.html:53
+#: team/templates/create_team.html:13 team/templates/create_team.html:63
 msgid "Crear Equipo"
 msgstr "Create team"
 
-#: team/templates/create_team.html:25 team/templates/edit_team.html:19
+#: team/templates/create_team.html:25
+#, python-format
+msgid ""
+"Categoría, nacionalidad y división vienen rellenas con las de %(team)s. "
+"Cámbialas si este equipo es distinto."
+msgstr "Category, nationality and division are prefilled with those of %(team)s. Change them if this team is different."
+
+#: team/templates/create_team.html:29 team/templates/edit_team.html:19
 msgid "Categoría:"
 msgstr "Category:"
 
-#: team/templates/create_team.html:31 team/templates/edit_team.html:30
+#: team/templates/create_team.html:35 team/templates/edit_team.html:30
 msgid "Nacionalidad del equipo:"
 msgstr "Team nationality:"
 
-#: team/templates/create_team.html:37 team/templates/edit_team.html:40
+#: team/templates/create_team.html:41 team/templates/edit_team.html:40
 msgid "División:"
 msgstr "Division:"
 
-#: team/templates/create_team.html:43
+#: team/templates/create_team.html:47
 msgid "Localización:"
 msgstr "Location:"
 
-#: team/templates/create_team.html:57
+#: team/templates/create_team.html:58 team/templates/edit_team.html:62
+msgid "¿Se encuentra en tu grupo?"
+msgstr "Is it in your group?"
+
+#: team/templates/create_team.html:59
+msgid ""
+"Los equipos de tu grupo los ven todos los miembros y se pueden elegir al "
+"crear un partido."
+msgstr "Teams in your group are visible to every member and can be picked when creating a match."
+
+#: team/templates/create_team.html:67
 msgid "Ya hay un equipo con un nombre parecido"
 msgstr "There is already a team with a similar name"
 
-#: team/templates/create_team.html:58
+#: team/templates/create_team.html:68
 msgid "En tu club ya existe un equipo con este nombre o uno muy parecido:"
 msgstr "Your club already has a team with this name or a very similar one:"
 
@@ -6156,57 +6179,164 @@ msgstr "Location:"
 msgid "Dejar vacío si no deseas cambiar la foto."
 msgstr "Leave empty if you don't want to change the photo."
 
-#: team/templates/edit_team.html:62
-msgid "¿Se encuentra en tu grupo?"
-msgstr "Is it in your group?"
+#: team/templates/list_teams.html:12 team/templates/manage_teams.html:8
+#
+msgid "Gestionar equipos"
+msgstr "Manage teams"
 
-#: team/templates/list_teams.html:12
+#: team/templates/list_teams.html:13
 msgid "Nuevo equipo"
 msgstr "New team"
 
-#: team/templates/list_teams.html:21
+#: team/templates/list_teams.html:22
 msgid "Buscar por nombre o ubicación..."
 msgstr "Search by name or location..."
 
-#: team/templates/list_teams.html:21
+#: team/templates/list_teams.html:22 team/templates/manage_teams.html:23
 msgid "Buscar equipo"
 msgstr "Search team"
 
-#: team/templates/list_teams.html:39
+#: team/templates/list_teams.html:40
 #, python-format
 msgid "Editar %(name)s"
 msgstr "Edit %(name)s"
 
-#: team/templates/list_teams.html:51 team/templates/list_teams.html:82
+#: team/templates/list_teams.html:52 team/templates/list_teams.html:83
+#: team/templates/manage_teams.html:27 team/templates/manage_teams.html:51
+#: team/templates/manage_teams.html:86
 msgid "En tu grupo"
 msgstr "In your group"
 
-#: team/templates/list_teams.html:51
+#: team/templates/list_teams.html:52 team/templates/manage_teams.html:52
 msgid "Fuera de grupo"
 msgstr "Outside group"
 
-#: team/templates/list_teams.html:59 team/templates/list_teams.html:87
+#: team/templates/list_teams.html:60 team/templates/list_teams.html:88
 #, python-format
 msgid "No hay equipos que coincidan con \"%(search)s\"."
 msgstr "No teams match \"%(search)s\"."
 
-#: team/templates/list_teams.html:59 team/templates/list_teams.html:87
+#: team/templates/list_teams.html:60 team/templates/list_teams.html:88
+#: team/templates/manage_teams.html:93
 msgid "Todavía no hay equipos."
 msgstr "There are no teams yet."
 
-#: team/templates/list_teams.html:72
+#: team/templates/list_teams.html:73 team/templates/manage_teams.html:49
 msgid "Grupo"
 msgstr "Group"
 
-#: team/templates/list_teams.html:82
+#: team/templates/list_teams.html:83 team/templates/manage_teams.html:28
 msgctxt "fuera de grupo"
 msgid "Fuera"
 msgstr "Outside"
 
-#: team/views.py:60
+#: team/templates/manage_teams.html:16
+msgid ""
+"Cambia la categoría, la nacionalidad, la división o el grupo de varios "
+"equipos y guarda todos los cambios de una vez. Marca equipos para aplicarles "
+"el mismo valor a todos."
+msgstr "Change the category, nationality, division or group of several teams and save all changes at once. Tick teams to give them all the same value."
+
+#: team/templates/manage_teams.html:23
+#
+msgid "Buscar equipo..."
+msgstr "Search team..."
+
+#: team/templates/manage_teams.html:34
+#
+msgid "Marcar los equipos visibles"
+msgstr "Tick the visible teams"
+
+#: team/templates/manage_teams.html:38
+#
+msgid "Categoría…"
+msgstr "Category…"
+
+#: team/templates/manage_teams.html:42
+#
+msgid "Nacionalidad…"
+msgstr "Nationality…"
+
+#: team/templates/manage_teams.html:46
+#
+msgid "División…"
+msgstr "Division…"
+
+#: team/templates/manage_teams.html:50
+#
+msgid "Grupo…"
+msgstr "Group…"
+
+#: team/templates/manage_teams.html:54
+#
+msgid "Aplicar a marcados"
+msgstr "Apply to ticked"
+
+#: team/templates/manage_teams.html:61
+#, python-format
+msgid "Marcar %(name)s"
+msgstr "Tick %(name)s"
+
+#: team/templates/manage_teams.html:65
+#
+msgid "Tu equipo · sus jugadores tienen su categoría"
+msgstr "Your team · its players share its category"
+
+#: team/templates/manage_teams.html:70
+#
+msgid "Sin categoría"
+msgstr "No category"
+
+#: team/templates/manage_teams.html:74
+#
+msgid "Sin nacionalidad"
+msgstr "No nationality"
+
+#: team/templates/manage_teams.html:78
+#
+msgid "Sin división"
+msgstr "No division"
+
+#: team/templates/manage_teams.html:95
+#
+msgid "Ningún equipo coincide con la búsqueda."
+msgstr "No teams match your search."
+
+#: team/templates/manage_teams.html:100
+#, python-format
+msgid "<b data-teams-count>%(count)s</b> en tu grupo"
+msgstr "<b data-teams-count>%(count)s</b> in your group"
+
+#: team/templates/manage_teams.html:108
+#, python-format
+msgid "%(n)s equipo con cambios sin guardar"
+msgstr "%(n)s team with unsaved changes"
+
+#: team/templates/manage_teams.html:109
+#, python-format
+msgid "%(n)s equipos con cambios sin guardar"
+msgstr "%(n)s teams with unsaved changes"
+
+#: team/templates/manage_teams.html:110
+#, python-format
+msgid "%(n)s marcados"
+msgstr "%(n)s ticked"
+
+#: team/views.py:61
 msgid "Error al crear el equipo. Por favor, verifica los datos."
 msgstr "Error creating the team. Please check the data."
 
-#: team/views.py:94
+#: team/views.py:95
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
+
+#: team/views.py:142
+msgid "No se ha guardado nada: revisa los equipos marcados."
+msgstr "Nothing was saved: check the highlighted teams."
+
+#: team/views.py:155
+#, python-format
+msgid "%(n)s equipo actualizado."
+msgid_plural "%(n)s equipos actualizados."
+msgstr[0] "%(n)s team updated."
+msgstr[1] "%(n)s teams updated."

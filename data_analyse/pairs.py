@@ -10,7 +10,7 @@ from django.db.models import Q
 from match.models import Game, Match
 
 # Mínimo de partidos para entrar en un top 5 (evita que un 1/1 = 100 % encabece la tabla).
-MIN_GAMES_PLAYER = 3
+MIN_GAMES_PLAYER = 2
 MIN_GAMES_PAIR = 2
 TOP_N = 5
 

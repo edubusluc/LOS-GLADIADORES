@@ -535,8 +535,8 @@ def summarize(log):
         'best_local_streak': _longest_run(local, True),
         'best_visiting_streak': _longest_run(visiting, True),
 
-        # últimos 10, el más reciente a la derecha
-        'form': results[-10:],
+        # últimos 5, el más reciente a la derecha
+        'form': results[-5:],
     }
 
 

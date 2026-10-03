@@ -72,7 +72,7 @@ def list_players(request):
             Q(name__icontains=search) | Q(last_name__icontains=search)
         )
 
-    paginator = Paginator(players, 6)  # Puedes ajustar el número de jugadores por página
+    paginator = Paginator(players, 9)  # Puedes ajustar el número de jugadores por página
 
     page = request.GET.get('page')
 

@@ -83,37 +83,56 @@ new Chart(document.getElementById('myLineChart'), {
 });
 
 // Balance por jugador: partidos de 2 y 3 puntos, ganados y perdidos.
-// Barras horizontales: un jugador por fila, así los nombres se leen enteros y
-// el gráfico crece hacia abajo cuando el equipo tiene muchos jugadores.
-const total = (r) => r.data.reduce((a, b) => a + b, 0);
-const rows = [...teamData.column_chart_data].sort((a, b) => total(b) - total(a));
-const balanceBox = document.getElementById('balanceChart');
+// Barras horizontales de tamaño fijo: se ven PAGE_SIZE jugadores y el resto se
+// recorre con el paginador, así el gráfico mide lo mismo con 8 jugadores que con 60.
+const PAGE_SIZE = 10;
 const ROW_HEIGHT = 30;
-balanceBox.style.height = `${Math.max(rows.length, 3) * ROW_HEIGHT + 110}px`;
+const SERIES = [
+  { label: gettext('2 puntos ganados'), index: 0, color: Z.lime },
+  { label: gettext('3 puntos ganados'), index: 2, color: Z.limeDark },
+  { label: gettext('2 puntos perdidos'), index: 1, color: Z.coral },
+  { label: gettext('3 puntos perdidos'), index: 3, color: Z.coralDark },
+];
+const players = teamData.column_chart_data.map((r) => ({
+  name: r.player,
+  data: r.data,
+  played: r.data.reduce((a, b) => a + b, 0),
+  won: r.data[0] + r.data[2],
+}));
+const SORTS = {
+  played: (a, b) => b.played - a.played || b.won - a.won,
+  won: (a, b) => b.won - a.won || b.played - a.played,
+  name: (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+};
+const balance = { sort: 'played', page: 0 };
+const pageCount = Math.max(1, Math.ceil(players.length / PAGE_SIZE));
+const visibleRows = Math.max(1, Math.min(players.length, PAGE_SIZE));
 
-const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'da', 'do', 'dos', 'van', 'von']);
+const balanceBox = document.getElementById('balanceChart');
+balanceBox.style.height = `${visibleRows * ROW_HEIGHT + 90}px`;
+
 // En pantallas estrechas: "Eduardo Bustamante Lucena" -> "E. Bustamante"
+const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'da', 'do', 'dos', 'van', 'von']);
 const shortName = (name, max) => {
   if (name.length <= max) return name;
   const parts = name.trim().split(/\s+/);
-  // Salta partículas para que "Marcos de la Fuente" quede "M. Fuente"
   const surname = parts.slice(1).find((w) => !PARTICLES.has(w.toLowerCase()));
   const short = surname ? `${parts[0][0]}. ${surname}` : name;
   return short.length <= max ? short : `${short.slice(0, max - 1)}…`;
 };
 const labelMax = () => (balanceBox.clientWidth < 520 ? 14 : 26);
 
-new Chart(document.getElementById('myColumnChart'), {
+// La última página se rellena con filas vacías para que las barras no cambien de grosor.
+const pageRows = () => {
+  const sorted = [...players].sort(SORTS[balance.sort]);
+  const rows = sorted.slice(balance.page * PAGE_SIZE, (balance.page + 1) * PAGE_SIZE);
+  while (rows.length < visibleRows) rows.push(null);
+  return rows;
+};
+
+const balanceChart = new Chart(document.getElementById('myColumnChart'), {
   type: 'bar',
-  data: {
-    labels: rows.map((r) => r.player),
-    datasets: [
-      { label: gettext('2 puntos ganados'), data: rows.map((r) => r.data[0]), backgroundColor: Z.lime },
-      { label: gettext('3 puntos ganados'), data: rows.map((r) => r.data[2]), backgroundColor: Z.limeDark },
-      { label: gettext('2 puntos perdidos'), data: rows.map((r) => r.data[1]), backgroundColor: Z.coral },
-      { label: gettext('3 puntos perdidos'), data: rows.map((r) => r.data[3]), backgroundColor: Z.coralDark },
-    ],
-  },
+  data: { labels: [], datasets: SERIES.map((s) => ({ label: s.label, data: [], backgroundColor: s.color })) },
   options: {
     indexAxis: 'y',
     responsive: true,
@@ -123,8 +142,9 @@ new Chart(document.getElementById('myColumnChart'), {
     plugins: {
       legend: { position: 'top' },
       tooltip: {
+        filter: (item) => item.label !== '',
         callbacks: {
-          footer: (items) => `${gettext('Partidos')}: ${items.reduce((a, i) => a + i.parsed.x, 0)}`,
+          footer: (items) => (items.length ? `${gettext('Partidos')}: ${items.reduce((a, i) => a + i.parsed.x, 0)}` : ''),
         },
       },
     },
@@ -132,6 +152,8 @@ new Chart(document.getElementById('myColumnChart'), {
       x: {
         stacked: true,
         beginAtZero: true,
+        // Misma escala en todas las páginas para poder compararlas
+        suggestedMax: Math.max(1, ...players.map((p) => p.played)),
         position: 'top',
         ticks: { precision: 0 },
         grid: { color: Z.grid },
@@ -148,3 +170,37 @@ new Chart(document.getElementById('myColumnChart'), {
     },
   },
 });
+
+const pager = document.getElementById('balancePager');
+const pagerInfo = pager.querySelector('.st-pager-info');
+const renderBalance = () => {
+  const rows = pageRows();
+  balanceChart.data.labels = rows.map((r) => (r ? r.name : ''));
+  balanceChart.data.datasets.forEach((ds, i) => {
+    ds.data = rows.map((r) => (r ? r.data[SERIES[i].index] : null));
+  });
+  balanceChart.update();
+
+  pager.hidden = pageCount < 2;
+  const first = balance.page * PAGE_SIZE + 1;
+  const last = Math.min(players.length, first + PAGE_SIZE - 1);
+  pagerInfo.textContent = interpolate(gettext('%(first)s–%(last)s de %(total)s'), { first, last, total: players.length }, true);
+  pager.querySelector('[data-step="-1"]').disabled = balance.page === 0;
+  pager.querySelector('[data-step="1"]').disabled = balance.page >= pageCount - 1;
+};
+
+pager.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-step]');
+  if (!btn || btn.disabled) return;
+  balance.page += Number(btn.dataset.step);
+  renderBalance();
+});
+document.querySelectorAll('.st-balance-sort [data-sort]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    balance.sort = btn.dataset.sort;
+    balance.page = 0;
+    document.querySelectorAll('.st-balance-sort [data-sort]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    renderBalance();
+  });
+});
+renderBalance();

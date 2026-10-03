@@ -27,22 +27,24 @@ def get_total_season(matchs):
 
 
 # ---------------------------------------------------------------
-# FILTRO POR TIPO DE PARTIDO (enfrentamiento, reto, play off)
+# FILTRO POR TIPO DE PARTIDO: Todos / Competitivos (enfrentamiento, reto, play off) / Amistosos
 # ---------------------------------------------------------------
 MATCH_TYPE_PARAM = "match_type"
+COMPETITIVE = pair_stats.COMPETITIVE
 
 
 def selected_match_type(request):
-    """Tipo de partido elegido en la URL (?match_type=reto); None = todos."""
+    """Filtro elegido en la URL (?match_type=competitivo, reto, amistoso...); None = todos."""
     value = request.GET.get(MATCH_TYPE_PARAM)
-    return value if value in dict(Match.MATCH_TYPES) else None
+    return value if value in pair_stats.FILTER_VALUES else None
 
 
 def match_type_context(request, match_type):
     """
-    Chips del filtro por tipo de partido. Cada enlace conserva el resto de la URL
-    (jugador, pareja, temporada); ``match_type_qs`` sirve para añadir el filtro a los
-    enlaces que ya existían (temporadas).
+    Filtro por tipo de partido: chips Todos / Competitivos / Amistosos (``match_types``) y, dentro
+    de Competitivos, un selector con todos los partidos competitivos o un tipo (``competitive_types``).
+    Cada enlace conserva el resto de la URL (jugador, pareja, temporada); ``match_type_qs`` sirve
+    para añadir el filtro a los enlaces que ya existían (temporadas).
     """
     def url(value):
         params = request.GET.copy()
@@ -53,19 +55,31 @@ def match_type_context(request, match_type):
         query = params.urlencode()
         return f"{request.path}?{query}" if query else request.path
 
-    options = [{'label': _("Todos"), 'url': url(None), 'active': match_type is None}]
-    options += [{'label': label, 'url': url(value), 'active': value == match_type} for value, label in Match.MATCH_TYPES]
+    competitive = match_type == COMPETITIVE or match_type in dict(Match.COMPETITIVE_TYPES)
+    options = [
+        {'label': _("Todos"), 'url': url(None), 'active': match_type is None},
+        {'label': _("Competitivos"), 'url': url(COMPETITIVE), 'active': competitive},
+        {'label': _("Amistosos"), 'url': url(Match.AMISTOSO), 'active': match_type == Match.AMISTOSO},
+    ]
+    competitive_labels = [(COMPETITIVE, _("Todos los partidos")), (Match.ENFRENTAMIENTO, _("Enfrentamientos")),
+                          (Match.RETO, _("Retos")), (Match.PLAYOFF, _("Play offs"))]
+    labels = dict(competitive_labels, **{COMPETITIVE: _("Competitivos"), Match.AMISTOSO: _("Amistosos")})
     return {
         'match_types': options,
+        'competitive_types': [{'label': label, 'value': value, 'url': url(value), 'active': value == match_type}
+                              for value, label in competitive_labels] if competitive else [],
+        # Resto de la URL (jugador, pareja, temporada) para el formulario del selector de Competitivos.
+        'match_type_keep': [(key, value) for key, values in request.GET.lists() if key != MATCH_TYPE_PARAM
+                            for value in values],
         'selected_match_type': match_type,
-        'selected_match_type_label': dict(Match.MATCH_TYPES).get(match_type),
+        'selected_match_type_label': labels.get(match_type),
         'match_type_qs': f"&{MATCH_TYPE_PARAM}={match_type}" if match_type else "",
     }
 
 
 def _by_type(matches, match_type, prefix=""):
-    """Filtra un queryset por tipo de partido; ``prefix`` es la ruta hasta Match ('match__')."""
-    return matches.filter(**{f"{prefix}match_type": match_type}) if match_type else matches
+    """Filtra un queryset por el filtro de tipo; ``prefix`` es la ruta hasta Match ('match__')."""
+    return matches.filter(**pair_stats.match_type_lookup(match_type, prefix))
 
 
 def calculate_match_statistics(season, team, match_type=None):

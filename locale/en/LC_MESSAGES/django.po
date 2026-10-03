@@ -5481,3 +5481,21 @@ msgstr "Friendly"
 
 msgid "Elige equipo"
 msgstr "Choose team"
+
+msgid "Competitivos"
+msgstr "Competitive"
+
+msgid "Amistosos"
+msgstr "Friendlies"
+
+msgid "Todos los partidos"
+msgstr "All matches"
+
+msgid "Retos"
+msgstr "Challenges"
+
+msgid "Play offs"
+msgstr "Play-offs"
+
+msgid "Tipo de partido competitivo"
+msgstr "Competitive match type"

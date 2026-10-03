@@ -32,11 +32,14 @@ class Match(PublicIdModel):
     ENFRENTAMIENTO = "enfrentamiento"
     RETO = "reto"
     PLAYOFF = "playoff"
-    MATCH_TYPES = [
+    AMISTOSO = "amistoso"
+    # Tipos de un partido competitivo; un amistoso no tiene tipo propio y se guarda como AMISTOSO.
+    COMPETITIVE_TYPES = [
         (ENFRENTAMIENTO, _("Enfrentamiento")),
         (RETO, _("Reto")),
         (PLAYOFF, _("Play Off")),
     ]
+    MATCH_TYPES = COMPETITIVE_TYPES + [(AMISTOSO, _("Amistoso"))]
 
     start_date = models.DateField()
     match_type = models.CharField(_("Tipo de partido"), max_length=15, choices=MATCH_TYPES, default=ENFRENTAMIENTO)
@@ -74,6 +77,10 @@ class Match(PublicIdModel):
         if not self.location:
             return ""
         return "https://www.google.com/maps/search/?api=1&query=" + quote(self.location)
+
+    @property
+    def is_friendly(self):
+        return self.match_type == self.AMISTOSO
 
     @property
     def own_is_local(self):

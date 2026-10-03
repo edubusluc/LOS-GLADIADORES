@@ -278,3 +278,14 @@ class MatchTypeFilterTests(TestCase):
         response = self.client.get(reverse("team_statistics"), {"match_type": "otro"})
         self.assertEqual(response.context["total_matches"], 4)
         self.assertIsNone(response.context["selected_match_type"])
+
+    def test_friendly_matches_have_their_own_filter(self):
+        Match.objects.create(club=self.club, local=self.club.own_team, visiting=Team.objects.get(name="Rival"),
+                             start_date=datetime.date(2025, 11, 5), draft_mode=False,
+                             match_type=Match.AMISTOSO, result="Victoria Local")
+        self.assertEqual(self.client.get(reverse("team_statistics")).context["total_matches"], 5)
+        response = self.client.get(reverse("team_statistics"), {"match_type": Match.AMISTOSO})
+        self.assertEqual(response.context["total_matches"], 1)
+        self.assertIn("Amistoso", [o["label"] for o in response.context["match_types"]])
+        response = self.client.get(reverse("team_statistics"), {"match_type": Match.ENFRENTAMIENTO})
+        self.assertEqual(response.context["total_matches"], 2)

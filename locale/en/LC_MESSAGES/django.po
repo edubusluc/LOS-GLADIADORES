@@ -5472,3 +5472,12 @@ msgstr "Error editing the team. Please check the data."
 #: data_analyse/templates/team_statistics.html
 msgid "Páginas de jugadores"
 msgstr "Player pages"
+
+msgid "Competitivo"
+msgstr "Competitive"
+
+msgid "Amistoso"
+msgstr "Friendly"
+
+msgid "Elige equipo"
+msgstr "Choose team"

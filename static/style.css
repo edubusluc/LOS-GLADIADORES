@@ -1898,3 +1898,77 @@ button.st-chip { font-family: inherit; line-height: inherit; cursor: pointer; }
     .z-table-stack form.d-flex > * { flex: 1 1 100%; }
     .z-table-stack .text-end .btn { width: 100%; }
 }
+
+/* ---------- Formulario de partido: modo y cards de equipo ---------- */
+.z-mode { margin: 0 0 18px; padding: 0; background: none; border: 0; border-radius: 0; }
+.z-mode legend { float: none; width: auto; margin-bottom: 6px; padding: 0; }
+.z-mode-option {
+    position: relative;
+    margin: 0;
+    padding: .5rem 1.2rem;
+    font-size: .85rem;
+    color: var(--z-muted);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.z-mode-option input { position: absolute; opacity: 0; pointer-events: none; }
+.z-mode-option.active, .z-mode-option:has(input:checked) { color: var(--z-ink); background: var(--z-lime); }
+.z-mode-option:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(var(--z-lime-rgb), .35); }
+
+.z-team-cards { display: grid; gap: 14px; margin: 6px 0 18px; }
+.z-team-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin: 0;
+    padding: 16px 52px 16px 16px;
+    text-transform: none;
+    letter-spacing: 0;
+    background: linear-gradient(90deg, #2E3A1C 0%, #232619 45%, #1A1A1A 100%);
+    border: 1px solid var(--z-border);
+    border-radius: var(--z-radius-sm);
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+}
+.z-team-card:hover { border-color: var(--z-border-strong); }
+.z-team-card:focus-within { border-color: var(--z-lime); box-shadow: 0 0 0 3px rgba(var(--z-lime-rgb), .18); }
+.z-team-card-logo {
+    flex: none;
+    width: 96px;
+    height: 96px;
+    padding: 4px;
+    border: 4px solid var(--z-lime);
+    border-radius: 50%;
+    background: var(--z-bg);
+    overflow: hidden;
+}
+.z-team-card-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.z-team-card-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.z-team-card-role { font-size: .85rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--z-lime); }
+.z-team-card-name {
+    font-family: var(--z-display);
+    font-size: 1.6rem;
+    font-style: italic;
+    line-height: 1.15;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    overflow-wrap: anywhere;
+}
+.z-team-card-name.is-empty { color: var(--z-muted); font-size: 1.1rem; }
+.z-team-card-caret { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--z-lime); }
+/* El <select> real cubre toda la card: al pulsarla se abre el desplegable de equipos. */
+.z-team-card select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+@media (max-width: 575.98px) {
+    .z-team-card { gap: 14px; padding: 12px 40px 12px 12px; }
+    .z-team-card-logo { width: 64px; height: 64px; border-width: 3px; padding: 3px; }
+    .z-team-card-name { font-size: 1.1rem; }
+    .z-team-card-caret { right: 14px; }
+}

@@ -319,3 +319,47 @@ class CreateMatchTypeTests(TestCase):
         response = self.client.post(reverse("create_match"), {**self.data, "match_type": "amistoso"})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Match.objects.exists())
+
+
+class CreateFriendlyMatchTests(TestCase):
+    """Modo Amistoso / Competitivo: un amistoso no tiene tipo (enfrentamiento, reto, play off)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        self.rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.client.force_login(self.user)
+        self.url = reverse("create_match")
+        self.data = {"local": self.club.own_team.id, "visiting": self.rival.id, "start_date": "2026-11-15"}
+
+    def test_competitive_is_the_default_mode(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["form"]["mode"].value(), "competitivo")
+        self.assertContains(response, "Amistoso")
+        self.client.post(self.url, {**self.data, "match_type": Match.RETO})
+        self.assertEqual(Match.objects.get().match_type, Match.RETO)
+
+    def test_friendly_match_ignores_type(self):
+        response = self.client.post(self.url, {**self.data, "mode": "amistoso", "match_type": Match.PLAYOFF})
+        self.assertRedirects(response, reverse("list_match"), fetch_redirect_response=False)
+        match = Match.objects.get()
+        self.assertEqual(match.match_type, Match.AMISTOSO)
+        self.assertTrue(match.is_friendly)
+
+    def test_friendly_still_requires_own_team(self):
+        other = Team.objects.create(club=self.club, name="Otro", location="Y", in_group=True)
+        response = self.client.post(self.url, {**self.data, "local": other.id, "mode": "amistoso"})
+        self.assertContains(response, "tiene que jugar el partido")
+        self.assertFalse(Match.objects.exists())
+
+    def test_type_select_does_not_offer_friendly(self):
+        form = self.client.get(self.url).context["form"]
+        self.assertNotIn(Match.AMISTOSO, dict(form.fields["match_type"].choices))
+
+    def test_team_cards_show_selected_team_and_photos(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "data-team-card", count=2)
+        self.assertContains(response, 'data-photo=""')
+        self.assertEqual(response.context["form"].local_team, self.club.own_team)
+        self.assertIsNone(response.context["form"].visiting_team)
+        self.assertContains(response, "js/match-form.js")

@@ -3,6 +3,12 @@
 
 {% block content %}
   <script src="{% static 'js/player-picker.js' %}" defer></script>
+  {% comment %}
+    Datos de los gráficos con json_script y no con |safe: los nombres de los jugadores los
+    escribe el capitán y con |safe un nombre con una etiqueta de cierre de script ejecutaba
+    código en el navegador de todo el club. Este aviso va en un comentario de plantilla y no
+    dentro del <script>: escrita ahí, esa etiqueta cerraba el script y no se pintaba ningún gráfico.
+  {% endcomment %}
   {{ dicc_line_chart|json_script:"matches-won-per-year" }}
   {{ column_chart_data|json_script:"column-chart-data" }}
   <script>
@@ -13,8 +19,6 @@
       localGamesLost: {{ local_games_lost|default:0|unlocalize }},
       visitingGamesWon: {{ visiting_games_won|default:0|unlocalize }},
       visitingGamesLost: {{ visiting_games_lost|default:0|unlocalize }},
-      // json_script: los nombres de los jugadores los escribe el capitán; con |safe un
-      // nombre como </script><script>... se ejecutaba en el navegador de todo el club.
       matchesWonPerYear: JSON.parse(document.getElementById('matches-won-per-year').textContent) || {},
       column_chart_data: JSON.parse(document.getElementById('column-chart-data').textContent) || []
     };

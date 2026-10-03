@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 16:49+0000\n"
+"POT-Creation-Date: 2026-10-03 17:38+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -139,7 +139,7 @@ msgstr "Players"
 #: backoffice/templates/backoffice/club_list.html:22
 #: backoffice/templates/backoffice/sql_console.html:35
 #: backoffice/templates/backoffice/user_detail.html:33
-#: data_analyse/templates/team_statistics.html:149
+#: data_analyse/templates/team_statistics.html:154
 #: players/templates/list_players.html:46
 #: players/templates/list_players.html:98 team/templates/list_teams.html:70
 msgid "Nombre"
@@ -1859,7 +1859,7 @@ msgstr ""
 msgid "Ahora mismo Rekognition no valida las fotos nuevas (%(reason)s)."
 msgstr "Rekognition is not checking new photos right now (%(reason)s)."
 
-#: backoffice/templates/backoffice/photo_list.html:35 core/models.py:184
+#: backoffice/templates/backoffice/photo_list.html:35 core/models.py:183
 msgid "Foto"
 msgstr "Photo"
 
@@ -2429,45 +2429,45 @@ msgid ""
 "envío)."
 msgstr "Could not notify by email (the user has no email or sending failed)."
 
-#: backoffice/views.py:687
-msgid "Foto marcada como revisada."
-msgstr "Photo marked as reviewed."
+#: backoffice/views.py:688
+msgid "Foto marcada como validada."
+msgstr "Photo marked as approved."
 
-#: backoffice/views.py:709
+#: backoffice/views.py:710
 msgid "No puedes suspender esta cuenta."
 msgstr "You can’t suspend this account."
 
-#: backoffice/views.py:711
+#: backoffice/views.py:712
 msgid "La cuenta ya estaba activa."
 msgstr "The account was already active."
 
-#: backoffice/views.py:711
+#: backoffice/views.py:712
 msgid "La cuenta ya estaba suspendida."
 msgstr "The account was already suspended."
 
-#: backoffice/views.py:715
+#: backoffice/views.py:716
 msgid "Cuenta reactivada."
 msgstr "Account reactivated."
 
-#: backoffice/views.py:715
+#: backoffice/views.py:716
 msgid "Cuenta suspendida: ya no puede iniciar sesión."
 msgstr "Account suspended: they can no longer sign in."
 
-#: backoffice/views.py:748
+#: backoffice/views.py:749
 msgid "Escribe un email válido."
 msgstr "Enter a valid email."
 
-#: backoffice/views.py:750
+#: backoffice/views.py:751
 #, python-format
 msgid "%(email)s bloqueado."
 msgstr "%(email)s blocked."
 
-#: backoffice/views.py:752
+#: backoffice/views.py:753
 #, python-format
 msgid "%(email)s ya estaba bloqueado."
 msgstr "%(email)s was already blocked."
 
-#: backoffice/views.py:761
+#: backoffice/views.py:762
 #, python-format
 msgid "%(email)s desbloqueado."
 msgstr "%(email)s unblocked."
@@ -2657,7 +2657,7 @@ msgstr "Member (read-only)"
 
 #: core/models.py:145
 msgid "Validada"
-msgstr "Checked"
+msgstr "Approved"
 
 #: core/models.py:146
 msgid "Rechazada"
@@ -2667,16 +2667,12 @@ msgstr "Rejected"
 msgid "Pendiente de revisar"
 msgstr "Pending review"
 
-#: core/models.py:148
-msgid "Revisada por el personal"
-msgstr "Reviewed by staff"
-
-#: core/models.py:181
+#: core/models.py:180
 #, python-format
 msgid "Foto de %(player)s"
 msgstr "Photo of %(player)s"
 
-#: core/models.py:183
+#: core/models.py:182
 #, python-format
 msgid "Escudo de %(team)s"
 msgstr "%(team)s crest"
@@ -3237,7 +3233,7 @@ msgid "Primera"
 msgstr "First"
 
 #: core/templates/includes/pagination.html:8
-#: data_analyse/templates/team_statistics.html:155
+#: data_analyse/templates/team_statistics.html:160
 msgid "Anterior"
 msgstr "Previous"
 
@@ -3247,7 +3243,7 @@ msgid "%(number)s de %(total)s"
 msgstr "%(number)s of %(total)s"
 
 #: core/templates/includes/pagination.html:12
-#: data_analyse/templates/team_statistics.html:157
+#: data_analyse/templates/team_statistics.html:162
 msgid "Siguiente"
 msgstr "Next"
 
@@ -3715,8 +3711,8 @@ msgstr "%(pct)s%% wins"
 
 #: data_analyse/templates/pair_statistics.html:68
 #: data_analyse/templates/player_statistics.html:50
-#: data_analyse/templates/team_statistics.html:51
-#: data_analyse/templates/team_statistics.html:148
+#: data_analyse/templates/team_statistics.html:56
+#: data_analyse/templates/team_statistics.html:153
 msgid "Victorias"
 msgstr "Wins"
 
@@ -3732,8 +3728,8 @@ msgstr "%(wins)s won · %(losses)s lost"
 #: data_analyse/templates/player_statistics.html:121
 #: data_analyse/templates/player_statistics.html:186
 #: data_analyse/templates/player_statistics.html:230
-#: data_analyse/templates/team_statistics.html:70
-#: data_analyse/templates/team_statistics.html:147
+#: data_analyse/templates/team_statistics.html:75
+#: data_analyse/templates/team_statistics.html:152
 msgid "Partidos jugados"
 msgstr "Matches played"
 
@@ -4084,7 +4080,7 @@ msgid "de %(total)s"
 msgstr "of %(total)s"
 
 #: data_analyse/templates/player_statistics.html:134
-#: data_analyse/templates/team_statistics.html:102
+#: data_analyse/templates/team_statistics.html:107
 msgid "Partidos ganados y perdidos"
 msgstr "Matches won and lost"
 
@@ -4093,16 +4089,16 @@ msgid "Balance de la temporada"
 msgstr "Season record"
 
 #: data_analyse/templates/player_statistics.html:140
-#: data_analyse/templates/team_statistics.html:107
-#: data_analyse/templates/team_statistics.html:118
-#: data_analyse/templates/team_statistics.html:129
+#: data_analyse/templates/team_statistics.html:112
+#: data_analyse/templates/team_statistics.html:123
+#: data_analyse/templates/team_statistics.html:134
 msgid "ganados"
 msgstr "won"
 
 #: data_analyse/templates/player_statistics.html:141
-#: data_analyse/templates/team_statistics.html:108
-#: data_analyse/templates/team_statistics.html:119
-#: data_analyse/templates/team_statistics.html:130
+#: data_analyse/templates/team_statistics.html:113
+#: data_analyse/templates/team_statistics.html:124
+#: data_analyse/templates/team_statistics.html:135
 msgid "perdidos"
 msgstr "lost"
 
@@ -4197,24 +4193,24 @@ msgstr "Include former"
 msgid "No hay partidos en pareja con compañeros de esta selección."
 msgstr "No games played as a pair with partners in this selection."
 
-#: data_analyse/templates/team_statistics.html:28
+#: data_analyse/templates/team_statistics.html:33
 msgid "Estadísticas del equipo"
 msgstr "Team statistics"
 
-#: data_analyse/templates/team_statistics.html:30
+#: data_analyse/templates/team_statistics.html:35
 #, python-format
 msgid "Estadísticas de la temporada %(season)s"
 msgstr "Statistics for season %(season)s"
 
-#: data_analyse/templates/team_statistics.html:30
+#: data_analyse/templates/team_statistics.html:35
 msgid "Estadísticas de todas las temporadas"
 msgstr "Statistics for all seasons"
 
-#: data_analyse/templates/team_statistics.html:40
+#: data_analyse/templates/team_statistics.html:45
 msgid "Todavía no hay partidos cerrados"
 msgstr "No closed matches yet"
 
-#: data_analyse/templates/team_statistics.html:41
+#: data_analyse/templates/team_statistics.html:46
 #, python-format
 msgid ""
 "Las estadísticas aparecerán cuando se cierre el primero de la temporada "
@@ -4222,130 +4218,130 @@ msgid ""
 msgstr ""
 "Statistics will appear once the first match of season %(season)s is closed."
 
-#: data_analyse/templates/team_statistics.html:41
+#: data_analyse/templates/team_statistics.html:46
 msgid "Las estadísticas aparecerán cuando se cierre el primero."
 msgstr "Statistics will appear once the first match is closed."
 
-#: data_analyse/templates/team_statistics.html:45
+#: data_analyse/templates/team_statistics.html:50
 msgid "Resumen de partidos"
 msgstr "Match summary"
 
-#: data_analyse/templates/team_statistics.html:47
+#: data_analyse/templates/team_statistics.html:52
 msgid "Balance de partidos"
 msgstr "Match record"
 
-#: data_analyse/templates/team_statistics.html:56
+#: data_analyse/templates/team_statistics.html:61
 msgid "Derrotas"
 msgstr "Losses"
 
-#: data_analyse/templates/team_statistics.html:59
+#: data_analyse/templates/team_statistics.html:64
 #, python-format
 msgid "%(pct)s %% de partidos ganados"
 msgstr "%(pct)s %% of matches won"
 
-#: data_analyse/templates/team_statistics.html:66
+#: data_analyse/templates/team_statistics.html:71
 msgid "Partidos ganados"
 msgstr "Matches won"
 
-#: data_analyse/templates/team_statistics.html:74
-#: data_analyse/templates/team_statistics.html:113
+#: data_analyse/templates/team_statistics.html:79
+#: data_analyse/templates/team_statistics.html:118
 msgid "Juegos como local"
 msgstr "Games at home"
 
-#: data_analyse/templates/team_statistics.html:78
-#: data_analyse/templates/team_statistics.html:124
+#: data_analyse/templates/team_statistics.html:83
+#: data_analyse/templates/team_statistics.html:129
 msgid "Juegos como visitante"
 msgstr "Games away"
 
-#: data_analyse/templates/team_statistics.html:85
+#: data_analyse/templates/team_statistics.html:90
 msgid "Top 5"
 msgstr "Top 5"
 
-#: data_analyse/templates/team_statistics.html:86
+#: data_analyse/templates/team_statistics.html:91
 msgid "Solo jugadores que siguen en el equipo."
 msgstr "Only players still in the team."
 
-#: data_analyse/templates/team_statistics.html:88
+#: data_analyse/templates/team_statistics.html:93
 msgid "Mejores jugadores como local"
 msgstr "Best players at home"
 
-#: data_analyse/templates/team_statistics.html:88
+#: data_analyse/templates/team_statistics.html:93
 #, python-format
 msgid "%% de victorias jugando en casa."
 msgstr "%% of wins playing at home."
 
-#: data_analyse/templates/team_statistics.html:88
+#: data_analyse/templates/team_statistics.html:93
 msgid "Ningún jugador llega al mínimo de partidos como local."
 msgstr "No player has reached the minimum number of home matches."
 
-#: data_analyse/templates/team_statistics.html:90
+#: data_analyse/templates/team_statistics.html:95
 msgid "Mejores jugadores como visitante"
 msgstr "Best players away"
 
-#: data_analyse/templates/team_statistics.html:90
+#: data_analyse/templates/team_statistics.html:95
 #, python-format
 msgid "%% de victorias jugando fuera."
 msgstr "%% of wins playing away."
 
-#: data_analyse/templates/team_statistics.html:90
+#: data_analyse/templates/team_statistics.html:95
 msgid "Ningún jugador llega al mínimo de partidos como visitante."
 msgstr "No player has reached the minimum number of away matches."
 
-#: data_analyse/templates/team_statistics.html:92
+#: data_analyse/templates/team_statistics.html:97
 msgid "Mejores parejas como local"
 msgstr "Best pairs at home"
 
-#: data_analyse/templates/team_statistics.html:92
+#: data_analyse/templates/team_statistics.html:97
 #, python-format
 msgid "%% de victorias de la pareja en casa."
 msgstr "The pair's win %% at home."
 
-#: data_analyse/templates/team_statistics.html:92
+#: data_analyse/templates/team_statistics.html:97
 msgid "Ninguna pareja llega al mínimo de partidos como local."
 msgstr "No pair has reached the minimum number of home matches."
 
-#: data_analyse/templates/team_statistics.html:94
+#: data_analyse/templates/team_statistics.html:99
 msgid "Mejores parejas como visitante"
 msgstr "Best pairs away"
 
-#: data_analyse/templates/team_statistics.html:94
+#: data_analyse/templates/team_statistics.html:99
 #, python-format
 msgid "%% de victorias de la pareja fuera."
 msgstr "The pair's win %% away."
 
-#: data_analyse/templates/team_statistics.html:94
+#: data_analyse/templates/team_statistics.html:99
 msgid "Ninguna pareja llega al mínimo de partidos como visitante."
 msgstr "No pair has reached the minimum number of away matches."
 
-#: data_analyse/templates/team_statistics.html:99
+#: data_analyse/templates/team_statistics.html:104
 msgid "Gráficos"
 msgstr "Charts"
 
-#: data_analyse/templates/team_statistics.html:135
+#: data_analyse/templates/team_statistics.html:140
 msgid "Partidos ganados por año"
 msgstr "Matches won per year"
 
-#: data_analyse/templates/team_statistics.html:136
+#: data_analyse/templates/team_statistics.html:141
 msgid "Evolución de victorias y derrotas del equipo en cada temporada."
 msgstr "The team's wins and losses in each season."
 
-#: data_analyse/templates/team_statistics.html:143
+#: data_analyse/templates/team_statistics.html:148
 msgid "Balance de partidos por jugador"
 msgstr "Match record by player"
 
-#: data_analyse/templates/team_statistics.html:144
+#: data_analyse/templates/team_statistics.html:149
 msgid ""
 "Partidos de 3 y de 2 puntos, ganados y perdidos, de cada jugador actual del "
 "equipo."
 msgstr "3- and 2-point matches won and lost by each current team player."
 
-#: data_analyse/templates/team_statistics.html:145
-#: data_analyse/templates/team_statistics.html:146
+#: data_analyse/templates/team_statistics.html:150
+#: data_analyse/templates/team_statistics.html:151
 #: players/templates/list_players.html:45
 msgid "Ordenar por"
 msgstr "Sort by"
 
-#: data_analyse/templates/team_statistics.html:154
+#: data_analyse/templates/team_statistics.html:159
 msgid "Páginas de jugadores"
 msgstr "Player pages"
 

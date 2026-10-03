@@ -576,7 +576,7 @@ def import_template(request, entity):
 # pasado a cada usuario se ven aquí y en su ficha. Rekognition (core/moderation.py) es
 # opcional y está desactivado por defecto: sin él todas las fotos llegan «Sin validar».
 
-PHOTO_FILTERS = [PhotoCheck.UNCHECKED, PhotoCheck.REJECTED, PhotoCheck.APPROVED, PhotoCheck.REVIEWED]
+PHOTO_FILTERS = [PhotoCheck.UNCHECKED, PhotoCheck.REJECTED, PhotoCheck.APPROVED]
 
 
 def _remove_photo(check):
@@ -682,9 +682,10 @@ def photo_delete(request, check_id):
 
 @staff_required
 @require_POST
-def photo_reviewed(request, check_id):
-    PhotoCheck.objects.filter(public_id=check_id).update(status=PhotoCheck.REVIEWED)
-    messages.success(request, _("Foto marcada como revisada."))
+def photo_approve(request, check_id):
+    """El personal da por buena una foto pendiente: queda «Validada», como las que aprueba Rekognition."""
+    PhotoCheck.objects.filter(public_id=check_id).update(status=PhotoCheck.APPROVED)
+    messages.success(request, _("Foto marcada como validada."))
     return _back_to(request, "backoffice:photo_list")
 
 

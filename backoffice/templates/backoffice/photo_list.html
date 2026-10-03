@@ -52,7 +52,7 @@
                 </form>
                 {% endif %}
                 {% if c.status == 'unchecked' %}
-                <form method="post" action="{% url 'backoffice:photo_reviewed' c.public_id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-check"></i> {% if c.in_use %}{% translate "Correcta" %}{% else %}{% translate "Quitar de pendientes" %}{% endif %}</button></form>
+                <form method="post" action="{% url 'backoffice:photo_approve' c.public_id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-check"></i> {% if c.in_use %}{% translate "Correcta" %}{% else %}{% translate "Quitar de pendientes" %}{% endif %}</button></form>
                 {% endif %}
             </td>
         </tr>

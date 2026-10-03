@@ -53,6 +53,7 @@ _fonts_ready = False
 
 
 def _register_fonts():
+    """Registra en reportlab las fuentes de Zyra (solo la primera vez)."""
     global _fonts_ready
     if _fonts_ready:
         return
@@ -63,6 +64,7 @@ def _register_fonts():
 
 
 def _styles():
+    """Estilos de párrafo del informe, por nombre."""
     base = dict(fontName="Archivo", fontSize=8.5, leading=11, textColor=TEXT, alignment=TA_LEFT)
     return {
         "title": ParagraphStyle("title", fontName="Syncopate", fontSize=17, leading=21, textColor=TEXT),
@@ -93,6 +95,7 @@ def _pips(results, size=6.5):
 
 
 def _badge(text, fill=LIME, fg=INK, width=16 * mm):
+    """Etiqueta redondeada con texto centrado (p. ej. VICTORIA / DERROTA)."""
     d = Drawing(width, 12)
     d.add(Rect(0, 0, width, 12, rx=6, ry=6, fillColor=fill, strokeColor=None))
     d.add(String(width / 2, 3.2, text, fontName="Archivo-Black", fontSize=7, fillColor=fg, textAnchor="middle"))
@@ -105,6 +108,7 @@ def _wl(wins, losses):
 
 
 def _record(wins, played):
+    """'3V-2D · 60%' a partir de victorias y jugados; '—' si no hay partidos."""
     if not played:
         return "—"
     return f"{_wl(wins, played - wins)} · {round(wins / played * 100)}%"
@@ -116,6 +120,7 @@ def _streak_label(kind, n):
 
 
 def _streak(streak):
+    """Texto de una racha ('3V', '2D') o '—' si no hay."""
     kind, n = streak
     return _streak_label(kind, n) if kind else "—"
 
@@ -150,6 +155,10 @@ def _panel(content, padding=PANEL_PAD):
 
 
 def _data_table(header, rows, col_widths, st, highlight_first=False):
+    """Tabla con cabecera y filas al estilo de la web.
+
+    ``highlight_first`` marca con una línea lima las dos primeras filas de datos.
+    """
     data = [[Paragraph(h.upper(), st["kpi_label"]) for h in header]] + rows
     t = Table(data, colWidths=col_widths, repeatRows=1)
     style = [
@@ -171,6 +180,7 @@ def _data_table(header, rows, col_widths, st, highlight_first=False):
 
 
 def _kpis(items, st):
+    """Fila de indicadores (etiqueta y valor grande) dentro de una tarjeta."""
     cells = [[Paragraph(esc(label.upper()), st["kpi_label"]), Paragraph(value, st["kpi_value"])] for label, value in items]
     widths = [CONTENT_W / len(items)] * len(items)
     inner = [Table([[c[0]], [c[1]]], colWidths=[widths[0] - 8]) for c in cells]
@@ -192,6 +202,7 @@ def _kpis(items, st):
 
 
 def _on_page(canvas, doc, report):
+    """Dibuja el fondo, la cabecera (logo, club y fecha) y el pie de cada página."""
     canvas.saveState()
     canvas.setFillColor(BG)
     canvas.rect(0, 0, PAGE_W, PAGE_H, stroke=0, fill=1)
@@ -268,6 +279,7 @@ def render_report(report):
                       Paragraph(_("Primer enfrentamiento contra este equipo."), st["muted"])]
 
     def streak_lines(items, color):
+        """Una línea por jugador en racha, o un aviso si no hay ninguno."""
         if not items:
             return [Paragraph(_("Nadie con 2 o más resultados seguidos."), st["muted"])]
         return [Paragraph(f"<font color='{color}'><b>{_streak_label(f.streak[0], f.streak[1])}</b></font>  {esc(f.name)}", st["list"])
@@ -306,6 +318,7 @@ def render_report(report):
 
     # Reparto de partidos en la temporada (toda la plantilla)
     def usage_table(rows):
+        """Tabla de reparto de partidos; los convocados ahora se resaltan en lima."""
         body = [[
             Paragraph(f"<font color='{'#B4F100' if u['called_now'] else '#F4F4F4'}'>"
                       f"<b>{esc(u['player'].short_name)}</b></font>", st["cell"]),

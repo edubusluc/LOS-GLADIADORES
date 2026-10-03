@@ -1,0 +1,71 @@
+/* Estilo de Zyra para la web de documentación: fondo oscuro, acento lima, Syncopate + Archivo. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Syncopate:wght@700&family=JetBrains+Mono:wght@400;600&display=swap");
+
+[data-md-color-scheme="slate"] {
+  --z-bg: #0B0B0B;
+  --z-surface: #151515;
+  --z-border: #333333;
+  --z-text: #F4F4F4;
+  --z-muted: #A3A3A3;
+  --z-lime: #B4F100;
+  --z-lime-hover: #C8FF2E;
+
+  --md-default-bg-color: var(--z-bg);
+  --md-default-fg-color: var(--z-text);
+  --md-default-fg-color--light: var(--z-muted);
+  --md-default-fg-color--lighter: #6B6B6B;
+  --md-default-fg-color--lightest: var(--z-border);
+  --md-primary-fg-color: #0B0B0B;
+  --md-primary-fg-color--light: #151515;
+  --md-primary-fg-color--dark: #000000;
+  --md-primary-bg-color: var(--z-text);
+  --md-accent-fg-color: var(--z-lime-hover);
+  --md-typeset-a-color: var(--z-lime);
+  --md-code-bg-color: var(--z-surface);
+  --md-code-fg-color: #E6E6E6;
+  --md-footer-bg-color: #000000;
+  --md-footer-bg-color--dark: #000000;
+  --md-text-font: "Archivo";
+  --md-code-font: "JetBrains Mono";
+}
+
+body { font-family: "Archivo", system-ui, sans-serif; }
+
+.md-header, .md-tabs { background-color: #000000; border-bottom: 1px solid var(--z-border); }
+.md-tabs__link--active, .md-tabs__item--active .md-tabs__link { color: var(--z-lime); }
+.md-header__topic:first-child, .md-typeset h1 {
+  font-family: "Syncopate", "Archivo", sans-serif;
+  font-style: italic;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.md-typeset h1 { color: #FFFFFF; }
+.md-typeset h2 { color: var(--z-lime); font-weight: 700; }
+.md-typeset h3 { font-weight: 700; }
+.md-nav__link--active, .md-nav__link:is(:focus, :hover) { color: var(--z-lime); }
+.md-search__input { background-color: var(--z-surface); }
+.md-typeset code { border-radius: 6px; }
+.md-typeset table:not([class]) { border: 1px solid var(--z-border); border-radius: 10px; overflow: hidden; }
+.md-typeset table:not([class]) th { background: var(--z-surface); color: var(--z-lime); }
+.md-typeset .admonition, .md-typeset details { border-radius: 10px; background: var(--z-surface); }
+
+/* Referencia del código (mkdocstrings) */
+.doc-heading code { color: var(--z-lime); }
+.doc-symbol-heading.doc-symbol-function,
+.doc-symbol-toc.doc-symbol-function,
+.doc-symbol-heading.doc-symbol-method,
+.doc-symbol-toc.doc-symbol-method { color: var(--z-lime); background-color: rgba(180, 241, 0, .12); }
+.doc-symbol-heading.doc-symbol-class,
+.doc-symbol-toc.doc-symbol-class { color: #FFC940; background-color: rgba(255, 201, 64, .12); }
+.doc-contents { border-left: 2px solid var(--z-border); padding-left: 1rem; }
+
+/* Tarjetas de la portada */
+.z-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 1.2rem 0; }
+.z-cards a {
+  display: block; padding: 14px 16px; border: 1px solid var(--z-border); border-radius: 14px;
+  background: var(--z-surface); color: var(--z-text) !important;
+}
+.z-cards a:hover { border-color: var(--z-lime); }
+.z-cards strong { display: block; color: var(--z-lime); margin-bottom: 4px; }
+.z-cards span { color: var(--z-muted); font-size: .85em; }

@@ -1,3 +1,4 @@
+"""Vistas de jugadores: alta, lista, ficha, plantilla, cuenta SNP, «Completar equipo» y perfil propio."""
 from django.shortcuts import render, redirect, get_object_or_404
 from core.decorators import club_required, club_admin_required
 from .forms import NewOwnPlayerForm, OwnPlayerForm, PlayerEditForm, PlayerForm, SnpAccountForm, with_placeholder
@@ -20,6 +21,14 @@ from core import similarity
 
 @club_admin_required
 def create_player(request):
+    """
+    Alta de un jugador en el equipo propio del club. Solo capitanes (``club_admin_required``).
+
+    GET muestra el formulario. POST lo valida y, si hay jugadores con un nombre igual o
+    parecido, vuelve a mostrarlo para que se confirme antes de crearlo. Las peticiones de
+    comprobación (``similarity.is_check_request``) responden en JSON si es válido y los
+    parecidos, sin crear nada. Al crearlo redirige a la lista de jugadores.
+    """
     similar = []
     if request.method == "POST":
         form = PlayerForm(request.POST, request.FILES)
@@ -58,6 +67,11 @@ ORDER_FIELDS = {'name', '-name', 'last_name', '-last_name', 'position', '-positi
 
 @club_required
 def list_players(request):
+    """
+    Lista paginada de jugadores del club con búsqueda por nombre y orden (``order_by``).
+    Requiere pertenecer al club (``club_required``). Los capitanes ven también a los que
+    ya no están en el equipo (al final) y el estado del botón «Completar equipo».
+    """
     order_by = request.GET.get('order_by', 'name')
     if order_by not in ORDER_FIELDS:
         order_by = 'name'
@@ -109,6 +123,10 @@ def _complete_team_context(club):
 
 @club_admin_required
 def edit_player(request, player_id):
+    """
+    Edición de un jugador del club. Solo capitanes. GET muestra el formulario; POST lo
+    guarda si es válido y redirige a la lista de jugadores.
+    """
     player = get_object_or_404(Player, public_id=player_id, club=request.club)
     form = PlayerEditForm(request.POST or None, instance=player)
     if request.method == "POST":
@@ -149,6 +167,7 @@ def delete_player(request, player_id):
 
 @club_required
 def show_player(request, player_id):
+    """Ficha de un jugador del club con sus últimos 5 partidos cerrados. Requiere pertenecer al club."""
     player = get_object_or_404(Player, public_id=player_id, club=request.club)
     games = Game.objects.filter(
         (Q(player_1_local=player) | Q(player_2_local=player) |
@@ -217,6 +236,7 @@ def snp_account(request):
 @club_admin_required
 @require_POST
 def snp_account_delete(request):
+    """Borra la cuenta SNP del club. Solo capitanes y por POST; vuelve a la página de la cuenta SNP."""
     SnpAccount.objects.filter(club=request.club).delete()
     messages.success(request, _("Cuenta SNP borrada."))
     return redirect("snp_account")
@@ -225,6 +245,7 @@ def snp_account_delete(request):
 # ---------- «Completar equipo» con los jugadores de SNP ----------
 
 def _blocked_this_month(request):
+    """True (y deja un mensaje de error) si el equipo ya se ha completado este mes desde la web."""
     last = snp_import.last_import_this_month(request.club)
     if last:
         messages.error(request, _("El equipo ya se ha completado este mes. Podrás volver a hacerlo a partir del %(date)s.")
@@ -235,6 +256,11 @@ def _blocked_this_month(request):
 @club_admin_required
 @require_POST
 def complete_team_start(request):
+    """
+    Lanza en segundo plano la búsqueda de «Completar equipo». Solo capitanes y por POST.
+    Hace falta cuenta SNP; no se lanza si ya se completó este mes o hay otra en curso.
+    Redirige a la lista de jugadores, que va preguntando el estado.
+    """
     if not SnpAccount.objects.filter(club=request.club).exists():
         messages.error(request, _("Primero registra la cuenta SNP del capitán."))
         return redirect("snp_account")
@@ -245,6 +271,7 @@ def complete_team_start(request):
 
 @club_admin_required
 def complete_team_status(request, import_id):
+    """Estado en JSON de una búsqueda de «Completar equipo» (lo consulta la lista). Solo capitanes."""
     team_import = get_object_or_404(SnpTeamImport, public_id=import_id, club=request.club)
     return JsonResponse({"status": team_import.status, "message": team_import.message})
 
@@ -252,6 +279,10 @@ def complete_team_status(request, import_id):
 @club_admin_required
 @require_POST
 def complete_team_confirm(request, import_id):
+    """
+    Confirma una búsqueda de «Completar equipo» lista para confirmar y crea los jugadores.
+    Solo capitanes y por POST; respeta el límite de una vez al mes. Redirige a la lista de jugadores.
+    """
     team_import = get_object_or_404(SnpTeamImport, public_id=import_id, club=request.club, source=SnpTeamImport.WEB)
     if team_import.status != SnpTeamImport.READY or not team_import.to_add or _blocked_this_month(request):
         return redirect("list_players")
@@ -263,8 +294,9 @@ def complete_team_confirm(request, import_id):
 @club_admin_required
 @require_POST
 def complete_team_cancel(request, import_id):
+    """Cancela la búsqueda de «Completar equipo» en curso o pendiente. Solo capitanes y por POST."""
     SnpTeamImport.objects.filter(
-        public_id=import_id, club=request.club, status__in=[SnpTeamImport.RUNNING, SnpTeamImport.READY],
+        public_id=import_id, club=request.club, source=SnpTeamImport.WEB, status__in=[SnpTeamImport.RUNNING, SnpTeamImport.READY],
     ).update(status=SnpTeamImport.CANCELLED)
     return redirect("list_players")
 

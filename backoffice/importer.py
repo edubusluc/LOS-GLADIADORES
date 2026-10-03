@@ -39,6 +39,7 @@ class ImportFileError(ValueError):
 
 
 def normalize(text):
+    """Texto sin acentos, en minúsculas y con guiones bajos, para comparar cabeceras y valores."""
     text = unicodedata.normalize("NFKD", str(text or "")).encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
@@ -50,6 +51,7 @@ FALSE = {"0", "no", "n", "false", "falso"}
 
 
 def parse_bool(value):
+    """Convierte sí/no (y variantes: 1/0, x, true...) en bool; si no, ValidationError."""
     v = normalize(value)
     if v in TRUE:
         return True
@@ -59,6 +61,7 @@ def parse_bool(value):
 
 
 def parse_date(value):
+    """Convierte una fecha en formato ISO o español (25/10/2026, 25-10-2026, 25/10/26) en date."""
     value = value.strip()
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y"):
         try:
@@ -69,12 +72,17 @@ def parse_date(value):
 
 
 def choice_parser(choices):
+    """
+    Devuelve un conversor para un campo con choices: admite el valor o la etiqueta,
+    sin distinguir mayúsculas ni acentos.
+    """
     options = {}
     for value, label in choices:
         options[normalize(value)] = value
         options[normalize(label)] = value
 
     def parse(text):
+        """Valor de la opción cuyo valor o etiqueta coincide con `text`; si no, ValidationError."""
         key = normalize(text)
         if key in options:
             return options[key]
@@ -85,6 +93,7 @@ def choice_parser(choices):
 
 
 def parse_int(value):
+    """Convierte el texto en entero; si no es un número, ValidationError."""
     try:
         return int(str(value).strip())
     except ValueError:
@@ -93,6 +102,10 @@ def parse_int(value):
 
 @dataclass
 class Field:
+    """
+    Campo importable: nombre en el modelo, etiqueta, conversor del texto, si es obligatorio,
+    otros nombres de columna que se reconocen y valor de ejemplo para la plantilla.
+    """
     name: str
     label: str
     parse: object = str.strip
@@ -101,6 +114,7 @@ class Field:
     example: str = ""
 
     def matches(self, header):
+        """True si la cabecera de una columna del fichero corresponde a este campo."""
         h = normalize(header)
         # La etiqueta cuenta en el idioma activo y en español (las plantillas pueden venir de cualquiera de los dos).
         with translation.override("es"):
@@ -115,6 +129,10 @@ ID_FIELD = Field("id", "ID", parse_int, aliases=("pk", "identificador"), example
 
 @dataclass
 class Entity:
+    """
+    Objeto importable (jugadores, equipos, partidos): su modelo, sus campos y cómo se
+    buscan, crean y rellenan sus registros dentro de un club. Las subclases ajustan cada caso.
+    """
     key: str
     label: str
     model: object
@@ -124,9 +142,11 @@ class Entity:
     preview: tuple = ()
 
     def all_fields(self):
+        """Campos que se pueden emparejar: el ID y los propios del objeto."""
         return [ID_FIELD, *self.fields]
 
     def queryset(self, club):
+        """Registros del club entre los que se busca."""
         return self.model.objects.filter(club=club)
 
     # Campos que no se importan pero sí cuentan para las validaciones (restricciones únicas).
@@ -147,51 +167,69 @@ class Entity:
         return self.find_natural(club, values)
 
     def find_natural(self, club, values):
+        """Registro que corresponde a la fila por su clave natural; por defecto no hay y devuelve None."""
         return None
 
     def natural_key(self, values, obj):
+        """Clave para detectar filas repetidas en el fichero; None si el objeto no tiene clave natural."""
         return None
 
     def apply(self, club, obj, values):
+        """Copia en el registro los valores de la fila (salvo el ID)."""
         for name, value in values.items():
             if name != "id":
                 setattr(obj, name, value)
 
     def new(self, club):
+        """Registro nuevo (sin guardar) del club."""
         return self.model(club=club)
 
 
 class PlayerEntity(Entity):
+    """Jugadores del club; la clave natural es nombre y apellidos."""
     def find_natural(self, club, values):
+        """Jugador del club con el mismo nombre y apellidos (sin distinguir mayúsculas), o None."""
         if values.get("name") and values.get("last_name"):
             return self.queryset(club).filter(name__iexact=values["name"], last_name__iexact=values["last_name"]).first()
         return None
 
     def natural_key(self, values, obj):
+        """Nombre y apellidos normalizados (los de la fila o, si faltan, los del registro)."""
         return (normalize(values.get("name", obj.name)), normalize(values.get("last_name", obj.last_name)))
 
     def new(self, club):
+        """Jugador nuevo del equipo propio del club."""
         return Player(club=club, team=club.own_team)
 
 
 class TeamEntity(Entity):
+    """Equipos rivales del club (el equipo propio no se importa); la clave natural es el nombre."""
     def queryset(self, club):
+        """Solo los equipos rivales del club."""
         return Team.objects.filter(club=club, is_own=False)
 
     def find_natural(self, club, values):
+        """Equipo del club con ese nombre (sin distinguir mayúsculas), o None."""
         if values.get("name"):
             return Team.objects.filter(club=club, name__iexact=values["name"]).first()
         return None
 
     def natural_key(self, values, obj):
+        """Nombre normalizado del equipo."""
         return normalize(values.get("name", obj.name))
 
     def new(self, club):
+        """Equipo rival nuevo del club."""
         return Team(club=club, is_own=False)
 
 
 class MatchEntity(Entity):
+    """Partidos del club; se identifican solo por ID y los equipos se indican por su nombre."""
     def apply(self, club, obj, values):
+        """
+        Copia los valores de la fila; local y visitante se buscan por nombre entre los equipos
+        del club. Uno de los dos tiene que ser el equipo propio y no pueden ser el mismo.
+        """
         for name, value in values.items():
             if name in ("local", "visiting"):
                 team = Team.objects.filter(club=club, name__iexact=value).first()
@@ -249,6 +287,7 @@ ENTITIES = {
 # ---------- Lectura del fichero ----------
 
 def decode(data):
+    """Decodifica el fichero subido (UTF-8 o, si no, Windows-1252) comprobando su tamaño máximo."""
     if len(data) > MAX_BYTES:
         raise ImportFileError(_("El fichero pasa de %(mb)s MB.") % {"mb": MAX_BYTES // (1024 * 1024)})
     for encoding in ("utf-8-sig", "cp1252"):
@@ -266,6 +305,7 @@ def read_csv(text):
         dialect = csv.Sniffer().sniff(sample, delimiters=";,\t")
     except csv.Error:
         class dialect(csv.excel):
+            """Dialecto de reserva si no se detecta el separador: ; o , (el que más aparezca)."""
             delimiter = ";" if sample.count(";") > sample.count(",") else ","
     rows = [r for r in csv.reader(io.StringIO(text), dialect) if any(c.strip() for c in r)]
     if not rows:
@@ -293,6 +333,10 @@ def guess_mapping(entity, headers):
 
 @dataclass
 class RowResult:
+    """
+    Resultado de validar una fila: valores convertidos, acción (crear o actualizar),
+    errores, el objeto preparado y los valores anteriores (para poder deshacer).
+    """
     line: int
     values: dict
     action: str = ""        # "create" | "update"
@@ -302,10 +346,12 @@ class RowResult:
 
     @property
     def ok(self):
+        """True si la fila no tiene errores."""
         return not self.errors
 
 
 def _messages(exc):
+    """Mensajes de un ValidationError, con el nombre del campo delante cuando lo hay."""
     if hasattr(exc, "message_dict"):
         out = []
         for name, msgs in exc.message_dict.items():

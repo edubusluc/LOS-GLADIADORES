@@ -43,10 +43,12 @@ def pair_key(a_id, b_id):
 
 
 def _pct(wins, total):
+    """Porcentaje con un decimal; 0 si no hay partidos."""
     return round(wins / total * 100, 1) if total else 0
 
 
 def _longest_run(results, target):
+    """Racha más larga de resultados iguales a ``target`` (True: victorias, False: derrotas)."""
     best = run = 0
     for r in results:
         run = run + 1 if r == target else 0
@@ -107,6 +109,10 @@ def club_game_log(club, season=None, match_type=None):
 # ---------------------------------------------------------------
 
 def _rank(counts, names, min_games):
+    """
+    Filas del top 5 a partir de ``counts`` ({clave: (victorias, jugados)}): solo las claves
+    con nombre y al menos ``min_games`` partidos, ordenadas por % de victorias.
+    """
     rows = []
     for key, (wins, played) in counts.items():
         if played < min_games or key not in names:
@@ -152,6 +158,7 @@ def top_pairs(log, players, local, min_games=MIN_GAMES_PAIR):
 
 
 def pair_label(player):
+    """Nombre de un jugador dentro de una pareja: nombre y primer apellido."""
     return player.short_name
 
 
@@ -288,6 +295,7 @@ def hot_streaks(log, players):
     by_player, by_pair = {}, {}
 
     def add(history, key, won, i):
+        """Añade un resultado al historial de ``key`` y apunta la posición ``i`` del último partido."""
         h = history.setdefault(key, {'results': [], 'last': i})
         h['results'].append(won)
         h['last'] = i

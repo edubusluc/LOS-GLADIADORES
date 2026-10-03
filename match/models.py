@@ -1,3 +1,12 @@
+"""Modelos de los partidos del club.
+
+- Match: un enfrentamiento entre dos equipos (uno de ellos, el propio del club).
+- Game: cada uno de los 5 partidos por parejas de un enfrentamiento.
+- Result: el resultado por sets de un Game.
+
+En los Game solo se guardan los jugadores del propio club, en el lado (local o
+visitante) en el que juega su equipo.
+"""
 from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -16,6 +25,12 @@ from core.models import Club
 from team.models import Team
 
 class Match(PublicIdModel):
+    """Enfrentamiento entre dos equipos del club (uno de ellos, el propio).
+
+    La temporada y la ubicación se rellenan solas al guardar. ``result`` y
+    ``result_points`` se fijan al cerrar el acta; ``draft_mode`` es True mientras
+    sigue abierta.
+    """
     PUBLIC_ID_PREFIX = "MAT"
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name='matches', null=True)
     local = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='local_matches', null=True)
@@ -57,6 +72,11 @@ class Match(PublicIdModel):
         ]
 
     def save(self, *args, **kwargs):
+        """Rellena la temporada a partir de la fecha y copia la ubicación del equipo local.
+
+        La temporada va de septiembre a agosto (p. ej. '2024-2025'). Solo se asignan si
+        están vacías, así que no cambian en guardados posteriores.
+        """
         # Asignar la temporada según la fecha de inicio
         if not self.season or self.season == "NONE":
             if self.start_date:
@@ -80,22 +100,32 @@ class Match(PublicIdModel):
 
     @property
     def is_friendly(self):
+        """True si es un partido amistoso."""
         return self.match_type == self.AMISTOSO
 
     @property
     def own_is_local(self):
+        """True si el equipo propio del club juega como local."""
         return bool(self.local and self.local.is_own)
 
     @property
     def own_is_visiting(self):
+        """True si el equipo propio del club juega como visitante."""
         return bool(self.visiting and self.visiting.is_own)
 
     def __str__(self):
+        """'Local - Visitante'."""
         return f'{self.local} - {self.visiting}'
 
 
 
 class Game(PublicIdModel):
+    """Partido por parejas dentro de un enfrentamiento (del 1 al 5).
+
+    Solo se rellenan los jugadores del lado del equipo propio. ``score`` son los
+    puntos en juego (3 en los partidos 1 y 2, 2 en el resto) y ``winner`` es
+    'Local' o 'Visitante'.
+    """
     PUBLIC_ID_PREFIX = "GAM"
     NUMBER_GAME = [
         ("1", "1"),
@@ -138,6 +168,7 @@ class Game(PublicIdModel):
         ]
 
     def save(self, *args, **kwargs):
+        """Valida el partido con clean() antes de guardarlo."""
         self.clean()  # Llamar a la validación antes de guardar
         super().save(*args, **kwargs)
 
@@ -150,18 +181,22 @@ class Game(PublicIdModel):
         return str(player) if player else self.removed_player_names.get(slot, "").upper()
 
     def _pair_label(self, first, second):
+        """'Jugador 1 / Jugador 2' de esas dos posiciones; '' si falta alguno."""
         names = [self.player_name(first), self.player_name(second)]
         return " / ".join(names) if all(names) else ""
 
     @property
     def local_pair_label(self):
+        """Nombre de la pareja local ('' si no hay)."""
         return self._pair_label("player_1_local", "player_2_local")
 
     @property
     def visiting_pair_label(self):
+        """Nombre de la pareja visitante ('' si no hay)."""
         return self._pair_label("player_1_visiting", "player_2_visiting")
 
     def __str__(self):
+        """Enfrentamiento, número de partido y pareja local; si no hay, la pareja visitante."""
         if self.player_1_local:
             return f'{self.match}-{self.n_game}: {self.player_1_local} - {self.player_2_local}'
         else:
@@ -179,13 +214,17 @@ def keep_name_in_games(sender, instance, **kwargs):
 
 
 def validate_set_value(value):
-    # Límite amplio para admitir un super tie-break en el tercer set; las reglas
-    # completas de pádel están en match/scoring.py (Result.clean).
+    """Validador de campo: los juegos de un set deben estar entre 0 y 30.
+
+    El límite es amplio para admitir un super tie-break en el tercer set; las reglas
+    completas de pádel están en match/scoring.py (Result.clean).
+    """
     if value < 0 or value > 30:
         raise ValidationError(gettext('El valor debe estar entre 0 y 30.'))
 
 
 class Result(PublicIdModel):
+    """Resultado por sets de un partido (uno por partido); el set 3 es opcional."""
     PUBLIC_ID_PREFIX = "RES"
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='results')
     result = models.CharField(max_length=100, null = True)
@@ -204,6 +243,7 @@ class Result(PublicIdModel):
         ]
 
     def sets(self):
+        """Los tres sets como lista de tuplas (local, visitante); el set 3 puede ser (None, None)."""
         return [
             (self.set1_local, self.set1_visiting),
             (self.set2_local, self.set2_visiting),
@@ -220,6 +260,7 @@ class Result(PublicIdModel):
             (self.set3_local, self.set3_visiting) = sets
 
     def determine_winner(self):
+        """'Victoria Local' o 'Victoria Visitante'; valida el resultado si aún no se ha hecho."""
         winner = getattr(self, "_winner", None)
         if winner is None:
             self.clean()
@@ -227,6 +268,7 @@ class Result(PublicIdModel):
         return "Victoria Local" if winner == "local" else "Victoria Visitante"
 
     def save(self, *args, **kwargs):
+        """Valida y normaliza el resultado con clean() antes de guardarlo."""
         self.clean() 
         super().save(*args, **kwargs)
         

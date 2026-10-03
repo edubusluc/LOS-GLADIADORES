@@ -1,3 +1,9 @@
+"""
+Adaptadores de django-allauth: personalizan el alta y el inicio de sesión con
+usuario/contraseña y con Google.
+
+Se activan en settings (ACCOUNT_ADAPTER y SOCIALACCOUNT_ADAPTER).
+"""
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
@@ -10,13 +16,16 @@ GOOGLE_NEW_ACCOUNT_KEY = "google_new_account"
 
 
 class AccountAdapter(DefaultAccountAdapter):
+    """Adaptador de cuentas de allauth (usuario/email y contraseña)."""
     def is_open_for_signup(self, request):
-        # Las cuentas con contraseña se crean desde una invitación, al registrar un
-        # club o las crea un capitán: el alta genérica de allauth queda cerrada.
+        """
+        Las cuentas con contraseña se crean desde una invitación, al registrar un
+        club o las crea un capitán: el alta genérica de allauth queda cerrada.
+        """
         return False
 
     def clean_email(self, email):
-        # Un email bloqueado por el personal no se puede añadir a ninguna cuenta.
+        """Un email bloqueado por el personal no se puede añadir a ninguna cuenta."""
         from django import forms
         from django.utils.translation import gettext as _
 
@@ -28,22 +37,28 @@ class AccountAdapter(DefaultAccountAdapter):
         return email
 
     def add_message(self, *args, **kwargs):
-        # Sin avisos de allauth ("Has iniciado sesión como..."): la app ya muestra los suyos.
+        """Sin avisos de allauth ("Has iniciado sesión como..."): la app ya muestra los suyos."""
         pass
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
+    """Adaptador de allauth para el inicio de sesión con Google."""
     def is_open_for_signup(self, request, sociallogin):
-        # Cualquiera puede crear su cuenta con Google (salvo con un email bloqueado por el
-        # personal); para ver datos de un club tiene que unirse con una invitación o
-        # registrar el suyo.
+        """
+        Cualquiera puede crear su cuenta con Google (salvo con un email bloqueado por el
+        personal); para ver datos de un club tiene que unirse con una invitación o
+        registrar el suyo.
+        """
         from .blocklist import is_blocked
 
         emails = [a.email for a in sociallogin.email_addresses] or [getattr(sociallogin.user, "email", "")]
         return not any(is_blocked(e) for e in emails)
 
     def save_user(self, request, sociallogin, form=None):
-        # Solo se llama cuando Google crea una cuenta nueva.
+        """
+        Crea la cuenta nueva y lo marca en la sesión (GOOGLE_NEW_ACCOUNT_KEY).
+        Solo se llama cuando Google crea una cuenta nueva.
+        """
         user = super().save_user(request, sociallogin, form)
         request.session[GOOGLE_NEW_ACCOUNT_KEY] = True
         return user
@@ -77,6 +92,7 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
 
 
 def _mark_verified(user, email):
+    """Marca ``email`` como verificado para ``user`` en allauth, creándolo si no existe."""
     record = EmailAddress.objects.filter(user=user, email__iexact=email).first()
     if record is None:
         EmailAddress.objects.create(

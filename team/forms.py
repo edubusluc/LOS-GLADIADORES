@@ -1,3 +1,4 @@
+"""Formulario de alta y edición de equipos."""
 from django import forms
 from django.utils.translation import gettext as _
 from core.images import clean_photo_field
@@ -6,11 +7,19 @@ from core.validators import plain_text
 from .models import Team
 
 class Teamform (forms.ModelForm):
+    """
+    Alta y edición de un equipo. Categoría, nacionalidad y división son obligatorias, y el
+    nombre no puede repetirse en la misma división del club.
+    """
     class Meta:
         model = Team
         fields = ['name', 'gender', 'country', 'division', 'location', 'photo', 'in_group']
 
     def __init__(self, *args, club=None, **kwargs):
+        """
+        ``club`` es el club activo. Un equipo nuevo se propone en el grupo y con la categoría,
+        nacionalidad y división del equipo propio (se pueden cambiar).
+        """
         self.club = club
         super().__init__(*args, **kwargs)
         if self.instance.pk is None and not self.is_bound:
@@ -29,13 +38,15 @@ class Teamform (forms.ModelForm):
             self.fields[name].choices = [("", _("Elige una opción"))] + list(Team._meta.get_field(name).choices)
 
     def clean_photo(self):
-        # Se valida, reduce y pasa a WebP antes de guardarla (core/images.py).
+        """Valida, reduce y pasa a WebP la foto antes de guardarla (core/images.py)."""
         return clean_photo_field(self)
 
     def clean(self):
-        # No puede haber dos equipos del club con el mismo nombre (sin distinguir mayúsculas,
-        # tildes ni signos) en la misma división. Los equipos antiguos sin división cuentan
-        # para todas. Los nombres solo parecidos se avisan (ver core/similarity.py).
+        """
+        No puede haber dos equipos del club con el mismo nombre (sin distinguir mayúsculas,
+        tildes ni signos) en la misma división. Los equipos antiguos sin división cuentan
+        para todas. Los nombres solo parecidos se avisan (ver core/similarity.py).
+        """
         cleaned = super().clean()
         name, division = cleaned.get('name'), cleaned.get('division')
         if name and division:

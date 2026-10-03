@@ -1,3 +1,4 @@
+"""Comando que envía los informes de convocatoria pendientes y reintenta los fallidos (pensado para cron)."""
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -6,10 +7,15 @@ from match.notifications import MAX_ATTEMPTS, deliver, due_deliveries
 
 
 class Command(BaseCommand):
+    """Envía los informes de convocatoria pendientes; falla si alguno se da por perdido."""
     help = ("Envía los informes de convocatoria pendientes y reintenta los que fallaron "
             f"(como mucho EMAIL_MAX_PER_RUN por pasada; tras {MAX_ATTEMPTS} intentos se dan por fallidos).")
 
     def handle(self, *args, **options):
+        """Envía como mucho EMAIL_MAX_PER_RUN informes pendientes y muestra el resultado de cada uno.
+
+        Termina con CommandError si alguno ha agotado los reintentos, para que se note en el cron.
+        """
         pending = due_deliveries(limit=settings.EMAIL_MAX_PER_RUN)
         if not pending:
             self.stdout.write("No hay informes pendientes de enviar.")

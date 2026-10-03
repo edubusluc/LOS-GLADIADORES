@@ -1,3 +1,4 @@
+"""Rutas del back-office (espacio de nombres ``backoffice``)."""
 from django.urls import path
 
 from . import views

@@ -1,3 +1,7 @@
+"""
+Operaciones de negocio sobre clubes que usan varias vistas: crear un club y aceptar
+una invitación. Cada una se ejecuta en una transacción.
+"""
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -18,6 +22,7 @@ def create_club(name, location, admin_user, gender="", country="", division=""):
 
 
 class InvitationError(Exception):
+    """La invitación no se puede aceptar; el mensaje explica el motivo al usuario."""
     pass
 
 

@@ -1,3 +1,4 @@
+"""Formularios de alta de club, registro de usuario e invitación de miembros."""
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
@@ -22,6 +23,7 @@ def password_min_length():
 
 
 class ClubForm(forms.Form):
+    """Datos del club nuevo y de su equipo propio."""
     name = forms.CharField(label=_("Nombre del club"), max_length=100)
     location = forms.CharField(label=_("Localización"), max_length=100)
     gender = forms.ChoiceField(label=_("Categoría"), choices=[("", _("Elige una opción"))] + Team.GENDERS,
@@ -30,11 +32,16 @@ class ClubForm(forms.Form):
     division = forms.ChoiceField(label=_("División"), choices=[("", _("Elige una opción"))] + Team.DIVISIONS)
 
     def __init__(self, *args, **kwargs):
+        """Los nombres solo admiten texto plano (core.validators)."""
         super().__init__(*args, **kwargs)
         plain_text(self, "name", "location")
 
 
 class SignUpForm(UserCreationForm):
+    """
+    Registro de una cuenta con usuario, email y contraseña (al registrar un club o desde
+    una invitación). El email no puede estar ya en uso ni bloqueado.
+    """
     email = forms.EmailField(
         label=_("Email"), help_text=_("Te enviaremos la confirmación del registro. También puedes usarlo para iniciar sesión."),
     )
@@ -44,6 +51,7 @@ class SignUpForm(UserCreationForm):
         fields = ("username", "email")
 
     def __init__(self, *args, **kwargs):
+        """Traduce las etiquetas y añade la lista de requisitos de la contraseña."""
         super().__init__(*args, **kwargs)
         self.fields["username"].label = _("Usuario")
         self.fields["username"].help_text = _("Letras, números y @ . + - _ (máximo 150).")
@@ -57,6 +65,7 @@ class SignUpForm(UserCreationForm):
         self.fields["password2"].help_text = ""
 
     def clean_email(self):
+        """Normaliza el email a minúsculas y rechaza los que ya tienen cuenta o están bloqueados."""
         email = self.cleaned_data["email"].strip().lower()
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError(gettext("Ya hay una cuenta con este email: inicia sesión con ella."))
@@ -73,10 +82,12 @@ class InviteMemberForm(forms.Form):
     )
 
     def __init__(self, *args, club=None, **kwargs):
+        """``club``: club al que se invita (para comprobar si el email ya es miembro)."""
         self.club = club
         super().__init__(*args, **kwargs)
 
     def clean_email(self):
+        """Normaliza el email y rechaza los de miembros del club o bloqueados."""
         email = self.cleaned_data["email"].strip().lower()
         if Membership.objects.filter(club=self.club, user__email__iexact=email).exists():
             raise forms.ValidationError(gettext("Ese email ya pertenece a un miembro del club."))

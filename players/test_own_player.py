@@ -257,6 +257,10 @@ class BackofficePhotoTests(MediaMixin, TestCase):
         self.assertContains(response, "Revisión manual")
         self.assertEqual(self.check.status, PhotoCheck.UNCHECKED)
 
+    def test_approving_unknown_photo_is_404(self):
+        response = self.client.post(reverse("backoffice:photo_approve", args=["PHC" + "x" * 12]))
+        self.assertEqual(response.status_code, 404)
+
     def test_not_staff_gets_404(self):
         self.client.force_login(self.captain)
         self.assertEqual(self.client.get(reverse("backoffice:photo_list")).status_code, 404)

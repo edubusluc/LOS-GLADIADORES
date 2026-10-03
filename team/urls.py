@@ -1,3 +1,4 @@
+"""URLs de equipos."""
 from django.urls import path
 from .views import list_team, create_team, edit_team, manage_teams
 

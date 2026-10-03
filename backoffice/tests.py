@@ -631,6 +631,14 @@ class ImportTests(TestCase):
         self.assertRedirects(response, reverse("backoffice:import_map", args=[job.public_id]))
         return job
 
+    def test_non_numeric_club_shows_error_instead_of_500(self):
+        f = self.upload("datos.csv", "Nombre\nAna\n".encode("utf-8-sig"), content_type="text/csv")
+        response = self.client.post(reverse("backoffice:import_list"),
+                                    {"entity": "players", "mode": "create", "club": "abc", "file": f})
+        self.assertEqual(response.status_code, 302)  # vuelve a la lista con el mensaje de error
+        from .models import ImportJob
+        self.assertFalse(ImportJob.objects.exists())
+
     def test_players_full_flow_with_auto_mapping_and_undo(self):
         existing = Player.objects.create(club=self.club, name="Ana", last_name="García", position="Derecha")
         Player.objects.create(club=self.other, name="Luis", last_name="Pérez")
@@ -702,6 +710,7 @@ class ImportTests(TestCase):
         for content in ["", "name;last_name\n"]:
             f = self.upload("x.csv", content.encode(), content_type="text/csv")
             self.client.post(reverse("backoffice:import_list"), {"entity": "players", "mode": "create", "club": self.club.pk, "file": f})
+        from .models import ImportJob
         self.assertFalse(ImportJob.objects.exists())
 
     def test_template(self):

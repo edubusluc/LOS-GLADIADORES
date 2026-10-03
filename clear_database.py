@@ -61,6 +61,7 @@ def drop_all_tables():
 
 
 def _files(folder):
+    """Rutas de todos los ficheros de ``folder`` en el almacenamiento de fotos, recorriendo subcarpetas."""
     try:
         dirs, files = default_storage.listdir(folder)
     except FileNotFoundError:
@@ -72,6 +73,7 @@ def _files(folder):
 
 
 def delete_uploaded_photos():
+    """Borra las fotos subidas (carpetas de PHOTO_DIRS) y devuelve cuántas se han borrado."""
     deleted = 0
     for folder in PHOTO_DIRS:
         for name in _files(folder):

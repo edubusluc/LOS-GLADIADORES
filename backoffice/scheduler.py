@@ -41,6 +41,10 @@ HEARTBEAT_STALE_AFTER = datetime.timedelta(minutes=10)
 
 
 def next_run(spec, after):
+    """
+    Siguiente ejecución programada (en UTC) posterior a `after`, calculada con la hora de
+    SCHEDULER_TIME_ZONE. None si el proceso no tiene horario (solo a mano).
+    """
     if not spec.schedule:
         return None  # solo a mano
     local = after.astimezone(ZoneInfo(SCHEDULER_TIME_ZONE))
@@ -59,6 +63,7 @@ def sync_jobs(now=None):
 
 
 def _clip(text):
+    """Recorta un texto a MAX_OUTPUT caracteres, indicando cuántos se han quitado."""
     if len(text) <= MAX_OUTPUT:
         return text
     return text[:MAX_OUTPUT] + f"\n… (salida recortada, {len(text) - MAX_OUTPUT} caracteres más)"
@@ -88,20 +93,27 @@ class Heartbeat:
     """Hilo que apunta cada HEARTBEAT_EVERY segundos que la ejecución sigue viva."""
 
     def __init__(self, job, every=HEARTBEAT_EVERY):
+        """Prepara el hilo (daemon) que apuntará la señal de vida de `job` cada `every` segundos."""
         self.job = job
         self.every = every
         self.stopped = threading.Event()
         self.thread = threading.Thread(target=self._beat, name=f"heartbeat-{job.name}", daemon=True)
 
     def __enter__(self):
+        """Arranca el hilo de señales de vida."""
         self.thread.start()
         return self
 
     def __exit__(self, *exc):
+        """Para el hilo y espera a que termine."""
         self.stopped.set()
         self.thread.join()
 
     def _beat(self):
+        """
+        Bucle del hilo: actualiza heartbeat_at mientras el proceso siga marcado como en
+        ejecución. Al terminar cierra sus conexiones a la base de datos.
+        """
         try:
             while not self.stopped.wait(self.every):
                 ScheduledJob.objects.filter(pk=self.job.pk, running_since__isnull=False).update(heartbeat_at=timezone.now())
@@ -118,6 +130,7 @@ class LiveOutput(io.TextIOBase):
     """
 
     def __init__(self, run, every=1.0):
+        """Salida vacía de `run`, que se guarda como mucho cada `every` segundos."""
         self.run = run
         self.every = every
         self.parts = []
@@ -126,9 +139,14 @@ class LiveOutput(io.TextIOBase):
         self.clipped = False
 
     def writable(self):
+        """Siempre se puede escribir (lo exige io.TextIOBase)."""
         return True
 
     def write(self, text):
+        """
+        Añade texto a la salida (recortándola en MAX_OUTPUT) y la guarda si ha pasado el
+        intervalo desde la última vez.
+        """
         if self.clipped or not text:
             return len(text or "")
         if self.size + len(text) > MAX_OUTPUT:
@@ -146,9 +164,11 @@ class LiveOutput(io.TextIOBase):
         self.write(f"[{stamp}] {message}\n")
 
     def getvalue(self):
+        """Toda la salida acumulada hasta ahora."""
         return "".join(self.parts)
 
     def save(self):
+        """Guarda la salida acumulada en el JobRun (desde otro hilo si se llama desde código asíncrono)."""
         self.saved_at = time.monotonic()
         if _in_event_loop():
             # Hay procesos que escriben su salida desde código asíncrono (p. ej. Playwright
@@ -161,9 +181,11 @@ class LiveOutput(io.TextIOBase):
             self._save_output(self.getvalue())
 
     def _save_output(self, output):
+        """Escribe la salida en la fila del JobRun sin tocar el resto de campos."""
         JobRun.objects.filter(pk=self.run.pk).update(output=output)
 
     def _save_in_thread(self, output):
+        """Guarda la salida desde un hilo aparte y cierra sus conexiones; un fallo solo se registra."""
         try:
             self._save_output(output)
         except Exception:
@@ -173,6 +195,7 @@ class LiveOutput(io.TextIOBase):
 
 
 def _in_event_loop():
+    """True si se está dentro de un bucle de asyncio en marcha (ahí Django no deja usar la BD)."""
     try:
         asyncio.get_running_loop()
     except RuntimeError:
@@ -257,6 +280,7 @@ def start_manual_run(job, user, args=()):
         return run
 
     def target():
+        """Ejecuta el proceso en el hilo y cierra sus conexiones a la base de datos al terminar."""
         try:
             execute_run(run)
         finally:

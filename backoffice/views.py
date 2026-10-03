@@ -1,3 +1,10 @@
+"""
+Vistas del back-office del personal de Zyra.
+
+Dashboard y carga, clubes, usuarios, procesos programados, fotos subidas y emails
+bloqueados son para el personal (staff_required); la consola SQL y la importación de
+datos, solo para superusuarios (superuser_required).
+"""
 import csv
 import datetime
 import re
@@ -39,6 +46,7 @@ PAGE_SIZE = 25
 
 
 def _page(request, qs):
+    """Página pedida en ?page= de `qs`, de PAGE_SIZE en PAGE_SIZE."""
     return Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
 
 
@@ -50,6 +58,10 @@ def _extra(request, *keys):
 
 @staff_required
 def dashboard(request):
+    """
+    Portada del back-office (solo personal). Vuelca antes las métricas pendientes y
+    muestra las cifras generales, los procesos fallidos en 24 h y si el lanzador va con retraso.
+    """
     flush_metrics()
     day_ago = timezone.now() - datetime.timedelta(hours=24)
     return render(request, "backoffice/dashboard.html", {
@@ -61,6 +73,7 @@ def dashboard(request):
 
 @staff_required
 def load(request):
+    """Carga de la web y usuarios conectados (solo personal), con las métricas recién volcadas."""
     flush_metrics()
     return render(request, "backoffice/load.html", {
         "section": "load", "online": online_users(), "online_minutes": ONLINE_MINUTES,
@@ -78,6 +91,10 @@ CLUB_ORDERINGS = {
 
 @staff_required
 def club_list(request):
+    """
+    Lista de clubes (solo personal) con sus contadores. Filtros por GET: ``q`` (nombre o
+    slug), ``activity`` (active/inactive según AT_RISK_DAYS) y ``order`` (CLUB_ORDERINGS).
+    """
     q = request.GET.get("q", "").strip()
     activity = request.GET.get("activity", "")
     order = request.GET.get("order", "recent")
@@ -104,6 +121,7 @@ def club_list(request):
 
 @staff_required
 def club_detail(request, club_id):
+    """Ficha de un club (solo personal): miembros, jugadores, partidos, invitaciones y emails bloqueados."""
     club = get_object_or_404(annotate_clubs(Club.objects.all()), public_id=club_id)
     today = timezone.localdate()
     matches = Match.objects.filter(club=club).select_related("local", "visiting")
@@ -161,6 +179,10 @@ def club_toggle_suspended(request, club_id):
 
 @staff_required
 def user_list(request):
+    """
+    Lista de usuarios (solo personal). Filtros por GET: ``q`` (usuario, email o nombre) y
+    ``kind`` (staff, google, no_club o inactive: sin entrar en 30 días).
+    """
     q = request.GET.get("q", "").strip()
     kind = request.GET.get("kind", "")
 
@@ -193,6 +215,10 @@ def user_list(request):
 
 @staff_required
 def user_detail(request, user_id):
+    """
+    Ficha de un usuario (solo personal): clubes, formas de entrar, invitaciones, fotos en uso
+    y fotos que se le han eliminado.
+    """
     member = get_object_or_404(User, pk=user_id)
     providers = SocialAccount.objects.filter(user=member).values_list("provider", flat=True)
     login_methods = ([_("Contraseña")] if member.has_usable_password() else []) + [p.capitalize() for p in providers]
@@ -213,6 +239,7 @@ def user_detail(request, user_id):
 # ---------- Procesos programados ----------
 
 def _last_runs(jobs):
+    """Última ejecución de cada proceso, indexada por el id del proceso."""
     last = {}
     for run in JobRun.objects.filter(job__in=jobs).order_by("job_id", "-started_at").select_related("job"):
         last.setdefault(run.job_id, run)
@@ -229,6 +256,7 @@ def _back(request):
 
 @staff_required
 def job_list(request):
+    """Lista de procesos programados con su última ejecución y las ejecuciones recientes (solo personal)."""
     jobs = list(sync_jobs())
     last = _last_runs(jobs)
     day_ago = timezone.now() - datetime.timedelta(hours=24)
@@ -243,6 +271,7 @@ def job_list(request):
 
 @staff_required
 def job_detail(request, name):
+    """Ficha de un proceso con sus ejecuciones paginadas (solo personal)."""
     sync_jobs()
     job = get_object_or_404(ScheduledJob, name=name)
     runs = job.runs.select_related("triggered_by")
@@ -254,6 +283,7 @@ def job_detail(request, name):
 
 @staff_required
 def run_list(request):
+    """Log de ejecuciones de todos los procesos (solo personal), filtrable por ``status`` y ``job``."""
     status = request.GET.get("status", "")
     job_name = request.GET.get("job", "")
     runs = JobRun.objects.select_related("job", "triggered_by")
@@ -269,6 +299,7 @@ def run_list(request):
 
 @staff_required
 def run_detail(request, run_id):
+    """Detalle de una ejecución (solo personal); la salida en directo la pide la página a run_live."""
     run = get_object_or_404(JobRun.objects.select_related("job", "triggered_by"), public_id=run_id)
     return render(request, "backoffice/run_detail.html", {"section": "jobs", "run": run})
 
@@ -276,6 +307,7 @@ def run_detail(request, run_id):
 @staff_required
 @require_POST
 def job_toggle(request, name):
+    """Activa o pone en pausa un proceso (solo personal, POST) y vuelve a la página de origen."""
     job = get_object_or_404(ScheduledJob, name=name)
     job.enabled = not job.enabled
     job.save(update_fields=["enabled"])
@@ -289,6 +321,11 @@ def job_toggle(request, name):
 @staff_required
 @require_POST
 def job_run_now(request, name):
+    """
+    "Ejecutar ahora" (solo personal, POST). Valida los datos (``params``) y opciones del
+    proceso que llegan en el formulario y lo lanza en segundo plano. Redirige a la página
+    de la ejecución, o de vuelta con un error si algún dato no es válido o ya estaba en marcha.
+    """
     job = get_object_or_404(ScheduledJob, name=name)
     args = []
     for param in job.spec.params if job.spec else ():
@@ -349,12 +386,21 @@ def _csv_response(result, filename):
 
 
 def _export_name(saved):
+    """Nombre del CSV exportado: el de la consulta guardada (o 'consulta') con la fecha y hora."""
     base = slugify(saved.name) if saved else "consulta"
     return f"zyra-{base}-{timezone.localtime():%Y%m%d-%H%M}.csv"
 
 
 @superuser_required
 def sql_console(request):
+    """
+    Consola SQL de solo lectura (solo superusuarios).
+
+    GET muestra la consola (con la consulta guardada de ``?saved=`` si se indica). POST
+    según ``action``: ``run`` ejecuta la consulta y ``export`` la descarga en CSV (ambas
+    quedan en QueryLog); ``save`` la valida y la guarda o actualiza por nombre, y redirige
+    a la consola con ella cargada.
+    """
     saved = None
     if request.GET.get("saved"):
         saved = SavedQuery.objects.filter(public_id=request.GET["saved"]).first()
@@ -405,6 +451,7 @@ def sql_console(request):
 @superuser_required
 @require_POST
 def sql_delete_saved(request, query_id):
+    """Borra una consulta guardada (solo superusuarios, POST) y vuelve a la consola."""
     saved = get_object_or_404(SavedQuery, public_id=query_id)
     saved.delete()
     messages.success(request, _("Consulta «%(name)s» borrada.") % {"name": saved.name})
@@ -413,6 +460,7 @@ def sql_delete_saved(request, query_id):
 
 @superuser_required
 def sql_log(request):
+    """Auditoría de las consultas lanzadas o exportadas desde la consola (solo superusuarios)."""
     return render(request, "backoffice/sql_log.html", {
         "section": "sql", "page": _page(request, QueryLog.objects.select_related("user")),
     })
@@ -425,9 +473,17 @@ PREVIEW_ROWS = 100
 
 @superuser_required
 def import_list(request):
+    """
+    Importación de datos, primer paso (solo superusuarios).
+
+    GET muestra el formulario y las importaciones anteriores. POST recibe objeto, modo,
+    club y fichero CSV, comprueba que se puede leer, crea el ImportJob en borrador con un
+    emparejamiento de columnas propuesto y redirige a import_map.
+    """
     if request.method == "POST":
         entity_key, mode = request.POST.get("entity"), request.POST.get("mode")
-        club = Club.objects.filter(pk=request.POST.get("club")).first()
+        club_id = request.POST.get("club", "")
+        club = Club.objects.filter(pk=club_id).first() if club_id.isdigit() else None
         upload = request.FILES.get("file")
         error = None
         if entity_key not in importer.ENTITIES or mode not in dict(importer.MODES) or club is None:
@@ -457,11 +513,17 @@ def import_list(request):
 
 
 def _draft(job_id):
+    """ImportJob en borrador con ese id público, o 404 (ya confirmada o deshecha)."""
     return get_object_or_404(ImportJob.objects.select_related("club"), public_id=job_id, status=ImportJob.DRAFT)
 
 
 @superuser_required
 def import_map(request, job_id):
+    """
+    Emparejamiento de columnas del fichero con los campos (solo superusuarios). GET muestra
+    las columnas y unas filas de muestra; POST guarda el emparejamiento y redirige a la
+    previsualización.
+    """
     job = _draft(job_id)
     entity = job.entity_spec
     headers, rows = importer.read_csv(job.content)
@@ -481,18 +543,25 @@ def import_map(request, job_id):
 
 
 def _show(value):
+    """Valor para mostrar en la previsualización (sí/no en lugar de True/False)."""
     if isinstance(value, bool):
         return _("sí") if value else _("no")
     return value
 
 
 def _validate(job):
+    """Valida todas las filas del fichero de la importación sin guardar nada."""
     headers, rows = importer.read_csv(job.content)
     return importer.process(job.entity_spec, job.club, job.mode, headers, rows, job.mapping)
 
 
 @superuser_required
 def import_preview(request, job_id):
+    """
+    Previsualización de una importación (solo superusuarios): valida todas las filas y
+    muestra las que tienen errores (o, si no hay, las primeras PREVIEW_ROWS). Con
+    ``?errors=csv`` descarga los errores en CSV. Si falla el fichero entero, vuelve a import_map.
+    """
     job = _draft(job_id)
     try:
         results = _validate(job)
@@ -527,6 +596,10 @@ def import_preview(request, job_id):
 @superuser_required
 @require_POST
 def import_confirm(request, job_id):
+    """
+    Confirma una importación (solo superusuarios, POST). Si alguna fila falla no se guarda
+    nada y vuelve a la previsualización; si va bien, marca la importación como hecha.
+    """
     job = _draft(job_id)
     try:
         results = importer.run_import(job)
@@ -549,6 +622,7 @@ def import_confirm(request, job_id):
 @superuser_required
 @require_POST
 def import_undo(request, job_id):
+    """Deshace una importación (solo superusuarios, POST): borra lo creado y restaura lo cambiado."""
     job = get_object_or_404(ImportJob, public_id=job_id, status=ImportJob.DONE)
     deleted, restored = importer.undo_import(job)
     job.status, job.undone_at = ImportJob.UNDONE, timezone.now()
@@ -561,6 +635,7 @@ def import_undo(request, job_id):
 
 @superuser_required
 def import_template(request, entity):
+    """Descarga la plantilla CSV de un objeto importable (solo superusuarios); 404 si no existe."""
     spec = importer.ENTITIES.get(entity)
     if spec is None:
         raise Http404
@@ -626,6 +701,7 @@ def _remove_and_notify(request, checks, reason=""):
 
 
 def _report_removal(request, removed, notified, not_notified):
+    """Mensajes para el personal con el resultado de eliminar fotos."""
     if not removed:
         messages.info(request, _("Esa foto ya no se usaba."))
         return
@@ -638,6 +714,11 @@ def _report_removal(request, removed, notified, not_notified):
 
 @staff_required
 def photo_list(request):
+    """
+    Revisión de fotos subidas (solo personal), filtradas por estado (``status``, por
+    defecto sin validar). Muestra cuántas fotos se le han eliminado ya a cada usuario y el
+    estado de Rekognition.
+    """
     status = request.GET.get("status", PhotoCheck.UNCHECKED)
     if status not in PHOTO_FILTERS:
         status = PhotoCheck.UNCHECKED
@@ -675,6 +756,10 @@ def photo_list(request):
 @staff_required
 @require_POST
 def photo_delete(request, check_id):
+    """
+    Elimina una foto (solo personal, POST) con el motivo indicado, avisa por email a su
+    dueño y vuelve a la página de origen.
+    """
     check = get_object_or_404(PhotoCheck.objects.select_related("team", "player__user", "uploaded_by", "club"), public_id=check_id)
     _report_removal(request, *_remove_and_notify(request, [check], request.POST.get("reason", "").strip()[:500]))
     return _back_to(request, "backoffice:photo_list")
@@ -684,7 +769,9 @@ def photo_delete(request, check_id):
 @require_POST
 def photo_approve(request, check_id):
     """El personal da por buena una foto pendiente: queda «Validada», como las que aprueba Rekognition."""
-    PhotoCheck.objects.filter(public_id=check_id).update(status=PhotoCheck.APPROVED)
+    check = get_object_or_404(PhotoCheck, public_id=check_id)
+    check.status = PhotoCheck.APPROVED
+    check.save(update_fields=["status"])
     messages.success(request, _("Foto marcada como validada."))
     return _back_to(request, "backoffice:photo_list")
 
@@ -718,6 +805,7 @@ def user_toggle_active(request, user_id):
 
 
 def _back_to(request, default):
+    """Vuelve a la página de ``next`` si es de este sitio; si no, a la vista `default`."""
     target = request.POST.get("next", "")
     if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
         return redirect(target)
@@ -728,6 +816,7 @@ def _back_to(request, default):
 
 @staff_required
 def blocked_email_list(request):
+    """Lista de emails bloqueados (solo personal), con búsqueda por ``q``."""
     q = request.GET.get("q", "").strip()
     emails = BlockedEmail.objects.select_related("club", "blocked_by")
     if q:
@@ -744,6 +833,7 @@ def blocked_email_list(request):
 @staff_required
 @require_POST
 def blocked_email_add(request):
+    """Bloquea un email a mano (solo personal, POST) y vuelve a la lista."""
     email = request.POST.get("email", "").strip()
     if "@" not in email:
         messages.error(request, _("Escribe un email válido."))
@@ -757,6 +847,7 @@ def blocked_email_add(request):
 @staff_required
 @require_POST
 def blocked_email_delete(request, blocked_id):
+    """Desbloquea un email (solo personal, POST) y vuelve a la página de origen."""
     blocked = get_object_or_404(BlockedEmail, public_id=blocked_id)
     blocked.delete()
     messages.success(request, _("%(email)s desbloqueado.") % {"email": blocked.original_email})

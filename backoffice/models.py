@@ -1,3 +1,7 @@
+"""
+Modelos del back-office: actividad y carga de la web, procesos programados y sus
+ejecuciones, consola SQL (consultas guardadas y auditoría) e importaciones de datos.
+"""
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -20,6 +24,7 @@ class UserActivity(models.Model):
         verbose_name_plural = _("actividad de usuarios")
 
     def __str__(self):
+        """Usuario y fecha de su última petición."""
         return f"{self.user} ({self.last_seen:%Y-%m-%d %H:%M})"
 
 
@@ -39,9 +44,11 @@ class RequestMetric(models.Model):
 
     @property
     def avg_ms(self):
+        """Tiempo medio por petición en ms (0 si no hubo peticiones)."""
         return round(self.total_ms / self.requests) if self.requests else 0
 
     def __str__(self):
+        """Minuto y número de peticiones."""
         return f"{self.minute:%Y-%m-%d %H:%M}: {self.requests}"
 
 
@@ -72,10 +79,12 @@ class ScheduledJob(models.Model):
 
     @property
     def spec(self):
+        """Definición del proceso en backoffice/jobs.py (JobSpec), o None si ya no existe."""
         from .jobs import get_spec
         return get_spec(self.name)
 
     def __str__(self):
+        """Nombre del proceso."""
         return self.name
 
 
@@ -111,11 +120,13 @@ class JobRun(PublicIdModel):
 
     @property
     def duration(self):
+        """Cuánto duró la ejecución (timedelta), o None si aún no ha terminado."""
         if self.finished_at:
             return self.finished_at - self.started_at
         return None
 
     def __str__(self):
+        """Proceso, hora de inicio y estado."""
         return f"{self.job} {self.started_at:%Y-%m-%d %H:%M} ({self.get_status_display()})"
 
 
@@ -137,6 +148,7 @@ class SavedQuery(PublicIdModel):
         verbose_name_plural = _("consultas guardadas")
 
     def __str__(self):
+        """Nombre de la consulta."""
         return self.name
 
 
@@ -156,6 +168,7 @@ class QueryLog(models.Model):
         verbose_name_plural = _("consultas ejecutadas")
 
     def __str__(self):
+        """Usuario y hora de la consulta."""
         return f"{self.user} {self.created_at:%Y-%m-%d %H:%M}"
 
 
@@ -189,13 +202,16 @@ class ImportJob(PublicIdModel):
 
     @property
     def entity_spec(self):
+        """Definición del objeto importado (importer.Entity), o None si ya no existe."""
         from .importer import ENTITIES
         return ENTITIES.get(self.entity)
 
     @property
     def mode_label(self):
+        """Texto del modo de importación (crear, actualizar o ambos)."""
         from .importer import MODES
         return dict(MODES).get(self.mode, self.mode)
 
     def __str__(self):
+        """Fichero, objeto importado y estado."""
         return f"{self.filename} → {self.entity} ({self.get_status_display()})"

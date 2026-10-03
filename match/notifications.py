@@ -28,13 +28,17 @@ logger = logging.getLogger(__name__)
 
 
 def report_filename(match):
-    # Solo letras, números, - y _: los nombres de los equipos los escribe el capitán y unas
-    # comillas o un punto y coma romperían la cabecera Content-Disposition de la descarga.
+    """Nombre del PDF del informe, p. ej. 'convocatoria-20250301-Local-vs-Visitante.pdf'.
+
+    Solo deja letras, números, - y _: los nombres de los equipos los escribe el capitán y unas
+    comillas o un punto y coma romperían la cabecera Content-Disposition de la descarga.
+    """
     name = f"convocatoria-{match.start_date:%Y%m%d}-{match.local}-vs-{match.visiting}".replace(" ", "_")
     return re.sub(r"[^\w-]", "", name) + ".pdf"
 
 
 def admin_emails(club):
+    """Emails (sin repetir y ordenados) de los capitanes activos del club."""
     return sorted({
         m.user.email for m in Membership.objects.filter(club=club, role=Membership.ADMIN).select_related("user")
         if m.user.email and m.user.is_active
@@ -108,6 +112,7 @@ def send_call_report(call, sender=None):
 
 
 def due_deliveries(now=None, limit=None):
+    """Envíos pendientes cuyo próximo intento ya ha llegado, más antiguos primero (como mucho ``limit``)."""
     now = now or timezone.now()
     due = (ReportDelivery.objects.filter(status=ReportDelivery.PENDING, next_attempt_at__lte=now)
            .select_related("call__match__club", "call__match__local", "call__match__visiting")
@@ -123,6 +128,7 @@ def _claim(delivery, now):
 
 
 def _failed(delivery, error, now):
+    """Anota un intento fallido y programa el siguiente; tras MAX_ATTEMPTS lo da por fallido."""
     delivery.attempts += 1
     delivery.last_error = str(error)[:2000] or error.__class__.__name__
     if delivery.attempts >= MAX_ATTEMPTS:
@@ -136,6 +142,7 @@ def _failed(delivery, error, now):
 
 
 def _sent(delivery, now):
+    """Marca el envío como enviado."""
     delivery.attempts += 1
     delivery.status = ReportDelivery.SENT
     delivery.sent_at = now
@@ -194,6 +201,7 @@ def deliver(deliveries, now=None):
 
 
 def _close(connection):
+    """Cierra la conexión SMTP si existe, ignorando errores."""
     if connection is not None:
         try:
             connection.close()

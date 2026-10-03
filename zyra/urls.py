@@ -1,18 +1,21 @@
 """
-URL configuration for zyra project.
+Mapa de URLs del proyecto.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+- ADMIN_URL: Django admin (solo superusuarios).
+- backoffice/: back-office del personal de Zyra (app backoffice).
+- "" (raíz): portada (core.views.home).
+- players/: jugadores (app players).
+- match/: partidos (app match).
+- data_analyse/: estadísticas (app data_analyse).
+- team/: equipos (app team).
+- callLog/: registro de convocatorias (app callLog).
+- penalty/: sanciones (app penalty).
+- core/: inicio de sesión, alta de club, miembros e invitaciones (app core).
+- accounts/: cuentas de django-allauth (inicio de sesión con Google, contraseñas...).
+- i18n/ y jsi18n/: selector de idioma y traducciones para el JavaScript.
+
+En local también sirve las fotos subidas (MEDIA_URL). Registra el conversor ``<pid:...>``
+y las vistas de error 403 y 404.
 """
 from django.conf import settings
 from django.conf.urls.static import static

@@ -44,20 +44,27 @@ def _models():
 
 
 def _counts(alias):
+    """Número de filas de cada modelo en la base de datos ``alias``."""
     return {model._meta.label: model._default_manager.using(alias).count() for model in _models()}
 
 
 class Command(BaseCommand):
+    """Copia un SQLite de Zyra a la base de datos configurada y verifica la copia."""
     help = ("Copia los datos de un fichero SQLite de Zyra a la base de datos configurada (PostgreSQL) "
             "y comprueba que el número de filas de cada tabla coincide.")
 
     def add_arguments(self, parser):
+        """Ruta del SQLite de origen y opción --any-target."""
         parser.add_argument("sqlite_path", nargs="?", default=str(settings.BASE_DIR / "db.sqlite3"),
                             help="Fichero SQLite de origen (por defecto, db.sqlite3 junto a manage.py).")
         parser.add_argument("--any-target", action="store_true",
                             help="Permite un destino que no sea PostgreSQL (solo para pruebas).")
 
     def handle(self, *args, sqlite_path, any_target=False, **options):
+        """
+        Valida origen y destino, copia los datos y comprueba los recuentos. La conexión
+        temporal al SQLite se cierra y se quita al terminar, aunque falle.
+        """
         target = connections[DEFAULT_DB_ALIAS]
         path = Path(sqlite_path).resolve()
         if not path.is_file():
@@ -83,6 +90,7 @@ class Command(BaseCommand):
             del connections.databases[SOURCE]
 
     def _add_source(self, path):
+        """Añade el SQLite de origen como conexión temporal (alias SOURCE)."""
         databases = {
             DEFAULT_DB_ALIAS: copy.deepcopy(settings.DATABASES[DEFAULT_DB_ALIAS]),
             SOURCE: {"ENGINE": "django.db.backends.sqlite3", "NAME": str(path)},
@@ -92,6 +100,7 @@ class Command(BaseCommand):
     def _check_migrations(self):
         """Origen y destino deben tener aplicadas todas las migraciones del código."""
         def pending(alias):
+            """Migraciones del código sin aplicar en la base de datos ``alias``."""
             executor = MigrationExecutor(connections[alias])
             plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
             return [f"{m.app_label}.{m.name}" for m, _ in plan]
@@ -109,6 +118,7 @@ class Command(BaseCommand):
             )
 
     def _check_target_empty(self):
+        """Se para si el destino ya tiene alguna fila."""
         filled = {label: n for label, n in _counts(DEFAULT_DB_ALIAS).items() if n}
         if filled:
             detail = ", ".join(f"{label} ({n})" for label, n in sorted(filled.items())[:8])
@@ -116,6 +126,7 @@ class Command(BaseCommand):
                                "(recién creada y con migrate).")
 
     def _copy(self):
+        """Exporta el origen con dumpdata a un JSON temporal y lo carga con loaddata en el destino."""
         fd, dump = tempfile.mkstemp(suffix=".json", prefix="zyra-copia-")
         os.close(fd)
         try:
@@ -128,6 +139,10 @@ class Command(BaseCommand):
             os.remove(dump)
 
     def _verify(self, source_counts):
+        """
+        Compara las filas de cada tabla en origen y destino, muestra la tabla y lanza
+        CommandError si alguna no coincide.
+        """
         target_counts = _counts(DEFAULT_DB_ALIAS)
         wrong = []
         self.stdout.write("")

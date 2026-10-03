@@ -1,3 +1,4 @@
+"""Modelo de equipo: el propio de cada club y sus rivales."""
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from core.images import connect_photo_cleanup, team_photo_path
@@ -7,6 +8,10 @@ from core.models import Club
 # Create your models here.
 
 class Team(PublicIdModel):
+    """
+    Equipo de un club. Cada club tiene un equipo propio (``is_own``), al que pertenecen sus
+    jugadores; el resto son rivales. ``in_group`` marca los equipos de su grupo.
+    """
     PUBLIC_ID_PREFIX = "TEA"
     MALE = "M"
     FEMALE = "F"
@@ -45,12 +50,14 @@ class Team(PublicIdModel):
         ]
 
     def save(self, *args, **kwargs):
+        """Guarda el equipo y pasa su categoría (masculino/femenino) a sus jugadores."""
         super().save(*args, **kwargs)
         # Los jugadores tienen la categoría (masculino/femenino) de su equipo.
         if self.gender:
             self.team.exclude(gender=self.gender).update(gender=self.gender)
 
     def __str__(self):
+        """Nombre del equipo."""
         return self.name
 
 

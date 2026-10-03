@@ -46,11 +46,15 @@ def split_category(text):
 
 
 def _snp_tokens(name):
-    # SNP añade al final la categoría del jugador ("500", "Future", "Grand Slam"…).
+    """Palabras normalizadas del nombre de SNP sin la categoría del final ("500", "Future", "Grand Slam"…)."""
     return normalize(split_category(name)[0]).split()
 
 
 def _match_level(player_tokens, snp_tokens):
+    """
+    Grado de coincidencia entre el nombre de un jugador y el de SNP (listas de palabras
+    normalizadas): EXACT, PREFIX, PARTIAL o 0 si no encajan.
+    """
     if not player_tokens or not snp_tokens:
         return 0
     if player_tokens == snp_tokens:
@@ -102,6 +106,12 @@ def match_scores(players, scores):
 
 @dataclass
 class SyncResult:
+    """
+    Resultado de actualizar los puntos SNP de un club. ``updated`` son pares (jugador, puntos);
+    ``unmatched``, ``ambiguous`` y ``missing`` son nombres que no se han podido actualizar.
+    ``retryable`` indica un fallo pasajero que se reintenta en la siguiente pasada y
+    ``blocked`` que SNP nos está limitando.
+    """
     ok: bool
     message: str
     total: int = 0
@@ -114,6 +124,7 @@ class SyncResult:
     blocked: bool = False
 
     def report(self):
+        """Texto para el capitán: el mensaje y los nombres sin jugador, ambiguos o que faltan en SNP."""
         lines = [self.message]
         if self.unmatched:
             lines.append(_("En SNP pero sin jugador en Zyra: %(names)s") % {"names": ", ".join(self.unmatched)})
@@ -157,6 +168,10 @@ def sync_club(account, scraper=None, **scrape_options):
 
 
 def _save_scores(account, scores):
+    """
+    Guarda los puntos emparejados (y una fila de histórico por jugador y día) para los
+    jugadores del equipo del club y devuelve el SyncResult. Se llama dentro de una transacción.
+    """
     players = list(Player.objects.filter(club=account.club, in_team=True))
     matched, unmatched, ambiguous = match_scores(players, scores)
     today, season = timezone.localdate(), current_season()

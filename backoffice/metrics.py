@@ -26,6 +26,10 @@ AT_RISK_DAYS = 60
 
 
 def _subquery_count(model, fk, **filters):
+    """
+    Subconsulta que cuenta las filas de `model` cuyo campo `fk` apunta al objeto de la
+    consulta exterior (con los filtros extra que se pasen). Evita los JOIN que multiplican filas.
+    """
     qs = (
         model.objects.filter(**{fk: OuterRef("pk")}, **filters)
         .order_by().values(fk).annotate(n=Count("pk")).values("n")
@@ -50,10 +54,15 @@ def annotate_clubs(qs):
 
 
 def google_user_ids():
+    """Ids de los usuarios que tienen cuenta de Google enlazada (subconsulta para filtrar)."""
     return SocialAccount.objects.filter(provider="google").values("user_id")
 
 
 def dashboard_kpis():
+    """
+    Cifras del dashboard: clubes, usuarios, actividad, invitaciones, altas por semana y
+    listas cortas de clubes y usuarios recientes y de clubes sin actividad.
+    """
     now = timezone.now()
     today = timezone.localdate()
     active_from = today - datetime.timedelta(days=ACTIVE_CLUB_DAYS)
@@ -139,11 +148,16 @@ ONLINE_MINUTES = 5
 
 
 def online_users():
+    """Actividad de los usuarios conectados (con alguna petición en los últimos ONLINE_MINUTES)."""
     since = timezone.now() - datetime.timedelta(minutes=ONLINE_MINUTES)
     return UserActivity.objects.filter(last_seen__gte=since).select_related("user", "club").order_by("-last_seen")
 
 
 def _bars(rows, peak_key="requests"):
+    """
+    Añade a cada fila el porcentaje de su barra respecto a la mayor (`pct`) y la parte de
+    la barra que son errores (`err_pct`). Modifica las filas y las devuelve.
+    """
     peak = max((r[peak_key] for r in rows), default=0) or 1
     for r in rows:
         r["pct"] = round(100 * r[peak_key] / peak)
@@ -153,6 +167,7 @@ def _bars(rows, peak_key="requests"):
 
 
 def _summary(qs):
+    """Totales de un conjunto de RequestMetric: peticiones, errores, lentas, media y máximo en ms."""
     agg = qs.aggregate(requests=Sum("requests"), errors=Sum("errors"), slow=Sum("slow"),
                        total_ms=Sum("total_ms"), max_ms=Max("max_ms"))
     requests = agg["requests"] or 0

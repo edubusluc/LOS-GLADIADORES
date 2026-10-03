@@ -1,3 +1,4 @@
+"""Comando de mantenimiento: borra partidos y resultados duplicados antes de las restricciones de unicidad."""
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -5,6 +6,7 @@ from match.models import Game, Result
 
 
 class Command(BaseCommand):
+    """Borra partidos y resultados duplicados (ver ``help``)."""
     help = (
         "Elimina los partidos (Game) duplicados de un enfrentamiento y los resultados "
         "duplicados de un partido. De cada número de partido se conserva el que tiene "
@@ -13,10 +15,16 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser):
+        """Opción --dry-run para ver qué se borraría sin borrar nada."""
         parser.add_argument("--dry-run", action="store_true", help="Solo muestra lo que se borraría.")
 
     @transaction.atomic
     def handle(self, *args, dry_run, **options):
+        """Busca y borra los duplicados en una transacción.
+
+        De los resultados de un partido se conserva el más reciente; de los partidos con
+        el mismo número, el que tiene resultado y, si hay varios, el más reciente.
+        """
         to_delete_games, to_delete_results = [], []
 
         # 1) Resultados duplicados del mismo partido: se conserva el más reciente

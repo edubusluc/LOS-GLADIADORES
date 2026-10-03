@@ -1,3 +1,4 @@
+"""Señales del back-office: limpieza de la actividad al cerrar sesión."""
 from django.contrib.auth.signals import user_logged_out
 from django.core.cache import cache
 from django.dispatch import receiver

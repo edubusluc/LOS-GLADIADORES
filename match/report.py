@@ -23,6 +23,7 @@ MAX_USAGE_ROWS = 5
 
 
 def _outcome(match):
+    """'V', 'D' o 'E' de un partido cerrado desde el punto de vista del club."""
     if match.result == "Victoria Local":
         return "V" if match.own_is_local else "D"
     if match.result == "Victoria Visitante":
@@ -40,6 +41,12 @@ def _own_score(match):
 
 
 def build_report(call):
+    """Reúne todos los datos del informe de la convocatoria ``call`` en un diccionario.
+
+    Incluye la forma de los convocados y sus parejas, rachas, balance de la temporada,
+    precedentes contra el rival, reparto de partidos de la plantilla y las dos alineaciones
+    recomendadas. Solo usa partidos anteriores a la fecha del enfrentamiento.
+    """
     match = call.match
     club = match.club
     own_local = match.own_is_local

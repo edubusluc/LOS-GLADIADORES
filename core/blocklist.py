@@ -17,6 +17,10 @@ GMAIL_DOMAINS = {"gmail.com", "googlemail.com"}
 
 
 def normalize_email(email):
+    """
+    Forma normalizada del email: en minúsculas, sin "+etiqueta" y, en Gmail, sin
+    puntos y con el dominio gmail.com.
+    """
     email = (email or "").strip().lower()
     if "@" not in email:
         return email
@@ -28,6 +32,7 @@ def normalize_email(email):
 
 
 def is_blocked(email):
+    """True si el email (normalizado) está bloqueado."""
     from .models import BlockedEmail
 
     normalized = normalize_email(email)

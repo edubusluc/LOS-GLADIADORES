@@ -1,3 +1,4 @@
+"""Validadores de texto para los nombres que escriben los usuarios (clubes, equipos y jugadores)."""
 import re
 
 from django.core.exceptions import ValidationError

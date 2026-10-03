@@ -26,12 +26,14 @@ PREFIXES = {}
 
 
 def new_public_id(prefix):
+    """Identificador público nuevo: ``prefix`` y 12 caracteres aleatorios."""
     return prefix + "".join(secrets.choice(ALPHABET) for _ in range(RANDOM_LENGTH))
 
 
 class PublicIdQuerySet(models.QuerySet):
+    """QuerySet que asigna el public_id también en bulk_create."""
     def bulk_create(self, objs, *args, **kwargs):
-        # bulk_create no llama a save(): se asigna aquí el identificador.
+        """bulk_create no llama a save(): se asigna aquí el identificador."""
         objs = list(objs)
         for obj in objs:
             if not obj.public_id:
@@ -53,12 +55,14 @@ class PublicIdModel(models.Model):
         abstract = True
 
     def assign_public_id(self):
+        """Genera y asigna un public_id nuevo con el prefijo del modelo; lo devuelve."""
         # 62^12 combinaciones: una colisión es prácticamente imposible y, si la hubiera,
         # la restricción unique de la base de datos la rechaza.
         self.public_id = new_public_id(self.PUBLIC_ID_PREFIX)
         return self.public_id
 
     def save(self, *args, **kwargs):
+        """Asigna el public_id si no lo tiene (también con ``update_fields``) y guarda."""
         if not self.public_id:
             self.assign_public_id()
             update_fields = kwargs.get("update_fields")
@@ -68,6 +72,10 @@ class PublicIdModel(models.Model):
 
 
 def _check_prefix(sender, **kwargs):
+    """
+    Señal class_prepared: comprueba que cada modelo con public_id tiene un prefijo de 3
+    letras o números y que no lo usa otro modelo.
+    """
     if not issubclass(sender, PublicIdModel) or sender._meta.abstract:
         return
     prefix, label = sender.PUBLIC_ID_PREFIX, sender._meta.label
@@ -81,6 +89,7 @@ class_prepared.connect(_check_prefix)
 
 
 def public_id_models():
+    """Todos los modelos instalados que tienen public_id."""
     from django.apps import apps
     return [m for m in apps.get_models() if issubclass(m, PublicIdModel)]
 
@@ -90,7 +99,9 @@ class PublicIdConverter:
     regex = f"[A-Za-z0-9]{{{LENGTH}}}"
 
     def to_python(self, value):
+        """Devuelve el identificador tal cual (las vistas buscan por public_id)."""
         return value
 
     def to_url(self, value):
+        """Devuelve el identificador tal cual para construir la URL."""
         return value

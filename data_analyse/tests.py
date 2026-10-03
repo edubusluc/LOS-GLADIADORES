@@ -387,3 +387,28 @@ class SeasonFilterTests(TestCase):
         self.assertTrue(response.context["season_all"]["url"].endswith("?season=all"))
         response = self.client.get(reverse("warnings_statistics"), {"season": "all"})
         self.assertTrue(response.context["season_all"]["active"])
+
+
+class AffinityScopeTests(TestCase):
+    """A juega con B (sigue en el equipo), C (ya no está) y D (eliminado)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        own = self.club.own_team
+        rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        mk = lambda n, **kw: Player.objects.create(club=self.club, name=n, last_name=f"{n}son", **kw)
+        self.a, b, c, d = mk("A"), mk("B"), mk("C", in_team=False), mk("D")
+        for i, partner in enumerate((b, c, d)):
+            m = Match.objects.create(club=self.club, local=own, visiting=rival, draft_mode=False,
+                                     start_date=datetime.date(2025, 10, 1 + i), result="Victoria Local")
+            Game.objects.create(match=m, n_game=1, score=3, winner='Local', draft_mode=False,
+                                player_1_local=self.a, player_2_local=partner)
+        d.delete()
+        self.client.force_login(self.user)
+
+    def test_affinity_marks_partners_not_in_team(self):
+        response = self.client.get(reverse("player_statistics"), {"player": self.a.public_id})
+        rows = {r["name"]: r["in_team"] for r in response.context["chart_affinity"]}
+        self.assertEqual(rows, {"B BSON": True, "C CSON": False, "D DSON": False})
+        self.assertContains(response, 'data-scope="team" aria-pressed="true"')

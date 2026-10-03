@@ -103,20 +103,27 @@
     });
   }
 
-  // Afinidad con compañeros (barras horizontales)
-  const entries = Object.entries(affinity).filter(([, v]) => v > 0);
-    new Chart(document.getElementById('chartAffinity'), {
+  // Afinidad con compañeros (barras horizontales).
+  // Por defecto solo compañeros que siguen en el equipo; "Incluir antiguos" añade
+  // a los que se fueron o se eliminaron.
+  // En pantallas estrechas: "Eduardo Bustamante Lucena (3)" -> "E. Bustamante (3)"
+  const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'da', 'do', 'dos', 'van', 'von']);
+  const shortName = (name, max) => {
+    if (name.length <= max) return name;
+    const parts = name.trim().split(/\s+/);
+    const surname = parts.slice(1).find((w) => !PARTICLES.has(w.toLowerCase()));
+    const short = surname ? `${parts[0][0]}. ${surname}` : name;
+    return short.length <= max ? short : `${short.slice(0, max - 1)}…`;
+  };
+  const affinityBox = document.getElementById('affinityChart');
+  const affinityLabel = (a) => {
+    const max = affinityBox.clientWidth < 520 ? 14 : 40;
+    return `${shortName(a.name, max)} (${a.games})`;
+  };
+
+  const affinityChart = new Chart(document.getElementById('chartAffinity'), {
     type: 'bar',
-    data: {
-      labels: affinity.map((a) => `${a.name} (${a.games})`),
-      datasets: [{
-        label: gettext('Afinidad'),
-        data: affinity.map((a) => a.affinity),
-        // por encima del 50 % rinden mejor de lo esperado juntos
-        backgroundColor: affinity.map((a) => (a.affinity >= 50 ? C.win : C.loss)),
-        borderRadius: 4,
-      }],
-    },
+    data: { labels: [], datasets: [{ label: gettext('Afinidad'), data: [], backgroundColor: [], borderRadius: 4, maxBarThickness: 56 }] },
     options: {
       ...base,
       indexAxis: 'y',
@@ -126,16 +133,42 @@
         tooltip: {
           callbacks: {
             label: (c) => {
-              const a = affinity[c.dataIndex];
+              const a = affinityChart.$rows[c.dataIndex];
               return ` ${a.affinity}% · ` + interpolate(gettext('%(wins)sV - %(losses)sD'), { wins: a.wins, losses: a.losses }, true);
             },
+            afterLabel: (c) => (affinityChart.$rows[c.dataIndex].in_team ? '' : ' ' + gettext('Ya no está en el equipo')),
           },
         },
       },
       scales: {
         x: { min: 0, max: 100, grid: { color: C.line } },
-        y: { grid: { display: false } },
+        y: {
+          grid: { display: false },
+          ticks: { autoSkip: false, callback: (v, i) => affinityLabel(affinityChart.$rows[i]) },
+        },
       },
     },
   });
+
+  function showAffinity(scope) {
+    const rows = scope === 'all' ? affinity : affinity.filter((a) => a.in_team);
+    affinityChart.$rows = rows;
+    affinityChart.data.labels = rows.map((a) => `${a.name} (${a.games})`);
+    const ds = affinityChart.data.datasets[0];
+    ds.data = rows.map((a) => a.affinity);
+    // por encima del 50 % rinden mejor de lo esperado juntos; los antiguos, más apagados
+    ds.backgroundColor = rows.map((a) => (a.affinity >= 50 ? C.win : C.loss) + (a.in_team ? '' : '80'));
+    affinityChart.update();
+    affinityBox.hidden = rows.length === 0;
+    document.getElementById('affinityEmpty').hidden = rows.length > 0;
+  }
+
+  const scopeButtons = document.querySelectorAll('.st-aff-scope [data-scope]');
+  scopeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      scopeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      showAffinity(btn.dataset.scope);
+    });
+  });
+  showAffinity('team');
 })();

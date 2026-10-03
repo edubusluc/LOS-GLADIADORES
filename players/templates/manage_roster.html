@@ -35,14 +35,14 @@
 
     <div class="z-selector-grid">
         {% for p in players %}
-        <label class="z-roster" data-name="{{ p.name }} {{ p.last_name }}">
+        <label class="z-roster" data-name="{{ p.full_name }}">
             <img src="{% if p.photo %}{{ p.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="" class="z-avatar z-avatar--sm">
             <span class="z-pick-body">
-                <span class="z-pick-name">{{ p.name }} {{ p.last_name }}</span>
+                <span class="z-pick-name">{{ p.full_name }}</span>
                 <span class="z-pick-meta" data-roster-state></span>
             </span>
             <span class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" name="in_team" value="{{ p.id }}" {% if p.in_team %}checked{% endif %} data-initial="{% if p.in_team %}1{% else %}0{% endif %}" aria-label="{% blocktranslate with name=p.name last_name=p.last_name %}{{ name }} {{ last_name }} en el equipo{% endblocktranslate %}">
+                <input class="form-check-input" type="checkbox" role="switch" name="in_team" value="{{ p.id }}" {% if p.in_team %}checked{% endif %} data-initial="{% if p.in_team %}1{% else %}0{% endif %}" aria-label="{% blocktranslate with name=p.name|upper last_name=p.last_name|upper %}{{ name }} {{ last_name }} en el equipo{% endblocktranslate %}">
             </span>
         </label>
         {% empty %}

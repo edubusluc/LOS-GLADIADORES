@@ -62,11 +62,23 @@ class Player(PublicIdModel):
             self.gender = self.team.gender
         super().save(*args, **kwargs)
 
+    # Los nombres se muestran siempre en mayúsculas, se hayan guardado como se hayan guardado.
+    # Lo guardado no se toca: los formularios de edición siguen mostrando name/last_name tal cual.
+    @property
+    def full_name(self):
+        return f'{self.name} {self.last_name}'.strip().upper()
+
+    @property
+    def short_name(self):
+        """Nombre y primer apellido, en mayúsculas."""
+        return f'{self.name} {self.get_first_last_name()}'.strip().upper()
+
     def __str__(self):
-        return str(f'{self.name} {self.last_name}')
+        return self.full_name
 
     def get_first_last_name(self):
-        return self.last_name.split()[0]  # Obtiene el primer apellido
+        parts = self.last_name.split()
+        return parts[0] if parts else ""  # Obtiene el primer apellido
 
 class SnpAccount(PublicIdModel):
     """

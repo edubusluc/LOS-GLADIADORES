@@ -14,7 +14,7 @@
         <img src="{% if player.photo %}{{ player.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="" class="z-avatar z-avatar--xl">
         <div>
             <span class="z-eyebrow">{% translate "Perfil del jugador" %}</span>
-            <h1 class="z-profile-name">{{ player.name }} {{ player.get_first_last_name }}</h1>
+            <h1 class="z-profile-name">{{ player.short_name }}</h1>
             <p class="z-player-meta mb-0">
                 <span><i class="fa-solid fa-location-crosshairs"></i>{{ player.get_position_display }}</span>
                 <span><i class="fa-solid fa-hand"></i>{{ player.get_skillfull_hand_display }}</span>

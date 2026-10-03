@@ -8,7 +8,7 @@
 
     <header class="st-head">
       <div>
-        <h1 class="st-title">{% if selected_player %}{{ player.name }} {{ player.last_name }}{% else %}{% translate "Estadísticas de jugadores" %}{% endif %}</h1>
+        <h1 class="st-title">{% if selected_player %}{{ player.full_name }}{% else %}{% translate "Estadísticas de jugadores" %}{% endif %}</h1>
         {% if selected_player %}
           <p class="st-subtitle">{% blocktranslate trimmed with played=s.played count n=seasons_asc|length %}{{ played }} partidos jugados en {{ n }} temporada{% plural %}{{ played }} partidos jugados en {{ n }} temporadas{% endblocktranslate %}</p>
         {% endif %}
@@ -19,7 +19,7 @@
         <select class="st-select" name="player" id="player" onchange="this.form.submit()" data-picker data-placeholder="{% translate 'Buscar jugador...' %}">
           <option value="">{% translate "Elige un jugador" %}</option>
           {% for p in players %}
-            <option value="{{ p.public_id }}" {% if p.public_id == selected_player %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>
+            <option value="{{ p.public_id }}" {% if p.public_id == selected_player %}selected{% endif %}>{{ p.full_name }}</option>
           {% endfor %}
         </select>
         {% if selected_season %}<input type="hidden" name="season" value="{{ selected_season }}">{% endif %}

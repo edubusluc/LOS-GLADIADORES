@@ -225,7 +225,7 @@ class SnpAccountTests(TestCase):
             call_command("update_snp_scores", stdout=out)
         self.assertIn("Jugadores a actualizar: 2\n", out.getvalue())
         self.assertIn("Jugadores actualizados correctamente: 1\n", out.getvalue())
-        self.assertIn("Jugadores no actualizados: 1 (Luis Gómez)\n", out.getvalue())
+        self.assertIn("Jugadores no actualizados: 1 (LUIS GÓMEZ)\n", out.getvalue())
 
         out = StringIO()
         with mock.patch("players.snp.scrape_scores", lambda *a, **k: [{"name": "Ana Alvarez", "score": 3.0},
@@ -494,12 +494,12 @@ class CompleteTeamTests(TestCase):
         self.assertEqual(team_import.status, SnpTeamImport.READY)
         self.assertEqual([(p["name"], p["last_name"]) for p in team_import.to_add],
                          [("Maria Jose", "Gomez Ruiz"), ("Pedro", "Raposo Bellerin")])
-        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ", "category": "500", "player": "Ana Álvarez"}])
+        self.assertEqual(team_import.existing, [{"snp_name": "ANA ALVAREZ", "category": "500", "player": "ANA ÁLVAREZ"}])
         self.assertEqual(Player.objects.count(), 1)  # la búsqueda no crea nada
 
         page = self.client.get(reverse("list_players"))
         self.assertContains(page, 'id="completeTeamModal"')
-        self.assertContains(page, "Pedro Raposo Bellerin")
+        self.assertContains(page, "PEDRO RAPOSO BELLERIN")
         self.assertContains(page, "ya están registrados")
         self.assertEqual(self.client.get(reverse("complete_team_status", args=[team_import.public_id])).json()["status"], "ready")
 
@@ -552,7 +552,7 @@ class CompleteTeamTests(TestCase):
         out = StringIO()
         call_command("complete_snp_team", team_id, "--dry-run", stdout=out)
         self.assertIn("Jugadores a añadir: 2 (Maria Jose Gomez Ruiz, Pedro Raposo Bellerin)", out.getvalue())
-        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ → Ana Álvarez)", out.getvalue())
+        self.assertIn("No se añaden porque ya están registrados: 1 (ANA ALVAREZ → ANA ÁLVAREZ)", out.getvalue())
         self.assertEqual(Player.objects.count(), 1)
 
         SnpTeamImport.objects.create(club=self.club, status=SnpTeamImport.DONE, finished_at=timezone.now())
@@ -582,6 +582,15 @@ class CompleteTeamTests(TestCase):
         self.assertEqual((self.ana.name, self.ana.last_name), ("Ana María", "Álvarez Ruiz"))
         self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.public_id])), 'name="last_name"')
 
+    def test_names_are_shown_in_uppercase_but_stored_as_typed(self):
+        self.ana.name, self.ana.last_name = "ana maría", "álvarez ruiz"
+        self.ana.save()
+        self.assertEqual((self.ana.full_name, self.ana.short_name), ("ANA MARÍA ÁLVAREZ RUIZ", "ANA MARÍA ÁLVAREZ"))
+        self.assertContains(self.client.get(reverse("list_players")), "ANA MARÍA ÁLVAREZ")
+        self.assertContains(self.client.get(reverse("show_player", args=[self.ana.public_id])), "ANA MARÍA ÁLVAREZ")
+        # El formulario de edición muestra lo guardado, sin cambiarlo.
+        self.assertContains(self.client.get(reverse("edit_player", args=[self.ana.public_id])), 'value="álvarez ruiz"')
+
 
 class CreatePlayerSimilarityTests(TestCase):
     def setUp(self):
@@ -597,7 +606,7 @@ class CreatePlayerSimilarityTests(TestCase):
     def test_similar_player_asks_before_creating(self):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["similar"], ["María García López"])
+        self.assertEqual(response.context["similar"], ["MARÍA GARCÍA LÓPEZ"])
         self.assertEqual(Player.objects.filter(club=self.club).count(), 1)
 
         self.client.post(self.url, {**self.data, "confirm_similar": "1"})
@@ -605,7 +614,7 @@ class CreatePlayerSimilarityTests(TestCase):
 
     def test_check_request_and_players_of_other_clubs(self):
         response = self.client.post(self.url, self.data, HTTP_X_SIMILAR_CHECK="1")
-        self.assertEqual(response.json(), {"valid": True, "similar": ["María García López"]})
+        self.assertEqual(response.json(), {"valid": True, "similar": ["MARÍA GARCÍA LÓPEZ"]})
         # Solo cuenta el equipo del club activo
         response = self.client.post(self.url, {**self.data, "name": "Lucia", "last_name": "Martin"}, HTTP_X_SIMILAR_CHECK="1")
         self.assertEqual(response.json(), {"valid": True, "similar": []})
@@ -682,9 +691,9 @@ class DeletePlayerTests(TestCase):
         self.assertIsNone(self.game.player_1_local)
         self.assertEqual(self.game.player_2_local, self.bea)
         self.assertTrue(self.game.results.exists())
-        self.assertEqual(self.game.local_pair_label, "Ana López / Bea Ruiz")
+        self.assertEqual(self.game.local_pair_label, "ANA LÓPEZ / BEA RUIZ")
         page = self.client.get(reverse("call_for_match", args=[self.match.public_id])).content.decode()
-        self.assertIn("Ana López / Bea Ruiz", page)
+        self.assertIn("ANA LÓPEZ / BEA RUIZ", page)
         # El compañero conserva sus estadísticas.
         self.assertEqual(self.client.get(reverse("show_player", args=[self.bea.public_id])).status_code, 200)
 

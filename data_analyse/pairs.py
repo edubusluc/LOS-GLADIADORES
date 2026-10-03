@@ -111,7 +111,7 @@ def _rank(counts, names, min_games):
 
 def top_players(log, players, local):
     """Top 5 jugadores por % de victorias como local (local=True) o visitante."""
-    names = {p.id: f"{p.name} {p.last_name}" for p in players}
+    names = {p.id: p.full_name for p in players}
     counts = {}
     for g in log:
         if g['local'] != local:
@@ -139,7 +139,7 @@ def top_pairs(log, players, local, min_games=MIN_GAMES_PAIR):
 
 
 def pair_label(player):
-    return f"{player.name} {player.get_first_last_name()}" if player.last_name else player.name
+    return player.short_name
 
 
 # ---------------------------------------------------------------

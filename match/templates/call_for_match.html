@@ -83,7 +83,7 @@
                 {% for p in group.players %}
                 <li class="z-chip {% if p.is_playing %}is-playing{% endif %}">
                     <img src="{% if p.photo %}{{ p.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="">
-                    <span>{{ p.name }} {{ p.get_first_last_name }}</span>
+                    <span>{{ p.short_name }}</span>
                     {% if p.is_playing %}<i class="z-dot" title="{% translate 'Juega un partido' %}"></i>{% endif %}
                 </li>
                 {% endfor %}

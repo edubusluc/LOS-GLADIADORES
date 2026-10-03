@@ -59,8 +59,7 @@ class PlayerForm:
 
     @property
     def name(self):
-        p = self.player
-        return f"{p.name} {p.get_first_last_name()}" if p.last_name else p.name
+        return self.player.short_name
 
     @property
     def snp(self):

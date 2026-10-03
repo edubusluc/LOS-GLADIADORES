@@ -85,7 +85,7 @@
         <div class="z-hot-body">
             <img class="z-avatar" src="{% if p.photo %}{{ p.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="">
             <div>
-                <strong>{{ p.name }} {{ p.last_name }}</strong>
+                <strong>{{ p.full_name }}</strong>
                 <span>{% blocktranslate trimmed count n=hot_player.streak %}{{ n }} victoria seguida{% plural %}{{ n }} victorias seguidas{% endblocktranslate %}</span>
             </div>
         </div>

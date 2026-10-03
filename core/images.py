@@ -68,12 +68,33 @@ def process_image(source):
 
 
 def clean_photo_field(form, field_name="photo"):
-    """clean_<campo> de los formularios: procesa la foto recién subida y deja las demás igual."""
+    """
+    clean_<campo> de los formularios: procesa la foto recién subida, la valida con
+    Rekognition (core/moderation.py) y deja las demás igual. Quién la sube se toma de
+    form.uploader (lo pone la vista). Cada validación queda registrada en PhotoCheck (así
+    se cuentan las llamadas del mes); al guardar el equipo o jugador se le añade la foto.
+    Una foto rechazada no se guarda. Con form.check_only (la comprobación de nombres
+    parecidos que hace el formulario antes de enviarse) no se procesa ni se valida.
+    """
+    from .models import PhotoCheck
+    from .moderation import moderate
+
     photo = form.cleaned_data.get(field_name)
     # Solo los ficheros recién subidos traen content_type; una foto ya guardada se deja igual.
-    if photo and hasattr(photo, "content_type"):
-        return process_image(photo)
-    return photo
+    if not (photo and hasattr(photo, "content_type")) or getattr(form, "check_only", False):
+        return photo
+    content = process_image(photo)
+    result = moderate(content)
+    uploader = getattr(form, "uploader", None)
+    check = PhotoCheck.objects.create(
+        club=getattr(form.instance, "club", None) or getattr(form, "club", None),
+        uploaded_by=uploader if uploader and uploader.is_authenticated else None,
+        status=result.status, reason=result.reason, api_called=result.api_called,
+    )
+    if result.status == PhotoCheck.REJECTED:
+        raise ValidationError(_("La foto no se puede usar: parece contener contenido no permitido. Elige otra."))
+    form.instance._photo_check_id = check.pk
+    return content
 
 
 def _is_used(model, field_name, name, exclude_pk=None):
@@ -94,7 +115,7 @@ def _delete_later(storage, model, field_name, name):
 
 def connect_photo_cleanup(model, field_name="photo"):
     """Conecta las señales que borran la foto antigua al cambiarla o al borrar el objeto."""
-    from django.db.models.signals import post_delete, pre_save
+    from django.db.models.signals import post_delete, post_save, pre_save
 
     def on_pre_save(sender, instance, update_fields=None, **kwargs):
         if not instance.pk or (update_fields is not None and field_name not in update_fields):
@@ -109,5 +130,17 @@ def connect_photo_cleanup(model, field_name="photo"):
         if file:
             _delete_later(file.storage, sender, field_name, file.name)
 
+    def on_post_save(sender, instance, **kwargs):
+        # Completa el registro de la validación de la foto recién subida (clean_photo_field).
+        check_id = instance.__dict__.pop("_photo_check_id", None)
+        file = getattr(instance, field_name)
+        if check_id and file:
+            from .models import PhotoCheck
+
+            PhotoCheck.objects.filter(pk=check_id).update(
+                photo=file.name, club=getattr(instance, "club", None), **{sender._meta.model_name: instance},
+            )
+
+    post_save.connect(on_post_save, sender=model, weak=False, dispatch_uid=f"{model._meta.label}.{field_name}.post_save")
     pre_save.connect(on_pre_save, sender=model, weak=False, dispatch_uid=f"{model._meta.label}.{field_name}.pre_save")
     post_delete.connect(on_post_delete, sender=model, weak=False, dispatch_uid=f"{model._meta.label}.{field_name}.post_delete")

@@ -43,6 +43,11 @@ class Player(PublicIdModel):
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="players", null=True)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team")
     photo = models.ImageField(upload_to=player_photo_path, null=True, blank=True)
+    # Cuenta del jugador: puede editar su posición, mano hábil y foto. Se enlaza al
+    # aceptar una invitación (vista my_player) y el capitán puede desenlazarla.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="players",
+    )
     snp_score = models.FloatField(null=True)
     in_team = models.BooleanField(default=True)
     # Copia de la categoría de su equipo (Team.gender): se asigna al guardar.
@@ -54,6 +59,14 @@ class Player(PublicIdModel):
         validators=[RegexValidator(r'^\d{4}-\d{4}$', _('Usa el formato 2024-2025.'))],
         help_text=_("Formato 2024-2025. Se usa para contar a cuántas convocatorias no se ha apuntado."),
     )
+
+    class Meta:
+        constraints = [
+            # Una cuenta es como mucho un jugador en cada club.
+            models.UniqueConstraint(
+                fields=["club", "user"], condition=models.Q(user__isnull=False), name="unique_player_user_per_club",
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         # Los jugadores siempre pertenecen al equipo propio de su club.

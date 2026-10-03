@@ -43,6 +43,7 @@ def create_team(request):
     similar = []
     if request.method == "POST":
         form = Teamform(request.POST, request.FILES, club=request.club)
+        form.uploader, form.check_only = request.user, similarity.is_check_request(request)
         if form.is_valid():
             # Equipos con un nombre igual o parecido: se pregunta antes de crearlo.
             similar = similarity.similar_teams(request.club, form.cleaned_data['name'])
@@ -82,7 +83,8 @@ def edit_team(request, team_id):
     team = get_object_or_404(Team, public_id=team_id, club=request.club)
 
     if request.method == "POST":
-        form = Teamform(request.POST, request.FILES, instance=team, club=request.club)  # Agregar request.FILES aquí
+        form = Teamform(request.POST, request.FILES, instance=team, club=request.club)
+        form.uploader = request.user
         if form.is_valid():
             form.save(commit=False)  # Guarda el equipo
             team.in_group = 'in_group' in request.POST

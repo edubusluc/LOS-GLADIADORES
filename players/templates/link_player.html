@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{{ current_club.name }}</span>
+        <h1>{% translate "¿Quién eres en el equipo?" %}</h1>
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">{% translate "Ahora no" %}</a>
+</div>
+
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+<p class="text-muted">{% translate "Busca tu nombre y pulsa «Soy yo» para enlazar tu cuenta con tu jugador. Así podrás cambiar tu foto, tu posición y tu mano hábil. Si no estás en la lista, crea tu jugador más abajo." %}</p>
+
+<form method="get" class="z-selector-tools">
+    <div class="z-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" name="q" value="{{ search }}" placeholder="{% translate 'Buscar jugador...' %}" aria-label="{% translate 'Buscar jugador' %}">
+    </div>
+</form>
+
+<div class="z-selector-grid">
+    {% for p in candidates %}
+    <form method="post" action="{% url 'link_player' p.public_id %}" class="z-roster">
+        {% csrf_token %}
+        <img src="{% if p.photo %}{{ p.photo.url }}{% else %}{% static 'zyra/avatar.svg' %}{% endif %}" alt="" class="z-avatar z-avatar--sm">
+        <span class="z-pick-body">
+            <span class="z-pick-name">{{ p.full_name }}</span>
+            <span class="z-pick-meta">{{ p.get_position_display }}</span>
+        </span>
+        <button type="submit" class="btn btn-primary btn-sm">{% translate "Soy yo" %}</button>
+    </form>
+    {% empty %}
+    <div class="z-empty" style="grid-column: 1 / -1;">{% if search %}{% translate "Ningún jugador coincide con la búsqueda." %}{% else %}{% translate "No hay jugadores sin cuenta en el club." %}{% endif %}</div>
+    {% endfor %}
+</div>
+
+<details class="z-panel mt-4" id="nuevo" {% if show_new %}open{% endif %}>
+    <summary class="z-section-title mt-0">{% translate "No estoy en la lista: crear mi jugador" %}</summary>
+    {% if new_form.errors %}
+    <div class="alert-message">
+        <ul>{% for error in new_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        {% for field in new_form %}{% for error in field.errors %}<li><strong>{{ field.label }}:</strong> {{ error }}</li>{% endfor %}{% endfor %}</ul>
+    </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="mt-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-sm-6"><label class="form-label" for="{{ new_form.name.id_for_label }}">{% translate "Nombre:" %}</label>{{ new_form.name }}</div>
+            <div class="col-sm-6"><label class="form-label" for="{{ new_form.last_name.id_for_label }}">{% translate "Apellidos:" %}</label>{{ new_form.last_name }}</div>
+            <div class="col-sm-6"><label class="form-label" for="{{ new_form.position.id_for_label }}">{% translate "Posición:" %}</label>{{ new_form.position }}</div>
+            <div class="col-sm-6"><label class="form-label" for="{{ new_form.skillfull_hand.id_for_label }}">{% translate "Mano hábil:" %}</label>{{ new_form.skillfull_hand }}</div>
+            <div class="col-12"><label class="form-label" for="{{ new_form.photo.id_for_label }}">{% translate "Foto:" %}</label>{{ new_form.photo }}</div>
+        </div>
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-primary">{% translate "Crear mi jugador" %}</button>
+        </div>
+    </form>
+</details>
+{% endblock %}

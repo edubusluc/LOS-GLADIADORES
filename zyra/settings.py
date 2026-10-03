@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import datetime
 from pathlib import Path
 import os
 import dj_database_url
@@ -268,6 +269,27 @@ if MEDIA_STORAGE.startswith('storages.backends.s3'):
 PHOTO_MAX_UPLOAD_MB = config('PHOTO_MAX_UPLOAD_MB', default=10, cast=int)
 PHOTO_MAX_SIZE = config('PHOTO_MAX_SIZE', default=512, cast=int)
 PHOTO_WEBP_QUALITY = config('PHOTO_WEBP_QUALITY', default=82, cast=int)
+
+# Validación automática de las fotos con AWS Rekognition (core/moderation.py), SOLO dentro
+# del plan gratuito: como mucho REKOGNITION_MONTHLY_LIMIT fotos al mes (1.000 gratis en
+# DetectModerationLabels) y hasta REKOGNITION_FREE_UNTIL (AAAA-MM-DD, fin del periodo
+# gratuito de la cuenta). Sin claves, después de esa fecha o pasado el límite, las fotos se
+# aceptan "sin validar" y el personal las revisa en el back-office (Fotos).
+REKOGNITION_ACCESS_KEY_ID = config('REKOGNITION_ACCESS_KEY_ID', default='')
+REKOGNITION_SECRET_ACCESS_KEY = config('REKOGNITION_SECRET_ACCESS_KEY', default='')
+REKOGNITION_REGION = config('REKOGNITION_REGION', default='eu-west-1')
+REKOGNITION_FREE_UNTIL = config(
+    'REKOGNITION_FREE_UNTIL', default='',
+    cast=lambda v: datetime.date.fromisoformat(v) if v else None,
+)
+REKOGNITION_MONTHLY_LIMIT = config('REKOGNITION_MONTHLY_LIMIT', default=1000, cast=int)
+REKOGNITION_MIN_CONFIDENCE = config('REKOGNITION_MIN_CONFIDENCE', default=80, cast=float)
+# Categorías de Rekognition que hacen rechazar la foto (nombre o categoría superior).
+REKOGNITION_BLOCKED_LABELS = config(
+    'REKOGNITION_BLOCKED_LABELS', cast=Csv(),
+    default='Explicit,Explicit Nudity,Non-Explicit Nudity,'
+            'Violence,Graphic Violence Or Gore,Visually Disturbing,Hate Symbols',
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

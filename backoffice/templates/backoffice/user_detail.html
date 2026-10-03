@@ -57,4 +57,26 @@
         </tbody>
     </table></div>
 </section>
+
+<section class="z-panel">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h2 class="h5 mb-0">{% translate "Fotos subidas" %}</h2>
+        {% if photo_checks %}
+        <form method="post" action="{% url 'backoffice:user_photos_delete' member.id %}" onsubmit="return confirm('{% translate "¿Eliminar todas las fotos que ha subido este usuario?" %}')">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i> {% translate "Eliminar todas sus fotos" %}</button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-3 mt-3">
+        {% for c in photo_checks %}
+        <figure class="m-0 text-center">
+            <a href="{{ c.subject.photo.url }}" target="_blank" rel="noopener"><img src="{{ c.subject.photo.url }}" alt="" class="z-avatar z-avatar--lg"></a>
+            <figcaption class="small text-muted">{% if c.player %}{{ c.player.short_name }}{% else %}{{ c.team.name }}{% endif %} · {{ c.get_status_display }}</figcaption>
+        </figure>
+        {% empty %}
+        <p class="text-muted mb-0">{% translate "No tiene fotos subidas en uso." %}</p>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

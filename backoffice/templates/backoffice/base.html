@@ -38,6 +38,7 @@
                 {% endif %}
                 <li><a href="{% url 'backoffice:club_list' %}" class="{% if section == 'clubs' %}is-active{% endif %}"><i class="fa-solid fa-shield-halved"></i> {% translate "Clubes" %}</a></li>
                 <li><a href="{% url 'backoffice:user_list' %}" class="{% if section == 'users' %}is-active{% endif %}"><i class="fa-solid fa-users"></i> {% translate "Usuarios" %}</a></li>
+                <li><a href="{% url 'backoffice:photo_list' %}" class="{% if section == 'photos' %}is-active{% endif %}"><i class="fa-solid fa-image"></i> {% translate "Fotos" %}</a></li>
             </ul>
         </nav>
         <div class="bo-side-foot">

@@ -169,6 +169,14 @@ class PairStatisticsTests(TestCase):
         self.assertIn("A ASON", names)
         self.assertEqual(len(response.context["top_local_players"]), 2)
 
+    def test_team_statistics_chart_script_is_not_cut(self):
+        # Un </script> dentro del script de los datos lo cerraba antes de tiempo y no se pintaba ningún gráfico.
+        html = self.client.get(reverse("team_statistics")).content.decode()
+        script = html[html.index("const teamData"):]
+        script = script[:script.index("</script>")]
+        self.assertIn("column_chart_data:", script)
+        self.assertTrue(script.rstrip().endswith("};"))
+
     def test_player_season_games_table(self):
         response = self.client.get(reverse("player_statistics"), {"player": self.a.public_id, "season": "2024-2025"})
         games = response.context["d"]["games"]

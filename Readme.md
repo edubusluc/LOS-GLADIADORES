@@ -63,6 +63,17 @@ python manage.py migrate
 columnas de las migraciones del repositorio, y solo cambia el historial de migraciones
 (ninguna tabla ni dato). Si le falta algo, se para y lo dice.
 
+### Empezar de cero
+
+```bash
+python clear_database.py   # borra todas las tablas y las fotos subidas y aplica las migraciones
+python populate_db.py      # opcional: carga el club LOS GLADIADORES con sus datos de partida
+```
+
+`clear_database.py` deja la base de datos vacía con el esquema actual (`--conservar-fotos`
+no borra `media/`). `populate_db.py` pregunta el usuario, email y contraseña del capitán,
+que se crea también como superusuario. No se puede deshacer: copia antes `db.sqlite3` y `media/`.
+
 ### PostgreSQL
 
 Sin `DATABASE_URL` la aplicación usa SQLite (`db.sqlite3`), que basta para desarrollar.

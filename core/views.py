@@ -128,7 +128,7 @@ def register_club(request):
 def no_club(request):
     if request.club is not None:
         return redirect("home")
-    return render(request, "no_club.html")
+    return render(request, "no_club.html", {"suspended_clubs": request.suspended_clubs})
 
 
 @login_required

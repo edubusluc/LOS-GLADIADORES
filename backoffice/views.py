@@ -18,7 +18,8 @@ from django.utils.translation import gettext as _, ngettext
 from django.views.decorators.http import require_POST
 
 from core import moderation
-from core.models import Club, Invitation, Membership, PhotoCheck
+from core.emails import send_photo_removed_email
+from core.models import Club, Invitation, Membership, PhotoCheck, PhotoRemoval
 from match.models import Match
 from players.models import Player
 
@@ -123,6 +124,22 @@ def club_detail(request, club_id):
 
 
 @staff_required
+@require_POST
+def club_toggle_suspended(request, club_id):
+    """Suspende (o reactiva) un club: sus miembros no pueden entrar en él. No se borra nada."""
+    club = get_object_or_404(Club, public_id=club_id)
+    if club.is_suspended:
+        club.suspended_at, club.suspension_reason = None, ""
+        messages.success(request, _("Club reactivado."))
+    else:
+        club.suspended_at = timezone.now()
+        club.suspension_reason = request.POST.get("reason", "").strip()[:500]
+        messages.success(request, _("Club suspendido: sus miembros ya no pueden entrar."))
+    club.save(update_fields=["suspended_at", "suspension_reason"])
+    return redirect("backoffice:club_detail", club_id=club.public_id)
+
+
+@staff_required
 def user_list(request):
     q = request.GET.get("q", "").strip()
     kind = request.GET.get("kind", "")
@@ -167,9 +184,10 @@ def user_detail(request, user_id):
         "invitation_used": Invitation.objects.filter(used_by=member).select_related("club", "created_by").first(),
         "invitations_sent": Invitation.objects.filter(created_by=member).count(),
         "photo_checks": [
-            c for c in PhotoCheck.objects.filter(uploaded_by=member).exclude(photo="")
+            c for c in PhotoCheck.objects.filter(Q(uploaded_by=member) | Q(player__user=member)).exclude(photo="")
             .select_related("team", "player", "club") if c.in_use
         ],
+        "photo_removals": PhotoRemoval.objects.filter(user=member).select_related("club", "removed_by"),
     })
 
 
@@ -533,6 +551,11 @@ def import_template(request, entity):
 
 
 # ---------- Fotos subidas ----------
+# El personal revisa las fotos que suben los usuarios (escudos y fotos de jugador) y
+# elimina las que no cumplen los términos y condiciones: se avisa por email al jugador
+# (o a quien subió el escudo) y queda registrado (PhotoRemoval). Las veces que le ha
+# pasado a cada usuario se ven aquí y en su ficha. Rekognition (core/moderation.py) es
+# opcional y está desactivado por defecto: sin él todas las fotos llegan «Sin validar».
 
 PHOTO_FILTERS = [PhotoCheck.UNCHECKED, PhotoCheck.REJECTED, PhotoCheck.APPROVED, PhotoCheck.REVIEWED]
 
@@ -547,6 +570,50 @@ def _remove_photo(check):
     return False
 
 
+def _remove_and_notify(request, checks, reason=""):
+    """
+    Elimina las fotos en uso de ``checks``, registra cada una (PhotoRemoval) y manda un
+    solo correo a cada afectado. Devuelve (fotos eliminadas, avisados, sin poder avisar).
+    """
+    by_owner = {}
+    for check in checks:
+        subject, owner, club = check.subject_label, check.owner, check.club
+        if _remove_photo(check):
+            by_owner.setdefault(owner, []).append((subject, club))
+        check.delete()
+    removed = notified = not_notified = 0
+    for owner, items in by_owner.items():
+        removals = [
+            PhotoRemoval.objects.create(
+                user=owner, club=club, subject=subject, reason=reason, removed_by=request.user,
+            )
+            for subject, club in items
+        ]
+        removed += len(removals)
+        total = PhotoRemoval.objects.filter(user=owner).count() if owner else 0
+        sent = send_photo_removed_email(
+            owner, [subject for subject, _club in items], reason=reason, removals=total,
+            site_url=request.build_absolute_uri("/"),
+        )
+        if sent:
+            PhotoRemoval.objects.filter(pk__in=[r.pk for r in removals]).update(email_sent=True)
+            notified += 1
+        else:
+            not_notified += 1
+    return removed, notified, not_notified
+
+
+def _report_removal(request, removed, notified, not_notified):
+    if not removed:
+        messages.info(request, _("Esa foto ya no se usaba."))
+        return
+    messages.success(request, ngettext("%(n)s foto eliminada.", "%(n)s fotos eliminadas.", removed) % {"n": removed})
+    if notified:
+        messages.success(request, _("Se ha avisado por email al usuario."))
+    if not_notified:
+        messages.warning(request, _("No se ha podido avisar por email (el usuario no tiene email o falló el envío)."))
+
+
 @staff_required
 def photo_list(request):
     status = request.GET.get("status", PhotoCheck.UNCHECKED)
@@ -554,17 +621,28 @@ def photo_list(request):
         status = PhotoCheck.UNCHECKED
     checks = (
         PhotoCheck.objects.filter(status=status)
-        .select_related("club", "uploaded_by", "team", "player")
+        .select_related("club", "uploaded_by", "team", "player__user")
         .order_by("-created_at")
     )
     if status != PhotoCheck.REJECTED:
         checks = checks.exclude(photo="")
-    counts = dict(PhotoCheck.objects.values_list("status").annotate(n=Count("id")).order_by())
+    page = _page(request, checks)
+    owners = {c.owner.pk for c in page if c.owner}
+    strikes = dict(
+        PhotoRemoval.objects.filter(user__in=owners).values_list("user").annotate(n=Count("id")).order_by()
+    )
+    for c in page:
+        c.strikes = strikes.get(c.owner.pk, 0) if c.owner else 0
+    # Las rechazadas no tienen foto guardada; del resto solo cuentan las que llegaron a guardarse.
+    counts = dict(PhotoCheck.objects.exclude(photo="").values_list("status").annotate(n=Count("id")).order_by())
+    counts[PhotoCheck.REJECTED] = PhotoCheck.objects.filter(status=PhotoCheck.REJECTED).count()
     return render(request, "backoffice/photo_list.html", {
         "section": "photos",
         "status": status,
         "filters": [(s, label, counts.get(s, 0)) for s, label in PhotoCheck.STATUSES],
-        "page": _page(request, checks),
+        "page": page,
+        "recent_removals": PhotoRemoval.objects.select_related("user", "club", "removed_by")[:10],
+        "rekognition_enabled": settings.REKOGNITION_ENABLED,
         "calls_this_month": moderation.calls_this_month(),
         "monthly_limit": settings.REKOGNITION_MONTHLY_LIMIT,
         "free_until": settings.REKOGNITION_FREE_UNTIL,
@@ -575,12 +653,8 @@ def photo_list(request):
 @staff_required
 @require_POST
 def photo_delete(request, check_id):
-    check = get_object_or_404(PhotoCheck.objects.select_related("team", "player"), public_id=check_id)
-    if _remove_photo(check):
-        messages.success(request, _("Foto eliminada."))
-    else:
-        messages.info(request, _("Esa foto ya no se usaba."))
-    check.delete()
+    check = get_object_or_404(PhotoCheck.objects.select_related("team", "player__user", "uploaded_by", "club"), public_id=check_id)
+    _report_removal(request, *_remove_and_notify(request, [check], request.POST.get("reason", "").strip()[:500]))
     return _back_to(request, "backoffice:photo_list")
 
 
@@ -595,13 +669,27 @@ def photo_reviewed(request, check_id):
 @staff_required
 @require_POST
 def user_photos_delete(request, user_id):
-    """Elimina todas las fotos que ha subido un usuario y siguen en uso."""
+    """Elimina todas las fotos que ha subido un usuario (o de su jugador) y siguen en uso."""
     member = get_object_or_404(User, pk=user_id)
-    removed = 0
-    for check in PhotoCheck.objects.filter(uploaded_by=member).exclude(photo="").select_related("team", "player"):
-        removed += _remove_photo(check)
-        check.delete()
-    messages.success(request, ngettext("%(n)s foto eliminada.", "%(n)s fotos eliminadas.", removed) % {"n": removed})
+    checks = (
+        PhotoCheck.objects.filter(Q(uploaded_by=member) | Q(player__user=member)).exclude(photo="")
+        .select_related("team", "player__user", "uploaded_by", "club")
+    )
+    _report_removal(request, *_remove_and_notify(request, list(checks), request.POST.get("reason", "").strip()[:500]))
+    return redirect("backoffice:user_detail", user_id=member.pk)
+
+
+@staff_required
+@require_POST
+def user_toggle_active(request, user_id):
+    """Suspende (o reactiva) la cuenta de un usuario: suspendida, no puede iniciar sesión."""
+    member = get_object_or_404(User, pk=user_id)
+    if member == request.user or member.is_superuser:
+        messages.error(request, _("No puedes suspender esta cuenta."))
+    else:
+        member.is_active = not member.is_active
+        member.save(update_fields=["is_active"])
+        messages.success(request, _("Cuenta reactivada.") if member.is_active else _("Cuenta suspendida: ya no puede iniciar sesión."))
     return redirect("backoffice:user_detail", user_id=member.pk)
 
 

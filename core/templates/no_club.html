@@ -5,11 +5,18 @@
 <div class="z-auth">
     <div class="z-auth-card text-center">
         <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
-        <h1>{% translate "Sin club" %}</h1>
+        {% if not suspended_clubs %}<h1>{% translate "Sin club" %}</h1>{% endif %}
         {% if messages %}
         <div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
         {% endif %}
+        {% if suspended_clubs %}
+        <h1>{% translate "Club suspendido" %}</h1>
+        {% for club in suspended_clubs %}
+        <p class="text-muted">{% blocktranslate trimmed with club=club.name %}El club {{ club }} está suspendido por incumplir los términos y condiciones de Zyra. Si crees que es un error, escribe a join.zyra@gmail.com.{% endblocktranslate %}</p>
+        {% endfor %}
+        {% else %}
         <p class="text-muted">{% translate "Todavía no perteneces a ningún club. Pide a un capitán que te añada como miembro, o registra un club nuevo." %}</p>
+        {% endif %}
         <a class="btn btn-primary btn-lg" href="{% url 'register_club' %}">{% translate "Registrar un club" %}</a>
     </div>
 </div>

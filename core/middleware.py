@@ -22,15 +22,19 @@ class CurrentClubMiddleware:
     def __call__(self, request):
         request.club = None
         request.membership = None
+        request.suspended_clubs = []
 
         if request.user.is_authenticated:
             memberships = Membership.objects.filter(user=request.user).select_related("club").order_by("club__name")
+            # Los clubes suspendidos desde el back-office no se pueden usar (no_club lo explica).
+            request.suspended_clubs = [m.club for m in memberships if m.club.is_suspended]
+            memberships = [m for m in memberships if not m.club.is_suspended]
             club_id = request.session.get(SESSION_KEY)
             membership = None
             if club_id:
                 membership = next((m for m in memberships if m.club_id == club_id), None)
             if membership is None:
-                membership = memberships.first()
+                membership = memberships[0] if memberships else None
 
             if membership:
                 request.membership = membership

@@ -1,0 +1,14 @@
+{% load i18n %}<h1 style="margin:0 0 16px; font-size:22px; color:#0B0B0B;">{% blocktranslate with username=user.username %}Hola, {{ username }}{% endblocktranslate %}</h1>
+<p style="margin:0 0 12px;">{% blocktranslate trimmed count n=subjects|length %}El equipo de Zyra ha revisado esta imagen y la ha eliminado porque no cumple los términos y condiciones de uso:{% plural %}El equipo de Zyra ha revisado estas imágenes y las ha eliminado porque no cumplen los términos y condiciones de uso:{% endblocktranslate %}</p>
+<ul style="margin:0 0 12px; padding-left:20px;">{% for s in subjects %}<li>{{ s }}</li>{% endfor %}</ul>
+{% if reason %}<p style="margin:0 0 12px;"><strong>{% translate "Motivo" %}:</strong> {{ reason }}</p>{% endif %}
+<p style="margin:0 0 12px;">{% translate "Puedes subir otra imagen que respete las normas: sin desnudos, violencia, contenido ofensivo ni imágenes de otras personas sin su permiso." %}</p>
+{% if repeated %}
+<p style="margin:0 0 12px; padding:12px; background-color:#FFF4E5; border-radius:8px;"><strong>{% blocktranslate trimmed with n=removals %}Ya hemos eliminado imágenes tuyas {{ n }} veces.{% endblocktranslate %}</strong> {% translate "Si vuelve a ocurrir, podemos suspender tu cuenta y eliminar el equipo." %}</p>
+{% else %}
+<p style="margin:0 0 12px;">{% translate "Si se repite, podemos suspender tu cuenta y eliminar el equipo." %}</p>
+{% endif %}
+{% if site_url %}
+<p style="margin:0 0 16px;"><a href="{{ site_url }}" style="display:inline-block; background-color:#B4F100; color:#0A0A0A; font-weight:bold; text-decoration:none; padding:10px 20px; border-radius:8px;">{% translate "Entrar en Zyra" %}</a></p>
+{% endif %}
+<p style="margin:0;">{% translate "Un saludo," %}<br>{% translate "El equipo de Zyra" %}</p>

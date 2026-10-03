@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 12:31+0000\n"
+"POT-Creation-Date: 2026-10-03 14:32+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -127,7 +127,7 @@ msgid "Uno de los dos equipos tiene que ser %(team)s."
 msgstr "One of the two teams must be %(team)s."
 
 #: backoffice/importer.py:212
-#: backoffice/templates/backoffice/club_detail.html:20
+#: backoffice/templates/backoffice/club_detail.html:32
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 #: core/templates/base.html:36 core/templates/base.html:135
 #: players/templates/list_players.html:8 players/templates/manage_roster.html:7
@@ -138,7 +138,7 @@ msgstr "Players"
 #: backoffice/importer.py:214 backoffice/importer.py:227
 #: backoffice/templates/backoffice/club_list.html:22
 #: backoffice/templates/backoffice/sql_console.html:35
-#: backoffice/templates/backoffice/user_detail.html:22
+#: backoffice/templates/backoffice/user_detail.html:32
 #: data_analyse/templates/team_statistics.html:145
 #: players/templates/list_players.html:46
 #: players/templates/list_players.html:98 team/templates/list_teams.html:70
@@ -193,7 +193,7 @@ msgstr ""
 "team is not imported."
 
 #: backoffice/importer.py:235
-#: backoffice/templates/backoffice/club_detail.html:21
+#: backoffice/templates/backoffice/club_detail.html:33
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 #: core/templates/base.html:35 core/templates/base.html:133
 #: core/templates/landing.html:30
@@ -207,7 +207,8 @@ msgstr "Matches"
 
 #: backoffice/importer.py:237
 #: backoffice/templates/backoffice/import_list.html:59
-#: backoffice/templates/backoffice/photo_list.html:28
+#: backoffice/templates/backoffice/photo_list.html:35
+#: backoffice/templates/backoffice/photo_list.html:69
 #: data_analyse/templates/pair_statistics.html:129
 #: data_analyse/templates/player_statistics.html:193
 #: data_analyse/templates/warnings_statistics.html:66 match/forms.py:29
@@ -412,6 +413,7 @@ msgstr "Running"
 
 #: backoffice/models.py:88
 #: backoffice/templates/backoffice/includes/run_status.html:2
+#: backoffice/templates/backoffice/photo_list.html:55
 #: backoffice/templates/backoffice/run_detail.html:49
 msgid "Correcta"
 msgstr "Succeeded"
@@ -618,7 +620,7 @@ msgstr "Import data"
 #: backoffice/templates/backoffice/club_list.html:3
 #: backoffice/templates/backoffice/club_list.html:9
 #: backoffice/templates/backoffice/dashboard.html:29
-#: backoffice/templates/backoffice/user_detail.html:45
+#: backoffice/templates/backoffice/user_detail.html:55
 #: backoffice/templates/backoffice/user_list.html:26
 msgid "Clubes"
 msgstr "Clubs"
@@ -633,7 +635,8 @@ msgstr "Users"
 
 #: backoffice/templates/backoffice/base.html:41
 #: backoffice/templates/backoffice/photo_list.html:3
-#: backoffice/templates/backoffice/photo_list.html:9
+#: backoffice/templates/backoffice/photo_list.html:15
+#: backoffice/templates/backoffice/user_detail.html:73
 msgid "Fotos"
 msgstr "Photos"
 
@@ -662,142 +665,185 @@ msgstr "joined on %(created)s"
 msgid "id del equipo: %(team_id)s"
 msgstr "team id: %(team_id)s"
 
-#: backoffice/templates/backoffice/club_detail.html:13
-#: backoffice/templates/backoffice/user_detail.html:13
+#: backoffice/templates/backoffice/club_detail.html:9
+#: backoffice/templates/backoffice/includes/club_rows.html:9
+#: backoffice/templates/backoffice/user_detail.html:61
+msgid "Suspendido"
+msgstr "Suspended"
+
+#: backoffice/templates/backoffice/club_detail.html:12
+msgid ""
+"¿Suspender este club? Sus miembros no podrán entrar hasta que lo reactives."
+msgstr ""
+"Suspend this club? Its members won’t be able to access it until you "
+"reactivate it."
+
+#: backoffice/templates/backoffice/club_detail.html:15
+msgid "Reactivar club"
+msgstr "Reactivate club"
+
+#: backoffice/templates/backoffice/club_detail.html:17
+msgid "Motivo (opcional)"
+msgstr "Reason (optional)"
+
+#: backoffice/templates/backoffice/club_detail.html:17
+#: backoffice/templates/backoffice/club_detail.html:27
+#: backoffice/templates/backoffice/photo_list.html:35
+#: backoffice/templates/backoffice/photo_list.html:50
+#: backoffice/templates/backoffice/photo_list.html:69
+#: backoffice/templates/backoffice/user_detail.html:77
+#: core/templates/emails/photo_removed.html:4
+#: core/templates/emails/photo_removed.txt:6
+msgid "Motivo"
+msgstr "Reason"
+
+#: backoffice/templates/backoffice/club_detail.html:18
+msgid "Suspender club"
+msgstr "Suspend club"
+
+#: backoffice/templates/backoffice/club_detail.html:22
+#: backoffice/templates/backoffice/user_detail.html:23
 msgid "Abrir en Django admin"
 msgstr "Open in Django admin"
 
-#: backoffice/templates/backoffice/club_detail.html:18
+#: backoffice/templates/backoffice/club_detail.html:27
+#, python-format
+msgid "Suspendido el %(date)s."
+msgstr "Suspended on %(date)s."
+
+#: backoffice/templates/backoffice/club_detail.html:30
 msgid "Resumen del club"
 msgstr "Club summary"
 
-#: backoffice/templates/backoffice/club_detail.html:19
-#: backoffice/templates/backoffice/club_detail.html:26
+#: backoffice/templates/backoffice/club_detail.html:31
+#: backoffice/templates/backoffice/club_detail.html:38
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 msgid "Miembros"
 msgstr "Members"
 
-#: backoffice/templates/backoffice/club_detail.html:19
+#: backoffice/templates/backoffice/club_detail.html:31
 #, python-format
 msgid "%(n)s capitán"
 msgid_plural "%(n)s capitanes"
 msgstr[0] "%(n)s captain"
 msgstr[1] "%(n)s captains"
 
-#: backoffice/templates/backoffice/club_detail.html:20
+#: backoffice/templates/backoffice/club_detail.html:32
 #, python-format
 msgid "%(total)s en total, contando bajas"
 msgstr "%(total)s in total, including inactive"
 
-#: backoffice/templates/backoffice/club_detail.html:21
+#: backoffice/templates/backoffice/club_detail.html:33
 #, python-format
 msgid "%(n)s equipo rival"
 msgid_plural "%(n)s equipos rivales"
 msgstr[0] "%(n)s rival team"
 msgstr[1] "%(n)s rival teams"
 
-#: backoffice/templates/backoffice/club_detail.html:22
+#: backoffice/templates/backoffice/club_detail.html:34
 #: backoffice/templates/backoffice/club_list.html:24
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 msgid "Último partido"
 msgstr "Last match"
 
-#: backoffice/templates/backoffice/club_detail.html:22
+#: backoffice/templates/backoffice/club_detail.html:34
 msgid "sin partidos jugados"
 msgstr "no matches played"
 
-#: backoffice/templates/backoffice/club_detail.html:28
+#: backoffice/templates/backoffice/club_detail.html:40
 #: backoffice/templates/backoffice/load.html:38
+#: backoffice/templates/backoffice/photo_list.html:69
 #: backoffice/templates/backoffice/user_list.html:26 core/forms.py:42
 #: core/templates/club_members.html:18 core/templates/emails/welcome.html:9
 #: core/templates/emails/welcome.txt:5
 msgid "Usuario"
 msgstr "Username"
 
-#: backoffice/templates/backoffice/club_detail.html:28
-#: backoffice/templates/backoffice/user_detail.html:23
+#: backoffice/templates/backoffice/club_detail.html:40
+#: backoffice/templates/backoffice/photo_list.html:69
+#: backoffice/templates/backoffice/user_detail.html:33
 #: backoffice/templates/backoffice/user_list.html:26 core/forms.py:33
 msgid "Email"
 msgstr "Email"
 
-#: backoffice/templates/backoffice/club_detail.html:28
-#: backoffice/templates/backoffice/user_detail.html:47
+#: backoffice/templates/backoffice/club_detail.html:40
+#: backoffice/templates/backoffice/user_detail.html:57
 msgid "Rol"
 msgstr "Role"
 
-#: backoffice/templates/backoffice/club_detail.html:28
-#: backoffice/templates/backoffice/user_detail.html:24
+#: backoffice/templates/backoffice/club_detail.html:40
+#: backoffice/templates/backoffice/user_detail.html:34
 #: backoffice/templates/backoffice/user_list.html:26
 msgid "Último acceso"
 msgstr "Last login"
 
-#: backoffice/templates/backoffice/club_detail.html:34
-#: backoffice/templates/backoffice/user_detail.html:52 core/models.py:47
+#: backoffice/templates/backoffice/club_detail.html:46
+#: backoffice/templates/backoffice/user_detail.html:62 core/models.py:55
 msgid "Capitán"
 msgstr "Captain"
 
-#: backoffice/templates/backoffice/club_detail.html:34
-#: backoffice/templates/backoffice/user_detail.html:52
+#: backoffice/templates/backoffice/club_detail.html:46
+#: backoffice/templates/backoffice/user_detail.html:62
 msgid "Miembro"
 msgstr "Member"
 
-#: backoffice/templates/backoffice/club_detail.html:38
+#: backoffice/templates/backoffice/club_detail.html:50
 msgid "Sin miembros."
 msgstr "No members."
 
-#: backoffice/templates/backoffice/club_detail.html:46
+#: backoffice/templates/backoffice/club_detail.html:58
 #: players/templates/player_detail.html:32
 msgid "Últimos partidos"
 msgstr "Latest matches"
 
-#: backoffice/templates/backoffice/club_detail.html:51
+#: backoffice/templates/backoffice/club_detail.html:63
 msgid "Sin partidos jugados."
 msgstr "No matches played."
 
-#: backoffice/templates/backoffice/club_detail.html:56
+#: backoffice/templates/backoffice/club_detail.html:68
 msgid "Próximos partidos"
 msgstr "Upcoming matches"
 
-#: backoffice/templates/backoffice/club_detail.html:61
+#: backoffice/templates/backoffice/club_detail.html:73
 msgid "Nada programado."
 msgstr "Nothing scheduled."
 
-#: backoffice/templates/backoffice/club_detail.html:68
+#: backoffice/templates/backoffice/club_detail.html:80
 msgid "Últimas invitaciones"
 msgstr "Recent invitations"
 
-#: backoffice/templates/backoffice/club_detail.html:70
+#: backoffice/templates/backoffice/club_detail.html:82
 msgid "Creada"
 msgstr "Created"
 
-#: backoffice/templates/backoffice/club_detail.html:70
+#: backoffice/templates/backoffice/club_detail.html:82
 msgid "Por"
 msgstr "By"
 
-#: backoffice/templates/backoffice/club_detail.html:70
+#: backoffice/templates/backoffice/club_detail.html:82
 #: backoffice/templates/backoffice/includes/run_rows.html:3
 #: backoffice/templates/backoffice/job_detail.html:66
-#: backoffice/templates/backoffice/photo_list.html:21
+#: backoffice/templates/backoffice/photo_list.html:28
 #: backoffice/templates/backoffice/run_detail.html:23
 #: backoffice/templates/backoffice/run_list.html:18
-#: backoffice/templates/backoffice/user_detail.html:26
+#: backoffice/templates/backoffice/user_detail.html:36
 msgid "Estado"
 msgstr "Status"
 
-#: backoffice/templates/backoffice/club_detail.html:77
+#: backoffice/templates/backoffice/club_detail.html:89
 #, python-format
 msgid "Usada por %(username)s"
 msgstr "Used by %(username)s"
 
-#: backoffice/templates/backoffice/club_detail.html:78
+#: backoffice/templates/backoffice/club_detail.html:90
 msgid "Caducada"
 msgstr "Expired"
 
-#: backoffice/templates/backoffice/club_detail.html:79
+#: backoffice/templates/backoffice/club_detail.html:91
 msgid "Vigente"
 msgstr "Valid"
 
-#: backoffice/templates/backoffice/club_detail.html:83
+#: backoffice/templates/backoffice/club_detail.html:95
 msgid "Este club no ha creado invitaciones."
 msgstr "This club has not created any invitations."
 
@@ -996,6 +1042,7 @@ msgid "Últimos usuarios"
 msgstr "Latest users"
 
 #: backoffice/templates/backoffice/dashboard.html:104
+#: backoffice/templates/backoffice/photo_list.html:42
 msgid "sin email"
 msgstr "no email"
 
@@ -1067,8 +1114,8 @@ msgstr "What to import"
 #: backoffice/templates/backoffice/import_list.html:59
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 #: backoffice/templates/backoffice/load.html:38
-#: backoffice/templates/backoffice/photo_list.html:28
-#: backoffice/templates/backoffice/user_detail.html:47
+#: backoffice/templates/backoffice/photo_list.html:35
+#: backoffice/templates/backoffice/user_detail.html:57
 #: core/templates/register_club.html:14
 msgid "Club"
 msgstr "Club"
@@ -1347,7 +1394,7 @@ msgid "(primeras %(n)s)"
 msgstr "(first %(n)s)"
 
 #: backoffice/templates/backoffice/import_preview.html:38
-#: backoffice/views.py:471
+#: backoffice/views.py:489
 msgid "Línea"
 msgstr "Line"
 
@@ -1356,7 +1403,7 @@ msgid "Acción"
 msgstr "Action"
 
 #: backoffice/templates/backoffice/import_preview.html:38
-#: backoffice/views.py:471
+#: backoffice/views.py:489
 msgid "Errores"
 msgstr "Errors"
 
@@ -1493,7 +1540,7 @@ msgid "En curso · ver en directo"
 msgstr "Running · watch live"
 
 #: backoffice/templates/backoffice/job_detail.html:66
-#: backoffice/templates/backoffice/user_detail.html:26
+#: backoffice/templates/backoffice/user_detail.html:36
 msgid "Activo"
 msgstr "Active"
 
@@ -1681,7 +1728,7 @@ msgid "Última actividad"
 msgstr "Last activity"
 
 #: backoffice/templates/backoffice/load.html:42
-#: backoffice/templates/backoffice/user_detail.html:26
+#: backoffice/templates/backoffice/user_detail.html:36
 #: backoffice/templates/backoffice/user_list.html:33
 msgid "Staff"
 msgstr "Staff"
@@ -1690,62 +1737,98 @@ msgstr "Staff"
 msgid "Nadie conectado ahora mismo."
 msgstr "Nobody online right now."
 
-#: backoffice/templates/backoffice/photo_list.html:8
+#: backoffice/templates/backoffice/photo_list.html:10
 #, python-format
 msgid "Rekognition este mes: %(n)s de %(limit)s fotos gratis"
 msgstr "Rekognition this month: %(n)s of %(limit)s free photos"
 
-#: backoffice/templates/backoffice/photo_list.html:8
+#: backoffice/templates/backoffice/photo_list.html:10
 #, python-format
 msgid "gratis hasta el %(date)s"
 msgstr "free until %(date)s"
 
-#: backoffice/templates/backoffice/photo_list.html:18
-#, python-format
-msgid ""
-"Ahora mismo las fotos nuevas no se validan (%(reason)s): se aceptan y "
-"aparecen aquí como «Sin validar»."
-msgstr ""
-"New photos are not being checked right now (%(reason)s): they are accepted "
-"and listed here as “Not checked”."
+#: backoffice/templates/backoffice/photo_list.html:12
+msgid "Revisión manual: las fotos nuevas llegan aquí pendientes de revisar"
+msgstr "Manual review: new photos arrive here pending review"
 
-#: backoffice/templates/backoffice/photo_list.html:28
+#: backoffice/templates/backoffice/photo_list.html:23
+msgid ""
+"Revisa las fotos que suben los usuarios. Si una no cumple los términos y "
+"condiciones, elimínala: se avisa por email al jugador (o a quien subió el "
+"escudo) y queda registrado. Si se repite, puedes suspender su cuenta y "
+"eliminar el equipo."
+msgstr ""
+"Review the photos users upload. If one breaks the terms and conditions, "
+"delete it: the player (or whoever uploaded the crest) is notified by email "
+"and it is recorded. If it happens again, you can suspend their account and "
+"delete the team."
+
+#: backoffice/templates/backoffice/photo_list.html:25
+#, python-format
+msgid "Ahora mismo Rekognition no valida las fotos nuevas (%(reason)s)."
+msgstr "Rekognition is not checking new photos right now (%(reason)s)."
+
+#: backoffice/templates/backoffice/photo_list.html:35 core/models.py:176
 msgid "Foto"
 msgstr "Photo"
 
-#: backoffice/templates/backoffice/photo_list.html:28
+#: backoffice/templates/backoffice/photo_list.html:35
+#: backoffice/templates/backoffice/photo_list.html:69
 msgid "De"
 msgstr "Of"
 
-#: backoffice/templates/backoffice/photo_list.html:28
-msgid "Subida por"
-msgstr "Uploaded by"
+#: backoffice/templates/backoffice/photo_list.html:35
+msgid "Avisar a"
+msgstr "Notify"
 
-#: backoffice/templates/backoffice/photo_list.html:28
-msgid "Motivo"
-msgstr "Reason"
+#: backoffice/templates/backoffice/photo_list.html:35
+msgid "Fotos eliminadas antes"
+msgstr "Photos removed before"
 
-#: backoffice/templates/backoffice/photo_list.html:32
+#: backoffice/templates/backoffice/photo_list.html:39
+msgid "Ver a tamaño completo"
+msgstr "View full size"
+
+#: backoffice/templates/backoffice/photo_list.html:39
 msgid "Ya no se usa"
 msgstr "No longer used"
 
-#: backoffice/templates/backoffice/photo_list.html:40
-msgid "Revisada"
-msgstr "Reviewed"
-
-#: backoffice/templates/backoffice/photo_list.html:43
-msgid "¿Eliminar esta foto?"
-msgstr "Delete this photo?"
-
-#: backoffice/templates/backoffice/photo_list.html:43
-#: match/templates/delete_match.html:11
-#: players/templates/confirm_delete.html:23
-msgid "Eliminar"
-msgstr "Delete"
-
 #: backoffice/templates/backoffice/photo_list.html:48
+msgid "¿Eliminar esta foto y avisar al usuario por email?"
+msgstr "Delete this photo and notify the user by email?"
+
+#: backoffice/templates/backoffice/photo_list.html:50
+#: backoffice/templates/backoffice/user_detail.html:77
+msgid "Motivo (opcional, va en el email)"
+msgstr "Reason (optional, included in the email)"
+
+#: backoffice/templates/backoffice/photo_list.html:51
+msgid "Eliminar y avisar"
+msgstr "Delete and notify"
+
+#: backoffice/templates/backoffice/photo_list.html:60
 msgid "No hay fotos en este estado."
 msgstr "There are no photos with this status."
+
+#: backoffice/templates/backoffice/photo_list.html:67
+msgid "Últimas fotos eliminadas"
+msgstr "Latest removed photos"
+
+#: backoffice/templates/backoffice/photo_list.html:69
+msgid "Eliminada por"
+msgstr "Removed by"
+
+#: backoffice/templates/backoffice/photo_list.html:77 call/models.py:30
+msgid "Enviado"
+msgstr "Sent"
+
+#: backoffice/templates/backoffice/photo_list.html:77
+msgid "No enviado"
+msgstr "Not sent"
+
+#: backoffice/templates/backoffice/photo_list.html:81
+msgid "Todavía no se ha eliminado ninguna foto."
+msgstr "No photos have been removed yet."
 
 #: backoffice/templates/backoffice/run_detail.html:3
 msgid "ejecución"
@@ -1965,77 +2048,101 @@ msgstr "Executed"
 msgid "Todavía no se ha lanzado ninguna consulta."
 msgstr "No queries have been run yet."
 
-#: backoffice/templates/backoffice/user_detail.html:20
+#: backoffice/templates/backoffice/user_detail.html:13
+msgid "¿Suspender esta cuenta? No podrá iniciar sesión hasta que la reactives."
+msgstr ""
+"Suspend this account? They won’t be able to sign in until you reactivate it."
+
+#: backoffice/templates/backoffice/user_detail.html:16
+msgid "Suspender cuenta"
+msgstr "Suspend account"
+
+#: backoffice/templates/backoffice/user_detail.html:18
+msgid "Reactivar cuenta"
+msgstr "Reactivate account"
+
+#: backoffice/templates/backoffice/user_detail.html:30
 msgid "Cuenta"
 msgstr "Account"
 
-#: backoffice/templates/backoffice/user_detail.html:24
+#: backoffice/templates/backoffice/user_detail.html:34
 #: backoffice/templatetags/backoffice_tags.py:16
 msgid "nunca"
 msgstr "never"
 
-#: backoffice/templates/backoffice/user_detail.html:25
+#: backoffice/templates/backoffice/user_detail.html:35
 msgid "Acceso"
 msgstr "Login"
 
-#: backoffice/templates/backoffice/user_detail.html:25
+#: backoffice/templates/backoffice/user_detail.html:35
 msgid "Sin método de acceso"
 msgstr "No login method"
 
-#: backoffice/templates/backoffice/user_detail.html:26
+#: backoffice/templates/backoffice/user_detail.html:36
 #: backoffice/templates/backoffice/user_list.html:34
 msgid "Inactivo"
 msgstr "Inactive"
 
-#: backoffice/templates/backoffice/user_detail.html:26
+#: backoffice/templates/backoffice/user_detail.html:36
 msgid "Superusuario"
 msgstr "Superuser"
 
-#: backoffice/templates/backoffice/user_detail.html:31
+#: backoffice/templates/backoffice/user_detail.html:41
 msgid "Cómo llegó"
 msgstr "How they joined"
 
-#: backoffice/templates/backoffice/user_detail.html:34
-#: backoffice/templates/backoffice/user_detail.html:37
+#: backoffice/templates/backoffice/user_detail.html:44
+#: backoffice/templates/backoffice/user_detail.html:47
 msgid "Invitación"
 msgstr "Invitation"
 
-#: backoffice/templates/backoffice/user_detail.html:34
+#: backoffice/templates/backoffice/user_detail.html:44
 #, python-format
 msgid "de %(creator)s a <a href=\"%(club_url)s\">%(club_name)s</a>"
 msgstr "from %(creator)s to <a href=\"%(club_url)s\">%(club_name)s</a>"
 
-#: backoffice/templates/backoffice/user_detail.html:35
+#: backoffice/templates/backoffice/user_detail.html:45
 msgid "Usada el"
 msgstr "Used on"
 
-#: backoffice/templates/backoffice/user_detail.html:37
+#: backoffice/templates/backoffice/user_detail.html:47
 msgid "No entró por invitación"
 msgstr "Did not join through an invitation"
 
-#: backoffice/templates/backoffice/user_detail.html:39
+#: backoffice/templates/backoffice/user_detail.html:49
 msgid "Invitaciones creadas"
 msgstr "Invitations created"
 
-#: backoffice/templates/backoffice/user_detail.html:55
+#: backoffice/templates/backoffice/user_detail.html:65
 msgid "No pertenece a ningún club."
 msgstr "Does not belong to any club."
 
-#: backoffice/templates/backoffice/user_detail.html:63
-msgid "Fotos subidas"
-msgstr "Uploaded photos"
+#: backoffice/templates/backoffice/user_detail.html:75
+msgid "¿Eliminar todas sus fotos y avisarle por email?"
+msgstr "Delete all their photos and notify them by email?"
 
-#: backoffice/templates/backoffice/user_detail.html:65
-msgid "¿Eliminar todas las fotos que ha subido este usuario?"
-msgstr "Delete all photos uploaded by this user?"
-
-#: backoffice/templates/backoffice/user_detail.html:67
+#: backoffice/templates/backoffice/user_detail.html:78
 msgid "Eliminar todas sus fotos"
 msgstr "Delete all their photos"
 
-#: backoffice/templates/backoffice/user_detail.html:78
-msgid "No tiene fotos subidas en uso."
-msgstr "No uploaded photos in use."
+#: backoffice/templates/backoffice/user_detail.html:89
+msgid "No tiene fotos en uso."
+msgstr "No photos in use."
+
+#: backoffice/templates/backoffice/user_detail.html:93
+#, python-format
+msgid "%(n)s foto eliminada por no cumplir los términos"
+msgid_plural "%(n)s fotos eliminadas por no cumplir los términos"
+msgstr[0] "%(n)s photo removed for breaking the terms"
+msgstr[1] "%(n)s photos removed for breaking the terms"
+
+#: backoffice/templates/backoffice/user_detail.html:97
+msgid "email no enviado"
+msgstr "email not sent"
+
+#: backoffice/templates/backoffice/user_detail.html:101
+msgid "Reincidente: puedes suspender su cuenta y eliminar el equipo."
+msgstr "Repeat offender: you can suspend their account and delete the team."
 
 #: backoffice/templates/backoffice/user_list.html:8
 #, python-format
@@ -2096,107 +2203,129 @@ msgstr "just now"
 msgid "Solo a mano"
 msgstr "Manual only"
 
-#: backoffice/views.py:161 core/forms.py:44
+#: backoffice/views.py:133
+msgid "Club reactivado."
+msgstr "Club reactivated."
+
+#: backoffice/views.py:137
+msgid "Club suspendido: sus miembros ya no pueden entrar."
+msgstr "Club suspended: its members can no longer access it."
+
+#: backoffice/views.py:178 core/forms.py:44
 #: core/templates/registration/login.html:22
 #: core/templates/registration/login.html:23
 msgid "Contraseña"
 msgstr "Password"
 
-#: backoffice/views.py:246
+#: backoffice/views.py:264
 #, python-format
 msgid "%(job)s: activado."
 msgstr "%(job)s: enabled."
 
-#: backoffice/views.py:248
+#: backoffice/views.py:266
 #, python-format
 msgid "%(job)s: en pausa."
 msgstr "%(job)s: paused."
 
-#: backoffice/views.py:260 backoffice/views.py:270
+#: backoffice/views.py:278 backoffice/views.py:288
 #, python-format
 msgid "Indica un valor válido para «%(field)s»."
 msgstr "Enter a valid value for “%(field)s”."
 
-#: backoffice/views.py:275
+#: backoffice/views.py:293
 #, python-format
 msgid "%(job)s ya se está ejecutando."
 msgstr "%(job)s is already running."
 
-#: backoffice/views.py:348
+#: backoffice/views.py:366
 msgid "Ponle un nombre a la consulta para guardarla."
 msgstr "Give the query a name to save it."
 
-#: backoffice/views.py:355
+#: backoffice/views.py:373
 #, python-format
 msgid "Consulta «%(name)s» guardada."
 msgstr "Query “%(name)s” saved."
 
-#: backoffice/views.py:357
+#: backoffice/views.py:375
 #, python-format
 msgid "Consulta «%(name)s» actualizada."
 msgstr "Query “%(name)s” updated."
 
-#: backoffice/views.py:373
+#: backoffice/views.py:391
 #, python-format
 msgid "Consulta «%(name)s» borrada."
 msgstr "Query “%(name)s” deleted."
 
-#: backoffice/views.py:397
+#: backoffice/views.py:415
 msgid "Elige qué importar, a qué club y cómo."
 msgstr "Choose what to import, into which club and how."
 
-#: backoffice/views.py:399
+#: backoffice/views.py:417
 msgid "Sube un fichero CSV."
 msgstr "Upload a CSV file."
 
-#: backoffice/views.py:448
+#: backoffice/views.py:466
 msgid "sí"
 msgstr "yes"
 
-#: backoffice/views.py:448
+#: backoffice/views.py:466
 msgid "no"
 msgstr "no"
 
-#: backoffice/views.py:500
+#: backoffice/views.py:518
 msgid "Hay filas con errores: no se ha importado nada."
 msgstr "Some rows have errors: nothing was imported."
 
-#: backoffice/views.py:506
+#: backoffice/views.py:524
 #, python-format
 msgid "Importación hecha: %(created)s creados y %(updated)s actualizados."
 msgstr "Import done: %(created)s created and %(updated)s updated."
 
-#: backoffice/views.py:519
+#: backoffice/views.py:537
 #, python-format
 msgid "Importación deshecha: %(deleted)s borrados y %(restored)s restaurados."
 msgstr "Import undone: %(deleted)s deleted and %(restored)s restored."
 
-#: backoffice/views.py:580
-msgid "Foto eliminada."
-msgstr "Photo deleted."
-
-#: backoffice/views.py:582
+#: backoffice/views.py:608
 msgid "Esa foto ya no se usaba."
 msgstr "That photo was no longer in use."
 
-#: backoffice/views.py:591
-msgid "Foto marcada como revisada."
-msgstr "Photo marked as reviewed."
-
-#: backoffice/views.py:604
+#: backoffice/views.py:610
 #, python-format
 msgid "%(n)s foto eliminada."
 msgid_plural "%(n)s fotos eliminadas."
 msgstr[0] "%(n)s photo deleted."
 msgstr[1] "%(n)s photos deleted."
 
+#: backoffice/views.py:612
+msgid "Se ha avisado por email al usuario."
+msgstr "The user has been notified by email."
+
+#: backoffice/views.py:614
+msgid ""
+"No se ha podido avisar por email (el usuario no tiene email o falló el "
+"envío)."
+msgstr "Could not notify by email (the user has no email or sending failed)."
+
+#: backoffice/views.py:665
+msgid "Foto marcada como revisada."
+msgstr "Photo marked as reviewed."
+
+#: backoffice/views.py:688
+msgid "No puedes suspender esta cuenta."
+msgstr "You can’t suspend this account."
+
+#: backoffice/views.py:692
+msgid "Cuenta reactivada."
+msgstr "Account reactivated."
+
+#: backoffice/views.py:692
+msgid "Cuenta suspendida: ya no puede iniciar sesión."
+msgstr "Account suspended: they can no longer sign in."
+
 #: call/models.py:30 match/templates/list_match.html:64
 msgid "Pendiente"
 msgstr "Pending"
-
-#: call/models.py:30
-msgid "Enviado"
-msgstr "Sent"
 
 #: call/models.py:30
 msgid "Fallido"
@@ -2268,6 +2397,10 @@ msgstr "Welcome to Zyra · You have joined %(club)s"
 #, python-format
 msgid "Te han invitado a %(club)s en Zyra"
 msgstr "You've been invited to %(club)s on Zyra"
+
+#: core/emails.py:156
+msgid "Hemos eliminado una foto que no cumple los términos de Zyra"
+msgstr "We removed a photo that breaks Zyra’s terms"
 
 #: core/forms.py:23
 msgid "Nombre del club"
@@ -2352,31 +2485,45 @@ msgstr ""
 "This photo can’t be used: it seems to contain content that isn’t allowed. "
 "Choose another one."
 
-#: core/models.py:48
+#: core/models.py:56
 msgid "Miembro (solo lectura)"
 msgstr "Member (read-only)"
 
-#: core/models.py:131
+#: core/models.py:139
 msgid "Validada"
 msgstr "Checked"
 
-#: core/models.py:132
+#: core/models.py:140
 msgid "Rechazada"
 msgstr "Rejected"
 
-#: core/models.py:133 match/templates/call_for_match.html:10
-msgid "Sin validar"
-msgstr "Not validated"
+#: core/models.py:141
+msgid "Pendiente de revisar"
+msgstr "Pending review"
 
-#: core/models.py:134
+#: core/models.py:142
 msgid "Revisada por el personal"
 msgstr "Reviewed by staff"
+
+#: core/models.py:173
+#, python-format
+msgid "Foto de %(player)s"
+msgstr "Photo of %(player)s"
+
+#: core/models.py:175
+#, python-format
+msgid "Escudo de %(team)s"
+msgstr "%(team)s crest"
 
 #: core/services.py:32
 msgid "Esta invitación ya se ha usado o ha caducado."
 msgstr "This invitation has already been used or has expired."
 
-#: core/services.py:34 core/views.py:254
+#: core/services.py:34
+msgid "Este club está suspendido y no admite nuevos miembros."
+msgstr "This club is suspended and does not accept new members."
+
+#: core/services.py:36 core/views.py:254
 #, python-format
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
@@ -2629,6 +2776,8 @@ msgstr ""
 
 #: core/templates/emails/invitation.html:6
 #: core/templates/emails/invitation.txt:10
+#: core/templates/emails/photo_removed.html:14
+#: core/templates/emails/photo_removed.txt:14
 #: core/templates/emails/welcome.html:24 core/templates/emails/welcome.txt:11
 #: match/notifications.py:52
 msgid "Un saludo,"
@@ -2636,6 +2785,8 @@ msgstr "Best regards,"
 
 #: core/templates/emails/invitation.html:6
 #: core/templates/emails/invitation.txt:11
+#: core/templates/emails/photo_removed.html:14
+#: core/templates/emails/photo_removed.txt:15
 #: core/templates/emails/welcome.html:24 core/templates/emails/welcome.txt:12
 msgid "El equipo de Zyra"
 msgstr "The Zyra team"
@@ -2672,6 +2823,62 @@ msgstr "Padel team management"
 #: core/templates/emails/layout.html:32
 msgid "Contacto:"
 msgstr "Contact:"
+
+#: core/templates/emails/photo_removed.html:1
+#: core/templates/emails/photo_removed.txt:1
+#, python-format
+msgid "Hola, %(username)s"
+msgstr "Hi, %(username)s"
+
+#: core/templates/emails/photo_removed.html:2
+#: core/templates/emails/photo_removed.txt:3
+msgid ""
+"El equipo de Zyra ha revisado esta imagen y la ha eliminado porque no cumple "
+"los términos y condiciones de uso:"
+msgid_plural ""
+"El equipo de Zyra ha revisado estas imágenes y las ha eliminado porque no "
+"cumplen los términos y condiciones de uso:"
+msgstr[0] ""
+"The Zyra team has reviewed this image and removed it because it breaks the "
+"terms and conditions of use:"
+msgstr[1] ""
+"The Zyra team has reviewed these images and removed them because they break "
+"the terms and conditions of use:"
+
+#: core/templates/emails/photo_removed.html:5
+#: core/templates/emails/photo_removed.txt:8
+msgid ""
+"Puedes subir otra imagen que respete las normas: sin desnudos, violencia, "
+"contenido ofensivo ni imágenes de otras personas sin su permiso."
+msgstr ""
+"You can upload another image that follows the rules: no nudity, violence, "
+"offensive content or pictures of other people without their permission."
+
+#: core/templates/emails/photo_removed.html:7
+#: core/templates/emails/photo_removed.txt:10
+#, python-format
+msgid "Ya hemos eliminado imágenes tuyas %(n)s veces."
+msgstr "We have now removed your images %(n)s times."
+
+#: core/templates/emails/photo_removed.html:7
+#: core/templates/emails/photo_removed.txt:10
+msgid "Si vuelve a ocurrir, podemos suspender tu cuenta y eliminar el equipo."
+msgstr "If it happens again, we may suspend your account and delete the team."
+
+#: core/templates/emails/photo_removed.html:9
+#: core/templates/emails/photo_removed.txt:10
+msgid "Si se repite, podemos suspender tu cuenta y eliminar el equipo."
+msgstr "If it happens again, we may suspend your account and delete the team."
+
+#: core/templates/emails/photo_removed.html:12
+#: core/templates/emails/welcome.html:22
+msgid "Entrar en Zyra"
+msgstr "Go to Zyra"
+
+#: core/templates/emails/photo_removed.txt:12
+#: core/templates/emails/welcome.txt:9
+msgid "Entra en Zyra"
+msgstr "Go to Zyra"
 
 #: core/templates/emails/welcome.html:1 core/templates/emails/welcome.txt:1
 #, python-format
@@ -2715,10 +2922,6 @@ msgstr "Team"
 msgid "Capitanes"
 msgstr "Captains"
 
-#: core/templates/emails/welcome.html:22
-msgid "Entrar en Zyra"
-msgstr "Go to Zyra"
-
 #: core/templates/emails/welcome.txt:3
 #, python-format
 msgid ""
@@ -2739,10 +2942,6 @@ msgid ""
 msgstr ""
 "Your registration is complete and you are now part of %(club)s. From now on "
 "you can view the team's matches, call-ups and statistics."
-
-#: core/templates/emails/welcome.txt:9
-msgid "Entra en Zyra"
-msgstr "Go to Zyra"
 
 #: core/templates/home.html:10
 #, python-format
@@ -3022,7 +3221,20 @@ msgstr "Set up the pairs and record the result of each set."
 msgid "Rachas, afinidad entre parejas y evolución por temporada."
 msgstr "Streaks, pair chemistry and progress by season."
 
-#: core/templates/no_club.html:12
+#: core/templates/no_club.html:13
+msgid "Club suspendido"
+msgstr "Club suspended"
+
+#: core/templates/no_club.html:15
+#, python-format
+msgid ""
+"El club %(club)s está suspendido por incumplir los términos y condiciones de "
+"Zyra. Si crees que es un error, escribe a join.zyra@gmail.com."
+msgstr ""
+"The club %(club)s is suspended for breaking Zyra’s terms and conditions. If "
+"you think this is a mistake, write to join.zyra@gmail.com."
+
+#: core/templates/no_club.html:18
 msgid ""
 "Todavía no perteneces a ningún club. Pide a un capitán que te añada como "
 "miembro, o registra un club nuevo."
@@ -3030,7 +3242,7 @@ msgstr ""
 "You don't belong to any club yet. Ask a captain to add you as a member, or "
 "register a new club."
 
-#: core/templates/no_club.html:13 core/templates/register_club.html:10
+#: core/templates/no_club.html:20 core/templates/register_club.html:10
 msgid "Registrar un club"
 msgstr "Register a club"
 
@@ -4521,6 +4733,10 @@ msgid "Resumen del partido"
 msgstr "Match overview"
 
 #: match/templates/call_for_match.html:10
+msgid "Sin validar"
+msgstr "Not validated"
+
+#: match/templates/call_for_match.html:10
 msgid "Acta cerrada"
 msgstr "Scoresheet closed"
 
@@ -4672,6 +4888,11 @@ msgstr ""
 "You are about to delete the match between <strong class=\"text-"
 "white\">%(local)s</strong> and <strong class=\"text-white\">%(visiting)s</"
 "strong>. This action cannot be undone."
+
+#: match/templates/delete_match.html:11
+#: players/templates/confirm_delete.html:23
+msgid "Eliminar"
+msgstr "Delete"
 
 #: match/templates/edit_call.html:8
 msgid "Editar convocatoria"
@@ -5779,3 +6000,20 @@ msgstr "Error creating the team. Please check the data."
 #: team/views.py:94
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
+
+#, python-format
+#~ msgid ""
+#~ "Ahora mismo las fotos nuevas no se validan (%(reason)s): se aceptan y "
+#~ "aparecen aquí como «Sin validar»."
+#~ msgstr ""
+#~ "New photos are not being checked right now (%(reason)s): they are "
+#~ "accepted and listed here as “Not checked”."
+
+#~ msgid "Subida por"
+#~ msgstr "Uploaded by"
+
+#~ msgid "¿Eliminar esta foto?"
+#~ msgstr "Delete this photo?"
+
+#~ msgid "Fotos subidas"
+#~ msgstr "Uploaded photos"

@@ -8,11 +8,21 @@
         <span class="z-eyebrow"><a href="{% url 'backoffice:user_list' %}">{% translate "Usuarios" %}</a> · {% with created=member.date_joined|date:"j M Y" %}{% blocktranslate %}alta el {{ created }}{% endblocktranslate %}{% endwith %}</span>
         <h1>{{ member.username }}</h1>
     </div>
-    {% if user.is_superuser %}
     <div class="z-actions">
+        {% if member != user and not member.is_superuser %}
+        <form method="post" action="{% url 'backoffice:user_toggle_active' member.id %}" class="d-inline" {% if member.is_active %}onsubmit="return confirm('{% translate "¿Suspender esta cuenta? No podrá iniciar sesión hasta que la reactives." %}')"{% endif %}>
+            {% csrf_token %}
+            {% if member.is_active %}
+            <button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-user-slash"></i> {% translate "Suspender cuenta" %}</button>
+            {% else %}
+            <button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-user-check"></i> {% translate "Reactivar cuenta" %}</button>
+            {% endif %}
+        </form>
+        {% endif %}
+        {% if user.is_superuser %}
         <a href="{% url 'admin:auth_user_change' member.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> {% translate "Abrir en Django admin" %}</a>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 <div class="bo-grid">
@@ -48,7 +58,7 @@
         <tbody>
         {% for m in memberships %}
             <tr>
-                <td><a href="{% url 'backoffice:club_detail' m.club.public_id %}">{{ m.club.name }}</a></td>
+                <td><a href="{% url 'backoffice:club_detail' m.club.public_id %}">{{ m.club.name }}</a>{% if m.club.is_suspended %} <span class="z-badge z-badge--danger">{% translate "Suspendido" %}</span>{% endif %}</td>
                 <td>{% if m.is_admin %}<span class="z-badge z-badge--lime">{% translate "Capitán" %}</span>{% else %}{% translate "Miembro" %}{% endif %}</td>
             </tr>
         {% empty %}
@@ -60,10 +70,11 @@
 
 <section class="z-panel">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <h2 class="h5 mb-0">{% translate "Fotos subidas" %}</h2>
+        <h2 class="h5 mb-0">{% translate "Fotos" %}</h2>
         {% if photo_checks %}
-        <form method="post" action="{% url 'backoffice:user_photos_delete' member.id %}" onsubmit="return confirm('{% translate "¿Eliminar todas las fotos que ha subido este usuario?" %}')">
+        <form method="post" action="{% url 'backoffice:user_photos_delete' member.id %}" class="d-flex flex-wrap gap-2" onsubmit="return confirm('{% translate "¿Eliminar todas sus fotos y avisarle por email?" %}')">
             {% csrf_token %}
+            <input type="text" name="reason" maxlength="500" class="form-control form-control-sm" style="max-width:240px" placeholder="{% translate 'Motivo (opcional, va en el email)' %}" aria-label="{% translate 'Motivo' %}">
             <button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i> {% translate "Eliminar todas sus fotos" %}</button>
         </form>
         {% endif %}
@@ -71,12 +82,24 @@
     <div class="d-flex flex-wrap gap-3 mt-3">
         {% for c in photo_checks %}
         <figure class="m-0 text-center">
-            <a href="{{ c.subject.photo.url }}" target="_blank" rel="noopener"><img src="{{ c.subject.photo.url }}" alt="" class="z-avatar z-avatar--lg"></a>
-            <figcaption class="small text-muted">{% if c.player %}{{ c.player.short_name }}{% else %}{{ c.team.name }}{% endif %} · {{ c.get_status_display }}</figcaption>
+            <a href="{{ c.subject.photo.url }}" target="_blank" rel="noopener"><img src="{{ c.subject.photo.url }}" alt="" width="96" height="96" style="object-fit:cover;border-radius:8px;"></a>
+            <figcaption class="small text-muted">{{ c.subject_label }}</figcaption>
         </figure>
         {% empty %}
-        <p class="text-muted mb-0">{% translate "No tiene fotos subidas en uso." %}</p>
+        <p class="text-muted mb-0">{% translate "No tiene fotos en uso." %}</p>
         {% endfor %}
     </div>
+
+    <h3 class="h6 mt-4">{% blocktranslate trimmed count n=photo_removals|length %}{{ n }} foto eliminada por no cumplir los términos{% plural %}{{ n }} fotos eliminadas por no cumplir los términos{% endblocktranslate %}</h3>
+    {% if photo_removals %}
+    <ul class="mb-0">
+        {% for r in photo_removals %}
+        <li>{{ r.created_at|date:"j M Y" }} · {{ r.subject }}{% if r.club %} ({{ r.club.name }}){% endif %}{% if r.reason %} · {{ r.reason }}{% endif %}{% if not r.email_sent %} · <span class="z-badge z-badge--danger">{% translate "email no enviado" %}</span>{% endif %}</li>
+        {% endfor %}
+    </ul>
+    {% if photo_removals|length > 1 %}
+    <p class="mt-2 mb-0"><i class="fa-solid fa-triangle-exclamation me-1"></i> {% translate "Reincidente: puedes suspender su cuenta y eliminar el equipo." %}</p>
+    {% endif %}
+    {% endif %}
 </section>
 {% endblock %}

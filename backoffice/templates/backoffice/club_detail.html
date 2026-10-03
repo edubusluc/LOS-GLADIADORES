@@ -6,14 +6,26 @@
 <div class="z-page-head">
     <div>
         <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">{% translate "Clubes" %}</a> · {% with created=club.created_at|date:"j M Y" %}{% blocktranslate %}alta el {{ created }}{% endblocktranslate %}{% endwith %}{% with team=club.own_team %}{% if team %} · {% blocktranslate with team_id=team.public_id %}id del equipo: {{ team_id }}{% endblocktranslate %}{% endif %}{% endwith %}</span>
-        <h1>{{ club.name }}</h1>
+        <h1>{{ club.name }}{% if club.is_suspended %} <span class="z-badge z-badge--danger">{% translate "Suspendido" %}</span>{% endif %}</h1>
     </div>
-    {% if user.is_superuser %}
     <div class="z-actions">
+        <form method="post" action="{% url 'backoffice:club_toggle_suspended' club.public_id %}" class="d-flex flex-wrap gap-2" {% if not club.is_suspended %}onsubmit="return confirm('{% translate "¿Suspender este club? Sus miembros no podrán entrar hasta que lo reactives." %}')"{% endif %}>
+            {% csrf_token %}
+            {% if club.is_suspended %}
+            <button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-circle-check"></i> {% translate "Reactivar club" %}</button>
+            {% else %}
+            <input type="text" name="reason" maxlength="500" class="form-control form-control-sm" style="max-width:220px" placeholder="{% translate 'Motivo (opcional)' %}" aria-label="{% translate 'Motivo' %}">
+            <button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-ban"></i> {% translate "Suspender club" %}</button>
+            {% endif %}
+        </form>
+        {% if user.is_superuser %}
         <a href="{% url 'admin:core_club_change' club.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> {% translate "Abrir en Django admin" %}</a>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
+{% if club.is_suspended %}
+<p class="z-panel"><i class="fa-solid fa-ban me-1"></i> {% blocktranslate trimmed with date=club.suspended_at|date:"j M Y H:i" %}Suspendido el {{ date }}.{% endblocktranslate %}{% if club.suspension_reason %} {% translate "Motivo" %}: {{ club.suspension_reason }}{% endif %}</p>
+{% endif %}
 
 <section class="bo-kpis" aria-label="{% translate 'Resumen del club' %}">
     <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Miembros" %}</span><b>{{ club.n_members|default:0 }}</b><small>{% with admins=club.n_admins|default:0 %}{% blocktranslate trimmed count n=admins %}{{ n }} capitán{% plural %}{{ n }} capitanes{% endblocktranslate %}{% endwith %}</small></div>

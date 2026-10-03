@@ -20,6 +20,14 @@ class Club(PublicIdModel):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Club suspendido por el personal de Zyra (back-office): sus miembros no pueden entrar
+    # hasta que se reactive. No se borra nada.
+    suspended_at = models.DateTimeField(null=True, blank=True)
+    suspension_reason = models.CharField(max_length=500, blank=True)
+
+    @property
+    def is_suspended(self):
+        return self.suspended_at is not None
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -130,7 +138,7 @@ class PhotoCheck(PublicIdModel):
     STATUSES = [
         (APPROVED, _("Validada")),
         (REJECTED, _("Rechazada")),
-        (UNCHECKED, _("Sin validar")),
+        (UNCHECKED, _("Pendiente de revisar")),
         (REVIEWED, _("Revisada por el personal")),
     ]
 
@@ -158,6 +166,21 @@ class PhotoCheck(PublicIdModel):
         return self.player or self.team
 
     @property
+    def subject_label(self):
+        from django.utils.translation import gettext
+
+        if self.player:
+            return gettext("Foto de %(player)s") % {"player": self.player.full_name}
+        if self.team:
+            return gettext("Escudo de %(team)s") % {"team": self.team.name}
+        return gettext("Foto")
+
+    @property
+    def owner(self):
+        """A quién se avisa si se elimina: el jugador enlazado o, si no, quien la subió."""
+        return (self.player.user if self.player and self.player.user else None) or self.uploaded_by
+
+    @property
     def in_use(self):
         """La foto sigue siendo la del equipo o jugador."""
         subject = self.subject
@@ -165,3 +188,31 @@ class PhotoCheck(PublicIdModel):
 
     def __str__(self):
         return f"{self.get_status_display()}: {self.photo or '—'}"
+
+
+class PhotoRemoval(PublicIdModel):
+    """
+    Foto eliminada por el personal desde el back-office por no cumplir los términos y
+    condiciones. Se avisa por email al jugador (o a quien subió el escudo); las veces
+    que le ha pasado a un usuario se muestran al personal, que puede suspender su cuenta
+    y eliminar el equipo si se repite.
+    """
+    PUBLIC_ID_PREFIX = "PHR"
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_removals",
+    )
+    club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_removals")
+    # De quién era la foto: «Jugador ANA RUIZ» o «Escudo de CD Tomares».
+    subject = models.CharField(max_length=200)
+    reason = models.CharField(max_length=500, blank=True)
+    removed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+    )
+    email_sent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.subject} ({self.created_at:%d/%m/%Y})"

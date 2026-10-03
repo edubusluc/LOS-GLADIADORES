@@ -9,22 +9,38 @@
     <div class="alert-message">{{ error }}</div>
     {% endfor %}
 
-    <form method="POST">
+    <form method="POST" class="z-match-form" data-match-form>
         {% csrf_token %}
 
-        {% for field in form %}
-        <p>
-            {{ field.label_tag }} {{ field }}
+        <fieldset class="z-mode">
+            <legend class="form-label">{{ form.mode.label }}</legend>
+            <div class="z-segmented z-mode-options">
+                {% for radio in form.mode %}
+                <label class="z-mode-option">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <p data-match-type-row>
+            {{ form.match_type.label_tag }} {{ form.match_type }}
         </p>
-        {% for error in field.errors %}
-            <div class="alert-message">{{ error }}</div>
-        {% endfor %}
-        {% endfor %}
+        {% for error in form.match_type.errors %}<div class="alert-message">{{ error }}</div>{% endfor %}
+
+        <div class="z-team-cards">
+            {% include "includes/match_team_card.html" with field=form.local team=form.local_team %}
+            {% include "includes/match_team_card.html" with field=form.visiting team=form.visiting_team %}
+        </div>
+
+        <p>
+            {{ form.start_date.label_tag }} {{ form.start_date }}
+        </p>
+        {% for error in form.start_date.errors %}<div class="alert-message">{{ error }}</div>{% endfor %}
 
         <button type="submit" class="btn btn-primary">{% translate "Crear Partido" %}</button>
     </form>
 </div>
 
 <script src="{% static 'js/date-picker.js' %}" defer></script>
+<script src="{% static 'js/match-form.js' %}" defer></script>
 
 {% endblock %}

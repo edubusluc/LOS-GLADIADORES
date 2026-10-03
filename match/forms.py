@@ -4,15 +4,33 @@ from django.utils.translation import gettext_lazy as _
 from .models import Match, Game, Result
 from team.models import Team
 
+class TeamSelect(forms.Select):
+    """Select de equipos que lleva la foto de cada uno (data-photo) para pintar la card del formulario."""
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        team = getattr(value, 'instance', None)
+        if team is not None:
+            option['attrs']['data-photo'] = team.photo.url if team.photo else ''
+        return option
+
+
 class MatchForm(forms.ModelForm):
+    COMPETITIVE = "competitivo"
+    FRIENDLY = "amistoso"
+    MODES = [(COMPETITIVE, _("Competitivo")), (FRIENDLY, _("Amistoso"))]
+
+    mode = forms.ChoiceField(label=_("Modo"), choices=MODES, initial=COMPETITIVE, required=False,
+                             widget=forms.RadioSelect)
+
     class Meta:
         model = Match
         fields = ['match_type', 'local', 'visiting', 'start_date']
         labels = {'local': _('Local'), 'visiting': _('Visitante'), 'start_date': _('Fecha')}
         widgets = {
             'match_type': forms.Select(),
-            'local': forms.Select(),
-            'visiting': forms.Select(),
+            'local': TeamSelect(),
+            'visiting': TeamSelect(),
             'start_date': forms.DateInput(
                 format='%Y-%m-%d',
                 attrs={'type': 'date', 'data-datepicker': '', 'data-placeholder': _('Elige el día del partido')},
@@ -34,18 +52,45 @@ class MatchForm(forms.ModelForm):
             field.error_messages.update(required=_("Por favor, completa todos los campos."), invalid_choice=missing_team)
         if not self.is_bound and self.own_team and not self.initial.get('local') and not self.initial.get('visiting'):
             self.initial['local'] = self.own_team.pk
-        # Si no se envía tipo, el partido es un enfrentamiento.
+        # El tipo solo se elige en un partido competitivo; si no se envía, es un enfrentamiento.
         self.fields['match_type'].required = False
+        self.fields['match_type'].choices = Match.COMPETITIVE_TYPES
+        if self.instance.pk and self.instance.is_friendly:
+            self.initial['mode'] = self.FRIENDLY
+            self.initial['match_type'] = Match.ENFRENTAMIENTO
+        self.order_fields(['mode'])
         self.fields['match_type'].error_messages['invalid_choice'] = _("Tipo de partido no válido.")
         date_error = _("Fecha no válida. Usa el formato AAAA-MM-DD.")
         self.fields['start_date'].input_formats = ['%Y-%m-%d']
         self.fields['start_date'].error_messages.update(required=date_error, invalid=date_error)
 
+    def _selected_team(self, name):
+        """Equipo elegido ahora en ``name`` (para pintar la card); None si no hay o no es válido."""
+        value = self[name].value()
+        if not value:
+            return None
+        return self.fields[name].queryset.filter(pk=value).first() if str(value).isdigit() else None
+
+    @property
+    def local_team(self):
+        return self._selected_team('local')
+
+    @property
+    def visiting_team(self):
+        return self._selected_team('visiting')
+
     def clean_match_type(self):
         return self.cleaned_data.get('match_type') or Match.ENFRENTAMIENTO
 
+    def clean_mode(self):
+        return self.cleaned_data.get('mode') or self.COMPETITIVE
+
     def clean(self):
         cleaned = super().clean()
+        # Un amistoso no tiene tipo (enfrentamiento, reto, play off): se guarda como AMISTOSO.
+        if cleaned.get('mode') == self.FRIENDLY:
+            self.errors.pop('match_type', None)
+            cleaned['match_type'] = Match.AMISTOSO
         local, visiting = cleaned.get('local'), cleaned.get('visiting')
         if local and visiting:
             if local == visiting:

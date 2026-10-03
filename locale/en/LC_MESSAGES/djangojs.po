@@ -164,3 +164,6 @@ msgstr "%(first)s–%(last)s of %(total)s"
 
 msgid "Elige equipo"
 msgstr "Choose team"
+
+msgid "Ya no está en el equipo"
+msgstr "No longer on the team"

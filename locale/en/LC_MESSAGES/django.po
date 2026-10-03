@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 12:20+0000\n"
+"POT-Creation-Date: 2026-10-03 12:31+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -3748,13 +3748,32 @@ msgstr "%(present)s of %(total)s"
 msgid "Compañeros"
 msgstr "Partners"
 
-#: data_analyse/templates/player_statistics.html:298
+#: data_analyse/templates/player_statistics.html:300
 msgid "Grado de afinidad"
 msgstr "Affinity"
 
-#: data_analyse/templates/player_statistics.html:299
+#: data_analyse/templates/player_statistics.html:301
 msgid "Con qué compañeros rinde mejor cuando juegan en pareja."
 msgstr "Which partners they perform best with when playing as a pair."
+
+#: data_analyse/templates/player_statistics.html:303
+msgid "Compañeros a mostrar"
+msgstr "Partners to show"
+
+#: data_analyse/templates/player_statistics.html:304
+#: players/templates/list_players.html:123
+#: players/templates/manage_roster.html:27
+#: players/templates/manage_roster.html:63
+msgid "En el equipo"
+msgstr "On the team"
+
+#: data_analyse/templates/player_statistics.html:305
+msgid "Incluir antiguos"
+msgstr "Include former"
+
+#: data_analyse/templates/player_statistics.html:309
+msgid "No hay partidos en pareja con compañeros de esta selección."
+msgstr "No games played as a pair with partners in this selection."
 
 #: data_analyse/templates/team_statistics.html:24
 msgid "Estadísticas del equipo"
@@ -3969,7 +3988,7 @@ msgstr "Challenges"
 msgid "Play offs"
 msgstr "Play-offs"
 
-#: data_analyse/views.py:675
+#: data_analyse/views.py:685
 msgid "Elige dos jugadores distintos."
 msgstr "Choose two different players."
 
@@ -5337,12 +5356,6 @@ msgid ""
 msgstr ""
 "Click “Complete team” to bring in the players from your SNP team without "
 "creating them one by one."
-
-#: players/templates/list_players.html:123
-#: players/templates/manage_roster.html:27
-#: players/templates/manage_roster.html:63
-msgid "En el equipo"
-msgstr "On the team"
 
 #: players/templates/list_players.html:123
 #: players/templates/manage_roster.html:28

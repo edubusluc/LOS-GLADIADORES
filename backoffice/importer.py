@@ -273,7 +273,7 @@ ENTITIES = {
             "matches", gettext_lazy("Partidos"), Match,
             [
                 Field("start_date", gettext_lazy("Fecha"), parse_date, required=True, aliases=("fecha", "dia"), example="2026-10-25"),
-                Field("local", gettext_lazy("Local"), required=True, aliases=("equipo_local",), example="Los Gladiadores"),
+                Field("local", gettext_lazy("Local"), required=True, aliases=("equipo_local",), example="Mi equipo"),
                 Field("visiting", gettext_lazy("Visitante"), required=True, aliases=("equipo_visitante",), example="Pádel Norte"),
                 Field("location", gettext_lazy("Ubicación"), aliases=("sede", "lugar"), example=""),
             ],

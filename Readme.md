@@ -438,7 +438,7 @@ python manage.py run_scheduler
 Con cron, por ejemplo (ajusta las rutas):
 
 ```
-* * * * * cd /ruta/a/LOS-GLADIADORES && /ruta/a/python manage.py run_scheduler >> /tmp/zyra-scheduler.log 2>&1
+* * * * * cd /ruta/a/Zyra && /ruta/a/python manage.py run_scheduler >> /tmp/zyra-scheduler.log 2>&1
 ```
 
 **Ejecutar ahora** no espera al lanzador: arranca el proceso en el momento y abre su

@@ -216,3 +216,28 @@ class PhotoRemoval(PublicIdModel):
 
     def __str__(self):
         return f"{self.subject} ({self.created_at:%d/%m/%Y})"
+
+
+class BlockedEmail(PublicIdModel):
+    """
+    Email bloqueado por el personal (al suspender un club o a mano en el back-office):
+    no puede crear cuentas ni clubes, ni recibir o aceptar invitaciones. Se guarda
+    normalizado (core.blocklist.normalize_email) en un campo único, así comprobar un email
+    es una búsqueda por índice aunque la lista crezca mucho.
+    """
+    PUBLIC_ID_PREFIX = "BLE"
+    email = models.CharField(max_length=254, unique=True)
+    # Tal y como estaba escrito (para mostrarlo); la comprobación usa `email`.
+    original_email = models.EmailField(max_length=254)
+    club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="blocked_emails")
+    reason = models.CharField(max_length=500, blank=True)
+    blocked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.original_email

@@ -17,9 +17,9 @@ from django.utils.text import slugify
 from django.utils.translation import gettext as _, ngettext
 from django.views.decorators.http import require_POST
 
-from core import moderation
+from core import blocklist, moderation
 from core.emails import send_photo_removed_email
-from core.models import Club, Invitation, Membership, PhotoCheck, PhotoRemoval
+from core.models import BlockedEmail, Club, Invitation, Membership, PhotoCheck, PhotoRemoval
 from match.models import Match
 from players.models import Player
 
@@ -119,6 +119,7 @@ def club_detail(request, club_id):
         "past_matches": matches.filter(start_date__lte=today).order_by("-start_date")[:10],
         "upcoming_matches": matches.filter(start_date__gt=today).order_by("start_date")[:5],
         "invitations": club.invitations.select_related("created_by", "used_by")[:10],
+        "blocked_emails": club.blocked_emails.all(),
         "now": timezone.now(),
     })
 
@@ -130,11 +131,25 @@ def club_toggle_suspended(request, club_id):
     club = get_object_or_404(Club, public_id=club_id)
     if club.is_suspended:
         club.suspended_at, club.suspension_reason = None, ""
-        messages.success(request, _("Club reactivado."))
+        # Se desbloquean los emails que se bloquearon al suspenderlo.
+        unblocked = BlockedEmail.objects.filter(club=club).delete()[0]
+        messages.success(request, _("Club reactivado.") + (" " + ngettext(
+            "%(n)s email desbloqueado.", "%(n)s emails desbloqueados.", unblocked) % {"n": unblocked} if unblocked else ""))
     else:
         club.suspended_at = timezone.now()
         club.suspension_reason = request.POST.get("reason", "").strip()[:500]
-        messages.success(request, _("Club suspendido: sus miembros ya no pueden entrar."))
+        # Emails de los miembros marcados (por defecto, los capitanes): no podrán crear
+        # otro club ni unirse a ninguno.
+        member_ids = [i for i in request.POST.getlist("block") if i.isdigit()]
+        blocked = 0
+        for m in club.memberships.filter(user_id__in=member_ids).select_related("user"):
+            if m.user.email:
+                blocked += blocklist.block(
+                    m.user.email, club=club, blocked_by=request.user,
+                    reason=club.suspension_reason or _("Club %(club)s suspendido") % {"club": club.name},
+                )
+        messages.success(request, _("Club suspendido: sus miembros ya no pueden entrar.") + (" " + ngettext(
+            "%(n)s email bloqueado.", "%(n)s emails bloqueados.", blocked) % {"n": blocked} if blocked else ""))
     club.save(update_fields=["suspended_at", "suspension_reason"])
     return redirect("backoffice:club_detail", club_id=club.public_id)
 
@@ -698,3 +713,40 @@ def _back_to(request, default):
     if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
         return redirect(target)
     return redirect(default)
+
+
+# ---------- Emails bloqueados ----------
+
+@staff_required
+def blocked_email_list(request):
+    q = request.GET.get("q", "").strip()
+    emails = BlockedEmail.objects.select_related("club", "blocked_by")
+    if q:
+        # Búsqueda por el principio del email normalizado: usa el índice del campo único.
+        emails = emails.filter(email__startswith=blocklist.normalize_email(q))
+    return render(request, "backoffice/blocked_email_list.html", {
+        "section": "blocked", "page": _page(request, emails), "q": q,
+        "extra": "&" + urlencode({"q": q}) if q else "",
+    })
+
+
+@staff_required
+@require_POST
+def blocked_email_add(request):
+    email = request.POST.get("email", "").strip()
+    if "@" not in email:
+        messages.error(request, _("Escribe un email válido."))
+    elif blocklist.block(email, reason=request.POST.get("reason", "").strip(), blocked_by=request.user):
+        messages.success(request, _("%(email)s bloqueado.") % {"email": email})
+    else:
+        messages.info(request, _("%(email)s ya estaba bloqueado.") % {"email": email})
+    return redirect("backoffice:blocked_email_list")
+
+
+@staff_required
+@require_POST
+def blocked_email_delete(request, blocked_id):
+    blocked = get_object_or_404(BlockedEmail, public_id=blocked_id)
+    blocked.delete()
+    messages.success(request, _("%(email)s desbloqueado.") % {"email": blocked.original_email})
+    return _back_to(request, "backoffice:blocked_email_list")

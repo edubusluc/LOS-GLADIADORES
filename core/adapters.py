@@ -22,9 +22,13 @@ class AccountAdapter(DefaultAccountAdapter):
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
     def is_open_for_signup(self, request, sociallogin):
-        # Cualquiera puede crear su cuenta con Google; para ver datos de un club
-        # tiene que unirse con una invitación o registrar el suyo.
-        return True
+        # Cualquiera puede crear su cuenta con Google (salvo con un email bloqueado por el
+        # personal); para ver datos de un club tiene que unirse con una invitación o
+        # registrar el suyo.
+        from .blocklist import is_blocked
+
+        emails = [a.email for a in sociallogin.email_addresses] or [getattr(sociallogin.user, "email", "")]
+        return not any(is_blocked(e) for e in emails)
 
     def save_user(self, request, sociallogin, form=None):
         # Solo se llama cuando Google crea una cuenta nueva.

@@ -39,6 +39,7 @@
                 <li><a href="{% url 'backoffice:club_list' %}" class="{% if section == 'clubs' %}is-active{% endif %}"><i class="fa-solid fa-shield-halved"></i> {% translate "Clubes" %}</a></li>
                 <li><a href="{% url 'backoffice:user_list' %}" class="{% if section == 'users' %}is-active{% endif %}"><i class="fa-solid fa-users"></i> {% translate "Usuarios" %}</a></li>
                 <li><a href="{% url 'backoffice:photo_list' %}" class="{% if section == 'photos' %}is-active{% endif %}"><i class="fa-solid fa-image"></i> {% translate "Fotos" %}</a></li>
+                <li><a href="{% url 'backoffice:blocked_email_list' %}" class="{% if section == 'blocked' %}is-active{% endif %}"><i class="fa-solid fa-envelope-circle-check"></i> {% translate "Emails bloqueados" %}</a></li>
             </ul>
         </nav>
         <div class="bo-side-foot">

@@ -1,0 +1,51 @@
+{% extends 'backoffice/base.html' %}
+{% load i18n %}
+{% block title %}{% translate "Emails bloqueados" %}{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{% blocktranslate trimmed count n=page.paginator.count %}{{ n }} email{% plural %}{{ n }} emails{% endblocktranslate %}</span>
+        <h1>{% translate "Emails bloqueados" %}</h1>
+    </div>
+</div>
+
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+<p class="text-muted">{% translate "Un email bloqueado no puede registrarse, crear un club, recibir invitaciones ni unirse a un club. Se compara sin mayúsculas, sin «+etiqueta» y, en Gmail, sin puntos. Los de un club suspendido se desbloquean al reactivarlo." %}</p>
+
+<form method="post" action="{% url 'backoffice:blocked_email_add' %}" class="bo-filters">
+    {% csrf_token %}
+    <input type="email" name="email" required class="form-control" placeholder="{% translate 'Email a bloquear' %}" aria-label="{% translate 'Email a bloquear' %}">
+    <input type="text" name="reason" maxlength="500" class="form-control" placeholder="{% translate 'Motivo (opcional)' %}" aria-label="{% translate 'Motivo' %}">
+    <button class="btn btn-outline-danger"><i class="fa-solid fa-ban"></i> {% translate "Bloquear" %}</button>
+</form>
+
+<form method="get" class="bo-filters" role="search">
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="{% translate 'Buscar por el principio del email' %}" aria-label="{% translate 'Buscar email' %}">
+    <button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> {% translate "Buscar" %}</button>
+</form>
+
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr><th>{% translate "Email" %}</th><th>{% translate "Club" %}</th><th>{% translate "Motivo" %}</th><th>{% translate "Fecha" %}</th><th>{% translate "Bloqueado por" %}</th><th></th></tr></thead>
+    <tbody>
+    {% for b in page %}
+        <tr>
+            <td>{{ b.original_email }}{% if b.original_email|lower != b.email %} <small class="text-muted">({{ b.email }})</small>{% endif %}</td>
+            <td>{% if b.club %}<a href="{% url 'backoffice:club_detail' b.club.public_id %}">{{ b.club.name }}</a>{% else %}—{% endif %}</td>
+            <td class="text-muted">{{ b.reason|default:"—" }}</td>
+            <td>{{ b.created_at|date:"j M Y" }}</td>
+            <td>{{ b.blocked_by.username|default:"—" }}</td>
+            <td class="text-end">
+                <form method="post" action="{% url 'backoffice:blocked_email_delete' b.public_id %}" onsubmit="return confirm('{% translate "¿Desbloquear este email?" %}')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-light btn-sm">{% translate "Desbloquear" %}</button></form>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6" class="text-muted">{% translate "No hay emails bloqueados." %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+<div class="mt-3">{% include 'includes/pagination.html' with page=page extra=extra %}</div>
+{% endblock %}

@@ -31,6 +31,9 @@ urlpatterns = [
     path("users/<int:user_id>/photos/delete/", views.user_photos_delete, name="user_photos_delete"),
     path("users/<int:user_id>/toggle-active/", views.user_toggle_active, name="user_toggle_active"),
     path("photos/", views.photo_list, name="photo_list"),
+    path("blocked/", views.blocked_email_list, name="blocked_email_list"),
+    path("blocked/add/", views.blocked_email_add, name="blocked_email_add"),
+    path("blocked/<pid:blocked_id>/delete/", views.blocked_email_delete, name="blocked_email_delete"),
     path("photos/<pid:check_id>/delete/", views.photo_delete, name="photo_delete"),
     path("photos/<pid:check_id>/reviewed/", views.photo_reviewed, name="photo_reviewed"),
 ]

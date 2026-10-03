@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Zyra\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 14:32+0000\n"
+"POT-Creation-Date: 2026-10-03 14:40+0000\n"
 "PO-Revision-Date: 2026-10-01 20:00+0200\n"
 "Last-Translator: Zyra\n"
 "Language-Team: English\n"
@@ -127,7 +127,7 @@ msgid "Uno de los dos equipos tiene que ser %(team)s."
 msgstr "One of the two teams must be %(team)s."
 
 #: backoffice/importer.py:212
-#: backoffice/templates/backoffice/club_detail.html:32
+#: backoffice/templates/backoffice/club_detail.html:36
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 #: core/templates/base.html:36 core/templates/base.html:135
 #: players/templates/list_players.html:8 players/templates/manage_roster.html:7
@@ -193,7 +193,7 @@ msgstr ""
 "team is not imported."
 
 #: backoffice/importer.py:235
-#: backoffice/templates/backoffice/club_detail.html:33
+#: backoffice/templates/backoffice/club_detail.html:37
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 #: core/templates/base.html:35 core/templates/base.html:133
 #: core/templates/landing.html:30
@@ -206,6 +206,7 @@ msgid "Partidos"
 msgstr "Matches"
 
 #: backoffice/importer.py:237
+#: backoffice/templates/backoffice/blocked_email_list.html:32
 #: backoffice/templates/backoffice/import_list.html:59
 #: backoffice/templates/backoffice/photo_list.html:35
 #: backoffice/templates/backoffice/photo_list.html:69
@@ -640,19 +641,115 @@ msgstr "Users"
 msgid "Fotos"
 msgstr "Photos"
 
-#: backoffice/templates/backoffice/base.html:46
+#: backoffice/templates/backoffice/base.html:42
+#: backoffice/templates/backoffice/blocked_email_list.html:3
+#: backoffice/templates/backoffice/blocked_email_list.html:9
+msgid "Emails bloqueados"
+msgstr "Blocked emails"
+
+#: backoffice/templates/backoffice/base.html:47
 msgid "Django admin"
 msgstr "Django admin"
 
-#: backoffice/templates/backoffice/base.html:48
+#: backoffice/templates/backoffice/base.html:49
 msgid "Volver a la web"
 msgstr "Back to the site"
 
-#: backoffice/templates/backoffice/base.html:53
-#: backoffice/templates/backoffice/base.html:58 core/templates/base.html:48
+#: backoffice/templates/backoffice/base.html:54
+#: backoffice/templates/backoffice/base.html:59 core/templates/base.html:48
 #: core/templates/base.html:53
 msgid "Idioma"
 msgstr "Language"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:8
+#, python-format
+msgid "%(n)s email"
+msgid_plural "%(n)s emails"
+msgstr[0] "%(n)s email"
+msgstr[1] "%(n)s emails"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:17
+msgid ""
+"Un email bloqueado no puede registrarse, crear un club, recibir invitaciones "
+"ni unirse a un club. Se compara sin mayúsculas, sin «+etiqueta» y, en Gmail, "
+"sin puntos. Los de un club suspendido se desbloquean al reactivarlo."
+msgstr ""
+"A blocked email cannot sign up, create a club, receive invitations or join a "
+"club. It is compared ignoring case, any “+tag” and, for Gmail, dots. Emails "
+"blocked with a suspended club are unblocked when it is reactivated."
+
+#: backoffice/templates/backoffice/blocked_email_list.html:21
+msgid "Email a bloquear"
+msgstr "Email to block"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:22
+#: backoffice/templates/backoffice/club_detail.html:111
+msgid "Motivo (opcional)"
+msgstr "Reason (optional)"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:22
+#: backoffice/templates/backoffice/blocked_email_list.html:32
+#: backoffice/templates/backoffice/club_detail.html:27
+#: backoffice/templates/backoffice/club_detail.html:111
+#: backoffice/templates/backoffice/photo_list.html:35
+#: backoffice/templates/backoffice/photo_list.html:50
+#: backoffice/templates/backoffice/photo_list.html:69
+#: backoffice/templates/backoffice/user_detail.html:77
+#: core/templates/emails/photo_removed.html:4
+#: core/templates/emails/photo_removed.txt:6
+msgid "Motivo"
+msgstr "Reason"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:23
+msgid "Bloquear"
+msgstr "Block"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:27
+msgid "Buscar por el principio del email"
+msgstr "Search by the start of the email"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:27
+msgid "Buscar email"
+msgstr "Search email"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:28
+msgid "Buscar"
+msgstr "Search"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:32
+#: backoffice/templates/backoffice/club_detail.html:44
+#: backoffice/templates/backoffice/photo_list.html:69
+#: backoffice/templates/backoffice/user_detail.html:33
+#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:34
+msgid "Email"
+msgstr "Email"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:32
+#: backoffice/templates/backoffice/import_list.html:25
+#: backoffice/templates/backoffice/import_list.html:59
+#: backoffice/templates/backoffice/includes/club_rows.html:5
+#: backoffice/templates/backoffice/load.html:38
+#: backoffice/templates/backoffice/photo_list.html:35
+#: backoffice/templates/backoffice/user_detail.html:57
+#: core/templates/register_club.html:14
+msgid "Club"
+msgstr "Club"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:32
+msgid "Bloqueado por"
+msgstr "Blocked by"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:42
+msgid "¿Desbloquear este email?"
+msgstr "Unblock this email?"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:42
+msgid "Desbloquear"
+msgstr "Unblock"
+
+#: backoffice/templates/backoffice/blocked_email_list.html:46
+msgid "No hay emails bloqueados."
+msgstr "There are no blocked emails."
 
 #: backoffice/templates/backoffice/club_detail.html:8
 #: backoffice/templates/backoffice/user_detail.html:8
@@ -671,37 +768,17 @@ msgstr "team id: %(team_id)s"
 msgid "Suspendido"
 msgstr "Suspended"
 
-#: backoffice/templates/backoffice/club_detail.html:12
-msgid ""
-"¿Suspender este club? Sus miembros no podrán entrar hasta que lo reactives."
-msgstr ""
-"Suspend this club? Its members won’t be able to access it until you "
-"reactivate it."
-
 #: backoffice/templates/backoffice/club_detail.html:15
 msgid "Reactivar club"
 msgstr "Reactivate club"
 
-#: backoffice/templates/backoffice/club_detail.html:17
-msgid "Motivo (opcional)"
-msgstr "Reason (optional)"
-
-#: backoffice/templates/backoffice/club_detail.html:17
-#: backoffice/templates/backoffice/club_detail.html:27
-#: backoffice/templates/backoffice/photo_list.html:35
-#: backoffice/templates/backoffice/photo_list.html:50
-#: backoffice/templates/backoffice/photo_list.html:69
-#: backoffice/templates/backoffice/user_detail.html:77
-#: core/templates/emails/photo_removed.html:4
-#: core/templates/emails/photo_removed.txt:6
-msgid "Motivo"
-msgstr "Reason"
-
 #: backoffice/templates/backoffice/club_detail.html:18
+#: backoffice/templates/backoffice/club_detail.html:107
+#: backoffice/templates/backoffice/club_detail.html:119
 msgid "Suspender club"
 msgstr "Suspend club"
 
-#: backoffice/templates/backoffice/club_detail.html:22
+#: backoffice/templates/backoffice/club_detail.html:21
 #: backoffice/templates/backoffice/user_detail.html:23
 msgid "Abrir en Django admin"
 msgstr "Open in Django admin"
@@ -711,116 +788,118 @@ msgstr "Open in Django admin"
 msgid "Suspendido el %(date)s."
 msgstr "Suspended on %(date)s."
 
-#: backoffice/templates/backoffice/club_detail.html:30
+#: backoffice/templates/backoffice/club_detail.html:29
+msgid "Emails bloqueados (no pueden crear clubes ni unirse a ninguno):"
+msgstr "Blocked emails (cannot create clubs or join any):"
+
+#: backoffice/templates/backoffice/club_detail.html:29
+msgid "Se desbloquean al reactivar el club."
+msgstr "They are unblocked when the club is reactivated."
+
+#: backoffice/templates/backoffice/club_detail.html:34
 msgid "Resumen del club"
 msgstr "Club summary"
 
-#: backoffice/templates/backoffice/club_detail.html:31
-#: backoffice/templates/backoffice/club_detail.html:38
+#: backoffice/templates/backoffice/club_detail.html:35
+#: backoffice/templates/backoffice/club_detail.html:42
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 msgid "Miembros"
 msgstr "Members"
 
-#: backoffice/templates/backoffice/club_detail.html:31
+#: backoffice/templates/backoffice/club_detail.html:35
 #, python-format
 msgid "%(n)s capitán"
 msgid_plural "%(n)s capitanes"
 msgstr[0] "%(n)s captain"
 msgstr[1] "%(n)s captains"
 
-#: backoffice/templates/backoffice/club_detail.html:32
+#: backoffice/templates/backoffice/club_detail.html:36
 #, python-format
 msgid "%(total)s en total, contando bajas"
 msgstr "%(total)s in total, including inactive"
 
-#: backoffice/templates/backoffice/club_detail.html:33
+#: backoffice/templates/backoffice/club_detail.html:37
 #, python-format
 msgid "%(n)s equipo rival"
 msgid_plural "%(n)s equipos rivales"
 msgstr[0] "%(n)s rival team"
 msgstr[1] "%(n)s rival teams"
 
-#: backoffice/templates/backoffice/club_detail.html:34
+#: backoffice/templates/backoffice/club_detail.html:38
 #: backoffice/templates/backoffice/club_list.html:24
 #: backoffice/templates/backoffice/includes/club_rows.html:5
 msgid "Último partido"
 msgstr "Last match"
 
-#: backoffice/templates/backoffice/club_detail.html:34
+#: backoffice/templates/backoffice/club_detail.html:38
 msgid "sin partidos jugados"
 msgstr "no matches played"
 
-#: backoffice/templates/backoffice/club_detail.html:40
+#: backoffice/templates/backoffice/club_detail.html:44
 #: backoffice/templates/backoffice/load.html:38
 #: backoffice/templates/backoffice/photo_list.html:69
-#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:42
+#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:43
 #: core/templates/club_members.html:18 core/templates/emails/welcome.html:9
 #: core/templates/emails/welcome.txt:5
 msgid "Usuario"
 msgstr "Username"
 
-#: backoffice/templates/backoffice/club_detail.html:40
-#: backoffice/templates/backoffice/photo_list.html:69
-#: backoffice/templates/backoffice/user_detail.html:33
-#: backoffice/templates/backoffice/user_list.html:26 core/forms.py:33
-msgid "Email"
-msgstr "Email"
-
-#: backoffice/templates/backoffice/club_detail.html:40
+#: backoffice/templates/backoffice/club_detail.html:44
 #: backoffice/templates/backoffice/user_detail.html:57
 msgid "Rol"
 msgstr "Role"
 
-#: backoffice/templates/backoffice/club_detail.html:40
+#: backoffice/templates/backoffice/club_detail.html:44
 #: backoffice/templates/backoffice/user_detail.html:34
 #: backoffice/templates/backoffice/user_list.html:26
 msgid "Último acceso"
 msgstr "Last login"
 
-#: backoffice/templates/backoffice/club_detail.html:46
+#: backoffice/templates/backoffice/club_detail.html:50
+#: backoffice/templates/backoffice/club_detail.html:116
 #: backoffice/templates/backoffice/user_detail.html:62 core/models.py:55
 msgid "Capitán"
 msgstr "Captain"
 
-#: backoffice/templates/backoffice/club_detail.html:46
+#: backoffice/templates/backoffice/club_detail.html:50
 #: backoffice/templates/backoffice/user_detail.html:62
 msgid "Miembro"
 msgstr "Member"
 
-#: backoffice/templates/backoffice/club_detail.html:50
+#: backoffice/templates/backoffice/club_detail.html:54
 msgid "Sin miembros."
 msgstr "No members."
 
-#: backoffice/templates/backoffice/club_detail.html:58
+#: backoffice/templates/backoffice/club_detail.html:62
 #: players/templates/player_detail.html:32
 msgid "Últimos partidos"
 msgstr "Latest matches"
 
-#: backoffice/templates/backoffice/club_detail.html:63
+#: backoffice/templates/backoffice/club_detail.html:67
 msgid "Sin partidos jugados."
 msgstr "No matches played."
 
-#: backoffice/templates/backoffice/club_detail.html:68
+#: backoffice/templates/backoffice/club_detail.html:72
 msgid "Próximos partidos"
 msgstr "Upcoming matches"
 
-#: backoffice/templates/backoffice/club_detail.html:73
+#: backoffice/templates/backoffice/club_detail.html:77
 msgid "Nada programado."
 msgstr "Nothing scheduled."
 
-#: backoffice/templates/backoffice/club_detail.html:80
+#: backoffice/templates/backoffice/club_detail.html:84
 msgid "Últimas invitaciones"
 msgstr "Recent invitations"
 
-#: backoffice/templates/backoffice/club_detail.html:82
+#: backoffice/templates/backoffice/club_detail.html:86
 msgid "Creada"
 msgstr "Created"
 
-#: backoffice/templates/backoffice/club_detail.html:82
+#: backoffice/templates/backoffice/club_detail.html:86
 msgid "Por"
 msgstr "By"
 
-#: backoffice/templates/backoffice/club_detail.html:82
+#: backoffice/templates/backoffice/club_detail.html:86
 #: backoffice/templates/backoffice/includes/run_rows.html:3
 #: backoffice/templates/backoffice/job_detail.html:66
 #: backoffice/templates/backoffice/photo_list.html:28
@@ -830,22 +909,49 @@ msgstr "By"
 msgid "Estado"
 msgstr "Status"
 
-#: backoffice/templates/backoffice/club_detail.html:89
+#: backoffice/templates/backoffice/club_detail.html:93
 #, python-format
 msgid "Usada por %(username)s"
 msgstr "Used by %(username)s"
 
-#: backoffice/templates/backoffice/club_detail.html:90
+#: backoffice/templates/backoffice/club_detail.html:94
 msgid "Caducada"
 msgstr "Expired"
 
-#: backoffice/templates/backoffice/club_detail.html:91
+#: backoffice/templates/backoffice/club_detail.html:95
 msgid "Vigente"
 msgstr "Valid"
 
-#: backoffice/templates/backoffice/club_detail.html:95
+#: backoffice/templates/backoffice/club_detail.html:99
 msgid "Este club no ha creado invitaciones."
 msgstr "This club has not created any invitations."
+
+#: backoffice/templates/backoffice/club_detail.html:108
+msgid ""
+"Sus miembros no podrán entrar hasta que lo reactives (no se borra nada). Los "
+"emails marcados quedan bloqueados: no podrán crear otro club, registrarse ni "
+"unirse a ningún club como jugadores."
+msgstr ""
+"Its members won’t be able to access it until you reactivate it (nothing is "
+"deleted). The selected emails are blocked: they won’t be able to create "
+"another club, sign up or join any club as players."
+
+#: backoffice/templates/backoffice/club_detail.html:109
+msgid ""
+"¿Suspender este club? Sus miembros no podrán entrar hasta que lo reactives."
+msgstr ""
+"Suspend this club? Its members won’t be able to access it until you "
+"reactivate it."
+
+#: backoffice/templates/backoffice/club_detail.html:112
+msgid "Bloquear los emails de:"
+msgstr "Block the emails of:"
+
+#: backoffice/templates/backoffice/club_detail.html:116
+#: backoffice/templates/backoffice/dashboard.html:104
+#: backoffice/templates/backoffice/photo_list.html:42
+msgid "sin email"
+msgstr "no email"
 
 #: backoffice/templates/backoffice/club_list.html:8
 #, python-format
@@ -1041,11 +1147,6 @@ msgstr "No clubs yet."
 msgid "Últimos usuarios"
 msgstr "Latest users"
 
-#: backoffice/templates/backoffice/dashboard.html:104
-#: backoffice/templates/backoffice/photo_list.html:42
-msgid "sin email"
-msgstr "no email"
-
 #: backoffice/templates/backoffice/dashboard.html:108
 msgid "Todavía no hay usuarios."
 msgstr "No users yet."
@@ -1109,16 +1210,6 @@ msgstr "New import"
 #: backoffice/templates/backoffice/import_list.html:20
 msgid "Qué importar"
 msgstr "What to import"
-
-#: backoffice/templates/backoffice/import_list.html:25
-#: backoffice/templates/backoffice/import_list.html:59
-#: backoffice/templates/backoffice/includes/club_rows.html:5
-#: backoffice/templates/backoffice/load.html:38
-#: backoffice/templates/backoffice/photo_list.html:35
-#: backoffice/templates/backoffice/user_detail.html:57
-#: core/templates/register_club.html:14
-msgid "Club"
-msgstr "Club"
 
 #: backoffice/templates/backoffice/import_list.html:30 match/forms.py:23
 msgid "Modo"
@@ -1394,7 +1485,7 @@ msgid "(primeras %(n)s)"
 msgstr "(first %(n)s)"
 
 #: backoffice/templates/backoffice/import_preview.html:38
-#: backoffice/views.py:489
+#: backoffice/views.py:504
 msgid "Línea"
 msgstr "Line"
 
@@ -1403,7 +1494,7 @@ msgid "Acción"
 msgstr "Action"
 
 #: backoffice/templates/backoffice/import_preview.html:38
-#: backoffice/views.py:489
+#: backoffice/views.py:504
 msgid "Errores"
 msgstr "Errors"
 
@@ -2203,125 +2294,163 @@ msgstr "just now"
 msgid "Solo a mano"
 msgstr "Manual only"
 
-#: backoffice/views.py:133
+#: backoffice/views.py:136
 msgid "Club reactivado."
 msgstr "Club reactivated."
 
 #: backoffice/views.py:137
+#, python-format
+msgid "%(n)s email desbloqueado."
+msgid_plural "%(n)s emails desbloqueados."
+msgstr[0] "%(n)s email unblocked."
+msgstr[1] "%(n)s emails unblocked."
+
+#: backoffice/views.py:149
+#, python-format
+msgid "Club %(club)s suspendido"
+msgstr "Club %(club)s suspended"
+
+#: backoffice/views.py:151
 msgid "Club suspendido: sus miembros ya no pueden entrar."
 msgstr "Club suspended: its members can no longer access it."
 
-#: backoffice/views.py:178 core/forms.py:44
+#: backoffice/views.py:152
+#, python-format
+msgid "%(n)s email bloqueado."
+msgid_plural "%(n)s emails bloqueados."
+msgstr[0] "%(n)s email blocked."
+msgstr[1] "%(n)s emails blocked."
+
+#: backoffice/views.py:193 core/forms.py:45
 #: core/templates/registration/login.html:22
 #: core/templates/registration/login.html:23
 msgid "Contraseña"
 msgstr "Password"
 
-#: backoffice/views.py:264
+#: backoffice/views.py:279
 #, python-format
 msgid "%(job)s: activado."
 msgstr "%(job)s: enabled."
 
-#: backoffice/views.py:266
+#: backoffice/views.py:281
 #, python-format
 msgid "%(job)s: en pausa."
 msgstr "%(job)s: paused."
 
-#: backoffice/views.py:278 backoffice/views.py:288
+#: backoffice/views.py:293 backoffice/views.py:303
 #, python-format
 msgid "Indica un valor válido para «%(field)s»."
 msgstr "Enter a valid value for “%(field)s”."
 
-#: backoffice/views.py:293
+#: backoffice/views.py:308
 #, python-format
 msgid "%(job)s ya se está ejecutando."
 msgstr "%(job)s is already running."
 
-#: backoffice/views.py:366
+#: backoffice/views.py:381
 msgid "Ponle un nombre a la consulta para guardarla."
 msgstr "Give the query a name to save it."
 
-#: backoffice/views.py:373
+#: backoffice/views.py:388
 #, python-format
 msgid "Consulta «%(name)s» guardada."
 msgstr "Query “%(name)s” saved."
 
-#: backoffice/views.py:375
+#: backoffice/views.py:390
 #, python-format
 msgid "Consulta «%(name)s» actualizada."
 msgstr "Query “%(name)s” updated."
 
-#: backoffice/views.py:391
+#: backoffice/views.py:406
 #, python-format
 msgid "Consulta «%(name)s» borrada."
 msgstr "Query “%(name)s” deleted."
 
-#: backoffice/views.py:415
+#: backoffice/views.py:430
 msgid "Elige qué importar, a qué club y cómo."
 msgstr "Choose what to import, into which club and how."
 
-#: backoffice/views.py:417
+#: backoffice/views.py:432
 msgid "Sube un fichero CSV."
 msgstr "Upload a CSV file."
 
-#: backoffice/views.py:466
+#: backoffice/views.py:481
 msgid "sí"
 msgstr "yes"
 
-#: backoffice/views.py:466
+#: backoffice/views.py:481
 msgid "no"
 msgstr "no"
 
-#: backoffice/views.py:518
+#: backoffice/views.py:533
 msgid "Hay filas con errores: no se ha importado nada."
 msgstr "Some rows have errors: nothing was imported."
 
-#: backoffice/views.py:524
+#: backoffice/views.py:539
 #, python-format
 msgid "Importación hecha: %(created)s creados y %(updated)s actualizados."
 msgstr "Import done: %(created)s created and %(updated)s updated."
 
-#: backoffice/views.py:537
+#: backoffice/views.py:552
 #, python-format
 msgid "Importación deshecha: %(deleted)s borrados y %(restored)s restaurados."
 msgstr "Import undone: %(deleted)s deleted and %(restored)s restored."
 
-#: backoffice/views.py:608
+#: backoffice/views.py:623
 msgid "Esa foto ya no se usaba."
 msgstr "That photo was no longer in use."
 
-#: backoffice/views.py:610
+#: backoffice/views.py:625
 #, python-format
 msgid "%(n)s foto eliminada."
 msgid_plural "%(n)s fotos eliminadas."
 msgstr[0] "%(n)s photo deleted."
 msgstr[1] "%(n)s photos deleted."
 
-#: backoffice/views.py:612
+#: backoffice/views.py:627
 msgid "Se ha avisado por email al usuario."
 msgstr "The user has been notified by email."
 
-#: backoffice/views.py:614
+#: backoffice/views.py:629
 msgid ""
 "No se ha podido avisar por email (el usuario no tiene email o falló el "
 "envío)."
 msgstr "Could not notify by email (the user has no email or sending failed)."
 
-#: backoffice/views.py:665
+#: backoffice/views.py:680
 msgid "Foto marcada como revisada."
 msgstr "Photo marked as reviewed."
 
-#: backoffice/views.py:688
+#: backoffice/views.py:703
 msgid "No puedes suspender esta cuenta."
 msgstr "You can’t suspend this account."
 
-#: backoffice/views.py:692
+#: backoffice/views.py:707
 msgid "Cuenta reactivada."
 msgstr "Account reactivated."
 
-#: backoffice/views.py:692
+#: backoffice/views.py:707
 msgid "Cuenta suspendida: ya no puede iniciar sesión."
 msgstr "Account suspended: they can no longer sign in."
+
+#: backoffice/views.py:738
+msgid "Escribe un email válido."
+msgstr "Enter a valid email."
+
+#: backoffice/views.py:740
+#, python-format
+msgid "%(email)s bloqueado."
+msgstr "%(email)s blocked."
+
+#: backoffice/views.py:742
+#, python-format
+msgid "%(email)s ya estaba bloqueado."
+msgstr "%(email)s was already blocked."
+
+#: backoffice/views.py:751
+#, python-format
+msgid "%(email)s desbloqueado."
+msgstr "%(email)s unblocked."
 
 #: call/models.py:30 match/templates/list_match.html:64
 msgid "Pendiente"
@@ -2402,62 +2531,66 @@ msgstr "You've been invited to %(club)s on Zyra"
 msgid "Hemos eliminado una foto que no cumple los términos de Zyra"
 msgstr "We removed a photo that breaks Zyra’s terms"
 
-#: core/forms.py:23
+#: core/forms.py:24
 msgid "Nombre del club"
 msgstr "Club name"
 
-#: core/forms.py:24
+#: core/forms.py:25
 msgid "Localización"
 msgstr "Location"
 
-#: core/forms.py:25 players/models.py:54
+#: core/forms.py:26 players/models.py:54
 #: players/templates/list_players.html:164
 #: players/templates/list_players.html:180 team/models.py:36
 msgid "Categoría"
 msgstr "Category"
 
-#: core/forms.py:25 core/forms.py:27 core/forms.py:28 match/forms.py:51
+#: core/forms.py:26 core/forms.py:28 core/forms.py:29 match/forms.py:51
 #: players/forms.py:9 team/forms.py:18 team/templates/edit_team.html:21
 #: team/templates/edit_team.html:32 team/templates/edit_team.html:42
 msgid "Elige una opción"
 msgstr "Choose an option"
 
-#: core/forms.py:26
+#: core/forms.py:27
 msgid "Los jugadores del club tendrán esta categoría."
 msgstr "The club's players will have this category."
 
-#: core/forms.py:27 team/models.py:37
+#: core/forms.py:28 team/models.py:37
 msgid "Nacionalidad del equipo"
 msgstr "Team nationality"
 
-#: core/forms.py:28 team/models.py:38
+#: core/forms.py:29 team/models.py:38
 msgid "División"
 msgstr "Division"
 
-#: core/forms.py:33
+#: core/forms.py:34
 msgid ""
 "Te enviaremos la confirmación del registro. También puedes usarlo para "
 "iniciar sesión."
 msgstr ""
 "We'll send you the registration confirmation. You can also use it to log in."
 
-#: core/forms.py:43
+#: core/forms.py:44
 msgid "Letras, números y @ . + - _ (máximo 150)."
 msgstr "Letters, numbers and @ . + - _ (150 max)."
 
-#: core/forms.py:50
+#: core/forms.py:51
 msgid "Repite la contraseña"
 msgstr "Repeat the password"
 
-#: core/forms.py:56
+#: core/forms.py:57
 msgid "Ya hay una cuenta con este email: inicia sesión con ella."
 msgstr "There is already an account with this email: log in with it."
 
-#: core/forms.py:63
+#: core/forms.py:59
+msgid "Este email no puede registrarse en Zyra."
+msgstr "This email cannot sign up to Zyra."
+
+#: core/forms.py:66
 msgid "Email del jugador"
 msgstr "Player's email"
 
-#: core/forms.py:64
+#: core/forms.py:67
 msgid ""
 "Le enviaremos un enlace para registrarse (o unirse con su cuenta) como "
 "miembro. Caduca en 24 horas."
@@ -2465,9 +2598,13 @@ msgstr ""
 "We'll send them a link to sign up (or join with their existing account) as a "
 "member. It expires in 24 hours."
 
-#: core/forms.py:74
+#: core/forms.py:77
 msgid "Ese email ya pertenece a un miembro del club."
 msgstr "That email already belongs to a club member."
+
+#: core/forms.py:79
+msgid "No se puede invitar a este email."
+msgstr "This email cannot be invited."
 
 #: core/images.py:52
 #, python-format
@@ -2515,15 +2652,19 @@ msgstr "Photo of %(player)s"
 msgid "Escudo de %(team)s"
 msgstr "%(team)s crest"
 
-#: core/services.py:32
+#: core/services.py:33
 msgid "Esta invitación ya se ha usado o ha caducado."
 msgstr "This invitation has already been used or has expired."
 
-#: core/services.py:34
+#: core/services.py:35
 msgid "Este club está suspendido y no admite nuevos miembros."
 msgstr "This club is suspended and does not accept new members."
 
-#: core/services.py:36 core/views.py:254
+#: core/services.py:37
+msgid "Tu email está bloqueado en Zyra y no puede unirse a clubes."
+msgstr "Your email is blocked on Zyra and cannot join clubs."
+
+#: core/services.py:39 core/views.py:260
 #, python-format
 msgid "Ya eres miembro de %(club)s."
 msgstr "You are already a member of %(club)s."
@@ -3295,27 +3436,31 @@ msgstr "See you soon"
 msgid "Has cerrado sesión correctamente."
 msgstr "You have been logged out."
 
-#: core/views.py:98
+#: core/views.py:99
 msgid "Ya tenías una cuenta con este email. Has iniciado sesión con ella."
 msgstr ""
 "You already had an account with this email. You are now signed in to it."
 
-#: core/views.py:114
+#: core/views.py:108
+msgid "Tu email está bloqueado en Zyra y no puede crear clubes."
+msgstr "Your email is blocked on Zyra and cannot create clubs."
+
+#: core/views.py:120
 #, python-format
 msgid "Club %(club)s creado correctamente."
 msgstr "Club %(club)s created successfully."
 
-#: core/views.py:183
+#: core/views.py:189
 #, python-format
 msgid "Invitación enviada a %(email)s. El enlace caduca en 24 horas."
 msgstr "Invitation sent to %(email)s. The link expires in 24 hours."
 
-#: core/views.py:186
+#: core/views.py:192
 #, python-format
 msgid "No se pudo enviar el correo a %(email)s. Inténtalo de nuevo más tarde."
 msgstr "The email to %(email)s could not be sent. Please try again later."
 
-#: core/views.py:195
+#: core/views.py:201
 msgid ""
 "Invitación creada: copia el enlace y compártelo. Caduca en 24 horas y sirve "
 "para una sola persona."
@@ -3323,25 +3468,25 @@ msgstr ""
 "Invitation created: copy the link and share it. It expires in 24 hours and "
 "works for one person only."
 
-#: core/views.py:203
+#: core/views.py:209
 msgid "Invitación anulada."
 msgstr "Invitation revoked."
 
-#: core/views.py:235 core/views.py:279
+#: core/views.py:241 core/views.py:285
 #, python-format
 msgid "¡Bienvenido a %(club)s!"
 msgstr "Welcome to %(club)s!"
 
-#: core/views.py:301
+#: core/views.py:307
 #, python-format
 msgid "'%(email)s' no es un email válido."
 msgstr "'%(email)s' is not a valid email."
 
-#: core/views.py:307
+#: core/views.py:313
 msgid "Rol no válido."
 msgstr "Invalid role."
 
-#: core/views.py:309 core/views.py:321
+#: core/views.py:315 core/views.py:327
 msgid "El club debe tener al menos un capitán."
 msgstr "The club must have at least one captain."
 

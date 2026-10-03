@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from core.images import connect_photo_cleanup, team_photo_path
 from core.public_id import PublicIdModel
 from core.models import Club
 
@@ -30,7 +31,7 @@ class Team(PublicIdModel):
     name = models.CharField(max_length=100)
     in_group = models.BooleanField(default=False)
     location = models.CharField(max_length=100)
-    photo = models.ImageField(upload_to='static/team', null=True, blank=True)
+    photo = models.ImageField(upload_to=team_photo_path, null=True, blank=True)
     # Vacíos solo en los equipos creados antes de existir estos campos; los formularios los piden.
     gender = models.CharField(_("Categoría"), max_length=1, choices=GENDERS, blank=True, default="")
     country = models.CharField(_("Nacionalidad del equipo"), max_length=2, choices=COUNTRIES, blank=True, default="")
@@ -51,3 +52,7 @@ class Team(PublicIdModel):
 
     def __str__(self):
         return self.name
+
+
+# Al cambiar o borrar la foto se borra el fichero antiguo (core/images.py).
+connect_photo_cleanup(Team)

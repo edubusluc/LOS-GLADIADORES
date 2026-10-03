@@ -46,8 +46,20 @@
             <label for="in_team">{% translate "¿Se encuentra en el equipo?" %}</label>
         </div>
         
+        <p class="form-text">
+            {% if player.user %}
+            {% blocktranslate with account=player.user.email|default:player.user.username %}Enlazado a la cuenta {{ account }}: puede cambiar su posición, mano hábil y foto.{% endblocktranslate %}
+            <button type="submit" form="unlink-player" class="btn btn-link btn-sm p-0 align-baseline">{% translate "Desenlazar" %}</button>
+            {% else %}
+            {% translate "Sin cuenta enlazada: el jugador puede enlazarla desde «Mi jugador» al entrar en el club." %}
+            {% endif %}
+        </p>
+
         <button type="submit" class="btn btn-primary">{% translate "Guardar" %}</button>
         <a href="{% url 'delete_player' player.public_id %}" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i> {% translate "Eliminar jugador" %}</a>
     </form>
+    {% if player.user %}
+    <form id="unlink-player" method="post" action="{% url 'unlink_player' player.public_id %}">{% csrf_token %}</form>
+    {% endif %}
 </div>
 {% endblock %}

@@ -79,6 +79,8 @@ class Command(BaseCommand):
             into.in_group = True
         if not into.photo and duplicate.photo:
             into.photo = duplicate.photo
+            # La foto pasa a `into`: que al borrar el duplicado no se borre el fichero.
+            duplicate.photo = None
         if not into.location:
             into.location = duplicate.location
         self.stdout.write(f"Fusionado el equipo duplicado {duplicate} (id={duplicate.id}) en el id={into.id}.")

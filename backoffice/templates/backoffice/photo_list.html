@@ -1,0 +1,53 @@
+{% extends 'backoffice/base.html' %}
+{% load i18n static %}
+{% block title %}{% translate "Fotos" %}{% endblock %}
+
+{% block content %}
+<div class="z-page-head">
+    <div>
+        <span class="z-eyebrow">{% blocktranslate trimmed with n=calls_this_month limit=monthly_limit %}Rekognition este mes: {{ n }} de {{ limit }} fotos gratis{% endblocktranslate %}{% if free_until %} · {% blocktranslate with date=free_until|date:"j M Y" %}gratis hasta el {{ date }}{% endblocktranslate %}{% endif %}</span>
+        <h1>{% translate "Fotos" %}</h1>
+    </div>
+</div>
+
+{% if messages %}
+<div class="alert-message">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>
+{% endif %}
+
+{% if not_validating %}
+<p class="z-panel"><i class="fa-solid fa-triangle-exclamation me-1"></i> {% blocktranslate trimmed with reason=not_validating %}Ahora mismo las fotos nuevas no se validan ({{ reason }}): se aceptan y aparecen aquí como «Sin validar».{% endblocktranslate %}</p>
+{% endif %}
+
+<div class="z-segmented mb-3" role="group" aria-label="{% translate 'Estado' %}">
+    {% for value, label, n in filters %}
+    <a href="?status={{ value }}" class="btn btn-sm {% if value == status %}active{% endif %}">{{ label }} ({{ n }})</a>
+    {% endfor %}
+</div>
+
+<div class="z-table-wrap"><table class="table align-middle">
+    <thead><tr><th>{% translate "Foto" %}</th><th>{% translate "De" %}</th><th>{% translate "Club" %}</th><th>{% translate "Subida por" %}</th><th>{% translate "Fecha" %}</th><th>{% translate "Motivo" %}</th><th></th></tr></thead>
+    <tbody>
+    {% for c in page %}
+        <tr>
+            <td>{% if c.in_use %}<a href="{{ c.subject.photo.url }}" target="_blank" rel="noopener"><img src="{{ c.subject.photo.url }}" alt="" class="z-avatar z-avatar--sm"></a>{% elif c.photo %}<span class="text-muted">{% translate "Ya no se usa" %}</span>{% else %}—{% endif %}</td>
+            <td>{% if c.player %}{{ c.player.full_name }}{% elif c.team %}{{ c.team.name }}{% else %}—{% endif %}</td>
+            <td>{% if c.club %}<a href="{% url 'backoffice:club_detail' c.club.public_id %}">{{ c.club.name }}</a>{% else %}—{% endif %}</td>
+            <td>{% if c.uploaded_by %}<a href="{% url 'backoffice:user_detail' c.uploaded_by.id %}">{{ c.uploaded_by.username }}</a>{% else %}—{% endif %}</td>
+            <td>{{ c.created_at|date:"j M Y H:i" }}</td>
+            <td class="text-muted">{{ c.reason|default:"—" }}</td>
+            <td class="text-end text-nowrap">
+                {% if c.status == 'unchecked' %}
+                <form method="post" action="{% url 'backoffice:photo_reviewed' c.public_id %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-light btn-sm">{% translate "Revisada" %}</button></form>
+                {% endif %}
+                {% if c.in_use %}
+                <form method="post" action="{% url 'backoffice:photo_delete' c.public_id %}" class="d-inline" onsubmit="return confirm('{% translate "¿Eliminar esta foto?" %}')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i> {% translate "Eliminar" %}</button></form>
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="7" class="text-muted">{% translate "No hay fotos en este estado." %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+<div class="mt-3">{% include 'includes/pagination.html' with page=page extra="&status="|add:status %}</div>
+{% endblock %}

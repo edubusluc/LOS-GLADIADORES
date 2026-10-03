@@ -40,11 +40,13 @@ MASK = "••••••"
 
 
 class QueryError(ValueError):
+    """Consulta no permitida o fallida; el mensaje se muestra tal cual en la consola."""
     pass
 
 
 @dataclass
 class QueryResult:
+    """Resultado de una consulta: columnas, filas, si se cortó, duración y columnas ocultas."""
     columns: list
     rows: list
     truncated: bool
@@ -55,6 +57,7 @@ class QueryResult:
 
     @property
     def row_count(self):
+        """Número de filas devueltas (como mucho el límite)."""
         return len(self.rows)
 
 
@@ -117,12 +120,17 @@ def run(sql, limit=DISPLAY_LIMIT, timeout=TIMEOUT_SECONDS):
 
 
 def _fetch(cursor, limit):
+    """Columnas y como mucho `limit` filas del cursor; pide una más para saber si hay más (truncado)."""
     columns = [c[0] for c in cursor.description or []]
     rows = cursor.fetchmany(limit + 1)
     return columns, [tuple(r) for r in rows[:limit]], len(rows) > limit
 
 
 def _run_sqlite(sql, limit, timeout):
+    """
+    Ejecuta la consulta en SQLite con ``PRAGMA query_only`` y un manejador de progreso
+    que la corta al pasar de `timeout` segundos.
+    """
     connection.ensure_connection()
     raw = connection.connection
     deadline = time.monotonic() + timeout
@@ -141,6 +149,7 @@ def _run_sqlite(sql, limit, timeout):
 
 
 def _run_postgres(sql, limit, timeout):
+    """Ejecuta la consulta en PostgreSQL en una transacción READ ONLY con statement_timeout."""
     with transaction.atomic(), connection.cursor() as cursor:
         cursor.execute("SET TRANSACTION READ ONLY")
         cursor.execute("SET LOCAL statement_timeout = %s", [int(timeout * 1000)])
@@ -149,6 +158,7 @@ def _run_postgres(sql, limit, timeout):
 
 
 def _explain(exc, timeout):
+    """Mensaje de error comprensible para una excepción de la base de datos (tiempo, escritura...)."""
     text = str(exc)
     if "interrupted" in text.lower() or "statement timeout" in text.lower():
         return _("La consulta tardó más de %(seconds)s segundos y se ha cancelado.") % {"seconds": timeout}
@@ -205,6 +215,7 @@ _CLAUSE_END = re.compile(r"\b(where|group\s+by|having|order\s+by|limit|offset|wi
 
 
 def _models_by_table():
+    """Modelos de Django indexados por el nombre de su tabla (incluidas las tablas intermedias)."""
     from django.apps import apps
     return {m._meta.db_table: m for m in apps.get_models(include_auto_created=True)}
 
@@ -219,6 +230,7 @@ def _relation(model, name):
 
 
 def _column(model, name):
+    """Nombre de la columna de `model` que se llama `name` (por campo o por columna), o None."""
     for f in model._meta.concrete_fields:
         if name.lower() in (f.name.lower(), f.column.lower()):
             return f.column
@@ -230,6 +242,7 @@ def expand_relations(sql):
     strings = []
 
     def stash(m):
+        """Cambia un texto entre comillas por una marca para que no se analice; se restaura al final."""
         strings.append(m.group(0))
         return f"\x00{len(strings) - 1}\x00"
 

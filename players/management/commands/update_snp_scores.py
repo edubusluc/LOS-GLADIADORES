@@ -60,15 +60,18 @@ def pending_accounts(now=None):
 
 
 def _pause(low, high):
+    """Espera un tiempo aleatorio entre ``low`` y ``high`` segundos (nada si ``high`` es 0)."""
     if high > 0:
         time.sleep(random.uniform(low, max(low, high)))
 
 
 class Command(BaseCommand):
+    """Actualiza por lotes los puntos SNP de los clubes pendientes en el ciclo semanal."""
     help = ("Descarga de SNP los puntos de los jugadores de los clubes con cuenta SNP pendientes en el ciclo "
             "semanal, por lotes y con pausas para no saturar SNP.")
 
     def add_arguments(self, parser):
+        """Opciones: un club concreto, todos los clubes, tamaño de lote y navegador a la vista."""
         parser.add_argument("--club", help="Nombre o slug de un club concreto (aunque ya esté actualizado).")
         parser.add_argument("--all", action="store_true",
                             help="Todos los clubes con cuenta SNP, aunque ya estén actualizados en este ciclo.")
@@ -79,6 +82,11 @@ class Command(BaseCommand):
                                  "Con --headed o -v 2 se muestran también los pasos y los puntos de cada jugador.")
 
     def handle(self, *args, club=None, all=False, batch_size=None, headed=False, **options):
+        """
+        Elige las cuentas (un club, todas o las pendientes del ciclo, las más antiguas primero),
+        las procesa por lotes con pausas y para si SNP nos limita o fallan demasiados clubes
+        seguidos. Lanza CommandError si se ha parado o no se ha actualizado ningún club.
+        """
         accounts = SnpAccount.objects.select_related("club")
         if club:
             accounts = accounts.filter(Q(club__slug=club) | Q(club__name__iexact=club))
@@ -145,6 +153,7 @@ class Command(BaseCommand):
             raise CommandError("No se ha podido actualizar ningún equipo.")
 
     def _sync(self, account, browser, headed, verbose):
+        """Actualiza un club con el navegador del lote, escribe el resumen y devuelve el SyncResult."""
         self.stdout.write("")
         self.stdout.write(f"Equipo que se actualiza: {account.club}")
         log = (lambda message: self.stdout.write(f"  {message}")) if verbose else None

@@ -1,3 +1,4 @@
+"""Filtros y etiquetas de plantilla del back-office (fechas relativas, duraciones, horarios)."""
 import datetime
 
 from django import template
@@ -49,4 +50,5 @@ def cron_text(job):
 
 @register.inclusion_tag("backoffice/includes/run_status.html")
 def run_status(run):
+    """Pinta la etiqueta de estado de una ejecución de proceso."""
     return {"run": run}

@@ -24,10 +24,15 @@ DAY_NAMES = [
 
 
 class CronError(ValueError):
+    """Expresión cron mal escrita o que no se cumple nunca."""
     pass
 
 
 def _parse_field(text, name, low, high):
+    """
+    Valores que admite un campo cron (`name` es solo para el mensaje de error y `low`-`high`
+    el rango permitido). Como en cron, ``5/10`` equivale a ``5-high/10``.
+    """
     values = set()
     for part in text.split(","):
         step = 1
@@ -56,7 +61,9 @@ def _parse_field(text, name, low, high):
 
 
 class Cron:
+    """Expresión cron ya analizada, para calcular la siguiente ejecución y describirla."""
     def __init__(self, expression):
+        """Analiza la expresión; lanza CronError si no tiene 5 campos o algún valor no es válido."""
         parts = expression.split()
         if len(parts) != 5:
             raise CronError("Una expresión cron tiene 5 campos: minuto hora día mes día-de-la-semana.")
@@ -68,6 +75,7 @@ class Cron:
         self.dows_restricted = parts[4] != "*"
 
     def _day_matches(self, day):
+        """True si el día cumple el mes y el día del mes / día de la semana (regla del O de cron)."""
         if day.month not in self.months:
             return False
         dom = day.day in self.days

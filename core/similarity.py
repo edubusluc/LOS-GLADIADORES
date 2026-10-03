@@ -13,6 +13,7 @@ SIMILARITY_THRESHOLD = 0.85
 
 
 def _tokens(text):
+    """Palabras del texto normalizado (sin tildes, signos ni mayúsculas)."""
     return normalize(text).split()
 
 
@@ -66,8 +67,10 @@ CONFIRM_FIELD = "confirm_similar"
 
 
 def is_check_request(request):
+    """True si la petición solo pregunta por nombres parecidos (cabecera X-Similar-Check)."""
     return request.META.get(CHECK_HEADER) == "1"
 
 
 def confirmed(request):
+    """True si el usuario ya ha confirmado que quiere continuar pese a los nombres parecidos."""
     return request.POST.get(CONFIRM_FIELD) == "1"

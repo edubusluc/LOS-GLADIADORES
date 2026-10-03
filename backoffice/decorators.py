@@ -1,3 +1,4 @@
+"""Decoradores de acceso a las vistas del back-office (personal y superusuarios)."""
 from functools import wraps
 
 from django.contrib.auth.decorators import login_required
@@ -13,6 +14,7 @@ def staff_required(view_func):
     @login_required
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
+        """Responde 404 si el usuario no está activo o no es del personal."""
         if not (request.user.is_active and request.user.is_staff):
             raise Http404
         return view_func(request, *args, **kwargs)
@@ -24,6 +26,7 @@ def superuser_required(view_func):
     @staff_required
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
+        """Responde 404 si el usuario no es superusuario."""
         if not request.user.is_superuser:
             raise Http404
         return view_func(request, *args, **kwargs)

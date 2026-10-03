@@ -1,3 +1,4 @@
+"""URLs de advertencias."""
 from .views import create_penalty
 from django.urls import path
 urlpatterns = [

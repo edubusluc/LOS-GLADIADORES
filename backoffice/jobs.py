@@ -20,6 +20,7 @@ SCHEDULER_TIME_ZONE = "Europe/Madrid"
 
 @dataclass(frozen=True)
 class JobParam:
+    """Dato obligatorio que se pide al lanzar un proceso a mano y se pasa al comando como argumento."""
     name: str
     label: str
     help: str = ""
@@ -29,6 +30,7 @@ class JobParam:
 
 @dataclass(frozen=True)
 class JobOption:
+    """Opción del comando que se puede marcar o rellenar al lanzar un proceso a mano."""
     name: str
     label: str
     # Opción del comando que se añade: "--all", "--club"…
@@ -41,6 +43,10 @@ class JobOption:
 
 @dataclass(frozen=True)
 class JobSpec:
+    """
+    Definición de un proceso: comando de Django, horario cron (vacío = solo a mano),
+    argumentos fijos (``args``), datos que se piden al lanzarlo (``params``) y opciones.
+    """
     name: str
     description: str
     command: str
@@ -107,4 +113,5 @@ JOBS = [
 
 
 def get_spec(name):
+    """Definición (JobSpec) del proceso con ese nombre, o None si ya no existe en JOBS."""
     return next((spec for spec in JOBS if spec.name == name), None)

@@ -1,3 +1,4 @@
+"""URLs de las estadísticas."""
 from django.urls import path
 from .views import team_statistics, statistics_per_player, statistics_per_pair, warnings_statistics
 

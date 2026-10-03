@@ -1,3 +1,4 @@
+"""Modelos de jugadores y de la integración con SNP (cuenta, histórico de puntos y «Completar equipo»)."""
 import datetime
 
 from django.conf import settings
@@ -24,6 +25,11 @@ def current_season():
 
 
 class Player(PublicIdModel):
+    """
+    Jugador de un club. Pertenece siempre al equipo propio del club y hereda su categoría.
+    ``in_team`` indica si sigue en la plantilla; los que se van se conservan para las
+    estadísticas. Puede estar enlazado a la cuenta de un usuario (``user``).
+    """
     PUBLIC_ID_PREFIX = "PLY"
     POSITIONS = [
         ("Derecha", _("Derecha")),
@@ -69,17 +75,19 @@ class Player(PublicIdModel):
         ]
 
     def save(self, *args, **kwargs):
-        # Los jugadores siempre pertenecen al equipo propio de su club.
+        """Asigna el equipo propio del club si no tiene equipo y copia su categoría antes de guardar."""
         if self.club_id and not self.team_id:
             self.team = self.club.own_team
         if self.team_id:
             self.gender = self.team.gender
         super().save(*args, **kwargs)
 
-    # Los nombres se muestran siempre en mayúsculas, se hayan guardado como se hayan guardado.
-    # Lo guardado no se toca: los formularios de edición siguen mostrando name/last_name tal cual.
     @property
     def full_name(self):
+        """
+        Nombre y apellidos en mayúsculas. Lo guardado no se toca: los formularios de edición
+        siguen mostrando name/last_name tal cual.
+        """
         return f'{self.name} {self.last_name}'.strip().upper()
 
     @property
@@ -88,9 +96,11 @@ class Player(PublicIdModel):
         return f'{self.name} {self.get_first_last_name()}'.strip().upper()
 
     def __str__(self):
+        """Nombre completo en mayúsculas."""
         return self.full_name
 
     def get_first_last_name(self):
+        """Primer apellido (cadena vacía si no tiene)."""
         parts = self.last_name.split()
         return parts[0] if parts else ""  # Obtiene el primer apellido
 
@@ -117,21 +127,26 @@ class SnpAccount(PublicIdModel):
 
     @property
     def username(self):
+        """Usuario de SNP descifrado (lanza DecryptionError si la clave de cifrado ha cambiado)."""
         return crypto.decrypt(self.username_encrypted)
 
     @username.setter
     def username(self, value):
+        """Guarda el usuario de SNP cifrado."""
         self.username_encrypted = crypto.encrypt(value)
 
     @property
     def password(self):
+        """Contraseña de SNP descifrada (lanza DecryptionError si la clave de cifrado ha cambiado)."""
         return crypto.decrypt(self.password_encrypted)
 
     @password.setter
     def password(self, value):
+        """Guarda la contraseña de SNP cifrada."""
         self.password_encrypted = crypto.encrypt(value)
 
     def __str__(self):
+        """«Cuenta SNP de <club>»."""
         return gettext("Cuenta SNP de %(club)s") % {"club": self.club}
 
 
@@ -150,6 +165,7 @@ class SnpScoreHistory(PublicIdModel):
         ]
 
     def __str__(self):
+        """Jugador, puntos y fecha."""
         return f"{self.player}: {self.score:g} ({self.date})"
 
 
@@ -191,6 +207,7 @@ class SnpTeamImport(PublicIdModel):
         ordering = ["-created_at"]
 
     def __str__(self):
+        """Club y estado de la búsqueda."""
         return gettext("Completar equipo de %(club)s (%(status)s)") % {"club": self.club, "status": self.get_status_display()}
 
 

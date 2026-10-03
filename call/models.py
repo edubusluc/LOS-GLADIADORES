@@ -1,3 +1,4 @@
+"""Modelos de convocatorias y del envío de su informe PDF a los capitanes."""
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from core.public_id import PublicIdModel
@@ -7,6 +8,10 @@ from datetime import datetime
 
 # Create your models here.
 class Call(PublicIdModel):
+    """
+    Convocatoria de un partido (una por partido): los jugadores que se han apuntado.
+    Mientras ``draft_mode`` es True sigue abierta.
+    """
     PUBLIC_ID_PREFIX = "CAL"
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='match')
     players = models.ManyToManyField(Player, related_name='players')
@@ -16,6 +21,7 @@ class Call(PublicIdModel):
         unique_together = ('match',)
 
     def __str__(self):
+        """«Local vs Visitante»."""
         return f"{self.match.local.name} vs {self.match.visiting.name}"
 
 
@@ -45,4 +51,5 @@ class ReportDelivery(PublicIdModel):
         indexes = [models.Index(fields=["status", "next_attempt_at"])]
 
     def __str__(self):
+        """Convocatoria, destinatario y estado del envío."""
         return f"Informe de {self.call} a {self.email} ({self.get_status_display()})"

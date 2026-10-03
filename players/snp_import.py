@@ -31,6 +31,7 @@ STALE_AFTER = datetime.timedelta(minutes=10)
 
 
 def _capitalize(token):
+    """Palabra de un nombre con mayúscula inicial; las partículas («de», «la»…) en minúscula."""
     return token.lower() if token.lower() in PARTICLES else token[:1].upper() + token[1:].lower()
 
 
@@ -143,17 +144,20 @@ def confirm(team_import):
 # ---------- Límite de una vez al mes (solo desde la web del club) ----------
 
 def _month_start(now=None):
+    """Primer instante del mes actual (o del de ``now``) en hora local."""
     local = timezone.localtime(now or timezone.now())
     return local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
 
 def last_import_this_month(club, now=None):
+    """Último «Completar equipo» hecho desde la web este mes, o None si todavía no se ha hecho."""
     return SnpTeamImport.objects.filter(
         club=club, source=SnpTeamImport.WEB, status=SnpTeamImport.DONE, finished_at__gte=_month_start(now),
     ).first()
 
 
 def next_month_start(now=None):
+    """Primer día del mes siguiente: cuándo se podrá volver a completar el equipo desde la web."""
     start = _month_start(now)
     return (start + datetime.timedelta(days=32)).replace(day=1)
 
@@ -182,6 +186,10 @@ def start_search(club, user):
         return search(team_import)
 
     def target():
+        """
+        Hilo de la búsqueda: si algo inesperado falla, la marca como errónea para que la página
+        deje de esperar. Al terminar cierra sus conexiones a la base de datos.
+        """
         try:
             search(team_import)
         except Exception:

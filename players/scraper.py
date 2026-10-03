@@ -101,6 +101,7 @@ def parse_score(text):
 
 
 def _first_visible(page, selectors):
+    """Primer elemento visible de la página que encaje con alguno de ``selectors`` (en ese orden), o None."""
     for selector in selectors:
         element = page.query_selector(selector)
         if element and element.is_visible():
@@ -109,6 +110,11 @@ def _first_visible(page, selectors):
 
 
 def _login(page, username, password):
+    """
+    Inicia sesión en SNP con la cuenta del capitán. Lanza SnpBlockedError si SNP limita el
+    acceso, SnpTemporaryError si no encuentra el formulario y SnpScrapeError (no reintentable)
+    si SNP rechaza el usuario o la contraseña.
+    """
     response = page.goto(LOGIN_URL, timeout=TIMEOUT_MS)
     if response is not None and response.status in BLOCKED_STATUSES:
         raise SnpBlockedError(f"SNP ha respondido {response.status} al abrir la página de inicio de sesión: "
@@ -131,6 +137,7 @@ def _login(page, username, password):
 
 
 def _frame_label(frame, page):
+    """Descripción legible de un frame para los mensajes de log."""
     if frame == page.main_frame:
         return "la página principal"
     return f"el iframe «{frame.name or '(sin nombre)'}» ({frame.url})"
@@ -223,6 +230,7 @@ def _wait_for_rows(page, frame, log):
 
 
 def _table_names(frame):
+    """Nombres de la tabla de jugadores del frame, o None si se está recargando."""
     try:
         return [r["name"] for r in _read_rows(frame)]
     except PlaywrightError:
@@ -249,6 +257,7 @@ def _wait_for_next_page(page, frame, previous_names, log):
 
 
 def _read_rows(page):
+    """Filas de la tabla de jugadores de ``page`` (página o frame) como ``{"name", "score"}``."""
     rows = []
     for row in page.query_selector_all(f"{RESULTS_TABLE} tbody tr"):
         name_cell = row.query_selector("td:nth-child(2)")
@@ -272,16 +281,19 @@ class SnpBrowser:
     """
 
     def __init__(self, headed=False):
+        """``headed`` abre el navegador a la vista y más despacio, para seguir la ejecución."""
         self.headed = headed
         self._playwright = None
         self.browser = None
         self._executor = None
 
     def __enter__(self):
+        """Arranca el hilo propio del navegador; Chromium no se abre hasta el primer club."""
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="snp-browser")
         return self
 
     def __exit__(self, *exc):
+        """Cierra el navegador desde su propio hilo y termina ese hilo."""
         executor, self._executor = self._executor, None
         if executor:
             executor.submit(self.close).result()
@@ -294,6 +306,7 @@ class SnpBrowser:
         return self._executor.submit(function, *args, **kwargs).result()
 
     def close(self):
+        """Cierra Chromium y Playwright ignorando los errores (puede que ya estuvieran caídos)."""
         for closer in (self.browser and self.browser.close, self._playwright and self._playwright.stop):
             if closer:
                 try:
@@ -303,6 +316,7 @@ class SnpBrowser:
         self.browser = self._playwright = None
 
     def _launch(self):
+        """Arranca Playwright y Chromium; si falla lanza SnpTemporaryError."""
         try:
             self._playwright = sync_playwright().start()
             self.browser = self._playwright.chromium.launch(headless=not self.headed, slow_mo=500 if self.headed else 0)
@@ -311,6 +325,11 @@ class SnpBrowser:
             raise SnpTemporaryError(f"No se ha podido abrir el navegador: {str(exc).splitlines()[0]}") from exc
 
     def new_context(self):
+        """
+        Contexto nuevo (como una ventana de incógnito) para leer un club. Vuelve a arrancar
+        Chromium si no estaba abierto o se ha caído, se presenta como un Chrome normal en español
+        y no descarga imágenes, vídeos ni tipos de letra.
+        """
         if self.browser is None or not self.browser.is_connected():
             self.close()
             self._launch()
@@ -331,6 +350,7 @@ def _is_blocked(response):
 
 
 def _skip_heavy_resources(route):
+    """Aborta las peticiones de imágenes, vídeos y tipos de letra; deja pasar el resto."""
     if route.request.resource_type in SKIPPED_RESOURCES:
         route.abort()
     else:
@@ -355,6 +375,12 @@ def scrape_scores(username, password, team_id=None, headed=False, log=None, brow
 
 
 def _scrape(username, password, team_id, log, browser, country=None):
+    """
+    Lectura de un club en el hilo del navegador: inicia sesión, abre la página del equipo y
+    recorre las páginas de la tabla de jugadores. Si durante la lectura SNP ha respondido que
+    nos limita, cualquier fallo se convierte en SnpBlockedError; los errores de Playwright pasan
+    a SnpTemporaryError. Devuelve los jugadores sin repetir nombres.
+    """
     log = log or (lambda message: None)
     players = []
     blocked = []  # respuestas de SNP que indican que nos está limitando

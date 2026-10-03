@@ -25,6 +25,7 @@ LOGO_PATH = settings.BASE_DIR / "static" / "zyra" / "email-logo.png"
 
 @lru_cache(maxsize=1)
 def _logo_bytes():
+    """Bytes del logo de Zyra para incrustarlo en los correos (se lee una sola vez)."""
     return LOGO_PATH.read_bytes()
 
 
@@ -38,6 +39,7 @@ class ZyraEmail(EmailMultiAlternatives):
     """
 
     def _create_alternatives(self, msg):
+        """Envuelve las versiones texto/HTML en un multipart/related junto con el logo."""
         msg = super()._create_alternatives(msg)
         if not self.alternatives:
             return msg
@@ -70,6 +72,7 @@ def build_email(subject, text, html_content, to, reply_to=None):
 
 
 def club_admins(club):
+    """Usuarios capitanes del club, ordenados por nombre de usuario."""
     return [
         m.user for m in Membership.objects.filter(club=club, role=Membership.ADMIN)
         .select_related("user").order_by("user__username")

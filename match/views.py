@@ -1,3 +1,8 @@
+"""Vistas de partidos: listado y alta de enfrentamientos, convocatorias, alineación de
+los 5 partidos, resultados, cierre del acta e informe PDF de la convocatoria.
+
+Todas las vistas trabajan solo con datos del club activo (``request.club``).
+"""
 from django.shortcuts import render, redirect, get_object_or_404
 from core.decorators import club_required, club_admin_required
 from django.contrib import messages
@@ -36,6 +41,7 @@ def club_match(request, match_id):
 
 
 def club_call(request, **filters):
+    """Convocatoria del club activo que cumpla ``filters`` o 404."""
     return get_object_or_404(Call, match__club=request.club, **filters)
 
 
@@ -61,6 +67,13 @@ def match_outcome(match):
 
 @club_required
 def list_match(request):
+    """Listado paginado de los enfrentamientos del club, filtrable por temporada.
+
+    Requiere pertenecer al club (club_required). Por GET ``season`` elige la temporada
+    (por defecto la actual; 'all' muestra todas) y ``page`` la página. Renderiza
+    list_match.html con el resultado de cada partido y un resumen de ganados, perdidos
+    y pendientes.
+    """
     # Por defecto, la temporada actual; "all" muestra todas.
     season = request.GET.get('season') or current_season()
 
@@ -103,8 +116,12 @@ def list_match(request):
 
 @club_admin_required
 def create_match(request):
-    # Las reglas (equipos del club, el equipo propio como local o visitante,
-    # fecha y tipo válidos) están en MatchForm.
+    """Alta de un enfrentamiento.
+
+    Solo para administradores del club (club_admin_required). En GET muestra el
+    formulario; en POST lo valida (las reglas están en MatchForm), lo guarda y
+    redirige al listado.
+    """
     form = MatchForm(request.POST or None, club=request.club)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -113,6 +130,11 @@ def create_match(request):
 
 @club_admin_required
 def delete_match(request, match_id):
+    """Borrado de un enfrentamiento que aún no está cerrado.
+
+    Solo para administradores del club. En GET pide confirmación (delete_match.html);
+    en POST lo borra. Si el acta ya está cerrada, avisa y vuelve al listado.
+    """
     try:
         match = club_match(request, match_id)
         if match.draft_mode != False:
@@ -153,6 +175,12 @@ def selectable_players(club, include_ids=()):
 
 @club_admin_required
 def create_call(request, match_id):
+    """Crea la convocatoria de un enfrentamiento.
+
+    Solo para administradores del club. Si ya existe convocatoria o el acta está
+    cerrada, redirige a existing_call. En POST guarda los jugadores elegidos (al menos
+    uno) y lleva a la página de la convocatoria; si no, muestra create_call.html.
+    """
     match = club_match(request, match_id)
     if Call.objects.filter(match=match).exists() or match.draft_mode == False:
         return redirect('existing_call', match.public_id)
@@ -177,6 +205,7 @@ def create_call(request, match_id):
 
 
 def validate_call(call):
+    """Comprueba si la convocatoria se puede cerrar: (True, None) o (False, mensaje de error)."""
     if call.players.all().count() < 10:
         return False, _("Para cerrar una convocatoria al menos debes contar con 10 jugadores")
     if call.draft_mode == False:
@@ -186,6 +215,11 @@ def validate_call(call):
 
 @club_admin_required
 def close_call(request, match_id):
+    """Cierra la convocatoria de un enfrentamiento y envía el informe a los capitanes.
+
+    Solo para administradores del club. Exige al menos 10 convocados y que siga
+    abierta. Solo cierra en POST; siempre vuelve a la página de la convocatoria.
+    """
     call = club_call(request, match__public_id=match_id)
     is_valid, error_message = validate_call(call)
 
@@ -252,6 +286,12 @@ def call_report_pdf(request, match_id):
 
 @club_admin_required
 def edit_call(request, call_id):
+    """Edición de los jugadores de una convocatoria.
+
+    Solo para administradores del club y mientras el acta del enfrentamiento esté
+    abierta (si no, vuelve a la convocatoria). En POST guarda los jugadores y anota en
+    el CallLog quién se ha añadido o quitado; en GET muestra edit_call.html.
+    """
     call = club_call(request, public_id=call_id)
     selected_players = list(call.players.values_list('id', flat=True))
     all_players = selectable_players(request.club, include_ids=selected_players)
@@ -305,25 +345,30 @@ def edit_call(request, call_id):
     }
     return render(request, 'edit_call.html', context)
 
-#VISTA POR SI SE INTENTA MODIFICAR UNA CONVOCATORIA YA CERRADA
 @club_admin_required
 def closed_call(request, call_id):
+    """Aviso al intentar modificar una convocatoria ya cerrada (solo administradores del club)."""
     call = club_call(request, public_id=call_id)
     return render(request, 'closed_call.html', {'match': call})
 
 
-#VISTA POR SI SE INTENTA CREAR UNA CONVOCATORIA YA EXISTENTE
 @club_admin_required
 def existing_call_view(request, match_id):
+    """Aviso al intentar crear una convocatoria que ya existe (solo administradores del club)."""
     match = club_match(request, match_id)
     return render(request, 'existing_call.html', {'match': match})
 
-#VISTA PARA MOSTRAR LA CONVOCATORIA
 POSITION_GROUPS = (("Derecha", gettext_lazy("Derecha")), ("Revés", gettext_lazy("Revés")), ("Mixto", gettext_lazy("Mixtos")))
 
 
 @club_required
 def call_for_match(request, match_id):
+    """Página de un enfrentamiento: convocatoria, partidos y resultados.
+
+    Requiere pertenecer al club (club_required). Agrupa a los convocados por posición
+    (derecha, revés y mixtos), marca los que ya juegan algún partido y muestra el
+    estado de los envíos del informe. Renderiza call_for_match.html.
+    """
     match = club_match(request, match_id)
     call = Call.objects.filter(match=match).first()
     games = list(
@@ -359,6 +404,9 @@ def call_for_match(request, match_id):
 
 
 def validate_game_for_match(call):
+    """Comprueba si se pueden crear los partidos: hace falta una convocatoria cerrada con
+    al menos 10 jugadores. Devuelve (True, None) o (False, mensaje de error).
+    """
     if not call:
         return False, _("No se pueden crear partidos, no existe ninguna convocatoria.")
     if call.players.all().count() < 10:
@@ -369,9 +417,14 @@ def validate_game_for_match(call):
     
     return True, None
 
-#FUNCIÓN PARA CREAR PARTIDOS DENTRO DE UN ENFRENTAMIENTO
 @club_admin_required
 def create_game_for_match(request, match_id):
+    """Crea los 5 partidos (parejas y orden) de un enfrentamiento.
+
+    Solo para administradores del club, con la convocatoria cerrada. Si los partidos
+    ya existen, redirige a su edición. En POST valida y guarda la alineación (ver
+    match.lineup); en GET muestra create_game.html con los convocados.
+    """
     match = club_match(request, match_id)
     call = Call.objects.filter(match=match).first()
 
@@ -423,6 +476,12 @@ def _save_result(request, game, result, template):
 
 @club_admin_required
 def create_result(request, game_id):
+    """Añade el resultado de un partido.
+
+    Solo para administradores del club y con el acta abierta. Si el partido ya tiene
+    resultado, redirige a su edición. En POST lo valida y guarda; en GET muestra
+    create_result.html.
+    """
     game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), public_id=game_id, match__club=request.club)
     if not game.match.draft_mode:
         messages.error(request, _("No se pueden añadir resultados a un partido ya confirmado"))
@@ -437,6 +496,11 @@ def create_result(request, game_id):
 
 @club_admin_required
 def edit_result(request, game_id):
+    """Edita el resultado de un partido.
+
+    Solo para administradores del club y con el acta abierta. En POST lo valida y
+    guarda; en GET muestra edit_result.html con los sets actuales.
+    """
     game = get_object_or_404(Game.objects.select_related('match__local', 'match__visiting'), public_id=game_id, match__club=request.club)
     match = game.match
     result = get_object_or_404(Result, game=game)
@@ -453,6 +517,7 @@ def edit_result(request, game_id):
 
 
 def calculate_points(games):
+    """Suma los puntos de los partidos ganados por cada lado: (puntos_local, puntos_visitante)."""
     points_local = 0
     points_visiting = 0
     
@@ -465,14 +530,18 @@ def calculate_points(games):
     return points_local, points_visiting
 
 def determine_match_result(points_local, points_visiting):
+    """'Victoria Local', 'Victoria Visitante' o 'EMPATE' (valor de Match.POSSIBLE_RESULT) según los puntos."""
     if points_local > points_visiting:
         return "Victoria Local"
     elif points_local < points_visiting:
         return "Victoria Visitante"
     else:
-        return "Empate"
+        return "EMPATE"
    
 def valid_close_match(games,match):
+    """Comprueba si se puede cerrar el acta: el enfrentamiento sigue abierto y tiene al menos
+    5 partidos, todos con resultado. Devuelve (True, None) o (False, mensaje de error).
+    """
     if match.draft_mode == False:
         return False, _("No se pueden cerrar actas, el partido ya ha sido cerrado")
     if len(games) < 5:
@@ -487,6 +556,11 @@ def valid_close_match(games,match):
 @club_admin_required
 @require_POST
 def close_match(request, match_id):
+    """Cierra el acta de un enfrentamiento (solo POST, administradores del club).
+
+    Si faltan partidos o resultados, avisa y vuelve a la convocatoria. Si no, cierra
+    los partidos, calcula los puntos y el resultado final y redirige al listado.
+    """
     match = club_match(request, match_id)
     games = match.games.all()
 
@@ -515,6 +589,12 @@ def close_match(request, match_id):
 
 @club_admin_required
 def edit_game_match(request, match_id):
+    """Cambia las parejas y el orden de los partidos ya creados.
+
+    Solo para administradores del club y con el acta abierta. Si aún no hay partidos,
+    redirige a crearlos. En POST guarda la nueva alineación; en GET muestra
+    edit_game_match.html con la alineación actual.
+    """
     match = club_match(request, match_id)
 
     if not match.draft_mode:

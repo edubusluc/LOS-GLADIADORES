@@ -1,3 +1,7 @@
+"""
+URLs de la app core (montadas en /core/): inicio de sesión, alta de club, cambio de
+club, miembros e invitaciones.
+"""
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views

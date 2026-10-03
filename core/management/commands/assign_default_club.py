@@ -1,3 +1,9 @@
+"""
+Comando assign_default_club: migra los datos de antes del modo multi-club a un club.
+
+Asigna al club los equipos, jugadores y partidos sin club, fusiona los equipos
+duplicados, marca el equipo propio y da de alta a los usuarios como capitanes.
+"""
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -9,6 +15,7 @@ from team.models import Team
 
 
 class Command(BaseCommand):
+    """Pasa los datos sin club al modo multi-club."""
     help = (
         "Pasa los datos anteriores al modo multi-club: crea (o reutiliza) un club, "
         "le asigna todos los equipos, jugadores, partidos y publicaciones sin club, "
@@ -16,6 +23,7 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser):
+        """Opciones --name, --location y --no-members."""
         parser.add_argument("--name", default="LOS GLADIADORES", help="Nombre del club y de su equipo propio.")
         parser.add_argument("--location", default="", help="Localización del equipo propio si hay que crearlo.")
         parser.add_argument(
@@ -25,6 +33,11 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, name, location, no_members, **options):
+        """
+        Crea o reutiliza el club, le asigna equipos (fusionando duplicados), jugadores y
+        partidos sin club, marca el equipo propio y crea las membresías de capitán. Todo en
+        una transacción.
+        """
         club, created = Club.objects.get_or_create(name=name)
         self.stdout.write(f"Club {'creado' if created else 'existente'}: {club} (id={club.id})")
 

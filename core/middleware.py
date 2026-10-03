@@ -1,3 +1,4 @@
+"""Middlewares propios de Zyra: club activo del usuario e idioma de la interfaz."""
 from django.conf import settings
 from django.utils import translation
 from django.utils.cache import patch_vary_headers
@@ -17,9 +18,14 @@ class CurrentClubMiddleware:
     """
 
     def __init__(self, get_response):
+        """Guarda la siguiente capa de la cadena de middlewares."""
         self.get_response = get_response
 
     def __call__(self, request):
+        """
+        Rellena request.club, request.membership, request.user_memberships (sin los clubes
+        suspendidos) y request.suspended_clubs, y guarda en sesión el club elegido.
+        """
         request.club = None
         request.membership = None
         request.suspended_clubs = []
@@ -58,9 +64,14 @@ class LanguageMiddleware:
     """
 
     def __init__(self, get_response):
+        """Guarda la siguiente capa de la cadena de middlewares."""
         self.get_response = get_response
 
     def __call__(self, request):
+        """
+        Activa el idioma de la cookie (o LANGUAGE_CODE) y añade a la respuesta Content-Language
+        y Vary: Cookie, para que las cachés no mezclen idiomas.
+        """
         language = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
         if language not in dict(settings.LANGUAGES):
             language = settings.LANGUAGE_CODE

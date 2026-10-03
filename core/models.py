@@ -1,3 +1,7 @@
+"""
+Modelos base de la aplicación multi-club: clubes, membresías, invitaciones y los
+registros de moderación (validación de fotos, fotos eliminadas y emails bloqueados).
+"""
 import datetime
 import secrets
 
@@ -27,9 +31,11 @@ class Club(PublicIdModel):
 
     @property
     def is_suspended(self):
+        """True si el personal ha suspendido el club."""
         return self.suspended_at is not None
 
     def save(self, *args, **kwargs):
+        """Genera un slug único a partir del nombre (añadiendo -2, -3...) si no tiene."""
         if not self.slug:
             base = slugify(self.name) or "club"
             slug, n = base, 2
@@ -44,10 +50,15 @@ class Club(PublicIdModel):
         return self.teams.filter(is_own=True).first()
 
     def __str__(self):
+        """Nombre del club."""
         return self.name
 
 
 class Membership(PublicIdModel):
+    """
+    Pertenencia de un usuario a un club con su rol: capitán (puede gestionar el club)
+    o miembro (solo lectura). Un usuario solo puede tener una membresía por club.
+    """
     PUBLIC_ID_PREFIX = "MBR"
     ADMIN = "admin"
     MEMBER = "member"
@@ -67,9 +78,11 @@ class Membership(PublicIdModel):
 
     @property
     def is_admin(self):
+        """True si el miembro es capitán del club."""
         return self.role == self.ADMIN
 
     def __str__(self):
+        """Usuario, club y rol."""
         return f"{self.user} - {self.club} ({self.get_role_display()})"
 
 
@@ -77,10 +90,12 @@ INVITATION_TTL = datetime.timedelta(hours=24)
 
 
 def _invitation_token():
+    """Token aleatorio e imposible de adivinar para el enlace de invitación."""
     return secrets.token_urlsafe(24)
 
 
 def _invitation_expiry():
+    """Fecha de caducidad por defecto de una invitación (ahora + INVITATION_TTL)."""
     return timezone.now() + INVITATION_TTL
 
 
@@ -109,21 +124,26 @@ class Invitation(PublicIdModel):
 
     @property
     def is_used(self):
+        """True si ya se ha aceptado la invitación."""
         return self.used_at is not None
 
     @property
     def is_expired(self):
+        """True si ya ha pasado la fecha de caducidad."""
         return timezone.now() >= self.expires_at
 
     @property
     def is_valid(self):
+        """La invitación todavía se puede aceptar: ni usada ni caducada."""
         return not self.is_used and not self.is_expired
 
     def __str__(self):
+        """Club y comienzo del token."""
         return f"Invitación a {self.club} ({self.token[:6]}…)"
 
 
 class PhotoCheckQuerySet(models.QuerySet):
+    """QuerySet de PhotoCheck con filtros propios."""
     def for_user(self, user):
         """Fotos guardadas que ha subido ``user`` o que son de su jugador."""
         return self.filter(models.Q(uploaded_by=user) | models.Q(player__user=user)).exclude(photo="")
@@ -170,10 +190,12 @@ class PhotoCheck(PublicIdModel):
 
     @property
     def subject(self):
+        """Jugador o equipo al que pertenece la foto (None si ya no existe)."""
         return self.player or self.team
 
     @property
     def subject_label(self):
+        """Texto para mostrar de quién es la foto: «Foto de ...» o «Escudo de ...»."""
         from django.utils.translation import gettext
 
         if self.player:
@@ -204,6 +226,7 @@ class PhotoCheck(PublicIdModel):
         return bool(self.photo and subject and subject.photo and subject.photo.name == self.photo)
 
     def __str__(self):
+        """Estado y ruta de la foto."""
         return f"{self.get_status_display()}: {self.photo or '—'}"
 
 
@@ -232,6 +255,7 @@ class PhotoRemoval(PublicIdModel):
         ordering = ["-created_at"]
 
     def __str__(self):
+        """De quién era la foto y la fecha en que se eliminó."""
         return f"{self.subject} ({self.created_at:%d/%m/%Y})"
 
 
@@ -261,4 +285,5 @@ class BlockedEmail(PublicIdModel):
         ordering = ["-created_at"]
 
     def __str__(self):
+        """El email tal y como se escribió."""
         return self.original_email

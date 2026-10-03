@@ -40,6 +40,16 @@ class CloseMatchTests(TestCase):
         self.assertFalse(self.match.games.filter(draft_mode=True).exists())
 
 
+class DrawResultTests(TestCase):
+    def test_draw_uses_the_field_choice(self):
+        """Un 6-6 se guarda como «EMPATE», el valor de las opciones, y se muestra como «Empate»."""
+        from match.views import determine_match_result
+        self.assertEqual(determine_match_result(6, 6), "EMPATE")
+        self.assertIn("EMPATE", dict(Match.POSSIBLE_RESULT))
+        match = Match(result=determine_match_result(6, 6))
+        self.assertEqual(match.get_result_display(), "Empate")
+
+
 class MatchesAndCallsTests(TestCase):
     def setUp(self):
         from core.models import Membership

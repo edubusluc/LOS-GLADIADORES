@@ -186,6 +186,22 @@ class PairStatisticsTests(TestCase):
         self.assertIn("column_chart_data:", script)
         self.assertTrue(script.rstrip().endswith("};"))
 
+    def test_player_streak_follows_match_date(self):
+        """Un partido anterior en fecha pero creado después no cuenta como el último (antes se ordenaba por id)."""
+        own, rival = self.club.own_team, Team.objects.get(club=self.club, name="Rival")
+        m = Match.objects.create(club=self.club, local=own, visiting=rival,
+                                 start_date=datetime.date(2025, 9, 1), draft_mode=False)
+        Game.objects.create(match=m, n_game=1, score=3, winner='Visitante', draft_mode=False,
+                            player_1_local=self.a, player_2_local=self.b)
+        d = self.client.get(reverse("player_statistics"),
+                            {"player": self.a.public_id, "season": "2025-2026"}).context["d"]
+        self.assertEqual((d["streak_type"], d["streak_len"]), ("V", 2))
+
+    def test_pair_last_games_with_competitive_filter(self):
+        response = self.client.get(reverse("pair_statistics"),
+                                   {"p1": self.a.public_id, "p2": self.b.public_id, "match_type": "competitivo"})
+        self.assertEqual(len(response.context["last_games"]), 4)
+
     def test_player_season_games_table(self):
         response = self.client.get(reverse("player_statistics"), {"player": self.a.public_id, "season": "2024-2025"})
         games = response.context["d"]["games"]

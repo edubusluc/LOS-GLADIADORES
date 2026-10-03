@@ -46,6 +46,7 @@ def current_streak(results):
 
 @dataclass
 class PlayerForm:
+    """Historial de un jugador convocado: global, en la sede del partido y resultados recientes."""
     player: object
     played: int = 0
     wins: int = 0
@@ -55,34 +56,42 @@ class PlayerForm:
 
     @property
     def id(self):
+        """Id del jugador."""
         return self.player.id
 
     @property
     def name(self):
+        """Nombre corto del jugador."""
         return self.player.short_name
 
     @property
     def snp(self):
+        """Puntos SNP del jugador (0 si no tiene)."""
         return self.player.snp_score or 0
 
     @property
     def losses(self):
+        """Partidos perdidos."""
         return self.played - self.wins
 
     @property
     def pct(self):
+        """% de victorias global, o None sin partidos."""
         return round(self.wins / self.played * 100) if self.played else None
 
     @property
     def venue_pct(self):
+        """% de victorias en la sede del partido, o None sin partidos allí."""
         return round(self.venue_wins / self.venue_played * 100) if self.venue_played else None
 
     @property
     def streak(self):
+        """Racha actual: ('V', n), ('D', n) o (None, 0)."""
         return current_streak(self.results)
 
     @property
     def form(self):
+        """Últimos 5 resultados (True = victoria)."""
         return self.results[-5:]
 
     @property
@@ -100,6 +109,7 @@ class PlayerForm:
 
 @dataclass
 class PairForm:
+    """Historial de una pareja de convocados jugando juntos."""
     a: PlayerForm
     b: PlayerForm
     played: int = 0
@@ -110,26 +120,32 @@ class PairForm:
 
     @property
     def key(self):
+        """Ids de los dos jugadores ordenados: identifica la pareja."""
         return tuple(sorted((self.a.id, self.b.id)))
 
     @property
     def name(self):
+        """'Jugador A / Jugador B'."""
         return f"{self.a.name} / {self.b.name}"
 
     @property
     def snp_sum(self):
+        """Suma de los puntos SNP de la pareja: decide el orden de los partidos."""
         return round(self.a.snp + self.b.snp, 1)
 
     @property
     def losses(self):
+        """Partidos perdidos juntos."""
         return self.played - self.wins
 
     @property
     def streak(self):
+        """Racha actual de la pareja: ('V', n), ('D', n) o (None, 0)."""
         return current_streak(self.results)
 
     @property
     def complementary(self):
+        """1 si es una pareja derecha + revés, -1 si los dos juegan del mismo lado, 0 en otro caso."""
         positions = {self.a.player.position, self.b.player.position}
         if positions == {"Derecha", "Revés"}:
             return 1
@@ -139,6 +155,11 @@ class PairForm:
 
     @property
     def strength(self):
+        """Probabilidad estimada de que la pareja gane un partido (0,05-0,95).
+
+        Parte de la media de los dos jugadores, se ajusta con su historial juntos (más
+        cuantos más partidos tengan), y suma un poco por posiciones complementarias y racha.
+        """
         base = (self.a.strength + self.b.strength) / 2
         # La química de la pareja pesa más cuantos más partidos hayan jugado juntos
         p = _smooth(self.wins, self.played, prior=base, weight=3)
@@ -180,6 +201,7 @@ def build_forms(log, players, own_local):
 
 
 def get_pair(pairs, forms, a_id, b_id):
+    """PairForm de dos jugadores; si nunca han jugado juntos, la crea vacía y la añade a ``pairs``."""
     key = tuple(sorted((a_id, b_id)))
     if key not in pairs:
         pairs[key] = PairForm(forms[key[0]], forms[key[1]])
@@ -235,6 +257,7 @@ STRATEGY_TITLES = {
 
 @dataclass
 class Lineup:
+    """Alineación recomendada: parejas en orden SNP, probabilidad de ganar, puntos esperados y banquillo."""
     pairs: list          # PairForm en orden SNP (partido 1 primero)
     win: float
     expected: float
@@ -243,14 +266,17 @@ class Lineup:
 
     @property
     def title(self):
+        """Nombre de la estrategia de la alineación, traducido."""
         return str(STRATEGY_TITLES[self.strategy])
 
     @property
     def keys(self):
+        """Claves de las parejas de la alineación."""
         return {p.key for p in self.pairs}
 
     @property
     def rows(self):
+        """Filas para mostrar: número de partido, puntos, pareja y % estimado."""
         return [
             {'n': n, 'value': v, 'pair': p, 'pct': round(p.strength * 100)}
             for n, (p, v) in enumerate(zip(self.pairs, GAME_VALUES), start=1)
@@ -292,6 +318,7 @@ def recommend(forms, pairs, called_ids):
             candidates.append(item)
 
     def lineup(item):
+        """Convierte un candidato de la búsqueda en un Lineup con su banquillo."""
         ps = [x[3] for x in item[3]]
         playing = {f.id for p in ps for f in (p.a, p.b)}
         return Lineup(ps, item[0], item[1], [f for f in called if f.id not in playing])
@@ -328,6 +355,7 @@ def recommend(forms, pairs, called_ids):
 # ---------------------------------------------------------------
 
 def _pct(x):
+    """0.634 -> '63 %'."""
     return f"{round(x * 100)} %"
 
 

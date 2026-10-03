@@ -33,10 +33,12 @@ def to_int(value):
 
 
 def is_valid_set(a, b):
+    """True si el marcador es un set válido (6-0 ... 6-4, 7-5 o 7-6), en cualquier orden."""
     return (max(a, b), min(a, b)) in VALID_SET_SCORES
 
 
 def is_valid_super_tiebreak(a, b):
+    """True si el marcador es un super tie-break válido (a 10 puntos con 2 de diferencia)."""
     high, low = max(a, b), min(a, b)
     if high < SUPER_TIEBREAK_POINTS:
         return False
@@ -45,6 +47,7 @@ def is_valid_super_tiebreak(a, b):
 
 
 def set_winner(a, b):
+    """'local' o 'visiting' según quién ganó el set (a juegos del local, b del visitante)."""
     return "local" if a > b else "visiting"
 
 

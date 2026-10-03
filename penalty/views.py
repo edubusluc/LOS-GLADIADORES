@@ -1,3 +1,4 @@
+"""Vistas de advertencias."""
 from django.shortcuts import redirect, get_object_or_404
 from .models import Penalty
 from players.models import Player
@@ -6,6 +7,11 @@ from core.decorators import club_admin_required
 
 @club_admin_required
 def create_penalty(request, call_id):
+    """
+    Crea una advertencia para cada jugador marcado en el POST (solo jugadores actuales del
+    club, estén o no en la convocatoria). Solo capitanes. Siempre vuelve a la convocatoria
+    del partido.
+    """
     call = get_object_or_404(Call, public_id=call_id, match__club=request.club)
     match = call.match
     if request.method == "POST":

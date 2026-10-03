@@ -1,3 +1,4 @@
+"""Rutas de la app de partidos (enfrentamientos, convocatorias, partidos y resultados)."""
 from django.urls import path
 from .views import *
 from call.views import delete_call

@@ -1,3 +1,9 @@
+"""
+Estadísticas del club: del equipo, por jugador, por parejas y advertencias.
+
+Todas se calculan sobre los partidos cerrados del club y admiten filtro por temporada
+y por tipo de partido.
+"""
 from django.shortcuts import render
 from match.models import Match, Game, Result
 from django.db.models import Sum
@@ -23,6 +29,7 @@ VISITING_WIN = "Victoria Visitante"
 
 
 def get_total_season(matchs):
+    """Temporadas distintas de los partidos de ``matchs``."""
     return set(matchs.values_list('season', flat=True).distinct())
 
 
@@ -55,6 +62,7 @@ def season_filter_context(request, seasons, selected_season, all_value=None, anc
     (advertencias usa ?season=all porque sin parámetro muestra la temporada actual).
     """
     def url(value):
+        """URL de la página actual con la temporada ``value`` (sin ella para «Todas»)."""
         params = request.GET.copy()
         if value:
             params[SEASON_PARAM] = value
@@ -86,6 +94,7 @@ def match_type_context(request, match_type):
     para añadir el filtro a los enlaces que ya existían (temporadas).
     """
     def url(value):
+        """URL de la página actual con el tipo de partido ``value`` (sin él para «Todos»)."""
         params = request.GET.copy()
         if value:
             params[MATCH_TYPE_PARAM] = value
@@ -122,6 +131,10 @@ def _by_type(matches, match_type, prefix=""):
 
 
 def calculate_match_statistics(season, team, match_type=None):
+    """
+    Enfrentamientos cerrados del club (de la temporada si se indica): (total, ganados,
+    perdidos, % ganados, % perdidos). Perdidos son todos los no ganados.
+    """
     matches = _by_type(Match.objects.filter(club=team.club, draft_mode=False), match_type)
     if season is not None:
         matches = matches.filter(season=season)
@@ -162,10 +175,12 @@ def _games_totals(season, team, own_local, match_type=None):
 
 
 def calculate_local_game_statistics(season, team, match_type=None):
+    """Juegos ganados y perdidos (y sus %) del equipo cuando juega en casa."""
     return _games_totals(season, team, own_local=True, match_type=match_type)
 
 
 def calculate_visiting_game_statistics(season, team, match_type=None):
+    """Juegos ganados y perdidos (y sus %) del equipo cuando juega fuera."""
     return _games_totals(season, team, own_local=False, match_type=match_type)
 
 
@@ -211,6 +226,7 @@ def column_chart(club, season, match_type=None):
 
 
 def format_for_chart(dic):
+    """Datos de ``column_chart`` como lista de {'player', 'data'} para el gráfico de columnas."""
     players = []
     for player_name, stats in dic.items():
         players.append({
@@ -228,6 +244,11 @@ def format_for_chart(dic):
 @club_required
 @require_GET
 def team_statistics(request):
+    """
+    Estadísticas del equipo propio: balance de enfrentamientos y juegos, evolución por
+    temporada, partidos de 2 y 3 puntos por jugador y top 5 de jugadores y parejas.
+    Requiere pertenecer al club y solo GET. Filtra por temporada (``?season=``) y tipo de partido.
+    """
     seasons = get_total_season(Match.objects.filter(club=request.club))
     selected_season = request.GET.get("season")
     team = request.club.own_team
@@ -291,10 +312,9 @@ def team_statistics(request):
 # ESTADÍSTICAS JUGADORES
 # ---------------------------------------------------------------
 
-# Orden cronológico de los partidos del jugador. De esto dependen las rachas.
-# Si Match tiene un campo de fecha, cámbialo:
-#   ORDER = ('match__date', 'match_id', 'n_game')
-ORDER = ('match__season', 'match_id', 'n_game')
+# Orden cronológico de los partidos del jugador (por fecha, como pairs.club_game_log).
+# De esto dependen las rachas.
+ORDER = ('match__start_date', 'match_id', 'n_game')
 
 # Peso del "punto de partida" neutro (50 %) en la afinidad, medido en puntos en juego.
 PRIOR_POINTS = 6
@@ -476,10 +496,12 @@ def calls_by_season(player, match_type=None):
 
 
 def _pct(wins, total):
+    """Porcentaje con un decimal; 0 si no hay partidos."""
     return round(wins / total * 100, 1) if total else 0
 
 
 def _longest_run(results, target):
+    """Racha más larga de resultados iguales a ``target`` (True: victorias, False: derrotas)."""
     best = run = 0
     for r in results:
         run = run + 1 if r == target else 0
@@ -579,6 +601,11 @@ def summarize_by_season(log, calls_present, calls_total):
 @club_required
 @require_GET
 def statistics_per_player(request):
+    """
+    Estadísticas de un jugador del club (``?player=``): balance, rachas, evolución por
+    temporada, afinidad con sus compañeros, puntos SNP y, con ``?season=``, el detalle de esa
+    temporada. Sin jugador muestra solo el selector. Requiere pertenecer al club y solo GET.
+    """
     players = Player.objects.filter(club=request.club, in_team=True).order_by('name', 'last_name')
     player_id = request.GET.get('player')
     match_type = selected_match_type(request)
@@ -658,6 +685,11 @@ def statistics_per_player(request):
 @club_required
 @require_GET
 def statistics_per_pair(request):
+    """
+    Estadísticas por parejas: mejores y peores parejas del club y, con ``?p1=`` y ``?p2=``,
+    el detalle de esa pareja y sus últimos partidos. Un jugador de otro club da 404.
+    Requiere pertenecer al club y solo GET.
+    """
     club_players = list(Player.objects.filter(club=request.club).order_by('name', 'last_name'))
     by_public_id = {p.public_id: p for p in club_players}
     match_type = selected_match_type(request)
@@ -719,7 +751,7 @@ def pair_last_games(club, p1, p2, n=PAIR_LAST_GAMES, match_type=None):
     games = (
         Game.objects
         .filter(together, draft_mode=False, winner__in=('Local', 'Visitante'), match__club=club,
-                **({'match__match_type': match_type} if match_type else {}))
+                **pair_stats.match_type_lookup(match_type, prefix='match__'))
         .select_related('match__local', 'match__visiting')
         .prefetch_related('results')
         .order_by('-match__start_date', '-match_id', '-n_game')[:n]
@@ -753,6 +785,10 @@ ALL_SEASONS = "all"
 @club_admin_required
 @require_GET
 def warnings_statistics(request):
+    """
+    Advertencias del club por jugador y su ranking. Solo capitanes y solo GET. Sin
+    ``?season=`` muestra la temporada actual; ``?season=all``, todas.
+    """
     penalties = (
         Penalty.objects
         .filter(player__club=request.club, call__match__club=request.club)

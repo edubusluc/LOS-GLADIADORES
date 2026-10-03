@@ -27,13 +27,19 @@ from team.models import Team
 
 
 class Command(BaseCommand):
+    """Mueve las fotos antiguas de static/ al almacenamiento de fotos."""
     help = "Mueve las fotos de equipos y jugadores guardadas en static/ al almacenamiento de fotos (media/)."
 
     def add_arguments(self, parser):
+        """Opciones --dry-run y --keep-originals."""
         parser.add_argument("--dry-run", action="store_true", help="No cambia nada, solo dice qué haría.")
         parser.add_argument("--keep-originals", action="store_true", help="No borra los ficheros originales de static/.")
 
     def handle(self, *args, dry_run=False, keep_originals=False, **options):
+        """
+        Procesa y guarda cada foto antigua de equipos y jugadores, corrige su ruta (también en
+        PhotoCheck) y al final borra los originales de static/ salvo con --keep-originals.
+        """
         base = Path(settings.BASE_DIR).resolve()
         moved = missing = invalid = 0
         to_delete = set()
@@ -97,6 +103,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _in_static(path, base):
+        """True si ``path`` está dentro de static/ o de algún STATICFILES_DIRS."""
         return any(path.is_relative_to((base / d).resolve()) for d in [*settings.STATICFILES_DIRS, "static"])
 
 
@@ -104,7 +111,9 @@ class _StorageFile:
     """Ruta dentro del almacenamiento con la misma interfaz open() que Path."""
 
     def __init__(self, name):
+        """``name``: ruta del fichero dentro del almacenamiento."""
         self.name = name
 
     def open(self, mode="rb"):
+        """Abre el fichero del almacenamiento."""
         return default_storage.open(self.name, mode)

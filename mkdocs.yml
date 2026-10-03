@@ -1,0 +1,81 @@
+# Web de documentación de Zyra (MkDocs + Material + mkdocstrings).
+# Se genera sola desde el código en cada push a main (.github/workflows/docs.yml).
+# En local: pip install -r requirements-docs.txt && mkdocs serve
+site_name: Zyra · Documentación
+site_description: Documentación funcional y de código de Zyra, la app para gestionar equipos de pádel.
+site_url: https://edubusluc.github.io/Zyra/
+repo_url: https://github.com/edubusluc/Zyra
+repo_name: edubusluc/Zyra
+edit_uri: edit/main/docs/
+copyright: Zyra
+
+theme:
+  name: material
+  language: es
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  font: false
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+extra_css:
+  - stylesheets/zyra.css
+
+plugins:
+  - search:
+      lang: es
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            filters: ["!^_[^_]", "!^Meta$"]
+            show_if_no_docstring: true
+            heading_level: 2
+            merge_init_into_class: true
+            separate_signature: true
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+
+nav:
+  - Inicio: index.md
+  - Funcionalidades: funcionalidades.md
+  - Novedades: novedades.md
+  - Mantener la documentación: mantener-documentacion.md
+  - Referencia del código: referencia/

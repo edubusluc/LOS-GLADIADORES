@@ -1,3 +1,7 @@
+"""
+Vistas generales de Zyra: portada, inicio de sesión, páginas de error, alta de club,
+cambio de club activo, gestión de miembros e invitaciones.
+"""
 import datetime
 from urllib.parse import urlencode
 
@@ -89,10 +93,12 @@ class ThrottledLoginView(LoginView):
     """
 
     def _key(self):
+        """Clave de caché del contador de fallos: IP y usuario escrito."""
         username = (self.request.POST.get("username") or "").strip().lower()
         return f"login-failures:{self.request.META.get('REMOTE_ADDR', '')}:{username}"
 
     def post(self, request, *args, **kwargs):
+        """Con demasiados fallos seguidos responde 429 sin comprobar la contraseña."""
         if cache.get(self._key(), 0) >= LOGIN_MAX_FAILURES:
             # Sin validar el formulario: validarlo comprobaría la contraseña.
             form = self.get_form()
@@ -102,6 +108,7 @@ class ThrottledLoginView(LoginView):
         return super().post(request, *args, **kwargs)
 
     def form_invalid(self, form):
+        """Suma un fallo al contador (caduca a los LOGIN_LOCKOUT_SECONDS)."""
         key = self._key()
         cache.add(key, 0, LOGIN_LOCKOUT_SECONDS)
         try:
@@ -111,11 +118,13 @@ class ThrottledLoginView(LoginView):
         return super().form_invalid(form)
 
     def form_valid(self, form):
+        """Inicio de sesión correcto: pone a cero el contador de fallos."""
         cache.delete(self._key())
         return super().form_valid(form)
 
 
 def error_404_view(request, exception):
+    """Página «No encontrado» (handler404)."""
     return render(request, '404.html', status=404)
 
 
@@ -139,10 +148,12 @@ def csrf_failure(request, reason=""):
 
 
 def _site_url(request):
+    """URL absoluta de la raíz de la web, para los enlaces de los correos."""
     return request.build_absolute_uri("/")
 
 
 def _style(*forms):
+    """Añade las clases de Bootstrap (form-control / form-select) a los campos de los formularios."""
     for form in filter(None, forms):
         for field in form:
             css = 'form-select' if isinstance(field.field.widget, Select) else 'form-control'
@@ -194,6 +205,12 @@ def register_club(request):
 
 @login_required
 def no_club(request):
+    """
+    Página para quien ha iniciado sesión pero no tiene club activo (requiere sesión).
+
+    Explica cómo unirse o registrar un club y lista sus clubes suspendidos. Si ya tiene
+    club, redirige a la portada.
+    """
     if request.club is not None:
         return redirect("home")
     return render(request, "no_club.html", {"suspended_clubs": request.suspended_clubs})
@@ -202,6 +219,11 @@ def no_club(request):
 @login_required
 @require_POST
 def switch_club(request):
+    """
+    Cambia el club activo del usuario (requiere sesión; solo POST con ``club_id``).
+
+    Solo admite clubes de los que es miembro (si no, 404) y redirige a la portada.
+    """
     club_id = request.POST.get("club_id", "")
     if not club_id.isdigit():
         raise Http404
@@ -212,6 +234,13 @@ def switch_club(request):
 
 @club_admin_required
 def club_members(request, invite_form=None):
+    """
+    Página de miembros del club (solo capitanes, club_admin_required).
+
+    Muestra los miembros con su rol, el formulario de invitación y las invitaciones
+    pendientes, paginadas y filtrables por email (parámetro ``q``). create_invitation
+    la reutiliza con ``invite_form`` para mostrar los errores del formulario.
+    """
     club = request.club
     invite_form = invite_form or InviteMemberForm(club=club)
     _style(invite_form)
@@ -270,6 +299,11 @@ def create_invitation_link(request):
 @club_admin_required
 @require_POST
 def revoke_invitation(request, invitation_id):
+    """
+    Anula una invitación pendiente del club (solo capitanes, solo POST).
+
+    Redirige a la lista de invitaciones de la página de miembros.
+    """
     get_object_or_404(Invitation, public_id=invitation_id, club=request.club, used_at__isnull=True).delete()
     messages.success(request, _("Invitación anulada."))
     return redirect(reverse("club_members") + "#invitaciones")
@@ -357,12 +391,19 @@ def invitation(request, token):
 
 
 def _is_last_admin(membership):
+    """True si ``membership`` es el único capitán de su club."""
     return membership.is_admin and not membership.club.memberships.filter(role=Membership.ADMIN).exclude(pk=membership.pk).exists()
 
 
 @club_admin_required
 @require_POST
 def update_member(request, membership_id):
+    """
+    Cambia el rol de un miembro (solo capitanes, solo POST).
+
+    Si el capitán edita su propia fila también puede cambiar su email (el de los demás
+    no). No deja el club sin capitanes. Redirige a la página de miembros.
+    """
     membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     role = request.POST.get("role")
     # Cada usuario solo puede cambiar su propio email. Antes un capitán podía cambiar el de
@@ -404,6 +445,11 @@ def _change_own_email(user, email):
 @club_admin_required
 @require_POST
 def remove_member(request, membership_id):
+    """
+    Da de baja a un miembro del club (solo capitanes, solo POST).
+
+    No permite quitar al último capitán. Redirige a la página de miembros.
+    """
     membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     if _is_last_admin(membership):
         messages.error(request, _("El club debe tener al menos un capitán."))

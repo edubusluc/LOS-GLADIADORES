@@ -1,3 +1,9 @@
+"""
+Decoradores de acceso para las vistas de los clubes.
+
+Se apoyan en request.club y request.membership, que rellena
+core.middleware.CurrentClubMiddleware en cada petición.
+"""
 from functools import wraps
 
 from django.contrib.auth.decorators import login_required
@@ -11,6 +17,7 @@ def club_required(view_func):
     @login_required
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
+        """Redirige a no_club si el usuario no tiene club activo."""
         if request.club is None:
             return redirect("no_club")
         return view_func(request, *args, **kwargs)
@@ -25,6 +32,7 @@ def club_admin_required(view_func):
     @club_required
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
+        """Lanza PermissionDenied (403) si el usuario no es capitán del club activo."""
         if not request.membership.is_admin:
             raise PermissionDenied(_("Solo los capitanes del club pueden ver esta página o realizar esta acción."))
         return view_func(request, *args, **kwargs)

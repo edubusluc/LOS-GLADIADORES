@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Moderation:
+    """
+    Resultado de validar una foto: estado (PhotoCheck.APPROVED, REJECTED o UNCHECKED),
+    motivo, si se llamó a Rekognition y las etiquetas que la rechazaron.
+    """
     status: str  # PhotoCheck.APPROVED / REJECTED / UNCHECKED
     reason: str = ""
     api_called: bool = False
@@ -34,10 +38,12 @@ class Moderation:
 
 
 def is_configured():
+    """True si están definidas las credenciales de AWS para Rekognition."""
     return bool(settings.REKOGNITION_ACCESS_KEY_ID and settings.REKOGNITION_SECRET_ACCESS_KEY)
 
 
 def calls_this_month():
+    """Llamadas a Rekognition hechas en el mes en curso (las PhotoCheck con api_called)."""
     from .models import PhotoCheck
 
     start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -61,6 +67,7 @@ def free_tier_status():
 
 
 def _client():
+    """Cliente boto3 de Rekognition con las credenciales de settings."""
     import boto3
 
     return boto3.client(

@@ -1,3 +1,4 @@
+"""URLs del registro de convocatorias."""
 from .views import view_call_log
 from django.urls import path
 urlpatterns = [

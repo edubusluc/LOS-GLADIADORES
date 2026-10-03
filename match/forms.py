@@ -1,3 +1,4 @@
+"""Formularios de la app de partidos: alta y edición de enfrentamientos, partidos y resultados."""
 from django import forms
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -8,6 +9,7 @@ class TeamSelect(forms.Select):
     """Select de equipos que lleva la foto de cada uno (data-photo) para pintar la card del formulario."""
 
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        """Añade a cada opción la URL de la foto del equipo en ``data-photo``."""
         option = super().create_option(name, value, label, selected, index, subindex, attrs)
         team = getattr(value, 'instance', None)
         if team is not None:
@@ -16,6 +18,12 @@ class TeamSelect(forms.Select):
 
 
 class MatchForm(forms.ModelForm):
+    """Alta y edición de un enfrentamiento del club.
+
+    Los equipos se limitan a los del club que están en el grupo (y siempre el propio),
+    que tiene que jugar como local o visitante. En modo amistoso el partido se guarda
+    con tipo AMISTOSO; en competitivo, el tipo por defecto es enfrentamiento.
+    """
     COMPETITIVE = "competitivo"
     FRIENDLY = "amistoso"
     MODES = [(COMPETITIVE, _("Competitivo")), (FRIENDLY, _("Amistoso"))]
@@ -38,6 +46,11 @@ class MatchForm(forms.ModelForm):
         }
 
     def __init__(self, *args, club=None, **kwargs):
+        """Prepara los campos para el club ``club``.
+
+        Limita los equipos a los del club, propone el equipo propio como local en un
+        formulario nuevo y marca el modo amistoso al editar un amistoso.
+        """
         super(MatchForm, self).__init__(*args, **kwargs)
         self.club = club
         self.own_team = club.own_team if club else None
@@ -73,19 +86,27 @@ class MatchForm(forms.ModelForm):
 
     @property
     def local_team(self):
+        """Equipo local elegido ahora, para pintar su card."""
         return self._selected_team('local')
 
     @property
     def visiting_team(self):
+        """Equipo visitante elegido ahora, para pintar su card."""
         return self._selected_team('visiting')
 
     def clean_match_type(self):
+        """Si no se envía tipo, es un enfrentamiento."""
         return self.cleaned_data.get('match_type') or Match.ENFRENTAMIENTO
 
     def clean_mode(self):
+        """Si no se envía modo, es competitivo."""
         return self.cleaned_data.get('mode') or self.COMPETITIVE
 
     def clean(self):
+        """Ajusta el tipo de un amistoso y comprueba los equipos.
+
+        Los dos equipos deben ser distintos y uno de ellos el propio del club.
+        """
         cleaned = super().clean()
         # Un amistoso no tiene tipo (enfrentamiento, reto, play off): se guarda como AMISTOSO.
         if cleaned.get('mode') == self.FRIENDLY:
@@ -106,6 +127,7 @@ class MatchForm(forms.ModelForm):
         return cleaned
 
     def save(self, commit=True):
+        """Guarda el enfrentamiento asignándolo al club del formulario."""
         match = super().save(commit=False)
         match.club = self.club
         if commit:
@@ -113,12 +135,14 @@ class MatchForm(forms.ModelForm):
         return match
 
 class GameForm (forms.ModelForm):
+    """Formulario de un partido por parejas (número y jugadores)."""
     class Meta:
         model = Game
         fields= ['n_game', 'player_1_local', 'player_2_local', 'player_1_visiting', 'player_2_visiting']
 
 
 class ResultForm(forms.ModelForm):
+    """Formulario del resultado de un partido."""
     class Meta:
         model = Result
         fields = ['result']

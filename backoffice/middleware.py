@@ -1,3 +1,9 @@
+"""
+Middleware que mide la carga de la web y apunta la actividad de los usuarios.
+
+Las métricas se acumulan en memoria por minuto y se vuelcan a RequestMetric cada
+FLUSH_EVERY segundos (o al cambiar de minuto), para no escribir en cada petición.
+"""
 import threading
 import time
 
@@ -27,15 +33,21 @@ class _Buffer:
     """Contadores del minuto en curso, en memoria de este proceso, para no escribir en cada petición."""
 
     def __init__(self):
+        """Buffer vacío; el intervalo de volcado empieza a contar ahora."""
         self.lock = threading.Lock()
         self.reset(None)
         self.flushed_at = time.monotonic()
 
     def reset(self, minute):
+        """Pone los contadores a cero para el minuto indicado."""
         self.minute = minute
         self.requests = self.errors = self.slow = self.total_ms = self.max_ms = 0
 
     def add(self, minute, ms, status):
+        """
+        Suma una petición (duración en ms y código de respuesta) al minuto en curso. Si ha
+        cambiado el minuto o toca volcar, guarda lo acumulado fuera del cerrojo.
+        """
         pending = None
         with self.lock:
             if self.minute is not None and minute != self.minute:
@@ -53,10 +65,12 @@ class _Buffer:
             _save(pending)
 
     def take(self):
+        """Saca lo acumulado (con el cerrojo) y deja el buffer vacío."""
         with self.lock:
             return self._take()
 
     def _take(self):
+        """Como take, sin cerrojo: devuelve los contadores (o None si no hay nada) y los reinicia."""
         data = None
         if self.minute is not None and self.requests:
             data = dict(minute=self.minute, requests=self.requests, errors=self.errors,
@@ -94,6 +108,7 @@ def flush_metrics():
 
 
 def activity_cache_key(user_id):
+    """Clave de caché que limita a una escritura por usuario cada ACTIVITY_EVERY segundos."""
     return f"backoffice:seen:{user_id}"
 
 
@@ -104,9 +119,14 @@ class ActivityMiddleware:
     """
 
     def __init__(self, get_response):
+        """Guarda la siguiente capa de la cadena de middleware."""
         self.get_response = get_response
 
     def __call__(self, request):
+        """
+        Atiende la petición y, salvo estáticos y ficheros subidos, suma su tiempo y código a
+        las métricas y actualiza UserActivity (como mucho una vez por minuto y usuario).
+        """
         if request.path.startswith(_IGNORED_PREFIXES):
             return self.get_response(request)
 

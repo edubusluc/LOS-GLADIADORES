@@ -1,3 +1,4 @@
+"""Vistas del registro de convocatorias."""
 from django.shortcuts import render
 from django.utils.translation import gettext as _
 from callLog.models import CallLog
@@ -9,6 +10,11 @@ from core.decorators import club_required
 @club_required
 @require_http_methods(["GET", "POST"])
 def view_call_log(request, call_id):
+    """
+    Muestra el registro de una convocatoria del club, línea a línea, junto con los jugadores
+    que siguen en el equipo. Requiere pertenecer al club. Si no existe, muestra un mensaje
+    de error en la misma plantilla.
+    """
     # Solo los jugadores que siguen en el equipo, por orden alfabético
     players = Player.objects.filter(club=request.club, in_team=True).order_by('name', 'last_name')
     try:

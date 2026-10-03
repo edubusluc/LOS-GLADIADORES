@@ -15,10 +15,15 @@ from django.conf import settings
 
 
 class DecryptionError(Exception):
+    """El dato no se puede descifrar (normalmente porque ha cambiado la clave)."""
     pass
 
 
 def _fernet():
+    """
+    Cifrador Fernet con FIELD_ENCRYPTION_KEY o, si no está definida (solo en desarrollo),
+    con una clave derivada de SECRET_KEY.
+    """
     key = getattr(settings, "FIELD_ENCRYPTION_KEY", "")
     if not key:
         digest = hashlib.sha256(f"zyra-field-encryption:{settings.SECRET_KEY}".encode()).digest()
@@ -27,10 +32,12 @@ def _fernet():
 
 
 def encrypt(value):
+    """Cifra un texto y devuelve el token como texto."""
     return _fernet().encrypt(value.encode()).decode()
 
 
 def decrypt(token):
+    """Descifra un token de encrypt(); lanza DecryptionError si no es válido para la clave actual."""
     try:
         return _fernet().decrypt(token.encode()).decode()
     except InvalidToken as exc:

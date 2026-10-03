@@ -16,6 +16,7 @@ GAMES_PER_MATCH = 5
 
 
 class LineupError(Exception):
+    """Error de validación de la alineación; su mensaje se muestra tal cual al usuario."""
     pass
 
 
@@ -67,6 +68,7 @@ def parse_lineup(raw, call, match_games=None):
 
 
 def _assign(game, match, n, p1, p2):
+    """Pone la pareja en el lado del equipo propio, vacía el otro y fija número y puntos del partido."""
     side, other = ("local", "visiting") if match.own_is_local else ("visiting", "local")
     setattr(game, f"player_1_{side}", p1)
     setattr(game, f"player_2_{side}", p2)
@@ -78,6 +80,11 @@ def _assign(game, match, n, p1, p2):
 
 @transaction.atomic
 def create_games(match, lineup):
+    """Crea los 5 partidos del enfrentamiento a partir de la alineación ya validada.
+
+    Bloquea el enfrentamiento mientras tanto y falla con LineupError si ya tenía partidos,
+    para que dos envíos simultáneos no creen partidos duplicados.
+    """
     if not (match.own_is_local or match.own_is_visiting):
         raise LineupError(_("El enfrentamiento no es del equipo del club."))
     # Bloquea el enfrentamiento para que dos envíos a la vez no creen partidos dobles
@@ -95,6 +102,7 @@ def create_games(match, lineup):
 
 @transaction.atomic
 def update_games(match, lineup):
+    """Reasigna parejas y orden de los partidos existentes según la alineación validada."""
     games = [g for g, _p1, _p2 in lineup]
     # Primero se libera el número de cada partido para poder reordenarlos sin
     # chocar con la restricción de número único por enfrentamiento.

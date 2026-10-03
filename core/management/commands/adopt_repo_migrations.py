@@ -24,13 +24,19 @@ INITIAL = "0001_initial"
 
 
 class Command(BaseCommand):
+    """Adapta el historial de migraciones de una base de datos antigua a las del repositorio."""
     help = ("Adapta una base de datos creada con migraciones locales a las migraciones del repositorio "
             "(solo cambia el historial de migraciones; no toca tablas ni datos).")
 
     def add_arguments(self, parser):
+        """Opción --dry-run."""
         parser.add_argument("--dry-run", action="store_true", help="Solo muestra lo que haría.")
 
     def handle(self, *args, dry_run=False, **options):
+        """
+        Comprueba el esquema, olvida las migraciones antiguas y marca las 0001_initial del
+        repositorio como aplicadas (con --dry-run solo lo muestra).
+        """
         loader = MigrationLoader(connection)
         recorder = MigrationRecorder(connection)
         repo = {key for key in loader.disk_migrations if key[0] in PROJECT_APPS}

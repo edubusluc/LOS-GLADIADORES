@@ -1,3 +1,4 @@
+"""Vistas de equipos: lista, alta, edición y edición conjunta."""
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import Teamform
 from .models import Team
@@ -15,6 +16,10 @@ from core import similarity
 @club_required
 @require_GET
 def list_team(request):
+    """
+    Lista paginada de equipos del club con búsqueda por nombre o localidad. Requiere
+    pertenecer al club y solo GET. Los capitanes ven también los equipos fuera del grupo.
+    """
     search = request.GET.get('search', '').strip()
 
     # Los capitanes ven también los equipos fuera de grupo
@@ -41,6 +46,14 @@ def list_team(request):
 @club_admin_required
 @require_http_methods(["GET", "POST"])
 def create_team(request):
+    """
+    Alta de un equipo en el club. Solo capitanes; GET y POST.
+
+    GET muestra el formulario con los valores del equipo propio. POST lo valida y, si hay
+    equipos con un nombre igual o parecido, vuelve a mostrarlo para que se confirme. Las
+    peticiones de comprobación responden en JSON sin crear nada. Al crearlo redirige a la
+    lista de equipos.
+    """
     similar = []
     if request.method == "POST":
         form = Teamform(request.POST, request.FILES, club=request.club)
@@ -83,6 +96,10 @@ def similar_team_label(team):
 @club_admin_required
 @require_http_methods(["GET", "POST"])
 def edit_team(request, team_id):
+    """
+    Edición de un equipo del club. Solo capitanes; GET muestra el formulario y POST lo guarda
+    y redirige a la lista de equipos.
+    """
     team = get_object_or_404(Team, public_id=team_id, club=request.club)
 
     if request.method == "POST":

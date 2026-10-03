@@ -28,15 +28,17 @@ PHOTO_DIRS = (TEAM_PHOTO_DIR, PLAYER_PHOTO_DIR)
 
 
 def team_photo_path(instance, filename):
+    """upload_to de los escudos de equipo: nombre aleatorio dentro de teams/."""
     return _random_name(TEAM_PHOTO_DIR, filename)
 
 
 def player_photo_path(instance, filename):
+    """upload_to de las fotos de jugador: nombre aleatorio dentro de players/."""
     return _random_name(PLAYER_PHOTO_DIR, filename)
 
 
 def _random_name(folder, filename):
-    # Nombre aleatorio: no choca con otras fotos ni deja ver el nombre del fichero original.
+    """Nombre aleatorio: no choca con otras fotos ni deja ver el nombre del fichero original."""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "webp"
     return f"{folder}/{uuid.uuid4().hex}.{ext}"
 
@@ -98,6 +100,7 @@ def clean_photo_field(form, field_name="photo"):
 
 
 def _is_used(model, field_name, name, exclude_pk=None):
+    """True si alguna fila de ``model`` (salvo ``exclude_pk``) sigue usando el fichero ``name``."""
     return model._default_manager.filter(**{field_name: name}).exclude(pk=exclude_pk).exists()
 
 
@@ -107,6 +110,7 @@ def _delete_later(storage, model, field_name, name):
         return
 
     def delete():
+        """Borra el fichero si, ya confirmada la transacción, nadie lo usa."""
         if not _is_used(model, field_name, name):
             storage.delete(name)
 
@@ -118,6 +122,7 @@ def connect_photo_cleanup(model, field_name="photo"):
     from django.db.models.signals import post_delete, post_save, pre_save
 
     def on_pre_save(sender, instance, update_fields=None, **kwargs):
+        """Al cambiar la foto, programa el borrado del fichero anterior."""
         if not instance.pk or (update_fields is not None and field_name not in update_fields):
             return
         old = sender._default_manager.filter(pk=instance.pk).values_list(field_name, flat=True).first()
@@ -126,12 +131,16 @@ def connect_photo_cleanup(model, field_name="photo"):
             _delete_later(getattr(instance, field_name).storage, sender, field_name, old)
 
     def on_post_delete(sender, instance, **kwargs):
+        """Al borrar el objeto, programa el borrado de su foto."""
         file = getattr(instance, field_name)
         if file:
             _delete_later(file.storage, sender, field_name, file.name)
 
     def on_post_save(sender, instance, **kwargs):
-        # Completa el registro de la validación de la foto recién subida (clean_photo_field).
+        """
+        Completa el registro de la validación de la foto recién subida (clean_photo_field)
+        con la ruta guardada, el club y el equipo o jugador.
+        """
         check_id = instance.__dict__.pop("_photo_check_id", None)
         file = getattr(instance, field_name)
         if check_id and file:

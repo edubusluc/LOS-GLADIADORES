@@ -1,3 +1,4 @@
+"""Formularios de jugadores (alta, edición, perfil propio) y de la cuenta SNP del capitán."""
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from core.images import clean_photo_field
@@ -11,18 +12,20 @@ def with_placeholder(choices):
 
 
 class PlayerForm (forms.ModelForm):
+    """Alta de un jugador por el capitán: nombre, apellidos, posición, mano hábil y foto."""
     class Meta:
         model = Player
         fields = ['name', 'last_name', 'position', 'skillfull_hand', 'photo']
 
     def __init__(self, *args, **kwargs):
+        """Pone «Elige una opción» en posición y mano hábil y limpia el texto de nombre y apellidos."""
         super().__init__(*args, **kwargs)
         self.fields['position'].choices = with_placeholder(Player.POSITIONS)
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
         plain_text(self, 'name', 'last_name')
 
     def clean_photo(self):
-        # Se valida, reduce y pasa a WebP antes de guardarla (core/images.py).
+        """Valida, reduce y pasa a WebP la foto antes de guardarla (core/images.py)."""
         return clean_photo_field(self)
 
 
@@ -37,6 +40,7 @@ class PlayerEditForm(forms.ModelForm):
         fields = ['name', 'last_name', 'position', 'skillfull_hand', 'joined_season', 'in_team']
 
     def __init__(self, *args, **kwargs):
+        """Pone «Elige una opción» en posición y mano hábil y limpia el texto de nombre y apellidos."""
         super().__init__(*args, **kwargs)
         self.fields['position'].choices = with_placeholder(Player.POSITIONS)
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
@@ -50,6 +54,7 @@ class OwnPlayerForm(forms.ModelForm):
         fields = ['position', 'skillfull_hand', 'photo']
 
     def __init__(self, *args, **kwargs):
+        """Pone «Elige una opción» en posición y mano hábil y las clases de Bootstrap en los campos."""
         super().__init__(*args, **kwargs)
         self.fields['position'].choices = with_placeholder(Player.POSITIONS)
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
@@ -58,6 +63,7 @@ class OwnPlayerForm(forms.ModelForm):
         self.fields['photo'].widget = forms.FileInput(attrs={"class": "form-control", "accept": "image/*"})
 
     def clean_photo(self):
+        """Valida, reduce y pasa a WebP la foto antes de guardarla (core/images.py)."""
         return clean_photo_field(self)
 
 
@@ -67,6 +73,7 @@ class NewOwnPlayerForm(OwnPlayerForm):
         fields = ['name', 'last_name', 'position', 'skillfull_hand', 'photo']
 
     def __init__(self, *args, club=None, **kwargs):
+        """``club`` es el club en el que se crea el jugador (para comprobar que no exista ya)."""
         self.club = club
         super().__init__(*args, **kwargs)
         for name in ('name', 'last_name'):
@@ -74,8 +81,10 @@ class NewOwnPlayerForm(OwnPlayerForm):
         plain_text(self, 'name', 'last_name')
 
     def clean(self):
-        # No se puede crear un jugador que ya existe en el club (mismo nombre y apellidos,
-        # sin distinguir mayúsculas, tildes ni signos): hay que elegirlo en la lista.
+        """
+        No se puede crear un jugador que ya existe en el club (mismo nombre y apellidos, sin
+        distinguir mayúsculas, tildes ni signos): hay que elegirlo en la lista.
+        """
         cleaned = super().clean()
         name, last_name = cleaned.get('name'), cleaned.get('last_name')
         if name and last_name:
@@ -88,6 +97,10 @@ class NewOwnPlayerForm(OwnPlayerForm):
 
 
 class SnpAccountForm(forms.Form):
+    """
+    Cuenta SNP del capitán. La contraseña solo es obligatoria si todavía no hay una guardada;
+    el equipo es opcional y admite el número o la dirección de su página en SNP.
+    """
     username = forms.CharField(label=_("Usuario de SNP"), max_length=150)
     password = forms.CharField(
         label=_("Contraseña de SNP"), required=False, widget=forms.PasswordInput(render_value=False),
@@ -99,6 +112,7 @@ class SnpAccountForm(forms.Form):
     )
 
     def __init__(self, *args, has_password=False, **kwargs):
+        """``has_password`` indica si ya hay una contraseña guardada (entonces puede dejarse vacía)."""
         super().__init__(*args, **kwargs)
         self.has_password = has_password
         for f in self.fields.values():
@@ -107,12 +121,14 @@ class SnpAccountForm(forms.Form):
         self.fields["password"].widget.attrs["autocomplete"] = "new-password"
 
     def clean_password(self):
+        """Obligatoria solo si no hay una guardada; vacía significa mantener la actual."""
         password = self.cleaned_data["password"]
         if not password and not self.has_password:
             raise forms.ValidationError(_("Escribe la contraseña de SNP."))
         return password
 
     def clean_team(self):
+        """Convierte el número o la dirección del equipo en SNP en su número; vacío si no se indica."""
         from .scraper import parse_team_id
         value = self.cleaned_data["team"].strip()
         if not value:

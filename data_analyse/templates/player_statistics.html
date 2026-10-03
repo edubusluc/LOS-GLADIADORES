@@ -295,9 +295,18 @@
       <section aria-labelledby="aff-title" class="st-section">
         <h2 class="st-section-title" id="aff-title">{% translate "Compañeros" %}</h2>
         <article class="st-card">
-          <h3 class="st-card-title">{% translate "Grado de afinidad" %}</h3>
-          <p class="st-card-note">{% translate "Con qué compañeros rinde mejor cuando juegan en pareja." %}</p>
-          <div class="st-chart st-chart--tall"><canvas id="chartAffinity"></canvas></div>
+          <div class="st-card-head">
+            <div>
+              <h3 class="st-card-title">{% translate "Grado de afinidad" %}</h3>
+              <p class="st-card-note">{% translate "Con qué compañeros rinde mejor cuando juegan en pareja." %}</p>
+            </div>
+            <div class="st-aff-scope" role="group" aria-label="{% translate 'Compañeros a mostrar' %}">
+              <button type="button" class="st-chip" data-scope="team" aria-pressed="true">{% translate "En el equipo" %}</button>
+              <button type="button" class="st-chip" data-scope="all" aria-pressed="false">{% translate "Incluir antiguos" %}</button>
+            </div>
+          </div>
+          <div class="st-chart st-chart--tall" id="affinityChart"><canvas id="chartAffinity"></canvas></div>
+          <p class="st-card-note st-aff-empty" id="affinityEmpty" hidden>{% translate "No hay partidos en pareja con compañeros de esta selección." %}</p>
         </article>
       </section>
 

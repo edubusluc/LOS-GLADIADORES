@@ -1313,6 +1313,16 @@ a.z-location:hover span { text-decoration: underline; }
 .st-chip[aria-pressed="true"] { color: var(--z-ink); background: var(--z-lime); border-color: var(--z-lime); }
 button.st-chip { font-family: inherit; line-height: inherit; cursor: pointer; }
 
+/* Grado de afinidad: selector de compañeros arriba a la derecha */
+.st-card-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; }
+.st-aff-scope { display: flex; flex-wrap: wrap; gap: 8px; }
+.st-aff-empty { margin-top: 16px; }
+.st-chart[hidden], .st-aff-empty[hidden] { display: none; }
+@media (max-width: 760px) {
+  .st-aff-scope { gap: 6px; }
+  .st-aff-scope .st-chip { padding: 6px 12px; font-size: .8rem; white-space: nowrap; }
+}
+
 /* Balance por jugador: orden y paginador */
 .st-balance-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
 .st-pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }

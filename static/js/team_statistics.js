@@ -88,10 +88,10 @@ new Chart(document.getElementById('myLineChart'), {
 const PAGE_SIZE = 10;
 const ROW_HEIGHT = 30;
 const SERIES = [
-  { label: gettext('2 puntos ganados'), index: 0, color: Z.lime },
-  { label: gettext('3 puntos ganados'), index: 2, color: Z.limeDark },
-  { label: gettext('2 puntos perdidos'), index: 1, color: Z.coral },
-  { label: gettext('3 puntos perdidos'), index: 3, color: Z.coralDark },
+  { label: gettext('3 puntos ganados'), index: 2, color: Z.lime },
+  { label: gettext('2 puntos ganados'), index: 0, color: Z.limeDark },
+  { label: gettext('3 puntos perdidos'), index: 3, color: Z.coral },
+  { label: gettext('2 puntos perdidos'), index: 1, color: Z.coralDark },
 ];
 const players = teamData.column_chart_data.map((r) => ({
   name: r.player,

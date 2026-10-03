@@ -276,12 +276,12 @@ def edit_call(request, call_id):
 
             # Construir el mensaje para los jugadores añadidos
             if added_players:
-                added_player_names = [Player.objects.get(id=player_id).name for player_id in added_players]
+                added_player_names = [Player.objects.get(id=player_id).name.upper() for player_id in added_players]
                 log_text += f"Jugadores añadidos con la {status_message}: " + ", ".join(added_player_names) + f" el día {current_time};"
 
             # Construir el mensaje para los jugadores eliminados
             if removed_players:
-                removed_player_names = [Player.objects.get(id=player_id).name for player_id in removed_players]
+                removed_player_names = [Player.objects.get(id=player_id).name.upper() for player_id in removed_players]
                 log_text += f"Jugadores eliminados con la {status_message}: " + ", ".join(removed_player_names) + f" el día {current_time};"
 
             # Guardar el log si hay algún mensaje

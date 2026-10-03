@@ -13,7 +13,7 @@
                     <option value="">{% translate "Elegir jugador" %}</option>
                     {% for p in players %}
                     <option value="{{ p.id }}" data-points="{{ p.snp_score|default:0|unlocalize }}"
-                        {% if key == "1" and p.id == slot.player1Id or key == "2" and p.id == slot.player2Id %}selected{% endif %}>{{ p.name }} {{ p.last_name }}</option>
+                        {% if key == "1" and p.id == slot.player1Id or key == "2" and p.id == slot.player2Id %}selected{% endif %}>{{ p.full_name }}</option>
                     {% endfor %}
                 </select>
             </div>

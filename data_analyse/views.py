@@ -132,7 +132,7 @@ def calculate_matches_won_per_year(team, match_type=None):
 def column_chart(club, season, match_type=None):
     """Partidos de 2 y 3 puntos ganados/perdidos por jugador actual (una sola consulta)."""
     players = Player.objects.filter(club=club, in_team=True)
-    names = {p.id: f"{p.name} {p.last_name}" for p in players}
+    names = {p.id: p.full_name for p in players}
     dicc = {
         name: {
             'Partidos de 2 puntos ganados': 0,
@@ -284,7 +284,7 @@ def degree_of_affinity(player, match_type=None):
         p = people[partner_id]
         rate = (a['won_pts'] + PRIOR_POINTS * 0.5) / (a['stake'] + PRIOR_POINTS)
         results.append({
-            'name': f"{p.name} {p.last_name}",
+            'name': p.full_name,
             'affinity': round(rate * 100),
             'games': a['games'],
             'wins': a['wins'],

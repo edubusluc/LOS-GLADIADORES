@@ -21,11 +21,11 @@
 
     <div class="z-selector-grid">
         {% for player in players %}
-        <label class="z-pick" data-name="{{ player.name }} {{ player.last_name }}" data-position="{{ player.position }}">
+        <label class="z-pick" data-name="{{ player.full_name }}" data-position="{{ player.position }}">
             <input type="checkbox" name="players" value="{{ player.id }}" {% if player.id in selected %}checked{% endif %}>
             <span class="z-pick-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
             <span class="z-pick-body">
-                <span class="z-pick-name">{{ player.name }} {{ player.last_name }}</span>
+                <span class="z-pick-name">{{ player.full_name }}</span>
                 <span class="z-pick-meta">
                     {{ player.get_position_display|default:"—" }}{% if not player.in_team %} · {% translate "fuera del equipo" %}{% endif %}
                 </span>

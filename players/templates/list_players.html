@@ -58,7 +58,7 @@
     {% for player in players %}
     <div class="z-card z-card--link z-player">
         {% if is_club_admin %}
-        <a href="{% url 'edit_player' player.public_id %}" class="z-edit" aria-label="{% blocktranslate with name=player.name %}Editar a {{ name }}{% endblocktranslate %}"><i class="fa-solid fa-pen"></i></a>
+        <a href="{% url 'edit_player' player.public_id %}" class="z-edit" aria-label="{% blocktranslate with name=player.name|upper %}Editar a {{ name }}{% endblocktranslate %}"><i class="fa-solid fa-pen"></i></a>
         {% endif %}
         {% if player.photo %}
         <img src="{{ player.photo.url }}" alt="" class="z-avatar z-avatar--lg">
@@ -66,7 +66,7 @@
         <img src="{% static 'zyra/avatar.svg' %}" alt="" class="z-avatar z-avatar--lg">
         {% endif %}
         <div class="min-w-0">
-            <h2 class="z-player-name"><a href="{% url 'show_player' player.public_id %}" class="stretched-link text-reset">{{ player.name }} {{ player.get_first_last_name }}</a></h2>
+            <h2 class="z-player-name"><a href="{% url 'show_player' player.public_id %}" class="stretched-link text-reset">{{ player.short_name }}</a></h2>
             <p class="z-player-meta">
                 <span><i class="fa-solid fa-location-crosshairs"></i>{{ player.get_position_display }}</span>
                 <span><i class="fa-solid fa-hand"></i>{{ player.get_skillfull_hand_display }}</span>
@@ -113,7 +113,7 @@
                     <img src="{% static 'zyra/avatar.svg' %}" alt="" class="table-avatar">
                     {% endif %}
                 </td>
-                <td><strong>{{ player.name }} {{ player.get_first_last_name }}</strong></td>
+                <td><strong>{{ player.short_name }}</strong></td>
                 <td>{{ player.get_position_display }}</td>
                 <td>{{ player.get_skillfull_hand_display }}</td>
                 <td>{{ player.snp_score|default:"-" }}</td>
@@ -164,7 +164,7 @@
                         <thead><tr><th>{% translate "Jugador" %}</th><th>{% translate "Categoría" %}</th><th class="text-end">{% translate "Puntos SNP" %}</th></tr></thead>
                         <tbody>
                         {% for p in snp_import.to_add %}
-                        <tr><td>{{ p.name }} {{ p.last_name }}</td><td>{% include 'includes/snp_category.html' with category=p.category %}</td><td class="text-end">{{ p.score|floatformat:"-1" }}</td></tr>
+                        <tr><td>{{ p.name|upper }} {{ p.last_name|upper }}</td><td>{% include 'includes/snp_category.html' with category=p.category %}</td><td class="text-end">{{ p.score|floatformat:"-1" }}</td></tr>
                         {% endfor %}
                         </tbody>
                     </table>
@@ -180,7 +180,7 @@
                         <thead><tr><th>{% translate "Nombre en SNP" %}</th><th>{% translate "Categoría" %}</th><th>{% translate "Jugador en Zyra" %}</th></tr></thead>
                         <tbody>
                         {% for p in snp_import.existing %}
-                        <tr><td>{{ p.snp_name }}</td><td>{% include 'includes/snp_category.html' with category=p.category %}</td><td class="text-muted">{{ p.player }}</td></tr>
+                        <tr><td>{{ p.snp_name|upper }}</td><td>{% include 'includes/snp_category.html' with category=p.category %}</td><td class="text-muted">{{ p.player }}</td></tr>
                         {% endfor %}
                         </tbody>
                     </table>

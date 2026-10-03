@@ -300,7 +300,7 @@ def render_report(report):
     def usage_table(rows):
         body = [[
             Paragraph(f"<font color='{'#B4F100' if u['called_now'] else '#F4F4F4'}'>"
-                      f"<b>{u['player'].name} {u['player'].get_first_last_name()}</b></font>", st["cell"]),
+                      f"<b>{u['player'].short_name}</b></font>", st["cell"]),
             Paragraph(f"<b>{u['games']}</b>", st["cell"]),
             Paragraph(str(u["calls"]), st["cell"]),
             Paragraph(f"{u['last']:%d/%m}" if u["last"] else "—", st["cell"]),

@@ -8,7 +8,7 @@
 
     <header class="st-head">
       <div>
-        <h1 class="st-title">{% if s %}{{ p1.name }} {{ p1.get_first_last_name }} / {{ p2.name }} {{ p2.get_first_last_name }}{% else %}{% translate "Estadísticas por parejas" %}{% endif %}</h1>
+        <h1 class="st-title">{% if s %}{{ p1.short_name }} / {{ p2.short_name }}{% else %}{% translate "Estadísticas por parejas" %}{% endif %}</h1>
         {% if s %}
           <p class="st-subtitle">{% blocktranslate trimmed count n=s.played %}{{ n }} partido juntos{% plural %}{{ n }} partidos juntos{% endblocktranslate %} {% blocktranslate trimmed count n=s.matches %}en {{ n }} enfrentamiento{% plural %}en {{ n }} enfrentamientos{% endblocktranslate %} · <a href="{% url 'pair_statistics' %}{% if selected_match_type %}?match_type={{ selected_match_type }}{% endif %}">{% translate "Ver mejores y peores parejas" %}</a></p>
         {% else %}
@@ -21,14 +21,14 @@
         <select class="st-select" name="p1" id="p1" data-picker data-placeholder="{% translate 'Jugador 1: buscar...' %}">
           <option value="">{% translate "Jugador 1" %}</option>
           {% for p in players %}
-            <option value="{{ p.public_id }}" {% if p.public_id == selected_p1 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
+            <option value="{{ p.public_id }}" {% if p.public_id == selected_p1 %}selected{% endif %}>{{ p.full_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
           {% endfor %}
         </select>
         <label class="visually-hidden" for="p2">{% translate "Jugador 2" %}</label>
         <select class="st-select" name="p2" id="p2" data-picker data-placeholder="{% translate 'Jugador 2: buscar...' %}">
           <option value="">{% translate "Jugador 2" %}</option>
           {% for p in players %}
-            <option value="{{ p.public_id }}" {% if p.public_id == selected_p2 %}selected{% endif %}>{{ p.name }} {{ p.last_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
+            <option value="{{ p.public_id }}" {% if p.public_id == selected_p2 %}selected{% endif %}>{{ p.full_name }}{% if not p.in_team %} {% translate "(fuera del equipo)" %}{% endif %}</option>
           {% endfor %}
         </select>
         {% if selected_match_type %}<input type="hidden" name="match_type" value="{{ selected_match_type }}">{% endif %}

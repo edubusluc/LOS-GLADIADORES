@@ -140,7 +140,7 @@ class Game(PublicIdModel):
     def player_name(self, slot):
         """Nombre del jugador de esa posición, también si ya se ha eliminado."""
         player = getattr(self, slot)
-        return str(player) if player else self.removed_player_names.get(slot, "")
+        return str(player) if player else self.removed_player_names.get(slot, "").upper()
 
     def _pair_label(self, first, second):
         names = [self.player_name(first), self.player_name(second)]

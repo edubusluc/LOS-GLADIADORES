@@ -133,7 +133,7 @@ class ClubIsolationTests(TestCase):
     def test_team_statistics_use_own_team(self):
         response = self.client.get(reverse("team_statistics"))
         self.assertEqual(response.context["team"], self.club_a.own_team)
-        self.assertEqual([c["player"] for c in response.context["column_chart_data"]], ["Ana Alpha"])
+        self.assertEqual([c["player"] for c in response.context["column_chart_data"]], ["ANA ALPHA"])
 
     def test_created_objects_belong_to_active_club(self):
         self.client.post(reverse("create_player"), {
@@ -376,7 +376,7 @@ class HomeTests(TestCase):
 
         response = self.client.get(reverse("home"))
         self.assertEqual(response.context["hot_player"]["streak"], 2)
-        self.assertEqual(response.context["hot_pair"]["label"], "Ana Alpha / Bea Beta")
+        self.assertEqual(response.context["hot_pair"]["label"], "ANA ALPHA / BEA BETA")
         self.assertContains(response, "2 victorias seguidas")
 
 

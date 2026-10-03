@@ -134,18 +134,17 @@ class PhotoCheck(PublicIdModel):
     Resultado de validar una foto subida (escudo o foto de jugador) con AWS Rekognition
     (core/moderation.py). Las rechazadas no se guardan; las que no se han podido validar
     (sin configurar, fuera del plan gratuito, error) se guardan y el personal las revisa
-    en el back-office.
+    en el back-office: si es correcta pasa a «Validada», igual que si la hubiera aprobado
+    Rekognition (``api_called`` dice cuál de los dos la validó).
     """
     PUBLIC_ID_PREFIX = "PHC"
     APPROVED = "approved"
     REJECTED = "rejected"
     UNCHECKED = "unchecked"
-    REVIEWED = "reviewed"
     STATUSES = [
         (APPROVED, _("Validada")),
         (REJECTED, _("Rechazada")),
         (UNCHECKED, _("Pendiente de revisar")),
-        (REVIEWED, _("Revisada por el personal")),
     ]
 
     club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_checks")

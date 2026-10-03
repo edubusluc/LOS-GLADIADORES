@@ -326,10 +326,10 @@ class BackofficePhotoTests(MediaMixin, TestCase):
         messages = [str(m) for m in response.wsgi_request._messages]
         self.assertTrue(any("No se ha podido avisar" in m for m in messages))
 
-    def test_mark_reviewed(self):
-        self.client.post(reverse("backoffice:photo_reviewed", args=[self.check.public_id]))
+    def test_staff_approval_is_validated(self):
+        self.client.post(reverse("backoffice:photo_approve", args=[self.check.public_id]))
         self.check.refresh_from_db()
-        self.assertEqual(self.check.status, PhotoCheck.REVIEWED)
+        self.assertEqual(self.check.status, PhotoCheck.APPROVED)
 
     def test_delete_all_photos_of_user_sends_one_email(self):
         self.assertContains(self.client.get(reverse("backoffice:user_detail", args=[self.player_user.pk])), "Eliminar todas sus fotos")

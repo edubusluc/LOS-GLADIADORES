@@ -136,3 +136,31 @@ def send_invitation_email(invitation, url):
         logger.exception("No se pudo enviar la invitación a %s", invitation.email)
         return False
     return True
+
+
+def send_photo_removed_email(user, subjects, reason="", removals=1, site_url=""):
+    """
+    Avisa a ``user`` de que el personal de Zyra ha eliminado sus fotos (``subjects``:
+    «Foto de ANA RUIZ», «Escudo de CD Tomares»...) por no cumplir los términos y
+    condiciones. ``removals`` es cuántas veces le ha pasado, contando esta: si se repite
+    se le advierte de que la cuenta puede suspenderse y el equipo eliminarse.
+    Devuelve True si el correo salió.
+    """
+    if not user or not user.email:
+        return False
+    context = {
+        "user": user, "subjects": subjects, "reason": reason, "removals": removals,
+        "repeated": removals > 1, "site_url": site_url,
+    }
+    email = build_email(
+        _("Hemos eliminado una foto que no cumple los términos de Zyra"),
+        render_to_string("emails/photo_removed.txt", context),
+        render_to_string("emails/photo_removed.html", context),
+        to=[user.email],
+    )
+    try:
+        email.send(fail_silently=False)
+    except Exception:  # SMTP caído, credenciales mal configuradas...
+        logger.exception("No se pudo enviar el aviso de foto eliminada a %s", user.email)
+        return False
+    return True

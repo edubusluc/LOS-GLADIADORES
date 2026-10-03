@@ -1,0 +1,15 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with username=user.username %}Hola, {{ username }}{% endblocktranslate %}
+
+{% blocktranslate trimmed count n=subjects|length %}El equipo de Zyra ha revisado esta imagen y la ha eliminado porque no cumple los términos y condiciones de uso:{% plural %}El equipo de Zyra ha revisado estas imágenes y las ha eliminado porque no cumplen los términos y condiciones de uso:{% endblocktranslate %}
+{% for s in subjects %}- {{ s }}
+{% endfor %}{% if reason %}
+{% translate "Motivo" %}: {{ reason }}
+{% endif %}
+{% translate "Puedes subir otra imagen que respete las normas: sin desnudos, violencia, contenido ofensivo ni imágenes de otras personas sin su permiso." %}
+
+{% if repeated %}{% blocktranslate trimmed with n=removals %}Ya hemos eliminado imágenes tuyas {{ n }} veces.{% endblocktranslate %} {% translate "Si vuelve a ocurrir, podemos suspender tu cuenta y eliminar el equipo." %}{% else %}{% translate "Si se repite, podemos suspender tu cuenta y eliminar el equipo." %}{% endif %}
+{% if site_url %}
+{% translate "Entra en Zyra" %}: {{ site_url }}
+{% endif %}
+{% translate "Un saludo," %}
+{% translate "El equipo de Zyra" %}{% endautoescape %}

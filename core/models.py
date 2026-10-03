@@ -20,6 +20,14 @@ class Club(PublicIdModel):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Club suspendido por el personal de Zyra (back-office): sus miembros no pueden entrar
+    # hasta que se reactive. No se borra nada.
+    suspended_at = models.DateTimeField(null=True, blank=True)
+    suspension_reason = models.CharField(max_length=500, blank=True)
+
+    @property
+    def is_suspended(self):
+        return self.suspended_at is not None
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -115,6 +123,12 @@ class Invitation(PublicIdModel):
         return f"Invitación a {self.club} ({self.token[:6]}…)"
 
 
+class PhotoCheckQuerySet(models.QuerySet):
+    def for_user(self, user):
+        """Fotos guardadas que ha subido ``user`` o que son de su jugador."""
+        return self.filter(models.Q(uploaded_by=user) | models.Q(player__user=user)).exclude(photo="")
+
+
 class PhotoCheck(PublicIdModel):
     """
     Resultado de validar una foto subida (escudo o foto de jugador) con AWS Rekognition
@@ -130,7 +144,7 @@ class PhotoCheck(PublicIdModel):
     STATUSES = [
         (APPROVED, _("Validada")),
         (REJECTED, _("Rechazada")),
-        (UNCHECKED, _("Sin validar")),
+        (UNCHECKED, _("Pendiente de revisar")),
         (REVIEWED, _("Revisada por el personal")),
     ]
 
@@ -149,6 +163,8 @@ class PhotoCheck(PublicIdModel):
     api_called = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    objects = PhotoCheckQuerySet.as_manager()
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["status", "created_at"])]
@@ -158,6 +174,31 @@ class PhotoCheck(PublicIdModel):
         return self.player or self.team
 
     @property
+    def subject_label(self):
+        from django.utils.translation import gettext
+
+        if self.player:
+            return gettext("Foto de %(player)s") % {"player": self.player.full_name}
+        if self.team:
+            return gettext("Escudo de %(team)s") % {"team": self.team.name}
+        return gettext("Foto")
+
+    @property
+    def owner(self):
+        """
+        Responsable de la foto (se le avisa y cuenta para él si se elimina): quien la subió;
+        si no se sabe (fotos anteriores a la revisión), el jugador enlazado o un capitán del club.
+        """
+        if self.uploaded_by:
+            return self.uploaded_by
+        if self.player and self.player.user:
+            return self.player.user
+        if self.club:
+            captain = self.club.memberships.filter(role=Membership.ADMIN).select_related("user").order_by("id").first()
+            return captain.user if captain else None
+        return None
+
+    @property
     def in_use(self):
         """La foto sigue siendo la del equipo o jugador."""
         subject = self.subject
@@ -165,3 +206,60 @@ class PhotoCheck(PublicIdModel):
 
     def __str__(self):
         return f"{self.get_status_display()}: {self.photo or '—'}"
+
+
+class PhotoRemoval(PublicIdModel):
+    """
+    Foto eliminada por el personal desde el back-office por no cumplir los términos y
+    condiciones. Se avisa por email al jugador (o a quien subió el escudo); las veces
+    que le ha pasado a un usuario se muestran al personal, que puede suspender su cuenta
+    y eliminar el equipo si se repite.
+    """
+    PUBLIC_ID_PREFIX = "PHR"
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_removals",
+    )
+    club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_removals")
+    # De quién era la foto: «Jugador ANA RUIZ» o «Escudo de CD Tomares».
+    subject = models.CharField(max_length=200)
+    reason = models.CharField(max_length=500, blank=True)
+    removed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+    )
+    email_sent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.subject} ({self.created_at:%d/%m/%Y})"
+
+
+class BlockedEmail(PublicIdModel):
+    """
+    Email bloqueado por el personal (al suspender un club o a mano en el back-office):
+    no puede crear cuentas ni clubes, ni recibir o aceptar invitaciones. Se guarda
+    normalizado (core.blocklist.normalize_email) en un campo único, así comprobar un email
+    es una búsqueda por índice aunque la lista crezca mucho.
+    """
+    PUBLIC_ID_PREFIX = "BLE"
+    email = models.CharField(max_length=254, unique=True)
+    # Tal y como estaba escrito (para mostrarlo); la comprobación usa `email`.
+    original_email = models.EmailField(max_length=254)
+    # Cuenta que tenía el email al bloquearlo: sigue bloqueada aunque cambie de email.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="blocked_emails",
+    )
+    club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="blocked_emails")
+    reason = models.CharField(max_length=500, blank=True)
+    blocked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.original_email

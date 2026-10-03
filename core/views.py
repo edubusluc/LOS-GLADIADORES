@@ -26,6 +26,7 @@ from match.models import Match
 from players.models import Player, SnpAccount, current_season
 
 from .adapters import GOOGLE_NEW_ACCOUNT_KEY
+from .blocklist import is_user_blocked
 from .decorators import club_admin_required
 from .emails import send_invitation_email, send_welcome_email
 from .forms import ClubForm, InviteMemberForm, SignUpForm
@@ -163,7 +164,12 @@ def register_club(request):
     if request.method == "POST":
         club_form = ClubForm(request.POST)
         user_form = SignUpForm(request.POST) if anonymous else None
-        if club_form.is_valid() and (user_form is None or user_form.is_valid()):
+        valid = club_form.is_valid() and (user_form is None or user_form.is_valid())
+        # Un email bloqueado por el personal (p. ej. de un club suspendido) no puede crear clubes.
+        if valid and not anonymous and is_user_blocked(request.user):
+            club_form.add_error(None, _("Tu email está bloqueado en Zyra y no puede crear clubes."))
+            valid = False
+        if valid:
             with transaction.atomic():
                 user = user_form.save() if anonymous else request.user
                 data = club_form.cleaned_data
@@ -190,7 +196,7 @@ def register_club(request):
 def no_club(request):
     if request.club is not None:
         return redirect("home")
-    return render(request, "no_club.html")
+    return render(request, "no_club.html", {"suspended_clubs": request.suspended_clubs})
 
 
 @login_required

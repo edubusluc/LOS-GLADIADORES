@@ -21,6 +21,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from core.images import PHOTO_DIRS, process_image
+from core.models import PhotoCheck
 from players.models import Player
 from team.models import Team
 
@@ -66,6 +67,7 @@ class Command(BaseCommand):
                 with transaction.atomic():
                     # update() no lanza las señales de core/images.py, que borrarían el original.
                     n = rows.update(photo=new_name)
+                    PhotoCheck.objects.filter(photo=name).update(photo=new_name)
                 moved += 1
                 self.stdout.write(f"{name} -> {new_name} ({n} {model._meta.verbose_name_plural}).")
                 if isinstance(source, Path) and self._in_static(source, base):

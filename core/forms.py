@@ -6,6 +6,7 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext, gettext_lazy as _
 
 from team.models import Team
+from .blocklist import is_blocked
 from .models import Membership
 from .validators import plain_text
 
@@ -59,6 +60,8 @@ class SignUpForm(UserCreationForm):
         email = self.cleaned_data["email"].strip().lower()
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError(gettext("Ya hay una cuenta con este email: inicia sesión con ella."))
+        if is_blocked(email):
+            raise forms.ValidationError(gettext("Este email no puede registrarse en Zyra."))
         return email
 
 
@@ -77,4 +80,6 @@ class InviteMemberForm(forms.Form):
         email = self.cleaned_data["email"].strip().lower()
         if Membership.objects.filter(club=self.club, user__email__iexact=email).exists():
             raise forms.ValidationError(gettext("Ese email ya pertenece a un miembro del club."))
+        if is_blocked(email):
+            raise forms.ValidationError(gettext("No se puede invitar a este email."))
         return email

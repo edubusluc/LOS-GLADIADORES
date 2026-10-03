@@ -6,14 +6,31 @@
 <div class="z-page-head">
     <div>
         <span class="z-eyebrow"><a href="{% url 'backoffice:club_list' %}">{% translate "Clubes" %}</a> · {% with created=club.created_at|date:"j M Y" %}{% blocktranslate %}alta el {{ created }}{% endblocktranslate %}{% endwith %}{% with team=club.own_team %}{% if team %} · {% blocktranslate with team_id=team.public_id %}id del equipo: {{ team_id }}{% endblocktranslate %}{% endif %}{% endwith %}</span>
-        <h1>{{ club.name }}</h1>
+        <h1>{{ club.name }}{% if club.is_suspended %} <span class="z-badge z-badge--danger">{% translate "Suspendido" %}</span>{% endif %}</h1>
     </div>
-    {% if user.is_superuser %}
     <div class="z-actions">
+        {% if club.is_suspended %}
+        <form method="post" action="{% url 'backoffice:club_toggle_suspended' club.public_id %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reactivate">
+            <button class="btn btn-outline-light btn-sm"><i class="fa-solid fa-circle-check"></i> {% translate "Reactivar club" %}</button>
+        </form>
+        {% else %}
+        <a href="#suspender" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-ban"></i> {% translate "Suspender club" %}</a>
+        {% endif %}
+        {% if user.is_superuser %}
         <a href="{% url 'admin:core_club_change' club.id %}" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-toolbox"></i> {% translate "Abrir en Django admin" %}</a>
+        {% endif %}
     </div>
+</div>
+{% if club.is_suspended %}
+<div class="z-panel">
+    <p class="mb-1"><i class="fa-solid fa-ban me-1"></i> {% blocktranslate trimmed with date=club.suspended_at|date:"j M Y H:i" %}Suspendido el {{ date }}.{% endblocktranslate %}{% if club.suspension_reason %} {% translate "Motivo" %}: {{ club.suspension_reason }}{% endif %}</p>
+    {% if blocked_emails %}
+    <p class="mb-0">{% translate "Emails bloqueados (no pueden crear clubes ni unirse a ninguno):" %} {% for b in blocked_emails %}{{ b.original_email }}{% if not forloop.last %}, {% endif %}{% endfor %}. {% translate "Se desbloquean al reactivar el club." %}</p>
     {% endif %}
 </div>
+{% endif %}
 
 <section class="bo-kpis" aria-label="{% translate 'Resumen del club' %}">
     <div class="bo-kpi"><span class="bo-kpi-label">{% translate "Miembros" %}</span><b>{{ club.n_members|default:0 }}</b><small>{% with admins=club.n_admins|default:0 %}{% blocktranslate trimmed count n=admins %}{{ n }} capitán{% plural %}{{ n }} capitanes{% endblocktranslate %}{% endwith %}</small></div>
@@ -85,4 +102,24 @@
         </tbody>
     </table></div>
 </section>
+
+{% if not club.is_suspended %}
+<section class="z-panel" id="suspender">
+    <h2 class="h5">{% translate "Suspender club" %}</h2>
+    <p class="text-muted">{% translate "Sus miembros no podrán entrar hasta que lo reactives (no se borra nada). Los emails marcados quedan bloqueados: no podrán crear otro club, registrarse ni unirse a ningún club como jugadores." %}</p>
+    <form method="post" action="{% url 'backoffice:club_toggle_suspended' club.public_id %}" onsubmit="return confirm('{% translate "¿Suspender este club? Sus miembros no podrán entrar hasta que lo reactives." %}')">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="suspend">
+        <input type="text" name="reason" maxlength="500" class="form-control mb-3" placeholder="{% translate 'Motivo (opcional)' %}" aria-label="{% translate 'Motivo' %}">
+        <p class="mb-2"><b>{% translate "Bloquear los emails de:" %}</b></p>
+        {% for m in memberships %}
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="block" value="{{ m.user_id }}" id="block-{{ m.user_id }}" {% if m.is_admin %}checked{% endif %} {% if not m.user.email %}disabled{% endif %}>
+            <label class="form-check-label" for="block-{{ m.user_id }}">{{ m.user.username }} · {{ m.user.email|default:_("sin email") }}{% if m.is_admin %} · {% translate "Capitán" %}{% endif %}</label>
+        </div>
+        {% endfor %}
+        <button class="btn btn-outline-danger mt-3"><i class="fa-solid fa-ban"></i> {% translate "Suspender club" %}</button>
+    </form>
+</section>
+{% endif %}
 {% endblock %}

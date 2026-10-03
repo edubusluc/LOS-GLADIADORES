@@ -1,6 +1,10 @@
 """
 Validación automática de las fotos subidas con AWS Rekognition (DetectModerationLabels).
 
+Es opcional y está desactivada por defecto (REKOGNITION_ENABLED=False): la revisión
+principal la hace el personal en el back-office (Fotos), que elimina las fotos que no
+cumplen los términos y avisa al usuario por email.
+
 Solo se usa el plan gratuito de AWS: como mucho REKOGNITION_MONTHLY_LIMIT fotos al mes
 (1.000 en el plan gratuito) y solo hasta REKOGNITION_FREE_UNTIL (fin del periodo gratuito
 de la cuenta de AWS). Fuera de eso, o si Rekognition no está configurado o falla, la foto
@@ -42,6 +46,8 @@ def calls_this_month():
 
 def free_tier_status():
     """None si se puede llamar a Rekognition gratis; si no, el motivo."""
+    if not settings.REKOGNITION_ENABLED:
+        return "Rekognition desactivado (REKOGNITION_ENABLED)"
     if not is_configured():
         return "Rekognition no está configurado"
     free_until = settings.REKOGNITION_FREE_UNTIL

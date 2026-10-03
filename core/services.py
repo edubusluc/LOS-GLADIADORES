@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from team.models import Team
+from .blocklist import is_user_blocked
 from .models import Club, Invitation, Membership
 
 
@@ -30,6 +31,10 @@ def accept_invitation(invitation, user):
     invitation = Invitation.objects.select_for_update().select_related("club").get(pk=invitation.pk)
     if not invitation.is_valid:
         raise InvitationError(_("Esta invitación ya se ha usado o ha caducado."))
+    if invitation.club.is_suspended:
+        raise InvitationError(_("Este club está suspendido y no admite nuevos miembros."))
+    if is_user_blocked(user):
+        raise InvitationError(_("Tu email está bloqueado en Zyra y no puede unirse a clubes."))
     if Membership.objects.filter(user=user, club=invitation.club).exists():
         raise InvitationError(_("Ya eres miembro de %(club)s.") % {"club": invitation.club.name})
     membership = Membership.objects.create(user=user, club=invitation.club, role=Membership.MEMBER)

@@ -15,6 +15,18 @@ class AccountAdapter(DefaultAccountAdapter):
         # club o las crea un capitán: el alta genérica de allauth queda cerrada.
         return False
 
+    def clean_email(self, email):
+        # Un email bloqueado por el personal no se puede añadir a ninguna cuenta.
+        from django import forms
+        from django.utils.translation import gettext as _
+
+        from .blocklist import is_blocked
+
+        email = super().clean_email(email)
+        if is_blocked(email):
+            raise forms.ValidationError(_("Este email no puede usarse en Zyra."))
+        return email
+
     def add_message(self, *args, **kwargs):
         # Sin avisos de allauth ("Has iniciado sesión como..."): la app ya muestra los suyos.
         pass
@@ -22,9 +34,13 @@ class AccountAdapter(DefaultAccountAdapter):
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
     def is_open_for_signup(self, request, sociallogin):
-        # Cualquiera puede crear su cuenta con Google; para ver datos de un club
-        # tiene que unirse con una invitación o registrar el suyo.
-        return True
+        # Cualquiera puede crear su cuenta con Google (salvo con un email bloqueado por el
+        # personal); para ver datos de un club tiene que unirse con una invitación o
+        # registrar el suyo.
+        from .blocklist import is_blocked
+
+        emails = [a.email for a in sociallogin.email_addresses] or [getattr(sociallogin.user, "email", "")]
+        return not any(is_blocked(e) for e in emails)
 
     def save_user(self, request, sociallogin, form=None):
         # Solo se llama cuando Google crea una cuenta nueva.

@@ -148,11 +148,20 @@
         <section class="st-card st-card--wide">
           <h2 class="st-card-title">{% translate "Balance de partidos por jugador" %}</h2>
           <p class="st-card-note">{% translate "Partidos de 2 y de 3 puntos, ganados y perdidos, de cada jugador actual del equipo." %}</p>
-          <div class="st-chart st-chart--tall">
-            <div class="chart-scroll st-scroll">
-              <canvas id="myColumnChart"></canvas>
-            </div>
+          <div class="st-balance-sort" role="group" aria-label="{% translate 'Ordenar por' %}">
+            <span class="st-filter-label">{% translate "Ordenar por" %}</span>
+            <button type="button" class="st-chip" data-sort="played" aria-pressed="true">{% translate "Partidos jugados" %}</button>
+            <button type="button" class="st-chip" data-sort="won" aria-pressed="false">{% translate "Victorias" %}</button>
+            <button type="button" class="st-chip" data-sort="name" aria-pressed="false">{% translate "Nombre" %}</button>
           </div>
+          <div class="st-chart" id="balanceChart">
+            <canvas id="myColumnChart"></canvas>
+          </div>
+          <nav class="st-pager" id="balancePager" aria-label="{% translate 'Páginas de jugadores' %}" hidden>
+            <button type="button" class="st-pager-btn" data-step="-1" aria-label="{% translate 'Anterior' %}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+            <span class="st-pager-info" aria-live="polite"></span>
+            <button type="button" class="st-pager-btn" data-step="1" aria-label="{% translate 'Siguiente' %}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+          </nav>
         </section>
       </div>
 

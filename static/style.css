@@ -1310,6 +1310,26 @@ a.z-location:hover span { text-decoration: underline; }
 .st-chip:hover { color: #FFFFFF; border-color: var(--z-lime); }
 .st-chip[aria-current="page"] { color: var(--z-ink); background: var(--z-lime); border-color: var(--z-lime); }
 .st-filter-label { align-self: center; margin-right: 4px; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--z-muted); }
+.st-chip[aria-pressed="true"] { color: var(--z-ink); background: var(--z-lime); border-color: var(--z-lime); }
+button.st-chip { font-family: inherit; line-height: inherit; cursor: pointer; }
+
+/* Balance por jugador: orden y paginador */
+.st-balance-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.st-pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }
+.st-pager[hidden] { display: none; }
+.st-pager-info { min-width: 7.5em; text-align: center; font-size: .9rem; font-weight: 700; color: var(--z-text); font-variant-numeric: tabular-nums; }
+.st-pager-btn {
+  display: inline-grid; place-items: center; width: 40px; height: 40px;
+  color: var(--z-text); background: var(--z-surface-2); border: 1px solid var(--st-line); border-radius: 999px;
+  cursor: pointer; transition: border-color .15s;
+}
+.st-pager-btn:hover:not(:disabled) { color: #FFFFFF; border-color: var(--z-lime); }
+.st-pager-btn:disabled { opacity: .35; cursor: default; }
+@media (max-width: 760px) {
+  .st-balance-sort { gap: 6px; }
+  .st-balance-sort .st-filter-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .st-balance-sort .st-chip { padding: 6px 12px; font-size: .8rem; white-space: nowrap; }
+}
 
 .st-detail { margin-bottom: 24px; padding: 22px; background: rgba(var(--z-lime-rgb), .05); border: 1px solid rgba(var(--z-lime-rgb), .25); border-radius: 20px; }
 .st-detail-title { margin: 0 0 16px; font-size: 1.05rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--z-lime); }
@@ -1396,7 +1416,6 @@ a.z-location:hover span { text-decoration: underline; }
 .st-fact--gold dd { color: var(--z-lime); }
 .st-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .st-card--wide { grid-column: 1 / -1; }
-.st-scroll { position: relative; height: 100%; overflow-x: auto; }
 .st-vs-bar--loss span { background: var(--z-lime); }
 
 .st-tabs { margin-bottom: 20px; }

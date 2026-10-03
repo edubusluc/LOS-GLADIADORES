@@ -5468,3 +5468,7 @@ msgstr "Error creating the team. Please check the data."
 #: team/views.py:92
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
+
+#: data_analyse/templates/team_statistics.html
+msgid "Páginas de jugadores"
+msgstr "Player pages"

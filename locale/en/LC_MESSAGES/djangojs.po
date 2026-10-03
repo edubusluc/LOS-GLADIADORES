@@ -156,3 +156,8 @@ msgstr "2 points lost"
 #: static/js/team_statistics.js:95
 msgid "3 puntos perdidos"
 msgstr "3 points lost"
+
+#: static/js/team_statistics.js
+#, python-format
+msgid "%(first)s–%(last)s de %(total)s"
+msgstr "%(first)s–%(last)s of %(total)s"

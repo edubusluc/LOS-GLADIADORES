@@ -75,6 +75,8 @@ ADMIN_URL = config('ADMIN_URL', default='admin/')
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'login'
+# Formularios rechazados por CSRF: misma página «Sin permiso» que el resto de la web.
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 # HTTPS en producción: redirección a https, cookies solo por https y HSTS.
 if not DEBUG:

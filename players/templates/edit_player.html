@@ -4,18 +4,28 @@
 {% block content %}
     <div class="table-container">
     <h1>{% translate "Editar Jugador" %}</h1>
+
+    {% if form.errors %}
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-1">{% translate "Error al editar el jugador. Por favor, verifica los datos." %}</p>
+        <ul class="mb-0">
+            {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
     
     <form method="POST" action="{% url 'edit_player' player.public_id %}">
         {% csrf_token %}
         
         <div>
             <label for="name">{% translate "Nombre:" %}</label>
-            <input type="text" id="name" name="name" value="{{ player.name }}" required>
+            <input type="text" id="name" name="name" value="{{ player.name }}" maxlength="100" required>
         </div>
 
         <div>
             <label for="last_name">{% translate "Apellidos:" %}</label>
-            <input type="text" id="last_name" name="last_name" value="{{ player.last_name }}" required>
+            <input type="text" id="last_name" name="last_name" value="{{ player.last_name }}" maxlength="100" required>
         </div>
     
         <div>
@@ -38,7 +48,7 @@
 
         <div>
             <label for="joined_season">{% translate "Temporada en la que se unió al equipo:" %}</label>
-            <input type="text" id="joined_season" name="joined_season" value="{{ player.joined_season }}" required>
+            <input type="text" id="joined_season" name="joined_season" value="{{ player.joined_season }}" maxlength="9" pattern="\d{4}-\d{4}" placeholder="2024-2025" required>
         </div>
         
         <div>

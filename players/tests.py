@@ -213,8 +213,8 @@ class SnpAccountTests(TestCase):
         Membership.objects.create(user=viewer, club=self.club, role=Membership.MEMBER)
         self.make_account()
         self.client.login(username="viewer", password="pass-12345")
-        self.assertEqual(self.client.get(reverse("snp_account")).status_code, 302)
-        self.assertEqual(self.client.post(reverse("snp_account_delete")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("snp_account")).status_code, 403)
+        self.assertEqual(self.client.post(reverse("snp_account_delete")).status_code, 403)
         self.assertTrue(SnpAccount.objects.exists())
 
     def test_log_lists_players_not_updated(self):

@@ -234,7 +234,7 @@ class ReportTests(TestCase):
         response = self.client.get(reverse("call_report", args=[self.match.public_id]))
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.client.login(username="viewer", password="pass-12345")
-        self.assertEqual(self.client.get(reverse("call_report", args=[self.match.public_id])).status_code, 302)
+        self.assertEqual(self.client.get(reverse("call_report", args=[self.match.public_id])).status_code, 403)
 
     def test_report_ignores_matches_after_its_date(self):
         old = Match.objects.create(club=self.club, local=self.rival, visiting=self.club.own_team,

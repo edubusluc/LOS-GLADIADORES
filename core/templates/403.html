@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}{% translate "Sin permiso" %} · Zyra{% endblock %}
+
+{% block content %}
+<div class="z-auth">
+    <div class="z-auth-card text-center">
+        <img src="{% static 'zyra/logo.svg' %}" alt="" class="z-auth-logo">
+        <h1><i class="fa-solid fa-lock me-2" aria-hidden="true"></i>{% translate "Sin permiso" %}</h1>
+        <p class="text-muted">
+            {% if reason %}{{ reason }}{% else %}{% translate "No tienes permiso para ver esta página o realizar esta acción." %}{% endif %}
+        </p>
+        {% if not csrf %}
+        <p class="text-muted small">{% translate "Si crees que deberías tener acceso, pide a un capitán de tu club que revise tu rol en Miembros." %}</p>
+        {% endif %}
+        <a class="btn btn-primary btn-lg" href="{% url 'home' %}">{% translate "Volver al inicio" %}</a>
+    </div>
+</div>
+{% endblock %}

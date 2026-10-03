@@ -113,3 +113,55 @@ class Invitation(PublicIdModel):
 
     def __str__(self):
         return f"Invitación a {self.club} ({self.token[:6]}…)"
+
+
+class PhotoCheck(PublicIdModel):
+    """
+    Resultado de validar una foto subida (escudo o foto de jugador) con AWS Rekognition
+    (core/moderation.py). Las rechazadas no se guardan; las que no se han podido validar
+    (sin configurar, fuera del plan gratuito, error) se guardan y el personal las revisa
+    en el back-office.
+    """
+    PUBLIC_ID_PREFIX = "PHC"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    UNCHECKED = "unchecked"
+    REVIEWED = "reviewed"
+    STATUSES = [
+        (APPROVED, _("Validada")),
+        (REJECTED, _("Rechazada")),
+        (UNCHECKED, _("Sin validar")),
+        (REVIEWED, _("Revisada por el personal")),
+    ]
+
+    club = models.ForeignKey(Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_checks")
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_checks",
+    )
+    team = models.ForeignKey("team.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_checks")
+    player = models.ForeignKey("players.Player", on_delete=models.SET_NULL, null=True, blank=True, related_name="photo_checks")
+    # Ruta en el almacenamiento (vacía en las rechazadas, que no se guardan).
+    photo = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=10, choices=STATUSES)
+    # Motivo: etiquetas de Rekognition que la rechazaron o por qué no se validó.
+    reason = models.CharField(max_length=500, blank=True)
+    # True si se llamó a Rekognition (cuenta para el límite mensual gratuito).
+    api_called = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "created_at"])]
+
+    @property
+    def subject(self):
+        return self.player or self.team
+
+    @property
+    def in_use(self):
+        """La foto sigue siendo la del equipo o jugador."""
+        subject = self.subject
+        return bool(self.photo and subject and subject.photo and subject.photo.name == self.photo)
+
+    def __str__(self):
+        return f"{self.get_status_display()}: {self.photo or '—'}"

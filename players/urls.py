@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (create_player, list_players, edit_player, delete_player, show_player, manage_roster, snp_account, snp_account_delete,
-                    complete_team_start, complete_team_status, complete_team_confirm, complete_team_cancel)
+                    complete_team_start, complete_team_status, complete_team_confirm, complete_team_cancel,
+                    my_player, link_player, unlink_player)
 
 urlpatterns = (
     path("create_player",create_player, name='create_player'),
@@ -15,4 +16,7 @@ urlpatterns = (
     path("complete_team/<pid:import_id>/confirm/", complete_team_confirm, name="complete_team_confirm"),
     path("complete_team/<pid:import_id>/cancel/", complete_team_cancel, name="complete_team_cancel"),
     path("roster/", manage_roster, name="manage_roster"),
+    path("me/", my_player, name="my_player"),
+    path("me/link/<pid:player_id>/", link_player, name="link_player"),
+    path("unlink/<pid:player_id>/", unlink_player, name="unlink_player"),
 )

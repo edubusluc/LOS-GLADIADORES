@@ -27,4 +27,8 @@ urlpatterns = [
     path("clubs/<pid:club_id>/", views.club_detail, name="club_detail"),
     path("users/", views.user_list, name="user_list"),
     path("users/<int:user_id>/", views.user_detail, name="user_detail"),
+    path("users/<int:user_id>/photos/delete/", views.user_photos_delete, name="user_photos_delete"),
+    path("photos/", views.photo_list, name="photo_list"),
+    path("photos/<pid:check_id>/delete/", views.photo_delete, name="photo_delete"),
+    path("photos/<pid:check_id>/reviewed/", views.photo_reviewed, name="photo_reviewed"),
 ]

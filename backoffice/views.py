@@ -4,6 +4,7 @@ import re
 from urllib.parse import urlencode
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -13,10 +14,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.text import slugify
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, ngettext
 from django.views.decorators.http import require_POST
 
-from core.models import Club, Invitation, Membership
+from core import moderation
+from core.models import Club, Invitation, Membership, PhotoCheck
 from match.models import Match
 from players.models import Player
 
@@ -164,6 +166,10 @@ def user_detail(request, user_id):
         "login_methods": login_methods,
         "invitation_used": Invitation.objects.filter(used_by=member).select_related("club", "created_by").first(),
         "invitations_sent": Invitation.objects.filter(created_by=member).count(),
+        "photo_checks": [
+            c for c in PhotoCheck.objects.filter(uploaded_by=member).exclude(photo="")
+            .select_related("team", "player", "club") if c.in_use
+        ],
     })
 
 
@@ -524,3 +530,83 @@ def import_template(request, entity):
     response = HttpResponse(importer.template_csv(spec), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="plantilla-{entity}.csv"'
     return response
+
+
+# ---------- Fotos subidas ----------
+
+PHOTO_FILTERS = [PhotoCheck.UNCHECKED, PhotoCheck.REJECTED, PhotoCheck.APPROVED, PhotoCheck.REVIEWED]
+
+
+def _remove_photo(check):
+    """Quita la foto del equipo o jugador (el fichero se borra al guardar, core/images.py)."""
+    subject = check.subject
+    if check.in_use:
+        subject.photo = None
+        subject.save(update_fields=["photo"])
+        return True
+    return False
+
+
+@staff_required
+def photo_list(request):
+    status = request.GET.get("status", PhotoCheck.UNCHECKED)
+    if status not in PHOTO_FILTERS:
+        status = PhotoCheck.UNCHECKED
+    checks = (
+        PhotoCheck.objects.filter(status=status)
+        .select_related("club", "uploaded_by", "team", "player")
+        .order_by("-created_at")
+    )
+    if status != PhotoCheck.REJECTED:
+        checks = checks.exclude(photo="")
+    counts = dict(PhotoCheck.objects.values_list("status").annotate(n=Count("id")).order_by())
+    return render(request, "backoffice/photo_list.html", {
+        "section": "photos",
+        "status": status,
+        "filters": [(s, label, counts.get(s, 0)) for s, label in PhotoCheck.STATUSES],
+        "page": _page(request, checks),
+        "calls_this_month": moderation.calls_this_month(),
+        "monthly_limit": settings.REKOGNITION_MONTHLY_LIMIT,
+        "free_until": settings.REKOGNITION_FREE_UNTIL,
+        "not_validating": moderation.free_tier_status(),
+    })
+
+
+@staff_required
+@require_POST
+def photo_delete(request, check_id):
+    check = get_object_or_404(PhotoCheck.objects.select_related("team", "player"), public_id=check_id)
+    if _remove_photo(check):
+        messages.success(request, _("Foto eliminada."))
+    else:
+        messages.info(request, _("Esa foto ya no se usaba."))
+    check.delete()
+    return _back_to(request, "backoffice:photo_list")
+
+
+@staff_required
+@require_POST
+def photo_reviewed(request, check_id):
+    PhotoCheck.objects.filter(public_id=check_id).update(status=PhotoCheck.REVIEWED)
+    messages.success(request, _("Foto marcada como revisada."))
+    return _back_to(request, "backoffice:photo_list")
+
+
+@staff_required
+@require_POST
+def user_photos_delete(request, user_id):
+    """Elimina todas las fotos que ha subido un usuario y siguen en uso."""
+    member = get_object_or_404(User, pk=user_id)
+    removed = 0
+    for check in PhotoCheck.objects.filter(uploaded_by=member).exclude(photo="").select_related("team", "player"):
+        removed += _remove_photo(check)
+        check.delete()
+    messages.success(request, ngettext("%(n)s foto eliminada.", "%(n)s fotos eliminadas.", removed) % {"n": removed})
+    return redirect("backoffice:user_detail", user_id=member.pk)
+
+
+def _back_to(request, default):
+    target = request.POST.get("next", "")
+    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return redirect(target)
+    return redirect(default)

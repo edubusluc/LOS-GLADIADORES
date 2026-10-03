@@ -1,5 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from core.images import clean_photo_field
+from core.similarity import same_name
 from core.validators import plain_text
 from .models import Player
 
@@ -19,6 +21,10 @@ class PlayerForm (forms.ModelForm):
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
         plain_text(self, 'name', 'last_name')
 
+    def clean_photo(self):
+        # Se valida, reduce y pasa a WebP antes de guardarla (core/images.py).
+        return clean_photo_field(self)
+
 
 class PlayerEditForm(forms.ModelForm):
     """
@@ -35,6 +41,51 @@ class PlayerEditForm(forms.ModelForm):
         self.fields['position'].choices = with_placeholder(Player.POSITIONS)
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
         plain_text(self, 'name', 'last_name')
+
+
+class OwnPlayerForm(forms.ModelForm):
+    """El propio jugador edita su perfil: posición, mano hábil y foto (el nombre y la temporada, no)."""
+    class Meta:
+        model = Player
+        fields = ['position', 'skillfull_hand', 'photo']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['position'].choices = with_placeholder(Player.POSITIONS)
+        self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
+        for name, f in self.fields.items():
+            f.widget.attrs["class"] = "form-control" if name == "photo" else "form-select"
+        self.fields['photo'].widget = forms.FileInput(attrs={"class": "form-control", "accept": "image/*"})
+
+    def clean_photo(self):
+        return clean_photo_field(self)
+
+
+class NewOwnPlayerForm(OwnPlayerForm):
+    """Quien entra con una invitación y no está en la lista crea su jugador."""
+    class Meta(OwnPlayerForm.Meta):
+        fields = ['name', 'last_name', 'position', 'skillfull_hand', 'photo']
+
+    def __init__(self, *args, club=None, **kwargs):
+        self.club = club
+        super().__init__(*args, **kwargs)
+        for name in ('name', 'last_name'):
+            self.fields[name].widget.attrs["class"] = "form-control"
+        plain_text(self, 'name', 'last_name')
+
+    def clean(self):
+        # No se puede crear un jugador que ya existe en el club (mismo nombre y apellidos,
+        # sin distinguir mayúsculas, tildes ni signos): hay que elegirlo en la lista.
+        cleaned = super().clean()
+        name, last_name = cleaned.get('name'), cleaned.get('last_name')
+        if name and last_name:
+            full = f"{name} {last_name}"
+            if any(same_name(full, f"{p.name} {p.last_name}") for p in Player.objects.filter(club=self.club)):
+                raise forms.ValidationError(
+                    _("Ya existe un jugador con ese nombre en el club. Búscalo en la lista y pulsa «Soy yo».")
+                )
+        return cleaned
+
 
 class SnpAccountForm(forms.Form):
     username = forms.CharField(label=_("Usuario de SNP"), max_length=150)

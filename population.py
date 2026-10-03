@@ -258,6 +258,8 @@ def populate_database():
     create_result()
     # Asigna todo lo cargado al club LOS GLADIADORES (multi-club)
     call_command('assign_default_club', name=LOS_GLADIADORES)
+    # Copia los escudos de ejemplo (populate/photos) al almacenamiento de fotos (media/).
+    call_command('move_photos_to_media')
     
 
 if __name__ == "__main__":

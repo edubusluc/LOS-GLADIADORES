@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from core.decorators import club_required, club_admin_required
-from .forms import PlayerEditForm, PlayerForm, SnpAccountForm, with_placeholder
+from .forms import NewOwnPlayerForm, OwnPlayerForm, PlayerEditForm, PlayerForm, SnpAccountForm, with_placeholder
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from match.models import Game
@@ -8,6 +8,7 @@ from players.models import Player, SnpAccount, SnpTeamImport
 from core.crypto import DecryptionError
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.db.models import Q
 from django.utils.translation import gettext as _, ngettext
 from . import snp_import
@@ -22,6 +23,7 @@ def create_player(request):
     similar = []
     if request.method == "POST":
         form = PlayerForm(request.POST, request.FILES)
+        form.uploader, form.check_only = request.user, similarity.is_check_request(request)
         if form.is_valid():
             # Jugadores con nombre y apellidos iguales o parecidos: se pregunta antes de crearlo.
             similar = similarity.similar_players(request.club, form.cleaned_data['name'], form.cleaned_data['last_name'])
@@ -265,3 +267,80 @@ def complete_team_cancel(request, import_id):
         public_id=import_id, club=request.club, status__in=[SnpTeamImport.RUNNING, SnpTeamImport.READY],
     ).update(status=SnpTeamImport.CANCELLED)
     return redirect("list_players")
+
+
+# ---------- Perfil del propio jugador ----------
+
+def own_player(request):
+    """Jugador enlazado a la cuenta del usuario en el club activo (o None)."""
+    return Player.objects.filter(club=request.club, user=request.user).first()
+
+
+@club_required
+def my_player(request):
+    """
+    «Mi jugador». Sin jugador enlazado: lista de jugadores del club sin cuenta para
+    elegir «Soy yo», o formulario para crear el suyo si no está. Con jugador enlazado:
+    edita su posición, mano hábil y foto (el nombre y la temporada los cambia el capitán).
+    """
+    player = own_player(request)
+    if player:
+        form = OwnPlayerForm(request.POST or None, request.FILES or None, instance=player)
+        form.uploader = request.user
+        if request.method == "POST" and form.is_valid():
+            form.save()
+            messages.success(request, _("Perfil actualizado."))
+            return redirect("show_player", player_id=player.public_id)
+        return render(request, "my_player.html", {"player": player, "form": form})
+
+    new_form = NewOwnPlayerForm(request.POST or None, request.FILES or None, club=request.club)
+    new_form.uploader = request.user
+    if request.method == "POST" and new_form.is_valid():
+        with transaction.atomic():
+            if own_player(request):  # se ha enlazado en otra pestaña mientras tanto
+                return redirect("my_player")
+            player = new_form.save(commit=False)
+            player.club = request.club
+            player.team = request.club.own_team
+            player.user = request.user
+            player.save()
+        messages.success(request, _("Jugador creado y enlazado a tu cuenta."))
+        return redirect("show_player", player_id=player.public_id)
+
+    search = request.GET.get("q", "").strip()
+    candidates = Player.objects.filter(club=request.club, user__isnull=True).order_by("-in_team", "name", "last_name")
+    if search:
+        candidates = candidates.filter(Q(name__icontains=search) | Q(last_name__icontains=search))
+    return render(request, "link_player.html", {
+        "candidates": candidates, "search": search, "new_form": new_form,
+        "show_new": request.method == "POST",
+    })
+
+
+@club_required
+@require_POST
+def link_player(request, player_id):
+    """«Soy yo»: enlaza la cuenta con un jugador del club que aún no tiene cuenta."""
+    with transaction.atomic():
+        player = get_object_or_404(Player.objects.select_for_update(), public_id=player_id, club=request.club)
+        if own_player(request):
+            messages.info(request, _("Tu cuenta ya está enlazada a un jugador."))
+        elif player.user_id:
+            messages.error(request, _("Ese jugador ya está enlazado a otra cuenta. Si eres tú, habla con tu capitán."))
+            return redirect("my_player")
+        else:
+            player.user = request.user
+            player.save(update_fields=["user"])
+            messages.success(request, _("Tu cuenta está enlazada a %(player)s.") % {"player": player.short_name})
+    return redirect("my_player")
+
+
+@club_admin_required
+@require_POST
+def unlink_player(request, player_id):
+    """El capitán quita el enlace entre un jugador y su cuenta (por si alguien se equivocó)."""
+    player = get_object_or_404(Player, public_id=player_id, club=request.club)
+    player.user = None
+    player.save(update_fields=["user"])
+    messages.success(request, _("%(player)s ya no está enlazado a ninguna cuenta.") % {"player": player.short_name})
+    return redirect("edit_player", player_id=player.public_id)

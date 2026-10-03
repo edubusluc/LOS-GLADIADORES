@@ -305,7 +305,9 @@ def degree_of_affinity(player, match_type=None):
     Afinidad (0-100) con cada compañero con el que ha jugado en pareja.
     % de puntos ganados en pareja (cada partido pesa game.score), suavizado
     hacia el 50 % cuando hay pocos partidos.
-    Devuelve: [{'name', 'affinity', 'games', 'wins', 'losses'}, ...] de mayor a menor.
+    Incluye a los compañeros que ya no están en el equipo (in_team=False) y a los
+    eliminados (por el nombre guardado en el partido); 'in_team' los distingue.
+    Devuelve: [{'name', 'affinity', 'games', 'wins', 'losses', 'in_team'}, ...] de mayor a menor.
     """
     games = Game.objects.filter(
         Q(player_1_local=player) | Q(player_2_local=player) |
@@ -320,32 +322,40 @@ def degree_of_affinity(player, match_type=None):
 
     for g in games:
         if player.id in (g.player_1_local_id, g.player_2_local_id):
-            side, pair = 'Local', (g.player_1_local_id, g.player_2_local_id)
+            side, slots = 'Local', ('player_1_local', 'player_2_local')
         else:
-            side, pair = 'Visitante', (g.player_1_visiting_id, g.player_2_visiting_id)
+            side, slots = 'Visitante', ('player_1_visiting', 'player_2_visiting')
 
-        partner_id = pair[1] if pair[0] == player.id else pair[0]
-        if partner_id not in people:
+        partner_slot = slots[1] if getattr(g, slots[0] + '_id') == player.id else slots[0]
+        partner_id = getattr(g, partner_slot + '_id')
+        if partner_id in people:
+            partner = people[partner_id]
+            key, name, in_team = partner_id, partner.full_name, partner.in_team
+        elif partner_id is None and g.removed_player_names.get(partner_slot):
+            # Jugador eliminado: se agrupa por el nombre guardado en el partido
+            name = g.removed_player_names[partner_slot].upper()
+            key, in_team = ('removed', name), False
+        else:
             continue
 
         won = g.winner == side
         weight = g.score or 1
-        a = acc.setdefault(partner_id, {'games': 0, 'wins': 0, 'stake': 0, 'won_pts': 0})
+        a = acc.setdefault(key, {'name': name, 'in_team': in_team, 'games': 0, 'wins': 0, 'stake': 0, 'won_pts': 0})
         a['games'] += 1
         a['wins'] += won
         a['stake'] += weight
         a['won_pts'] += weight if won else 0
 
     results = []
-    for partner_id, a in acc.items():
-        p = people[partner_id]
+    for a in acc.values():
         rate = (a['won_pts'] + PRIOR_POINTS * 0.5) / (a['stake'] + PRIOR_POINTS)
         results.append({
-            'name': p.full_name,
+            'name': a['name'],
             'affinity': round(rate * 100),
             'games': a['games'],
             'wins': a['wins'],
             'losses': a['games'] - a['wins'],
+            'in_team': a['in_team'],
         })
 
     results.sort(key=lambda r: (r['affinity'], r['games']), reverse=True)

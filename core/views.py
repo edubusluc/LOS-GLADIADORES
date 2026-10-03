@@ -321,8 +321,8 @@ def invitation(request, token):
         # Vuelve de iniciar sesión con Google desde esta misma invitación: se une directamente.
         from_google = request.session.pop(PENDING_INVITE_KEY, None) == token
         if request.method == "POST" or from_google:
-            _join(request, invitation, request.user)
-            return redirect("home")
+            # Tras unirse, elige su jugador en la plantilla o lo crea (players.views.my_player).
+            return redirect("my_player" if _join(request, invitation, request.user) else "home")
         return render(request, "invitation.html", {"invitation": invitation, "club": club})
 
     request.session[PENDING_INVITE_KEY] = token
@@ -342,7 +342,7 @@ def invitation(request, token):
             request.session[SESSION_KEY] = club.id
             send_welcome_email(user, club, site_url=_site_url(request))
             messages.success(request, _("¡Bienvenido a %(club)s!") % {"club": club.name})
-            return redirect("home")
+            return redirect("my_player")
     else:
         form = SignUpForm(initial={"email": invitation.email})
 

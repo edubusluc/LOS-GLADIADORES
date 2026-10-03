@@ -58,6 +58,7 @@ class CaptainOnlyUrlsTests(SecurityBase):
             reverse("delete_call", args=[m]), reverse("create_penalty", args=[c]),
             reverse("create_player"), reverse("edit_player", args=[self.player.public_id]),
             reverse("delete_player", args=[self.player.public_id]), reverse("manage_roster"),
+            reverse("unlink_player", args=[self.player.public_id]),
             reverse("snp_account"), reverse("snp_account_delete"), reverse("complete_team_start"),
             reverse("complete_team_status", args=[team_import.public_id]),
             reverse("complete_team_confirm", args=[team_import.public_id]),

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from core.decorators import club_required, club_admin_required
-from .forms import NewOwnPlayerForm, OwnPlayerForm, PlayerForm, SnpAccountForm, with_placeholder
+from .forms import NewOwnPlayerForm, OwnPlayerForm, PlayerEditForm, PlayerForm, SnpAccountForm, with_placeholder
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from match.models import Game
@@ -109,34 +109,20 @@ def _complete_team_context(club):
 
 @club_admin_required
 def edit_player(request, player_id):
-    player = get_object_or_404(Player, public_id=player_id, club=request.club)  # Asegúrate de que estás usando el modelo correcto
-
+    player = get_object_or_404(Player, public_id=player_id, club=request.club)
+    form = PlayerEditForm(request.POST or None, instance=player)
     if request.method == "POST":
-        name = (request.POST.get("name") or "").strip()
-        last_name = (request.POST.get("last_name") or "").strip()
-        position = request.POST.get("position")
-        skillfull_hand = request.POST.get("skillfull_hand")
-        joined_season = request.POST.get("joined_season")
-        in_team = 'in_team' in request.POST
-
-        if name:
-            player.name = name
-        if last_name:
-            player.last_name = last_name
-        player.position = position
-        player.skillfull_hand = skillfull_hand
-        player.in_team = in_team
-        player.joined_season = joined_season
-        player.save()
-
-        return redirect('list_players')  # Redirigir a la lista de jugadores después de guardar
+        if form.is_valid():
+            form.save()
+            return redirect('list_players')
 
     context = {
         'player': player,
+        'form': form,
         'positions': with_placeholder(Player.POSITIONS),
         'hands': with_placeholder(Player.HAND),
     }
-    return render(request, 'edit_player.html', context)  # Renderizar con el contexto correcto
+    return render(request, 'edit_player.html', context)
 
 
 @club_admin_required

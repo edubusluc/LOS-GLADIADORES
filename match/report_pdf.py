@@ -4,6 +4,7 @@ Pensado para caber en dos páginas A4: la primera con el contexto del partido y
 los convocados; la segunda con parejas y las dos alineaciones recomendadas.
 """
 import io
+from xml.sax.saxutils import escape as xml_escape
 from pathlib import Path
 
 from django.conf import settings
@@ -170,7 +171,7 @@ def _data_table(header, rows, col_widths, st, highlight_first=False):
 
 
 def _kpis(items, st):
-    cells = [[Paragraph(label.upper(), st["kpi_label"]), Paragraph(value, st["kpi_value"])] for label, value in items]
+    cells = [[Paragraph(esc(label.upper()), st["kpi_label"]), Paragraph(value, st["kpi_value"])] for label, value in items]
     widths = [CONTENT_W / len(items)] * len(items)
     inner = [Table([[c[0]], [c[1]]], colWidths=[widths[0] - 8]) for c in cells]
     for t in inner:
@@ -215,6 +216,13 @@ def _on_page(canvas, doc, report):
     canvas.restoreState()
 
 
+def esc(value):
+    """Texto escrito por los usuarios (nombres de equipos y jugadores) dentro de un Paragraph:
+    reportlab interpreta < > & como etiquetas, así que sin escaparlos un nombre podía meter
+    formato en el PDF o hacer fallar su generación (y con ella el envío del informe)."""
+    return xml_escape(str(value))
+
+
 def render_report(report):
     """Devuelve los bytes del PDF."""
     _register_fonts()
@@ -229,7 +237,7 @@ def render_report(report):
     story.append(Paragraph(
         _("<b>%(own)s</b> vs <b>%(rival)s</b> · %(date)s · "
           "jugáis como <font color='#B4F100'><b>%(venue)s</b></font> · temporada %(season)s") % {
-            "own": own, "rival": report['rival'], "date": f"{match.start_date:%d/%m/%Y}",
+            "own": esc(own), "rival": esc(report['rival']), "date": f"{match.start_date:%d/%m/%Y}",
             "venue": venue.upper(), "season": match.season},
         st["subtitle"]))
     story.append(Spacer(1, 5 * mm))
@@ -252,17 +260,17 @@ def render_report(report):
                       _badge(_("VICTORIA") if p["outcome"] == "V" else _("DERROTA") if p["outcome"] == "D" else _("EMPATE"),
                              fill=LIME if p["outcome"] == "V" else CORAL if p["outcome"] == "D" else MUTED)]
                      for p in prec]
-        prec_block = [Paragraph(_("PRECEDENTES CONTRA %(rival)s") % {"rival": str(report['rival']).upper()}, st["section"]),
+        prec_block = [Paragraph(_("PRECEDENTES CONTRA %(rival)s") % {"rival": esc(str(report['rival']).upper())}, st["section"]),
                       _data_table([_("Fecha"), _("Sede"), _("Puntos"), ""], prec_rows,
                                   [22 * mm, 22 * mm, 18 * mm, prec_col_w - 62 * mm], st)]
     else:
-        prec_block = [Paragraph(_("PRECEDENTES CONTRA %(rival)s") % {"rival": str(report['rival']).upper()}, st["section"]),
+        prec_block = [Paragraph(_("PRECEDENTES CONTRA %(rival)s") % {"rival": esc(str(report['rival']).upper())}, st["section"]),
                       Paragraph(_("Primer enfrentamiento contra este equipo."), st["muted"])]
 
     def streak_lines(items, color):
         if not items:
             return [Paragraph(_("Nadie con 2 o más resultados seguidos."), st["muted"])]
-        return [Paragraph(f"<font color='{color}'><b>{_streak_label(f.streak[0], f.streak[1])}</b></font>  {f.name}", st["list"])
+        return [Paragraph(f"<font color='{color}'><b>{_streak_label(f.streak[0], f.streak[1])}</b></font>  {esc(f.name)}", st["list"])
                 for f in items]
 
     streak_block = [Paragraph(_("JUGADORES EN RACHA"), st["section"]),
@@ -277,7 +285,7 @@ def render_report(report):
     story.append(Spacer(1, SECTION_GAP))
     story.append(Paragraph(_("CONVOCADOS · RENDIMIENTO COMO %(venue)s") % {"venue": venue.upper()}, st["section"]))
     player_rows = [[
-        Paragraph(f"<b>{f.name}</b>", st["cell"]),
+        Paragraph(f"<b>{esc(f.name)}</b>", st["cell"]),
         Paragraph(f.player.get_position_display() if f.player.position else "—", st["cell"]),
         Paragraph(f"{f.snp:g}" if f.snp else "—", st["cell"]),
         Paragraph(_record(f.venue_wins, f.venue_played), st["cell"]),
@@ -300,7 +308,7 @@ def render_report(report):
     def usage_table(rows):
         body = [[
             Paragraph(f"<font color='{'#B4F100' if u['called_now'] else '#F4F4F4'}'>"
-                      f"<b>{u['player'].short_name}</b></font>", st["cell"]),
+                      f"<b>{esc(u['player'].short_name)}</b></font>", st["cell"]),
             Paragraph(f"<b>{u['games']}</b>", st["cell"]),
             Paragraph(str(u["calls"]), st["cell"]),
             Paragraph(f"{u['last']:%d/%m}" if u["last"] else "—", st["cell"]),
@@ -333,7 +341,7 @@ def render_report(report):
     story.append(Paragraph(_("PAREJAS CON HISTORIAL ENTRE LOS CONVOCADOS"), st["section"]))
     if report["pairs"]:
         pair_rows = [[
-            Paragraph(f"<b>{p.name}</b>", st["cell"]),
+            Paragraph(f"<b>{esc(p.name)}</b>", st["cell"]),
             Paragraph(f"{p.snp_sum:g}", st["cell"]),
             Paragraph(_record(p.venue_wins, p.venue_played), st["cell"]),
             Paragraph(_record(p.wins, p.played), st["cell"]),
@@ -357,7 +365,7 @@ def render_report(report):
             Paragraph(f"<b>{row['n']}</b>", st["cell_bold"]),
             _badge(_("%(n)s PTS") % {"n": row['value']}, fill=LIME if row['value'] == 3 else SURFACE_2,
                    fg=INK if row['value'] == 3 else TEXT, width=13 * mm),
-            Paragraph(f"<b>{row['pair'].name}</b>", st["cell"]),
+            Paragraph(f"<b>{esc(row['pair'].name)}</b>", st["cell"]),
             Paragraph(f"{row['pair'].snp_sum:g}", st["cell"]),
             Paragraph(f"<b>{row['pct']}%</b>", st["cell"]),
         ] for row in lineup.rows]
@@ -369,11 +377,11 @@ def render_report(report):
                       st["lineup_title"]),
             table,
             Spacer(1, 3 * mm),
-            Paragraph(item["explanation"], st["body"]),
+            Paragraph(esc(item["explanation"]), st["body"]),
         ]
         if lineup.bench:
             block.append(Spacer(1, NOTE_GAP))
-            block.append(Paragraph(_("Descansan: %(names)s") % {"names": ", ".join(f.name for f in lineup.bench)}, st["muted"]))
+            block.append(Paragraph(_("Descansan: %(names)s") % {"names": esc(", ".join(f.name for f in lineup.bench))}, st["muted"]))
         story.append(KeepTogether([_panel(block)]))
 
     story.append(Spacer(1, SECTION_GAP))

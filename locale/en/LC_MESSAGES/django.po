@@ -2241,9 +2241,9 @@ msgstr "Select the players you want to warn (current squad players only)."
 msgid "No se encontró el registro de llamada con el ID especificado."
 msgstr "No call-up log was found with the given ID."
 
-#: core/decorators.py:26
-msgid "Solo los capitanes del club pueden realizar esta acción."
-msgstr "Only club captains can perform this action."
+#: core/decorators.py
+msgid "Solo los capitanes del club pueden ver esta página o realizar esta acción."
+msgstr "Only club captains can view this page or perform this action."
 
 #: core/emails.py:57
 msgid "Zyra · Gestión de equipos de pádel"
@@ -5779,3 +5779,47 @@ msgstr "Error creating the team. Please check the data."
 #: team/views.py:94
 msgid "Error al editar el equipo. Por favor, verifica los datos."
 msgstr "Error editing the team. Please check the data."
+
+#: core/templates/403.html
+msgid "Sin permiso"
+msgstr "Access denied"
+
+#: core/templates/403.html
+msgid "No tienes permiso para ver esta página o realizar esta acción."
+msgstr "You don't have permission to view this page or perform this action."
+
+#: core/templates/403.html
+msgid ""
+"Si crees que deberías tener acceso, pide a un capitán de tu club que revise "
+"tu rol en Miembros."
+msgstr ""
+"If you think you should have access, ask a captain of your club to check "
+"your role in Members."
+
+#: core/views.py
+msgid ""
+"No se ha podido comprobar el formulario: puede que haya caducado o que venga "
+"de otra web. Vuelve a la página, recárgala e inténtalo de nuevo."
+msgstr ""
+"The form could not be verified: it may have expired or come from another "
+"website. Go back, reload the page and try again."
+
+#: core/views.py
+msgid "Demasiados intentos fallidos. Espera 15 minutos y vuelve a intentarlo."
+msgstr "Too many failed attempts. Wait 15 minutes and try again."
+
+#: core/views.py
+msgid "Ese email ya lo usa otra cuenta."
+msgstr "That email is already used by another account."
+
+#: core/validators.py
+msgid "No se admiten los signos < > ni saltos de línea."
+msgstr "The characters < > and line breaks are not allowed."
+
+#: call/views.py
+msgid "No se puede borrar la convocatoria de un partido ya confirmado."
+msgstr "The call-up of a confirmed match cannot be deleted."
+
+#: players/templates/edit_player.html
+msgid "Error al editar el jugador. Por favor, verifica los datos."
+msgstr "Error editing the player. Please check the details."

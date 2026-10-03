@@ -2,6 +2,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from core.images import clean_photo_field
 from core.similarity import same_name
+from core.validators import plain_text
 from .models import Player
 
 def with_placeholder(choices):
@@ -18,10 +19,29 @@ class PlayerForm (forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['position'].choices = with_placeholder(Player.POSITIONS)
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
+        plain_text(self, 'name', 'last_name')
 
     def clean_photo(self):
         # Se valida, reduce y pasa a WebP antes de guardarla (core/images.py).
         return clean_photo_field(self)
+
+
+class PlayerEditForm(forms.ModelForm):
+    """
+    Edición de un jugador. Antes la vista guardaba lo que llegara en el POST sin
+    validar (posiciones inventadas, temporadas con cualquier formato, nombres de más
+    de 100 caracteres); ahora se aplican las mismas reglas que al crearlo.
+    """
+    class Meta:
+        model = Player
+        fields = ['name', 'last_name', 'position', 'skillfull_hand', 'joined_season', 'in_team']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['position'].choices = with_placeholder(Player.POSITIONS)
+        self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
+        plain_text(self, 'name', 'last_name')
+
 
 class OwnPlayerForm(forms.ModelForm):
     """El propio jugador edita su perfil: posición, mano hábil y foto (el nombre y la temporada, no)."""
@@ -51,6 +71,7 @@ class NewOwnPlayerForm(OwnPlayerForm):
         super().__init__(*args, **kwargs)
         for name in ('name', 'last_name'):
             self.fields[name].widget.attrs["class"] = "form-control"
+        plain_text(self, 'name', 'last_name')
 
     def clean(self):
         # No se puede crear un jugador que ya existe en el club (mismo nombre y apellidos,

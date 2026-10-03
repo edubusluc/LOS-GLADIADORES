@@ -1,16 +1,20 @@
 import datetime
 from urllib.parse import urlencode
 
+from allauth.account.models import EmailAddress
 from django.forms import Select
+from django.forms.utils import ErrorDict
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
+from django.contrib.auth.views import LoginView
+from django.core.cache import cache
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -40,6 +44,11 @@ FROM_GOOGLE_PARAM = "google"
 LOGIN_BACKEND = "django.contrib.auth.backends.ModelBackend"
 
 User = get_user_model()
+
+# Inicio de sesión: tras LOGIN_MAX_FAILURES contraseñas erróneas seguidas para el mismo
+# usuario desde la misma IP, se bloquea durante LOGIN_LOCKOUT_SECONDS.
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCKOUT_SECONDS = 15 * 60
 
 
 def home(request):
@@ -71,8 +80,61 @@ def home(request):
         'snp_missing': request.membership.is_admin and not SnpAccount.objects.filter(club=club).exists(),
     })
 
+
+class ThrottledLoginView(LoginView):
+    """
+    LoginView de Django con freno a los ataques de fuerza bruta: sin él se podían probar
+    contraseñas sin límite. (El login de allauth, /accounts/login/, ya tiene el suyo.)
+    """
+
+    def _key(self):
+        username = (self.request.POST.get("username") or "").strip().lower()
+        return f"login-failures:{self.request.META.get('REMOTE_ADDR', '')}:{username}"
+
+    def post(self, request, *args, **kwargs):
+        if cache.get(self._key(), 0) >= LOGIN_MAX_FAILURES:
+            # Sin validar el formulario: validarlo comprobaría la contraseña.
+            form = self.get_form()
+            form._errors, form.cleaned_data = ErrorDict(), {}
+            form.add_error(None, _("Demasiados intentos fallidos. Espera 15 minutos y vuelve a intentarlo."))
+            return self.render_to_response(self.get_context_data(form=form), status=429)
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        key = self._key()
+        cache.add(key, 0, LOGIN_LOCKOUT_SECONDS)
+        try:
+            cache.incr(key)
+        except ValueError:
+            cache.set(key, 1, LOGIN_LOCKOUT_SECONDS)
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        cache.delete(self._key())
+        return super().form_valid(form)
+
+
 def error_404_view(request, exception):
     return render(request, '404.html', status=404)
+
+
+def error_403_view(request, exception=None):
+    """
+    Página «Sin permiso»: el usuario ha iniciado sesión pero intenta abrir una página o
+    hacer una acción reservada (por ejemplo, un miembro que entra por URL en una página
+    de capitán). El motivo solo se muestra si lo da la propia aplicación.
+    """
+    reason = str(exception) if isinstance(exception, PermissionDenied) and exception.args else ""
+    return render(request, '403.html', {'reason': reason}, status=403)
+
+
+def csrf_failure(request, reason=""):
+    """Formulario rechazado por la protección CSRF (caducado o enviado desde otra web)."""
+    return render(request, '403.html', {
+        'reason': _("No se ha podido comprobar el formulario: puede que haya caducado o que venga de otra web. "
+                    "Vuelve a la página, recárgala e inténtalo de nuevo."),
+        'csrf': True,
+    }, status=403)
 
 
 def _site_url(request):
@@ -134,7 +196,10 @@ def no_club(request):
 @login_required
 @require_POST
 def switch_club(request):
-    membership = get_object_or_404(Membership, user=request.user, club_id=request.POST.get("club_id"))
+    club_id = request.POST.get("club_id", "")
+    if not club_id.isdigit():
+        raise Http404
+    membership = get_object_or_404(Membership, user=request.user, club_id=club_id)
     request.session[SESSION_KEY] = membership.club_id
     return redirect("home")
 
@@ -294,15 +359,14 @@ def _is_last_admin(membership):
 def update_member(request, membership_id):
     membership = get_object_or_404(Membership, public_id=membership_id, club=request.club)
     role = request.POST.get("role")
-    email = request.POST.get("email", "").strip()
-    try:
-        validate_email(email) if email else None
-    except ValidationError:
-        messages.error(request, _("'%(email)s' no es un email válido.") % {"email": email})
-        return redirect("club_members")
-    if email != membership.user.email:
-        membership.user.email = email
-        membership.user.save(update_fields=["email"])
+    # Cada usuario solo puede cambiar su propio email. Antes un capitán podía cambiar el de
+    # cualquier miembro y, con «Entrar con Google» (que entra en la cuenta cuyo email
+    # coincide), quedarse con la cuenta de ese miembro.
+    if membership.user_id == request.user.id and "email" in request.POST:
+        error = _change_own_email(request.user, request.POST.get("email", "").strip())
+        if error:
+            messages.error(request, error)
+            return redirect("club_members")
     if role not in dict(Membership.ROLES):
         messages.error(request, _("Rol no válido."))
     elif role != Membership.ADMIN and _is_last_admin(membership):
@@ -311,6 +375,24 @@ def update_member(request, membership_id):
         membership.role = role
         membership.save()
     return redirect("club_members")
+
+
+def _change_own_email(user, email):
+    """Cambia el email del propio usuario; devuelve el mensaje de error o None."""
+    email = email.lower()
+    if email == (user.email or "").lower():
+        return None
+    try:
+        validate_email(email) if email else None
+    except ValidationError:
+        return _("'%(email)s' no es un email válido.") % {"email": email}
+    if email and User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+        return _("Ese email ya lo usa otra cuenta.")
+    user.email = email
+    user.save(update_fields=["email"])
+    # El email verificado (Google) era el anterior: allauth no debe seguir dándolo por bueno.
+    EmailAddress.objects.filter(user=user).exclude(email__iexact=email).delete()
+    return None
 
 
 @club_admin_required

@@ -94,10 +94,14 @@ class ClubIsolationTests(TestCase):
             reverse("create_result", args=[game_b.public_id]),
             reverse("edit_result", args=[game_b.public_id]),
         ]
+        # Estas solo aceptan POST: un GET da 405 sea de quien sea el partido (no desvela nada).
+        post_only = {reverse("delete_call", args=[self.match_b.public_id]),
+                     reverse("close_match", args=[self.match_b.public_id])}
         for url in urls:
             for method in ("get", "post"):
                 with self.subTest(url=url, method=method):
-                    self.assertEqual(getattr(self.client, method)(url).status_code, 404)
+                    expected = 405 if method == "get" and url in post_only else 404
+                    self.assertEqual(getattr(self.client, method)(url).status_code, expected)
 
         # Nada del otro club ha cambiado
         self.assertTrue(Match.objects.filter(pk=self.match_b.pk, draft_mode=True).exists())
@@ -205,9 +209,10 @@ class RolesAndClubSwitchTests(TestCase):
         self.assertEqual(self.client.get(reverse("list_players")).status_code, 200)
 
         response = self.client.post(reverse("create_player"), {"name": "X", "last_name": "Y"})
-        self.assertRedirects(response, reverse("home"), fetch_redirect_response=False)
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
         self.assertFalse(Player.objects.exists())
-        self.assertEqual(self.client.get(reverse("club_members")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("club_members")).status_code, 403)
 
     def test_anonymous_is_redirected_to_login(self):
         response = self.client.get(reverse("list_players"))

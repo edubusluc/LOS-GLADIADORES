@@ -9,6 +9,7 @@ from call.models import ReportDelivery
 from .report import build_report
 from .report_pdf import render_report
 from django.http import HttpResponse
+from django.views.decorators.http import require_POST
 from django.utils.translation import gettext as _, gettext_lazy
 import logging
 
@@ -484,6 +485,7 @@ def valid_close_match(games,match):
     return True, None     
 
 @club_admin_required
+@require_POST
 def close_match(request, match_id):
     match = club_match(request, match_id)
     games = match.games.all()

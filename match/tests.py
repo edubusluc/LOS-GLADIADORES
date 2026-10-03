@@ -89,7 +89,7 @@ class MatchesAndCallsTests(TestCase):
         self.assertEqual(self.client.get(reverse("warnings_statistics"), {"season": "1999-2000"}).context["total"], 0)
 
         self.client.login(username="viewer", password="pass-12345")
-        self.assertEqual(self.client.get(reverse("warnings_statistics")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("warnings_statistics")).status_code, 403)
 
     def test_manage_roster_updates_many_players_at_once(self):
         self.client.post(reverse("manage_roster"), {"in_team": [self.ana.id, self.gone.id]})

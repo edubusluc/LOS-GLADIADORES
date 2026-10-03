@@ -24,7 +24,12 @@
                 <td>
                     <form method="post" action="{% url 'update_member' m.public_id %}" class="d-flex flex-wrap gap-2">
                         {% csrf_token %}
-                        <input type="email" name="email" value="{{ m.user.email }}" placeholder="{% translate 'email@ejemplo.com' %}" class="form-control form-control-sm" style="max-width: 240px;" aria-label="{% blocktranslate with username=m.user.username %}Email de {{ username }}{% endblocktranslate %}">
+                        {% if m.user_id == request.user.id %}
+                        <input type="email" name="email" value="{{ m.user.email }}" maxlength="254" placeholder="{% translate 'email@ejemplo.com' %}" class="form-control form-control-sm" style="max-width: 240px;" aria-label="{% blocktranslate with username=m.user.username %}Email de {{ username }}{% endblocktranslate %}">
+                        {% else %}
+                        {# Solo cada usuario cambia su email: así nadie puede apropiarse de la cuenta de otro. #}
+                        <span class="form-control form-control-sm bg-transparent border-0 text-muted" style="max-width: 240px;">{{ m.user.email|default:"—" }}</span>
+                        {% endif %}
                         <select name="role" style="max-width: 220px;" class="form-select form-select-sm">
                             {% for value, label in roles %}
                             <option value="{{ value }}" {% if m.role == value %}selected{% endif %}>{{ label }}</option>

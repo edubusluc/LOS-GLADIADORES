@@ -24,7 +24,7 @@ una página por módulo en cada build, y un módulo nuevo aparece solo.
 ## Verla en tu ordenador
 
 ```bash
-pip install -r requirements-docs.txt
+pip install --only-binary :all: --require-hashes -r requirements-docs.txt
 mkdocs serve          # http://127.0.0.1:8000, se recarga al guardar
 python scripts/check_docstrings.py   # lista lo que falta por documentar
 ```

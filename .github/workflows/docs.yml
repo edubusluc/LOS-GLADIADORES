@@ -29,7 +29,7 @@ jobs:
           python-version: "3.11"
 
       - name: Instalar MkDocs
-        run: pip install -r requirements-docs.txt
+        run: pip install --only-binary :all: --require-hashes -r requirements-docs.txt
 
       - name: Todo el código tiene docstring
         run: python scripts/check_docstrings.py

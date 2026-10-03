@@ -1,6 +1,6 @@
 # Web de documentación de Zyra (MkDocs + Material + mkdocstrings).
 # Se genera sola desde el código en cada push a main (.github/workflows/docs.yml).
-# En local: pip install -r requirements-docs.txt && mkdocs serve
+# En local: pip install --only-binary :all: --require-hashes -r requirements-docs.txt && mkdocs serve
 site_name: Zyra · Documentación
 site_description: Documentación funcional y de código de Zyra, la app para gestionar equipos de pádel.
 site_url: https://edubusluc.github.io/Zyra/

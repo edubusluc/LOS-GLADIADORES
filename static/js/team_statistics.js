@@ -82,8 +82,27 @@ new Chart(document.getElementById('myLineChart'), {
   },
 });
 
-// Balance por jugador: partidos de 2 y 3 puntos, ganados y perdidos
-const rows = teamData.column_chart_data;
+// Balance por jugador: partidos de 2 y 3 puntos, ganados y perdidos.
+// Barras horizontales: un jugador por fila, así los nombres se leen enteros y
+// el gráfico crece hacia abajo cuando el equipo tiene muchos jugadores.
+const total = (r) => r.data.reduce((a, b) => a + b, 0);
+const rows = [...teamData.column_chart_data].sort((a, b) => total(b) - total(a));
+const balanceBox = document.getElementById('balanceChart');
+const ROW_HEIGHT = 30;
+balanceBox.style.height = `${Math.max(rows.length, 3) * ROW_HEIGHT + 110}px`;
+
+const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'da', 'do', 'dos', 'van', 'von']);
+// En pantallas estrechas: "Eduardo Bustamante Lucena" -> "E. Bustamante"
+const shortName = (name, max) => {
+  if (name.length <= max) return name;
+  const parts = name.trim().split(/\s+/);
+  // Salta partículas para que "Marcos de la Fuente" quede "M. Fuente"
+  const surname = parts.slice(1).find((w) => !PARTICLES.has(w.toLowerCase()));
+  const short = surname ? `${parts[0][0]}. ${surname}` : name;
+  return short.length <= max ? short : `${short.slice(0, max - 1)}…`;
+};
+const labelMax = () => (balanceBox.clientWidth < 520 ? 14 : 26);
+
 new Chart(document.getElementById('myColumnChart'), {
   type: 'bar',
   data: {
@@ -96,9 +115,36 @@ new Chart(document.getElementById('myColumnChart'), {
     ],
   },
   options: {
+    indexAxis: 'y',
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom' } },
-    scales: scales({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: gettext('Partidos') } } }),
+    datasets: { bar: { barPercentage: 0.8, categoryPercentage: 0.9, maxBarThickness: 22 } },
+    interaction: { mode: 'index', axis: 'y', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          footer: (items) => `${gettext('Partidos')}: ${items.reduce((a, i) => a + i.parsed.x, 0)}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        position: 'top',
+        ticks: { precision: 0 },
+        grid: { color: Z.grid },
+        title: { display: true, text: gettext('Partidos') },
+      },
+      y: {
+        stacked: true,
+        grid: { display: false },
+        ticks: {
+          autoSkip: false,
+          callback(value) { return shortName(this.getLabelForValue(value), labelMax()); },
+        },
+      },
+    },
   },
 });

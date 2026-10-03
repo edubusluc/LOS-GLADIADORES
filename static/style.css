@@ -1396,7 +1396,6 @@ a.z-location:hover span { text-decoration: underline; }
 .st-fact--gold dd { color: var(--z-lime); }
 .st-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .st-card--wide { grid-column: 1 / -1; }
-.st-scroll { position: relative; height: 100%; overflow-x: auto; }
 .st-vs-bar--loss span { background: var(--z-lime); }
 
 .st-tabs { margin-bottom: 20px; }

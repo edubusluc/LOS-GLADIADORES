@@ -82,7 +82,9 @@ class PairStatisticsTests(TestCase):
         local = pair_stats.top_players(log, squad, local=True)
         # A y B: 3 de 3 en casa; D: 0 de 1 (no llega al mínimo); C no está en el equipo.
         self.assertEqual([(r['name'], r['pct']) for r in local], [("A ASON", 100.0), ("B BSON", 100.0)])
-        self.assertEqual(pair_stats.top_players(log, squad, local=False), [])  # nadie llega a 3 fuera
+        away = pair_stats.top_players(log, squad, local=False)
+        # Fuera solo A llega al mínimo de 2 partidos (1 de 2)
+        self.assertEqual([(r['name'], r['played'], r['pct']) for r in away], [("A ASON", 2, 50.0)])
 
         pairs_local = pair_stats.top_pairs(log, squad, local=True)
         self.assertEqual([(r['name'], r['played'], r['pct']) for r in pairs_local], [("A ASON / B BSON", 3, 100.0)])

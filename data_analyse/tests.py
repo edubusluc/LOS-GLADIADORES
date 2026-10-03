@@ -322,3 +322,66 @@ class MatchTypeFilterTests(TestCase):
         response = self.client.get(reverse("team_statistics"))
         self.assertEqual(response.context["competitive_types"], [])
         self.assertNotContains(response, 'id="competitive-type"')
+
+
+class SeasonFilterTests(TestCase):
+    """Cinco temporadas con un partido cada una (2021-2022 ... 2025-2026)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("admin", password="pass-12345")
+        self.club = create_club("Club A", "Sevilla", self.user)
+        rival = Team.objects.create(club=self.club, name="Rival", location="X", in_group=True)
+        self.a = Player.objects.create(club=self.club, name="A", last_name="Ason")
+        for year in range(2021, 2026):
+            m = Match.objects.create(club=self.club, local=self.club.own_team, visiting=rival,
+                                     start_date=datetime.date(year, 10, 1), draft_mode=False,
+                                     match_type=Match.AMISTOSO if year == 2021 else Match.ENFRENTAMIENTO,
+                                     result="Victoria Local")
+            Game.objects.create(match=m, n_game=1, score=3, winner='Local', draft_mode=False, player_1_local=self.a)
+        self.client.force_login(self.user)
+
+    def test_all_plus_last_three_and_search_with_every_season(self):
+        response = self.client.get(reverse("team_statistics"))
+        self.assertTrue(response.context["season_all"]["active"])
+        self.assertEqual([c["label"] for c in response.context["season_chips"]], ["2025-2026", "2024-2025", "2023-2024"])
+        self.assertEqual(response.context["season_search"],
+                         ["2025-2026", "2024-2025", "2023-2024", "2022-2023", "2021-2022"])
+        self.assertContains(response, 'id="season-search"')
+
+    def test_older_season_from_search_shows_as_active_chip(self):
+        response = self.client.get(reverse("team_statistics"), {"season": "2021-2022"})
+        self.assertEqual(response.context["total_matches"], 1)
+        self.assertFalse(response.context["season_all"]["active"])
+        self.assertEqual([(c["label"], c["active"]) for c in response.context["season_chips"]],
+                         [("2025-2026", False), ("2024-2025", False), ("2023-2024", False), ("2021-2022", True)])
+
+    def test_season_links_and_search_keep_match_type(self):
+        url = reverse("player_statistics")
+        response = self.client.get(url, {"player": self.a.public_id, "season": "2021-2022", "match_type": Match.AMISTOSO})
+        self.assertEqual(response.context["s"]["played"], 1)
+        self.assertEqual(response.context["season_all"]["url"],
+                         f"{url}?player={self.a.public_id}&match_type=amistoso#temporadas")
+        self.assertIn("match_type=amistoso", response.context["season_chips"][0]["url"])
+        self.assertEqual(response.context["season_keep"],
+                         [("player", self.a.public_id), ("match_type", Match.AMISTOSO)])
+        # Cambiar el tipo de partido conserva la temporada
+        links = {o["label"]: o["url"] for o in response.context["match_types"]}
+        self.assertIn("season=2021-2022", links["Competitivos"])
+
+    def test_unknown_season_shows_all(self):
+        response = self.client.get(reverse("team_statistics"), {"season": "1999-2000"})
+        self.assertIsNone(response.context["selected_season"])
+        self.assertEqual(response.context["total_matches"], 5)
+
+    def test_no_search_with_three_seasons_or_fewer(self):
+        Match.objects.filter(start_date__year__lt=2023).delete()
+        response = self.client.get(reverse("team_statistics"))
+        self.assertEqual(response.context["season_search"], [])
+        self.assertNotContains(response, 'id="season-search"')
+
+    def test_warnings_all_uses_explicit_value(self):
+        response = self.client.get(reverse("warnings_statistics"))
+        self.assertFalse(response.context["season_all"]["active"])
+        self.assertTrue(response.context["season_all"]["url"].endswith("?season=all"))
+        response = self.client.get(reverse("warnings_statistics"), {"season": "all"})
+        self.assertTrue(response.context["season_all"]["active"])

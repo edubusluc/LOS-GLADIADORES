@@ -2,6 +2,7 @@
 {% load static i18n %}
 
 {% block content %}
+  <script src="{% static 'js/player-picker.js' %}" defer></script>
   <div class="st-page">
     {% include 'includes/stats_tabs.html' %}
 
@@ -15,14 +16,7 @@
       </div>
     </header>
 
-    <nav aria-label="{% translate 'Temporadas' %}">
-      <ul class="st-seasons">
-        {% for season in seasons %}
-          <li><a class="st-chip" href="?season={{ season|urlencode:'' }}" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a></li>
-        {% endfor %}
-        <li><a class="st-chip" href="?season={{ all_seasons }}" {% if selected_season == all_seasons %}aria-current="page"{% endif %}>{% translate "Todas" %}</a></li>
-      </ul>
-    </nav>
+    {% include 'includes/season_filter.html' %}
 
     {% if not total %}
       <div class="st-empty">

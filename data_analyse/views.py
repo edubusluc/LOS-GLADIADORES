@@ -39,6 +39,45 @@ def selected_match_type(request):
     return value if value in pair_stats.FILTER_VALUES else None
 
 
+# ---------------------------------------------------------------
+# SELECTOR DE TEMPORADAS: Todas + las tres últimas + buscador para el resto
+# ---------------------------------------------------------------
+SEASON_PARAM = "season"
+RECENT_SEASONS = 3
+
+
+def season_filter_context(request, seasons, selected_season, all_value=None, anchor=""):
+    """
+    Chips "Todas" y las ``RECENT_SEASONS`` temporadas más recientes (``seasons`` de más nueva a
+    más antigua); si la elegida es más antigua, aparece también como chip activo. Con más temporadas
+    de las que caben en los chips, ``season_search`` lista todas para el buscador. Cada enlace conserva
+    el resto de la URL (jugador, tipo de partido). ``all_value`` es el valor de "Todas" en la URL
+    (advertencias usa ?season=all porque sin parámetro muestra la temporada actual).
+    """
+    def url(value):
+        params = request.GET.copy()
+        if value:
+            params[SEASON_PARAM] = value
+        else:
+            params.pop(SEASON_PARAM, None)
+        query = params.urlencode()
+        return f"{request.path}?{query}{anchor}" if query else f"{request.path}{anchor}"
+
+    all_active = selected_season in (None, "", all_value)
+    chips = list(seasons[:RECENT_SEASONS])
+    if not all_active and selected_season not in chips:
+        chips.append(selected_season)
+    return {
+        'season_all': {'url': url(all_value), 'active': all_active},
+        'season_chips': [{'label': s, 'url': url(s), 'active': s == selected_season} for s in chips],
+        'season_search': list(seasons) if len(seasons) > RECENT_SEASONS else [],
+        # Resto de la URL para el formulario del buscador.
+        'season_keep': [(key, value) for key, values in request.GET.lists() if key != SEASON_PARAM
+                        for value in values],
+        'season_anchor': anchor,
+    }
+
+
 def match_type_context(request, match_type):
     """
     Filtro por tipo de partido: chips Todos / Competitivos / Amistosos (``match_types``) y, dentro
@@ -196,12 +235,15 @@ def team_statistics(request):
     min_games_pair = pair_stats.min_games_pair(match_type)
 
     seasons = sorted(seasons, key=lambda s: int(s.split('-')[0]), reverse=True)
+    if selected_season not in seasons:
+        selected_season = None
 
     dicc = column_chart(request.club, selected_season, match_type)
     column_chart_data = format_for_chart(dicc)
 
     if not team:
-        return render(request, 'team_statistics.html', {"seasons": seasons, **match_type_context(request, match_type)})
+        return render(request, 'team_statistics.html', {"seasons": seasons, **match_type_context(request, match_type),
+                                                        **season_filter_context(request, seasons, selected_season)})
 
     total_matches, total_won, lost_matches, percentage_won, percentage_lost = calculate_match_statistics(selected_season or None, team, match_type)
     local_games_won, local_games_lost, percentage_local_games_won, percentage_local_games_lost = calculate_local_game_statistics(selected_season or None, team, match_type)
@@ -215,6 +257,7 @@ def team_statistics(request):
 
     context = {
         **match_type_context(request, match_type),
+        **season_filter_context(request, seasons, selected_season),
         'team': team,
         'total_matches': total_matches,
         'won_matches': total_won,
@@ -567,6 +610,7 @@ def statistics_per_player(request):
 
     context = {
         **match_type_context(request, match_type),
+        **season_filter_context(request, all_seasons, selected_season, anchor="#temporadas"),
         'players': players,
         'selected_player': player.public_id,
         'player': player,
@@ -721,6 +765,7 @@ def warnings_statistics(request):
     ranking = sorted(by_player.values(), key=lambda r: (-r['count'], r['player'].name, r['player'].last_name))
 
     return render(request, 'warnings_statistics.html', {
+        **season_filter_context(request, seasons, selected_season, all_value=ALL_SEASONS),
         'seasons': seasons,
         'selected_season': selected_season,
         'all_seasons': ALL_SEASONS,

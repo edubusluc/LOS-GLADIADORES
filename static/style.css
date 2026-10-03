@@ -1977,3 +1977,14 @@ button.st-chip { font-family: inherit; line-height: inherit; cursor: pointer; }
 .st-type-filter .st-seasons:has(+ .st-type-select) { margin-bottom: 10px; }
 .st-type-select { margin: 0 0 20px; }
 .st-type-select select { width: auto; min-width: 220px; max-width: 100%; padding-top: 7px; padding-bottom: 7px; font-size: .85rem; font-weight: 700; border-radius: 999px; }
+
+/* Estadísticas: selector de temporadas (Todas + tres últimas + buscador) */
+.st-season-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 0 0 20px; }
+.st-season-filter .st-seasons { margin: 0; }
+.st-season-search { flex: 0 1 240px; }
+.st-season-search .z-picker { min-width: 0; }
+.st-season-search .z-picker-input { padding-top: 7px; padding-bottom: 7px; font-size: .85rem; font-weight: 700; }
+@media (max-width: 767.98px) {
+    .st-season-filter { display: block; }
+    .st-season-search { margin-top: 10px; }
+}

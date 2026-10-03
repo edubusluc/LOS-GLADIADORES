@@ -14,9 +14,10 @@ Qué hace:
 3. Borra las fotos subidas (carpetas teams/ y players/ del almacenamiento de fotos, por
    defecto media/), que ya no son de nadie. Las fotos de ejemplo de populate/photos no se tocan.
 
-Funciona con la base de datos configurada en zyra.settings (SQLite o PostgreSQL) y con el
-almacenamiento de fotos configurado (disco o bucket S3). No se puede deshacer: haz antes
-una copia (en SQLite basta con copiar db.sqlite3, y la carpeta media/).
+Funciona con la base de datos configurada en zyra.settings (SQLite, o PostgreSQL con las
+tablas en el esquema public) y con el almacenamiento de fotos configurado (disco o bucket
+S3). No se puede deshacer: haz antes una copia (en SQLite basta con copiar db.sqlite3, y
+la carpeta media/).
 
 Opciones:
     --yes             no pide confirmación.
@@ -24,6 +25,7 @@ Opciones:
 """
 import os
 import sys
+from pathlib import Path
 
 import django
 
@@ -38,17 +40,23 @@ from core.images import PHOTO_DIRS  # noqa: E402
 
 
 def drop_all_tables():
+    """
+    Borra todas las tablas sin construir SQL con sus nombres: en SQLite se borra el
+    fichero de la base de datos y en PostgreSQL se vuelve a crear el esquema public.
+    """
     tables = connection.introspection.table_names()
     vendor = connection.vendor
-    with connection.cursor() as cursor:
-        if vendor == "sqlite":
-            cursor.execute("PRAGMA foreign_keys = OFF")
-        for table in tables:
-            name = connection.ops.quote_name(table)
-            cursor.execute(f"DROP TABLE IF EXISTS {name}" + (" CASCADE" if vendor == "postgresql" else ""))
-        if vendor == "sqlite":
-            cursor.execute("PRAGMA foreign_keys = ON")
-            cursor.execute("VACUUM")
+    if vendor == "sqlite":
+        path = Path(connection.settings_dict["NAME"])
+        connection.close()
+        path.unlink(missing_ok=True)
+    elif vendor == "postgresql":
+        with connection.cursor() as cursor:
+            cursor.execute("DROP SCHEMA public CASCADE")
+            cursor.execute("CREATE SCHEMA public")
+        connection.close()
+    else:
+        sys.exit(f"Base de datos {vendor} no soportada: usa SQLite o PostgreSQL.")
     return tables
 
 
@@ -86,7 +94,6 @@ if __name__ == "__main__":
             sys.exit("Cancelado: no se ha borrado nada.")
 
     print(f"Borradas {len(drop_all_tables())} tablas.")
-    connection.close()
     call_command("migrate", interactive=False, verbosity=0)
     print(f"Creadas de nuevo {len(connection.introspection.table_names())} tablas con las migraciones (vacías).")
     if not keep_photos:

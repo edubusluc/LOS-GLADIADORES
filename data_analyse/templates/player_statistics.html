@@ -106,18 +106,7 @@
       <section aria-labelledby="seasons-title" class="st-section" id="temporadas">
         <h2 class="st-section-title" id="seasons-title">{% translate "Por temporadas" %}</h2>
 
-        <nav aria-label="{% translate 'Temporadas' %}">
-          <ul class="st-seasons">
-            <li>
-              <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}{{ match_type_qs }}#temporadas" {% if not selected_season %}aria-current="page"{% endif %}>{% translate "Todas" %}</a>
-            </li>
-            {% for season in seasons %}
-              <li>
-                <a class="st-chip" href="{% url 'player_statistics' %}?player={{ selected_player }}&season={{ season|urlencode:'' }}{{ match_type_qs }}#temporadas" {% if season == selected_season %}aria-current="page"{% endif %}>{{ season }}</a>
-              </li>
-            {% endfor %}
-          </ul>
-        </nav>
+        {% include 'includes/season_filter.html' %}
 
         {# ---- Detalle de la temporada elegida ---- #}
         {% if selected_season %}

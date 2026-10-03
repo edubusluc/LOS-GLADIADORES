@@ -7,6 +7,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 
 from core import crypto
 from core.models import Club
+from core.images import connect_photo_cleanup, player_photo_path
 from core.public_id import PublicIdModel
 from team.models import Team
 
@@ -41,7 +42,7 @@ class Player(PublicIdModel):
     skillfull_hand = models.CharField(max_length=10, choices=HAND, default="NONE")
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="players", null=True)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team")
-    photo = models.ImageField(upload_to='static/profile', null=True, blank=True)
+    photo = models.ImageField(upload_to=player_photo_path, null=True, blank=True)
     snp_score = models.FloatField(null=True)
     in_team = models.BooleanField(default=True)
     # Copia de la categoría de su equipo (Team.gender): se asigna al guardar.
@@ -178,3 +179,7 @@ class SnpTeamImport(PublicIdModel):
 
     def __str__(self):
         return gettext("Completar equipo de %(club)s (%(status)s)") % {"club": self.club, "status": self.get_status_display()}
+
+
+# Al cambiar o borrar la foto se borra el fichero antiguo (core/images.py).
+connect_photo_cleanup(Player)

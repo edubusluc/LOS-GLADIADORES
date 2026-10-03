@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, register_converter
 from django.views.i18n import JavaScriptCatalog
@@ -42,7 +43,10 @@ urlpatterns = [
     # Selector de idioma (vista set_language) y traducciones de los textos de static/js.
     path('i18n/', include('django.conf.urls.i18n')),
     path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
-    
 ]
+
+# Fotos subidas (MEDIA_URL): en local las sirve Django; en producción, el servidor web.
+# static() no añade nada si DEBUG está desactivado.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = error_404_view

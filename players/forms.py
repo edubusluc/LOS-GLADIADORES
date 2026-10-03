@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from core.images import clean_photo_field
 from .models import Player
 
 def with_placeholder(choices):
@@ -16,6 +17,10 @@ class PlayerForm (forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['position'].choices = with_placeholder(Player.POSITIONS)
         self.fields['skillfull_hand'].choices = with_placeholder(Player.HAND)
+
+    def clean_photo(self):
+        # Se valida, reduce y pasa a WebP antes de guardarla (core/images.py).
+        return clean_photo_field(self)
 
 class SnpAccountForm(forms.Form):
     username = forms.CharField(label=_("Usuario de SNP"), max_length=150)

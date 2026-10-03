@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext as _
+from core.images import clean_photo_field
 from core.similarity import same_name
 from .models import Team
 
@@ -15,6 +16,10 @@ class Teamform (forms.ModelForm):
         for name in ('gender', 'country', 'division'):
             self.fields[name].required = True
             self.fields[name].choices = [("", _("Elige una opción"))] + list(Team._meta.get_field(name).choices)
+
+    def clean_photo(self):
+        # Se valida, reduce y pasa a WebP antes de guardarla (core/images.py).
+        return clean_photo_field(self)
 
     def clean(self):
         # No puede haber dos equipos del club con el mismo nombre (sin distinguir mayúsculas,

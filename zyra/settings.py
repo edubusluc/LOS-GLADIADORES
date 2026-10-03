@@ -235,6 +235,40 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+# Ficheros subidos por los usuarios (escudos y fotos de jugador): nunca en static/, que es
+# solo para los ficheros del código. Se guardan en MEDIA_ROOT (carpeta media/, fuera de git)
+# y se ven en MEDIA_URL. En local los sirve Django (DJANGO_DEBUG=True); en el servidor, el
+# servidor web (Caddy, Nginx) desde esa carpeta, que debe estar en un disco persistente.
+MEDIA_URL = '/media/'
+MEDIA_ROOT = Path(config('DJANGO_MEDIA_ROOT', default=str(BASE_DIR / 'media')))
+
+# Dónde se guardan: por defecto en el disco (MEDIA_ROOT). Para usar un bucket compatible con
+# S3 (Hetzner Object Storage, Cloudflare R2, AWS S3...) basta con instalar django-storages[s3]
+# y poner DJANGO_MEDIA_STORAGE=storages.backends.s3.S3Storage y las variables AWS_* del .env.
+MEDIA_STORAGE = config('DJANGO_MEDIA_STORAGE', default='django.core.files.storage.FileSystemStorage')
+STORAGES = {
+    'default': {'BACKEND': MEDIA_STORAGE},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
+if MEDIA_STORAGE.startswith('storages.backends.s3'):
+    STORAGES['default']['OPTIONS'] = {
+        'bucket_name': config('AWS_STORAGE_BUCKET_NAME'),
+        'endpoint_url': config('AWS_S3_ENDPOINT_URL', default=None),
+        'region_name': config('AWS_S3_REGION_NAME', default=None),
+        'access_key': config('AWS_ACCESS_KEY_ID'),
+        'secret_key': config('AWS_SECRET_ACCESS_KEY'),
+        # Dominio público del bucket (o de su CDN); sin él las URLs se firman y caducan.
+        'custom_domain': config('AWS_S3_CUSTOM_DOMAIN', default=None),
+        'querystring_auth': not config('AWS_S3_CUSTOM_DOMAIN', default=''),
+        'file_overwrite': False,
+    }
+
+# Procesado de las fotos al subirlas (core/images.py): tamaño máximo del fichero subido,
+# lado máximo en píxeles tras reducirla y calidad del WebP (0-100).
+PHOTO_MAX_UPLOAD_MB = config('PHOTO_MAX_UPLOAD_MB', default=10, cast=int)
+PHOTO_MAX_SIZE = config('PHOTO_MAX_SIZE', default=512, cast=int)
+PHOTO_WEBP_QUALITY = config('PHOTO_WEBP_QUALITY', default=82, cast=int)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

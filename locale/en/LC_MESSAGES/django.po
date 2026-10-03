@@ -5499,3 +5499,15 @@ msgstr "Play-offs"
 
 msgid "Tipo de partido competitivo"
 msgstr "Competitive match type"
+
+#: data_analyse/templates/includes/season_filter.html
+msgid "Buscar temporada"
+msgstr "Search season"
+
+#: data_analyse/templates/includes/season_filter.html
+msgid "Buscar temporada..."
+msgstr "Search season..."
+
+#: data_analyse/templates/includes/season_filter.html
+msgid "Elige una temporada"
+msgstr "Choose a season"

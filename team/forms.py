@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import gettext as _
 from core.similarity import same_name
+from core.validators import plain_text
 from .models import Team
 
 class Teamform (forms.ModelForm):
@@ -11,6 +12,7 @@ class Teamform (forms.ModelForm):
     def __init__(self, *args, club=None, **kwargs):
         self.club = club
         super().__init__(*args, **kwargs)
+        plain_text(self, 'name', 'location')
         # Obligatorios en el formulario aunque los equipos antiguos los tengan vacíos.
         for name in ('gender', 'country', 'division'):
             self.fields[name].required = True

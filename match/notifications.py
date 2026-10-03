@@ -8,6 +8,7 @@ crecientes. Tras MAX_ATTEMPTS intentos se da por fallido y se avisa al personal.
 """
 import datetime
 import logging
+import re
 
 from django.core.mail import get_connection
 from django.utils import timezone
@@ -27,7 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 def report_filename(match):
-    return f"convocatoria-{match.start_date:%Y%m%d}-{match.local}-vs-{match.visiting}.pdf".replace(" ", "_")
+    # Solo letras, números, - y _: los nombres de los equipos los escribe el capitán y unas
+    # comillas o un punto y coma romperían la cabecera Content-Disposition de la descarga.
+    name = f"convocatoria-{match.start_date:%Y%m%d}-{match.local}-vs-{match.visiting}".replace(" ", "_")
+    return re.sub(r"[^\w-]", "", name) + ".pdf"
 
 
 def admin_emails(club):

@@ -20,6 +20,7 @@
         <p class = "alert-log">{% translate "No hay cambios registrados en la convocatoria." %}</p>
     {% endif %}
 
+    {% if is_club_admin %}
     <div class="mt-4">
         <h2 class="z-section-title">{% translate "Aplicar sanciones" %}</h2>
         <form method="POST" action="{% url 'create_penalty' call_id %}">
@@ -29,5 +30,6 @@
             {% include 'includes/player_selector.html' with selected=None submit_label=penalty_label %}
         </form>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

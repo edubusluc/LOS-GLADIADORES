@@ -3,6 +3,8 @@
 
 {% block content %}
   <script src="{% static 'js/player-picker.js' %}" defer></script>
+  {{ dicc_line_chart|json_script:"matches-won-per-year" }}
+  {{ column_chart_data|json_script:"column-chart-data" }}
   <script>
     const teamData = {
       wonMatches: {{ won_matches|default:0|unlocalize }},
@@ -11,8 +13,10 @@
       localGamesLost: {{ local_games_lost|default:0|unlocalize }},
       visitingGamesWon: {{ visiting_games_won|default:0|unlocalize }},
       visitingGamesLost: {{ visiting_games_lost|default:0|unlocalize }},
-      matchesWonPerYear: {% if dicc_line_chart %}{{ dicc_line_chart|safe }}{% else %}{}{% endif %},
-      column_chart_data: {% if column_chart_data %}{{ column_chart_data|safe }}{% else %}[]{% endif %}
+      // json_script: los nombres de los jugadores los escribe el capitán; con |safe un
+      // nombre como </script><script>... se ejecutaba en el navegador de todo el club.
+      matchesWonPerYear: JSON.parse(document.getElementById('matches-won-per-year').textContent) || {},
+      column_chart_data: JSON.parse(document.getElementById('column-chart-data').textContent) || []
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

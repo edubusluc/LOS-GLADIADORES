@@ -21,7 +21,7 @@ from django.views.i18n import JavaScriptCatalog
 
 from core.public_id import PublicIdConverter
 
-from core.views import error_404_view, home
+from core.views import error_403_view, error_404_view, home
 
 # <pid:...>: identificador público de un objeto (core/public_id.py). Se registra antes de
 # cargar las URLs de cada aplicación, que lo usan.
@@ -45,4 +45,5 @@ urlpatterns = [
     
 ]
 
+handler403 = error_403_view
 handler404 = error_404_view

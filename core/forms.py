@@ -7,6 +7,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 
 from team.models import Team
 from .models import Membership
+from .validators import plain_text
 
 User = get_user_model()
 
@@ -26,6 +27,10 @@ class ClubForm(forms.Form):
                                help_text=_("Los jugadores del club tendrán esta categoría."))
     country = forms.ChoiceField(label=_("Nacionalidad del equipo"), choices=[("", _("Elige una opción"))] + Team.COUNTRIES)
     division = forms.ChoiceField(label=_("División"), choices=[("", _("Elige una opción"))] + Team.DIVISIONS)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        plain_text(self, "name", "location")
 
 
 class SignUpForm(UserCreationForm):

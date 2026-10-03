@@ -66,8 +66,11 @@ def match_type_context(request, match_type):
     labels = dict(competitive_labels, **{COMPETITIVE: _("Competitivos"), Match.AMISTOSO: _("Amistosos")})
     return {
         'match_types': options,
-        'competitive_types': [{'label': label, 'url': url(value), 'active': value == match_type}
+        'competitive_types': [{'label': label, 'value': value, 'url': url(value), 'active': value == match_type}
                               for value, label in competitive_labels] if competitive else [],
+        # Resto de la URL (jugador, pareja, temporada) para el formulario del selector de Competitivos.
+        'match_type_keep': [(key, value) for key, values in request.GET.lists() if key != MATCH_TYPE_PARAM
+                            for value in values],
         'selected_match_type': match_type,
         'selected_match_type_label': labels.get(match_type),
         'match_type_qs': f"&{MATCH_TYPE_PARAM}={match_type}" if match_type else "",

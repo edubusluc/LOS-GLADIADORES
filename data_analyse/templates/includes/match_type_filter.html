@@ -8,13 +8,15 @@
     {% endfor %}
   </ul>
   {% if competitive_types %}
-  <div class="st-type-select">
+  <form method="get" class="st-type-select">
+    {% for name, value in match_type_keep %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
     <label for="competitive-type" class="visually-hidden">{% translate "Tipo de partido competitivo" %}</label>
-    <select id="competitive-type" onchange="window.location.href = this.value">
+    <select id="competitive-type" name="match_type" onchange="this.form.submit()">
       {% for option in competitive_types %}
-      <option value="{{ option.url }}" {% if option.active %}selected{% endif %}>{{ option.label }}</option>
+      <option value="{{ option.value }}" {% if option.active %}selected{% endif %}>{{ option.label }}</option>
       {% endfor %}
     </select>
-  </div>
+    <noscript><button type="submit" class="st-chip">{% translate "Filtrar" %}</button></noscript>
+  </form>
   {% endif %}
 </nav>

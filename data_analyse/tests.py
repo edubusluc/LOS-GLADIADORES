@@ -312,6 +312,12 @@ class MatchTypeFilterTests(TestCase):
         pairs = [(r["p1"].name, r["p2"].name) for r in response.context["best_pairs"] + response.context["worst_pairs"]]
         self.assertEqual(pairs, [("A", "B")])
 
+    def test_competitive_selector_keeps_other_parameters(self):
+        response = self.client.get(reverse("player_statistics"), {"player": self.a.public_id, "match_type": "competitivo"})
+        self.assertEqual(response.context["match_type_keep"], [("player", self.a.public_id)])
+        self.assertContains(response, f'<input type="hidden" name="player" value="{self.a.public_id}">', html=True)
+        self.assertContains(response, '<option value="reto" >')
+
     def test_all_hides_competitive_selector(self):
         response = self.client.get(reverse("team_statistics"))
         self.assertEqual(response.context["competitive_types"], [])
